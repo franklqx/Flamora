@@ -6,6 +6,33 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		15A115992F3246460085ED9B /* mockdata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A115972F3246460085ED9B /* mockdata.swift */; };
+		15E21AA62F3248F500A9BB60 /* JourneyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AA32F3248F500A9BB60 /* JourneyView.swift */; };
+		15E21AAB2F324EFA00A9BB60 /* Spacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AAA2F324EFA00A9BB60 /* Spacing.swift */; };
+		15E21AAD2F324F0E00A9BB60 /* ProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AAC2F324F0E00A9BB60 /* ProgressBar.swift */; };
+		15E21AAF2F324F1F00A9BB60 /* MonthIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AAE2F324F1F00A9BB60 /* MonthIndicator.swift */; };
+		15E21AB12F32548A00A9BB60 /* SimulatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB02F32548A00A9BB60 /* SimulatorView.swift */; };
+		15E21AB32F3257B000A9BB60 /* CashflowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB22F3257B000A9BB60 /* CashflowView.swift */; };
+		15E21AB72F3257C600A9BB60 /* InvestmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB62F3257C600A9BB60 /* InvestmentView.swift */; };
+		15E21AB92F3257D700A9BB60 /* GlassmorphicTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */; };
+		15E21ABB2F325A9D00A9BB60 /* JourneyContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21ABA2F325A9D00A9BB60 /* JourneyContainerView.swift */; };
+		15E21AD92F3394B100A9BB60 /* FlameIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AD82F3394B100A9BB60 /* FlameIcon.swift */; };
+		15E21ADB2F33971100A9BB60 /* TabBarVisibilityPreferenceKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21ADA2F33971100A9BB60 /* TabBarVisibilityPreferenceKey.swift */; };
+		15E21ADD2F33973100A9BB60 /* FlameTogglePill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21ADC2F33973100A9BB60 /* FlameTogglePill.swift */; };
+		15E21AE12F33BB9300A9BB60 /* SavingsTargetCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AE02F33BB9200A9BB60 /* SavingsTargetCard.swift */; };
+		15E21AE32F33BBB600A9BB60 /* SavingsInputSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AE22F33BBB600A9BB60 /* SavingsInputSheet.swift */; };
+		15E21AED2F33C11A00A9BB60 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */; };
+		15E21AEF2F33C3F600A9BB60 /* IncomeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AEE2F33C3F600A9BB60 /* IncomeCard.swift */; };
+		15E21AF12F33C40000A9BB60 /* BudgetCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF02F33C40000A9BB60 /* BudgetCard.swift */; };
+		15E21AF32F33F2AD00A9BB60 /* AccountsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF22F33F2AD00A9BB60 /* AccountsCard.swift */; };
+		15E21AF52F33F2BE00A9BB60 /* AssetAllocationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */; };
+		15E21AF72F33F2C600A9BB60 /* PortfolioCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF62F33F2C600A9BB60 /* PortfolioCard.swift */; };
+		15FF6EDA2F31096B0005F482 /* GradientButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED92F31043F0005F482 /* GradientButton.swift */; };
+		15FF6EDB2F3109F40005F482 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED72F31033C0005F482 /* Colors.swift */; };
+		15FF6EE02F310A040005F482 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED82F3103F70005F482 /* Typography.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		150899A42F30F611003DDFBF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +54,30 @@
 		150899942F30F60F003DDFBF /* Flamora app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Flamora app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899A32F30F611003DDFBF /* Flamora appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899AD2F30F611003DDFBF /* Flamora appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		15A115972F3246460085ED9B /* mockdata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mockdata.swift; sourceTree = "<group>"; };
+		15E21AA32F3248F500A9BB60 /* JourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyView.swift; sourceTree = "<group>"; };
+		15E21AAA2F324EFA00A9BB60 /* Spacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spacing.swift; sourceTree = "<group>"; };
+		15E21AAC2F324F0E00A9BB60 /* ProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBar.swift; sourceTree = "<group>"; };
+		15E21AAE2F324F1F00A9BB60 /* MonthIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthIndicator.swift; sourceTree = "<group>"; };
+		15E21AB02F32548A00A9BB60 /* SimulatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorView.swift; sourceTree = "<group>"; };
+		15E21AB22F3257B000A9BB60 /* CashflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowView.swift; sourceTree = "<group>"; };
+		15E21AB62F3257C600A9BB60 /* InvestmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentView.swift; sourceTree = "<group>"; };
+		15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassmorphicTabBar.swift; sourceTree = "<group>"; };
+		15E21ABA2F325A9D00A9BB60 /* JourneyContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyContainerView.swift; sourceTree = "<group>"; };
+		15E21AD82F3394B100A9BB60 /* FlameIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlameIcon.swift; sourceTree = "<group>"; };
+		15E21ADA2F33971100A9BB60 /* TabBarVisibilityPreferenceKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarVisibilityPreferenceKey.swift; sourceTree = "<group>"; };
+		15E21ADC2F33973100A9BB60 /* FlameTogglePill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlameTogglePill.swift; sourceTree = "<group>"; };
+		15E21AE02F33BB9200A9BB60 /* SavingsTargetCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsTargetCard.swift; sourceTree = "<group>"; };
+		15E21AE22F33BBB600A9BB60 /* SavingsInputSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsInputSheet.swift; sourceTree = "<group>"; };
+		15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		15E21AEE2F33C3F600A9BB60 /* IncomeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomeCard.swift; sourceTree = "<group>"; };
+		15E21AF02F33C40000A9BB60 /* BudgetCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetCard.swift; sourceTree = "<group>"; };
+		15E21AF22F33F2AD00A9BB60 /* AccountsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountsCard.swift; sourceTree = "<group>"; };
+		15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetAllocationCard.swift; sourceTree = "<group>"; };
+		15E21AF62F33F2C600A9BB60 /* PortfolioCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioCard.swift; sourceTree = "<group>"; };
+		15FF6ED72F31033C0005F482 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
+		15FF6ED82F3103F70005F482 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
+		15FF6ED92F31043F0005F482 /* GradientButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientButton.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -76,9 +127,13 @@
 			isa = PBXGroup;
 			children = (
 				150899962F30F60F003DDFBF /* Flamora app */,
+				15A115982F3246460085ED9B /* Models */,
+				15FF6ED62F31031D0005F482 /* Components */,
+				15FF6ED52F3102D50005F482 /* Style */,
 				150899A62F30F611003DDFBF /* Flamora appTests */,
 				150899B02F30F611003DDFBF /* Flamora appUITests */,
 				150899952F30F60F003DDFBF /* Products */,
+				15E21AA52F3248F500A9BB60 /* View */,
 			);
 			sourceTree = "<group>";
 		};
@@ -90,6 +145,82 @@
 				150899AD2F30F611003DDFBF /* Flamora appUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		15A115982F3246460085ED9B /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				15A115972F3246460085ED9B /* mockdata.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		15E21AA42F3248F500A9BB60 /* Journey */ = {
+			isa = PBXGroup;
+			children = (
+				15E21ABA2F325A9D00A9BB60 /* JourneyContainerView.swift */,
+				15E21AA32F3248F500A9BB60 /* JourneyView.swift */,
+				15E21AAE2F324F1F00A9BB60 /* MonthIndicator.swift */,
+				15E21AB02F32548A00A9BB60 /* SimulatorView.swift */,
+				15E21ADC2F33973100A9BB60 /* FlameTogglePill.swift */,
+				15E21AAC2F324F0E00A9BB60 /* ProgressBar.swift */,
+			);
+			path = Journey;
+			sourceTree = "<group>";
+		};
+		15E21AA52F3248F500A9BB60 /* View */ = {
+			isa = PBXGroup;
+			children = (
+				15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */,
+				15E21AEB2F33BE1900A9BB60 /* Investment */,
+				15E21AE72F33BC5E00A9BB60 /* Cashflow */,
+				15E21AA42F3248F500A9BB60 /* Journey */,
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		15E21AE72F33BC5E00A9BB60 /* Cashflow */ = {
+			isa = PBXGroup;
+			children = (
+				15E21AB22F3257B000A9BB60 /* CashflowView.swift */,
+				15E21AF02F33C40000A9BB60 /* BudgetCard.swift */,
+				15E21AEE2F33C3F600A9BB60 /* IncomeCard.swift */,
+				15E21AE22F33BBB600A9BB60 /* SavingsInputSheet.swift */,
+				15E21AE02F33BB9200A9BB60 /* SavingsTargetCard.swift */,
+			);
+			path = Cashflow;
+			sourceTree = "<group>";
+		};
+		15E21AEB2F33BE1900A9BB60 /* Investment */ = {
+			isa = PBXGroup;
+			children = (
+				15E21AF62F33F2C600A9BB60 /* PortfolioCard.swift */,
+				15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */,
+				15E21AF22F33F2AD00A9BB60 /* AccountsCard.swift */,
+				15E21AB62F3257C600A9BB60 /* InvestmentView.swift */,
+			);
+			path = Investment;
+			sourceTree = "<group>";
+		};
+		15FF6ED52F3102D50005F482 /* Style */ = {
+			isa = PBXGroup;
+			children = (
+				15E21AAA2F324EFA00A9BB60 /* Spacing.swift */,
+				15FF6ED72F31033C0005F482 /* Colors.swift */,
+				15FF6ED82F3103F70005F482 /* Typography.swift */,
+			);
+			path = Style;
+			sourceTree = "<group>";
+		};
+		15FF6ED62F31031D0005F482 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				15E21ADA2F33971100A9BB60 /* TabBarVisibilityPreferenceKey.swift */,
+				15E21AD82F3394B100A9BB60 /* FlameIcon.swift */,
+				15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */,
+				15FF6ED92F31043F0005F482 /* GradientButton.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -236,6 +367,30 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				15E21AF12F33C40000A9BB60 /* BudgetCard.swift in Sources */,
+				15FF6EDB2F3109F40005F482 /* Colors.swift in Sources */,
+				15E21ADB2F33971100A9BB60 /* TabBarVisibilityPreferenceKey.swift in Sources */,
+				15E21AB72F3257C600A9BB60 /* InvestmentView.swift in Sources */,
+				15E21ABB2F325A9D00A9BB60 /* JourneyContainerView.swift in Sources */,
+				15E21AAD2F324F0E00A9BB60 /* ProgressBar.swift in Sources */,
+				15E21AED2F33C11A00A9BB60 /* MainTabView.swift in Sources */,
+				15FF6EDA2F31096B0005F482 /* GradientButton.swift in Sources */,
+				15E21AE12F33BB9300A9BB60 /* SavingsTargetCard.swift in Sources */,
+				15FF6EE02F310A040005F482 /* Typography.swift in Sources */,
+				15E21AA62F3248F500A9BB60 /* JourneyView.swift in Sources */,
+				15E21AE32F33BBB600A9BB60 /* SavingsInputSheet.swift in Sources */,
+				15E21AAF2F324F1F00A9BB60 /* MonthIndicator.swift in Sources */,
+				15E21AEF2F33C3F600A9BB60 /* IncomeCard.swift in Sources */,
+				15E21AAB2F324EFA00A9BB60 /* Spacing.swift in Sources */,
+				15E21AB92F3257D700A9BB60 /* GlassmorphicTabBar.swift in Sources */,
+				15E21AB12F32548A00A9BB60 /* SimulatorView.swift in Sources */,
+				15E21ADD2F33973100A9BB60 /* FlameTogglePill.swift in Sources */,
+				15A115992F3246460085ED9B /* mockdata.swift in Sources */,
+				15E21AF52F33F2BE00A9BB60 /* AssetAllocationCard.swift in Sources */,
+				15E21AF32F33F2AD00A9BB60 /* AccountsCard.swift in Sources */,
+				15E21AD92F3394B100A9BB60 /* FlameIcon.swift in Sources */,
+				15E21AB32F3257B000A9BB60 /* CashflowView.swift in Sources */,
+				15E21AF72F33F2C600A9BB60 /* PortfolioCard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -327,6 +482,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -383,6 +539,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -395,6 +552,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 526LTP6Z7D;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -402,6 +560,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -426,6 +585,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 526LTP6Z7D;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -433,6 +593,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
