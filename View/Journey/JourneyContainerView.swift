@@ -13,7 +13,7 @@ struct JourneyContainerView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color.clear
 
             ZStack {
                 // Journey 页面 (正面)

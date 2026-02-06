@@ -44,7 +44,7 @@ struct CashflowView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.black.ignoresSafeArea()
+                AppBackgroundView()
 
                 GeometryReader { proxy in
                     ScrollView(showsIndicators: false) {
@@ -84,10 +84,7 @@ struct CashflowView: View {
                 }
             }
         }
-        .background(Color.black.ignoresSafeArea())
-        .toolbarBackground(Color.black, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .background(Color.clear)
         .onAppear {
             initializeMonths()
         }

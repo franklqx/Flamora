@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */; };
 		153CA3182F34E952001ED98E /* NetWorthCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3172F34E952001ED98E /* NetWorthCard.swift */; };
 		153CA31A2F34EDEC001ED98E /* TopHeaderBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3192F34EDEC001ED98E /* TopHeaderBar.swift */; };
 		153CA31C2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA31B2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift */; };
@@ -55,6 +56,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBackgroundView.swift; sourceTree = "<group>"; };
 		150899942F30F60F003DDFBF /* Flamora app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Flamora app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899A32F30F611003DDFBF /* Flamora appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899AD2F30F611003DDFBF /* Flamora appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -180,6 +182,7 @@
 		15E21AA52F3248F500A9BB60 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */,
 				15E21AEB2F33BE1900A9BB60 /* Investment */,
 				15E21AE72F33BC5E00A9BB60 /* Cashflow */,
 				15E21AA42F3248F500A9BB60 /* Journey */,
@@ -207,7 +210,6 @@
 				15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */,
 				15E21AF22F33F2AD00A9BB60 /* AccountsCard.swift */,
 				15E21AB62F3257C600A9BB60 /* InvestmentView.swift */,
-				15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */,
 			);
 			path = Investment;
 			sourceTree = "<group>";
@@ -225,6 +227,7 @@
 		15FF6ED62F31031D0005F482 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */,
 				153CA31B2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift */,
 				153CA3192F34EDEC001ED98E /* TopHeaderBar.swift */,
 				15E21ADA2F33971100A9BB60 /* TabBarVisibilityPreferenceKey.swift */,
@@ -390,6 +393,7 @@
 				15E21AE12F33BB9300A9BB60 /* SavingsTargetCard.swift in Sources */,
 				15FF6EE02F310A040005F482 /* Typography.swift in Sources */,
 				15E21AA62F3248F500A9BB60 /* JourneyView.swift in Sources */,
+				1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */,
 				153CA3182F34E952001ED98E /* NetWorthCard.swift in Sources */,
 				15E21AE32F33BBB600A9BB60 /* SavingsInputSheet.swift in Sources */,
 				153CA31A2F34EDEC001ED98E /* TopHeaderBar.swift in Sources */,

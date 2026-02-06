@@ -43,7 +43,7 @@ struct TopHeaderBar: View {
         .padding(.top, 6)
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity)
-        .background(Color.black.ignoresSafeArea(edges: .top))
+        .background(Color.clear)
         .opacity(isVisible ? 1 : 0)
         .allowsHitTesting(isVisible)
         .frame(height: isVisible ? nil : 0)

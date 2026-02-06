@@ -19,8 +19,7 @@ struct JourneyView: View {
 
     var body: some View {
         ZStack {
-            Color.black
-                .ignoresSafeArea()
+            Color.clear
 
             GeometryReader { proxy in
                 ScrollView(showsIndicators: false) {

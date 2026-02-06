@@ -10,21 +10,19 @@ import SwiftUI
 struct MainTabView: View {
     @State private var selectedTab = 0
     @State private var showHeaderBar = true
-    @State private var showTabBar = true
     @State private var isSimulatorShown = false
 
     var body: some View {
         GeometryReader { proxy in
             let topInset = proxy.safeAreaInsets.top
-
+            let bottomInset = proxy.safeAreaInsets.bottom
+            let shouldShowTabBar = true
+            let shouldShowHeaderBar = selectedTab == 0
+            ? (isSimulatorShown ? showHeaderBar : true)
+            : showHeaderBar
             ZStack {
                 // 背景
-                Color.black.ignoresSafeArea()
-
-                let shouldShowTabBar = (selectedTab != 0 || !isSimulatorShown) && showTabBar
-                let shouldShowHeaderBar = selectedTab == 0
-                ? (isSimulatorShown ? showHeaderBar : true)
-                : showHeaderBar
+                AppBackgroundView()
 
                 // 内容区域
                 Group {
@@ -39,16 +37,11 @@ struct MainTabView: View {
                         JourneyContainerView(isSimulatorShown: $isSimulatorShown)
                     }
                 }
-                .background(Color.black)
+                .background(Color.clear)
                 .transaction { $0.animation = nil }
                 .onPreferenceChange(HeaderVisibilityPreferenceKey.self) { value in
                     withAnimation(nil) {
                         showHeaderBar = value
-                    }
-                }
-                .onPreferenceChange(TabBarVisibilityPreferenceKey.self) { value in
-                    withAnimation(nil) {
-                        showTabBar = value
                     }
                 }
                 .safeAreaInset(edge: .top, spacing: 0) {
@@ -59,20 +52,19 @@ struct MainTabView: View {
                         isVisible: shouldShowHeaderBar
                     )
                 }
-
-                // Tab Bar (浮在最上层)
-                if shouldShowTabBar {
-                    VStack {
-                        Spacer()
-                        GlassmorphicTabBar(selectedTab: $selectedTab)
-                    }
-                    .ignoresSafeArea(edges: .bottom)
-                }
             }
             .overlay(alignment: .top) {
-                Color.black
+                Color.clear
                     .frame(height: topInset)
                     .ignoresSafeArea(edges: .top)
+            }
+            .overlay(alignment: .bottom) {
+                if shouldShowTabBar {
+                    GlassmorphicTabBar(selectedTab: $selectedTab)
+                        .padding(.bottom, bottomInset + 48)
+                        .zIndex(10)
+                        .allowsHitTesting(true)
+                }
             }
         }
     }

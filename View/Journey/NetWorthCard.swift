@@ -38,11 +38,9 @@ struct NetWorthCard: View {
             .cornerRadius(20)
         }
         .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.horizontal, 22)
-        .padding(.vertical, 20)
-        .background(Color.black)
-        .cornerRadius(24)
         .padding(.horizontal, AppSpacing.screenPadding)
+        .padding(.top, 6)
+        .padding(.bottom, 8)
     }
 
     private func formatCurrency(_ value: Double) -> String {
