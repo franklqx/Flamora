@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		153CA3182F34E952001ED98E /* NetWorthCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3172F34E952001ED98E /* NetWorthCard.swift */; };
+		153CA31A2F34EDEC001ED98E /* TopHeaderBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3192F34EDEC001ED98E /* TopHeaderBar.swift */; };
+		153CA31C2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA31B2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift */; };
+		153CA32C2F3562AC001ED98E /* SavingsTargetDetailView2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA32B2F3562AC001ED98E /* SavingsTargetDetailView2.swift */; };
 		15A115992F3246460085ED9B /* mockdata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A115972F3246460085ED9B /* mockdata.swift */; };
 		15E21AA62F3248F500A9BB60 /* JourneyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AA32F3248F500A9BB60 /* JourneyView.swift */; };
 		15E21AAB2F324EFA00A9BB60 /* Spacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AAA2F324EFA00A9BB60 /* Spacing.swift */; };
@@ -54,6 +58,10 @@
 		150899942F30F60F003DDFBF /* Flamora app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Flamora app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899A32F30F611003DDFBF /* Flamora appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899AD2F30F611003DDFBF /* Flamora appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		153CA3172F34E952001ED98E /* NetWorthCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetWorthCard.swift; sourceTree = "<group>"; };
+		153CA3192F34EDEC001ED98E /* TopHeaderBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopHeaderBar.swift; sourceTree = "<group>"; };
+		153CA31B2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeaderVisibilityPreferenceKey.swift; sourceTree = "<group>"; };
+		153CA32B2F3562AC001ED98E /* SavingsTargetDetailView2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsTargetDetailView2.swift; sourceTree = "<group>"; };
 		15A115972F3246460085ED9B /* mockdata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mockdata.swift; sourceTree = "<group>"; };
 		15E21AA32F3248F500A9BB60 /* JourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyView.swift; sourceTree = "<group>"; };
 		15E21AAA2F324EFA00A9BB60 /* Spacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spacing.swift; sourceTree = "<group>"; };
@@ -127,13 +135,13 @@
 			isa = PBXGroup;
 			children = (
 				150899962F30F60F003DDFBF /* Flamora app */,
+				150899B02F30F611003DDFBF /* Flamora appUITests */,
+				150899A62F30F611003DDFBF /* Flamora appTests */,
+				15E21AA52F3248F500A9BB60 /* View */,
 				15A115982F3246460085ED9B /* Models */,
 				15FF6ED62F31031D0005F482 /* Components */,
 				15FF6ED52F3102D50005F482 /* Style */,
-				150899A62F30F611003DDFBF /* Flamora appTests */,
-				150899B02F30F611003DDFBF /* Flamora appUITests */,
 				150899952F30F60F003DDFBF /* Products */,
-				15E21AA52F3248F500A9BB60 /* View */,
 			);
 			sourceTree = "<group>";
 		};
@@ -158,6 +166,7 @@
 		15E21AA42F3248F500A9BB60 /* Journey */ = {
 			isa = PBXGroup;
 			children = (
+				153CA3172F34E952001ED98E /* NetWorthCard.swift */,
 				15E21ABA2F325A9D00A9BB60 /* JourneyContainerView.swift */,
 				15E21AA32F3248F500A9BB60 /* JourneyView.swift */,
 				15E21AAE2F324F1F00A9BB60 /* MonthIndicator.swift */,
@@ -171,7 +180,6 @@
 		15E21AA52F3248F500A9BB60 /* View */ = {
 			isa = PBXGroup;
 			children = (
-				15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */,
 				15E21AEB2F33BE1900A9BB60 /* Investment */,
 				15E21AE72F33BC5E00A9BB60 /* Cashflow */,
 				15E21AA42F3248F500A9BB60 /* Journey */,
@@ -182,6 +190,7 @@
 		15E21AE72F33BC5E00A9BB60 /* Cashflow */ = {
 			isa = PBXGroup;
 			children = (
+				153CA32B2F3562AC001ED98E /* SavingsTargetDetailView2.swift */,
 				15E21AB22F3257B000A9BB60 /* CashflowView.swift */,
 				15E21AF02F33C40000A9BB60 /* BudgetCard.swift */,
 				15E21AEE2F33C3F600A9BB60 /* IncomeCard.swift */,
@@ -198,6 +207,7 @@
 				15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */,
 				15E21AF22F33F2AD00A9BB60 /* AccountsCard.swift */,
 				15E21AB62F3257C600A9BB60 /* InvestmentView.swift */,
+				15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */,
 			);
 			path = Investment;
 			sourceTree = "<group>";
@@ -215,6 +225,8 @@
 		15FF6ED62F31031D0005F482 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				153CA31B2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift */,
+				153CA3192F34EDEC001ED98E /* TopHeaderBar.swift */,
 				15E21ADA2F33971100A9BB60 /* TabBarVisibilityPreferenceKey.swift */,
 				15E21AD82F3394B100A9BB60 /* FlameIcon.swift */,
 				15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */,
@@ -378,7 +390,9 @@
 				15E21AE12F33BB9300A9BB60 /* SavingsTargetCard.swift in Sources */,
 				15FF6EE02F310A040005F482 /* Typography.swift in Sources */,
 				15E21AA62F3248F500A9BB60 /* JourneyView.swift in Sources */,
+				153CA3182F34E952001ED98E /* NetWorthCard.swift in Sources */,
 				15E21AE32F33BBB600A9BB60 /* SavingsInputSheet.swift in Sources */,
+				153CA31A2F34EDEC001ED98E /* TopHeaderBar.swift in Sources */,
 				15E21AAF2F324F1F00A9BB60 /* MonthIndicator.swift in Sources */,
 				15E21AEF2F33C3F600A9BB60 /* IncomeCard.swift in Sources */,
 				15E21AAB2F324EFA00A9BB60 /* Spacing.swift in Sources */,
@@ -388,9 +402,11 @@
 				15A115992F3246460085ED9B /* mockdata.swift in Sources */,
 				15E21AF52F33F2BE00A9BB60 /* AssetAllocationCard.swift in Sources */,
 				15E21AF32F33F2AD00A9BB60 /* AccountsCard.swift in Sources */,
+				153CA32C2F3562AC001ED98E /* SavingsTargetDetailView2.swift in Sources */,
 				15E21AD92F3394B100A9BB60 /* FlameIcon.swift in Sources */,
 				15E21AB32F3257B000A9BB60 /* CashflowView.swift in Sources */,
 				15E21AF72F33F2C600A9BB60 /* PortfolioCard.swift in Sources */,
+				153CA31C2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

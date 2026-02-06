@@ -9,15 +9,17 @@ import SwiftUI
 
 struct CashflowView: View {
     private let data = MockData.cashflowData
-    @State private var selectedMonthIndex = 3
+    @State private var selectedMonthIndex = 0
+    @State private var monthDates: [Date] = []
+    @State private var hasInitializedMonths = false
     @State private var currentSavings: Double = 0
     @State private var needsTotal: Double = MockData.cashflowData.spending.needs
     @State private var wantsTotal: Double = MockData.cashflowData.spending.wants
     @State private var totalSpend: Double = MockData.cashflowData.spending.total
     @State private var reviewTransactions: [Transaction] = MockData.cashflowData.toReview.transactions
     @State private var reviewCount: Int = MockData.cashflowData.toReview.count
-
-    private let monthOptions = ["Nov 25", "Dec 25", "Jan 26", "Feb 26"]
+    @State private var showSavingsInput = false
+    @State private var showSavingsSummary = false
 
     private var spendingForDisplay: Spending {
         Spending(
@@ -28,119 +30,117 @@ struct CashflowView: View {
         )
     }
 
+    private var formattedMonthLabel: String {
+        monthHeaderLabel(selectedMonthDate)
+    }
+
+    private var selectedMonthDate: Date {
+        guard selectedMonthIndex >= 0, selectedMonthIndex < monthDates.count else {
+            return Date()
+        }
+        return monthDates[selectedMonthIndex]
+    }
+
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 20) {
-                    header
+                GeometryReader { proxy in
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 20) {
+                            monthSelector
 
-                    monthSelector
+                            IncomeCard(
+                                income: data.income,
+                                monthLabel: formattedMonthLabel
+                            )
+                                .padding(.horizontal, AppSpacing.screenPadding)
 
-                    SavingsTargetCard(
-                        currentAmount: $currentSavings,
-                        targetAmount: data.savingsTarget.goal
-                    )
-                    .padding(.horizontal, AppSpacing.screenPadding)
+                            sectionTitle("Monthly Savings")
+                                .padding(.horizontal, AppSpacing.screenPadding)
 
-                    sectionTitle("Monthly Income")
-                        .padding(.horizontal, AppSpacing.screenPadding)
+                            SavingsTargetCard(
+                                currentAmount: $currentSavings,
+                                targetAmount: data.savingsTarget.goal,
+                                onAdd: { showSavingsInput = true },
+                                onCardTap: { showSavingsSummary = true }
+                            )
+                            .padding(.horizontal, AppSpacing.screenPadding)
 
-                    IncomeCard(income: data.income)
-                        .padding(.horizontal, AppSpacing.screenPadding)
+                            sectionTitle("Monthly Budget Spend")
+                                .padding(.horizontal, AppSpacing.screenPadding)
 
-                    sectionTitle("Monthly Budget")
-                        .padding(.horizontal, AppSpacing.screenPadding)
+                            BudgetCard(spending: spendingForDisplay)
+                                .padding(.horizontal, AppSpacing.screenPadding)
 
-                    BudgetCard(spending: spendingForDisplay)
-                        .padding(.horizontal, AppSpacing.screenPadding)
+                            toReviewSection
 
-                    toReviewSection
-
-                    Color.clear.frame(height: 120)
+                        }
+                        .frame(minHeight: proxy.size.height, alignment: .top)
+                        .padding(.top, TopHeaderBar.height)
+                        .padding(.bottom, AppSpacing.tabBarReserve)
+                    }
                 }
-                .padding(.top, 8)
-                .padding(.bottom, 24)
             }
+        }
+        .background(Color.black.ignoresSafeArea())
+        .toolbarBackground(Color.black, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .onAppear {
+            initializeMonths()
+        }
+        .fullScreenCover(isPresented: $showSavingsSummary) {
+            SavingsTargetDetailView2()
+        }
+        .sheet(isPresented: $showSavingsInput) {
+            SavingsInputSheet(amount: $currentSavings)
+                .ignoresSafeArea(.container, edges: .bottom)
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(28)
+                .presentationBackground(Color.black)
         }
     }
 }
 
 // MARK: - Header
 private extension CashflowView {
-    var header: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Welcome back,")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color(hex: "#7C7C7C"))
-
-                Text("Alex Sterling")
-                    .font(.system(size: 30, weight: .bold))
-                    .foregroundColor(.white)
-            }
-
-            Spacer()
-
-            HStack(spacing: 10) {
-                Button(action: {}) {
-                    Circle()
-                        .fill(Color(hex: "#121212"))
-                        .frame(width: 36, height: 36)
-                        .overlay(
-                            Image(systemName: "gearshape.fill")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.white)
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(Color(hex: "#222222"), lineWidth: 1)
-                        )
-                }
-                .buttonStyle(.plain)
-
-                Circle()
-                    .fill(Color(hex: "#2C2C2E"))
-                    .frame(width: 36, height: 36)
-                    .overlay(
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
-                    )
-                    .overlay(
-                        Circle()
-                            .stroke(Color(hex: "#222222"), lineWidth: 1)
-                    )
-            }
-        }
-        .padding(.horizontal, AppSpacing.screenPadding)
-    }
-
     var monthSelector: some View {
-        HStack(spacing: 10) {
-            ForEach(monthOptions.indices, id: \.self) { index in
-                let isSelected = index == selectedMonthIndex
-                Text(monthOptions[index])
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(isSelected ? .white : Color(hex: "#6B7280"))
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .background(
-                        Capsule()
-                            .fill(isSelected ? Color(hex: "#121212") : Color.clear)
-                            .overlay(
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 10) {
+                    ForEach(monthDates.indices, id: \.self) { index in
+                        let isSelected = index == selectedMonthIndex
+                        Text(monthPillLabel(monthDates[index]))
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(isSelected ? .white : Color(hex: "#6B7280"))
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .background(
                                 Capsule()
-                                    .stroke(isSelected ? Color(hex: "#222222") : Color.clear, lineWidth: 1)
+                                    .fill(isSelected ? Color(hex: "#121212") : Color.clear)
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(isSelected ? Color(hex: "#222222") : Color.clear, lineWidth: 1)
+                                    )
                             )
-                    )
-                    .onTapGesture {
-                        selectedMonthIndex = index
+                            .id(index)
+                            .onTapGesture {
+                                selectedMonthIndex = index
+                            }
                     }
+                }
+                .padding(.horizontal, AppSpacing.screenPadding)
+            }
+            .onAppear {
+                scrollToCurrentMonth(using: proxy, animated: false)
+            }
+            .onChange(of: selectedMonthIndex) { _, _ in
+                scrollToCurrentMonth(using: proxy, animated: true)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, AppSpacing.screenPadding)
     }
 }
 
@@ -151,6 +151,51 @@ private extension CashflowView {
             .font(.system(size: 18, weight: .bold))
             .foregroundColor(.white)
             .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+// MARK: - Month Helpers
+private extension CashflowView {
+    static let monthPillFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM yy"
+        return formatter
+    }()
+
+    static let monthHeaderFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM yyyy"
+        return formatter
+    }()
+
+    func monthPillLabel(_ date: Date) -> String {
+        Self.monthPillFormatter.string(from: date)
+    }
+
+    func monthHeaderLabel(_ date: Date) -> String {
+        Self.monthHeaderFormatter.string(from: date)
+    }
+
+    func initializeMonths() {
+        guard !hasInitializedMonths else { return }
+        let calendar = Calendar.current
+        let now = Date()
+        let base = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
+        let offsets = -5...6
+        monthDates = offsets.compactMap { calendar.date(byAdding: .month, value: $0, to: base) }
+        selectedMonthIndex = 5
+        hasInitializedMonths = true
+    }
+
+    func scrollToCurrentMonth(using proxy: ScrollViewProxy, animated: Bool) {
+        guard selectedMonthIndex >= 0, selectedMonthIndex < monthDates.count else { return }
+        if animated {
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                proxy.scrollTo(selectedMonthIndex, anchor: .center)
+            }
+        } else {
+            proxy.scrollTo(selectedMonthIndex, anchor: .center)
+        }
     }
 }
 
@@ -244,7 +289,7 @@ private struct TransactionCard: View {
                     .foregroundColor(.white)
                     .padding(.vertical, 8)
                     .padding(.horizontal, 16)
-                    .background(Color(hex: "#93C5FD").opacity(0.2))
+                    .background(Color(hex: "#A78BFA").opacity(0.2))
                     .clipShape(Capsule())
                 }
 
@@ -258,7 +303,7 @@ private struct TransactionCard: View {
                     .foregroundColor(.white)
                     .padding(.vertical, 8)
                     .padding(.horizontal, 16)
-                    .background(Color(hex: "#C4B5FD").opacity(0.2))
+                    .background(Color(hex: "#93C5FD").opacity(0.2))
                     .clipShape(Capsule())
                 }
             }

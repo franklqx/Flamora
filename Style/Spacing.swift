@@ -19,6 +19,7 @@ struct AppSpacing {
     static let cardGap: CGFloat = 16
     static let screenPadding: CGFloat = 16
     static let sectionGap: CGFloat = 24
+    static let tabBarReserve: CGFloat = 84
 }
 
 struct AppRadius {

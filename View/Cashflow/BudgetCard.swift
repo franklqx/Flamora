@@ -8,10 +8,8 @@ import SwiftUI
 struct BudgetCard: View {
     let spending: Spending
 
-    private var progress: Double {
-        guard spending.budgetLimit > 0 else { return 0 }
-        return min(max(spending.total / spending.budgetLimit, 0), 1)
-    }
+    private var needsColor: Color { Color(hex: "#A78BFA") }
+    private var wantsColor: Color { Color(hex: "#93C5FD") }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -29,14 +27,14 @@ struct BudgetCard: View {
                     .foregroundColor(Color(hex: "#6B7280"))
             }
 
-            ProgressBar(progress: progress, color: Color(hex: "#8B5CF6"), height: 8)
+            segmentedBar
 
             VStack(spacing: 12) {
                 BudgetRowItem(
                     title: "Needs",
                     current: formatCurrency(spending.needs),
                     total: formatCurrency(spending.budgetLimit * 0.75),
-                    color: Color(hex: "#93C5FD"),
+                    color: needsColor,
                     icon: "house.fill"
                 )
 
@@ -44,7 +42,7 @@ struct BudgetCard: View {
                     title: "Wants",
                     current: formatCurrency(spending.wants),
                     total: formatCurrency(spending.budgetLimit * 0.25),
-                    color: Color(hex: "#C4B5FD"),
+                    color: wantsColor,
                     icon: "bag.fill"
                 )
             }
@@ -56,6 +54,34 @@ struct BudgetCard: View {
             RoundedRectangle(cornerRadius: 20)
                 .stroke(Color(hex: "#222222"), lineWidth: 1)
         )
+    }
+
+    private var segmentedBar: some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            let safeWidth = width.isFinite && width >= 0 ? width : 0
+            let limit = max(spending.budgetLimit, 1)
+            let needsRatio = min(max(spending.needs / limit, 0), 1)
+            let wantsRatio = min(max(spending.wants / limit, 0), 1)
+            let needsWidth = max(0, safeWidth * CGFloat(needsRatio))
+            let wantsWidth = max(0, safeWidth * CGFloat(wantsRatio))
+
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color(hex: "#2C2C2E"))
+                    .frame(height: 8)
+
+                Capsule()
+                    .fill(needsColor)
+                    .frame(width: needsWidth, height: 8)
+
+                Capsule()
+                    .fill(wantsColor)
+                    .frame(width: wantsWidth, height: 8)
+                    .offset(x: needsWidth)
+            }
+        }
+        .frame(height: 8)
     }
 
     private func formatCurrency(_ value: Double) -> String {

@@ -75,9 +75,9 @@ private struct AccountRow: View {
 
     private var iconColor: Color {
         switch account.type.lowercased() {
-        case "investment": return Color(hex: "#60A5FA")
-        case "brokerage": return Color(hex: "#F87171")
-        case "crypto": return Color(hex: "#F59E0B")
+        case "investment": return Color(hex: "#A78BFA")
+        case "brokerage": return Color(hex: "#93C5FD")
+        case "crypto": return Color(hex: "#F9A8D4")
         default: return Color(hex: "#A78BFA")
         }
     }

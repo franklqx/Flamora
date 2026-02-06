@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct JourneyContainerView: View {
-    @State private var showSimulator = false
-    @State private var degrees: Double = 0
+    @Binding var isSimulatorShown: Bool
+    private var bottomPadding: CGFloat { isSimulatorShown ? 0 : AppSpacing.tabBarReserve }
 
     var body: some View {
         ZStack {
@@ -17,31 +17,32 @@ struct JourneyContainerView: View {
 
             ZStack {
                 // Journey 页面 (正面)
-                JourneyView(onFireTapped: {
+                JourneyView(bottomPadding: bottomPadding, onFireTapped: {
                     flip(to: true)
                 })
                 .rotation3DEffect(
-                    .degrees(degrees),
+                    .degrees(isSimulatorShown ? -90 : 0),
                     axis: (x: 0, y: 1, z: 0),
                     perspective: 0.5
                 )
-                .opacity(degrees <= 90 ? 1 : 0)
-                .allowsHitTesting(!showSimulator)
+                .opacity(!isSimulatorShown ? 1 : 0)
+                .allowsHitTesting(!isSimulatorShown)
 
                 // Simulator 页面 (背面)
                 SimulatorView(
+                    bottomPadding: bottomPadding,
                     isFireOn: true,
                     onFireToggle: {
                         flip(to: false)
                     }
                 )
                 .rotation3DEffect(
-                    .degrees(degrees + 180),
+                    .degrees(isSimulatorShown ? 0 : 90),
                     axis: (x: 0, y: 1, z: 0),
                     perspective: 0.5
                 )
-                .opacity(degrees > 90 ? 1 : 0)
-                .allowsHitTesting(showSimulator)
+                .opacity(isSimulatorShown ? 1 : 0)
+                .allowsHitTesting(isSimulatorShown)
             }
         }
         .simultaneousGesture(
@@ -52,11 +53,11 @@ struct JourneyContainerView: View {
                     guard abs(horizontal) > abs(vertical) else { return }
 
                     // 左滑: 进入 Simulator
-                    if horizontal < -100 && !showSimulator {
+                    if horizontal < -100 && !isSimulatorShown {
                         flip(to: true)
                     }
                     // 右滑: 返回 Journey
-                    else if horizontal > 100 && showSimulator {
+                    else if horizontal > 100 && isSimulatorShown {
                         flip(to: false)
                     }
                 }
@@ -64,9 +65,8 @@ struct JourneyContainerView: View {
     }
 
     private func flip(to simulator: Bool) {
-        withAnimation(.spring(response: 0.8, dampingFraction: 0.75)) {
-            showSimulator = simulator
-            degrees = simulator ? 180 : 0
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+            isSimulatorShown = simulator
         }
     }
 }
@@ -127,5 +127,5 @@ struct ScaleButtonStyle: ButtonStyle {
 
 // MARK: - Preview
 #Preview {
-    JourneyContainerView()
+    JourneyContainerView(isSimulatorShown: .constant(false))
 }

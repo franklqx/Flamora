@@ -392,12 +392,13 @@ struct MockData {
             percent: 85
         ),
         income: Income(
-            total: 7000.00,
-            active: 6000.00,
-            passive: 1000.00,
+            total: 8427.64,
+            active: 6159.72,
+            passive: 2267.92,
             sources: [
-                IncomeSource(id: "1", name: "Tech Corp Salary", amount: 6000.00, type: "active"),
-                IncomeSource(id: "2", name: "Dividend Income", amount: 1000.00, type: "passive")
+                IncomeSource(id: "1", name: "Business", amount: 3317.74, type: "active"),
+                IncomeSource(id: "2", name: "Salary", amount: 2841.98, type: "active"),
+                IncomeSource(id: "3", name: "Investment", amount: 2267.92, type: "passive")
             ]
         ),
         spending: Spending(

@@ -20,14 +20,19 @@ struct ProgressBar: View {
     
     var body: some View {
         GeometryReader { geometry in
+            let width = geometry.size.width
+            let safeWidth = width.isFinite && width >= 0 ? width : 0
+            let clampedProgress = max(0, min(progress, 1.0))
+            let progressWidth = max(0, safeWidth * clampedProgress)
+
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: AppRadius.full)
                     .fill(Color(hex: "#2C2C2E"))
                     .frame(height: height)
-                
+
                 RoundedRectangle(cornerRadius: AppRadius.full)
                     .fill(color)
-                    .frame(width: geometry.size.width * progress, height: height)
+                    .frame(width: progressWidth, height: height)
             }
         }
         .frame(height: height)

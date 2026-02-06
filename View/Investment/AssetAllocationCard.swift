@@ -12,9 +12,9 @@ struct AssetAllocationCard: View {
         HStack(spacing: 20) {
             DonutChart(
                 segments: [
-                    ChartSegment(percent: allocation.stocks.percent, color: Color(hex: "#8B5CF6")),
+                    ChartSegment(percent: allocation.stocks.percent, color: Color(hex: "#93C5FD")),
                     ChartSegment(percent: allocation.bonds.percent, color: Color(hex: "#A78BFA")),
-                    ChartSegment(percent: allocation.cash.percent, color: Color(hex: "#F59E0B"))
+                    ChartSegment(percent: allocation.cash.percent, color: Color(hex: "#F9A8D4"))
                 ]
             )
             .frame(width: 120, height: 120)
@@ -24,7 +24,7 @@ struct AssetAllocationCard: View {
                     title: "Stocks",
                     percent: allocation.stocks.percent,
                     amount: allocation.stocks.amount,
-                    color: Color(hex: "#8B5CF6")
+                    color: Color(hex: "#93C5FD")
                 )
                 AllocationRow(
                     title: "Bonds",
@@ -36,7 +36,7 @@ struct AssetAllocationCard: View {
                     title: "Cash",
                     percent: allocation.cash.percent,
                     amount: allocation.cash.amount,
-                    color: Color(hex: "#F59E0B")
+                    color: Color(hex: "#F9A8D4")
                 )
             }
 

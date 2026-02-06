@@ -10,8 +10,8 @@ import SwiftUI
 struct SavingsTargetCard: View {
     @Binding var currentAmount: Double
     var targetAmount: Double
-
-    @State private var showInputSheet = false
+    var onAdd: () -> Void
+    var onCardTap: (() -> Void)? = nil
 
     private var progress: Double {
         guard targetAmount > 0 else { return 0 }
@@ -19,92 +19,85 @@ struct SavingsTargetCard: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Savings Target")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(Color(hex: "#7C7C7C"))
+        ZStack(alignment: .topTrailing) {
+            VStack(spacing: 0) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Savings Target")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(Color(hex: "#7C7C7C"))
 
-                    if currentAmount > 0 {
-                        HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            Text(formatCurrency(currentAmount))
+                        if currentAmount > 0 {
+                            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                Text(formatCurrency(currentAmount))
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(.white)
+
+                                Text("/ \(formatCurrency(targetAmount))")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(Color(hex: "#6B7280"))
+                            }
+                        } else {
+                            Text(formatCurrency(targetAmount))
                                 .font(.system(size: 28, weight: .bold))
                                 .foregroundColor(.white)
-
-                            Text("/ \(formatCurrency(targetAmount))")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(Color(hex: "#6B7280"))
                         }
-                    } else {
-                        Text(formatCurrency(targetAmount))
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
                     }
-                }
 
-                Spacer()
+                    Spacer()
+                }
 
                 if currentAmount > 0 {
-                    ZStack {
-                        Circle()
-                            .fill(Color(hex: "#1A1A1A"))
-                            .frame(width: 40, height: 40)
+                    VStack(spacing: 10) {
+                        HStack {
+                            Text("\(Int(progress * 100))% Achieved")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(Color(hex: "#6B7280"))
 
-                        Image(systemName: "piggy.bank")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(Color(hex: "#A78BFA"))
-                    }
-                } else {
-                    Button(action: {
-                        showInputSheet = true
-                    }) {
-                        ZStack {
-                            Circle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [
-                                            Color(hex: "#A78BFA"),
-                                            Color(hex: "#F9A8D4"),
-                                            Color(hex: "#FCD34D")
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .frame(width: 48, height: 48)
+                            Spacer()
 
-                            Image(systemName: "plus")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundColor(.black)
+                            Text("Fire Goal")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(Color(hex: "#6B7280"))
                         }
+                        .padding(.top, 16)
+
+                        progressBar
                     }
-                    .buttonStyle(.plain)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onCardTap?()
+            }
 
-            if currentAmount > 0 {
-                VStack(spacing: 10) {
-                    HStack {
-                        Text("\(Int(progress * 100))% Achieved")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(Color(hex: "#6B7280"))
+            if currentAmount <= 0 {
+                Button(action: {
+                    onAdd()
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color(hex: "#A78BFA"),
+                                        Color(hex: "#F9A8D4"),
+                                        Color(hex: "#FCD34D")
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 48, height: 48)
 
-                        Spacer()
-
-                        Text("Fire Goal")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(Color(hex: "#6B7280"))
+                        Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.black)
                     }
-                    .padding(.top, 16)
-
-                    ProgressBar(
-                        progress: progress,
-                        color: Color(hex: "#8B5CF6"),
-                        height: 8
-                    )
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .buttonStyle(.plain)
             }
         }
         .padding(20)
@@ -114,10 +107,36 @@ struct SavingsTargetCard: View {
             RoundedRectangle(cornerRadius: 20)
                 .stroke(Color(hex: "#222222"), lineWidth: 1)
         )
-        .sheet(isPresented: $showInputSheet) {
-            SavingsInputSheet(amount: $currentAmount)
-                .presentationDetents([.medium])
+    }
+
+    private var progressBar: some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            let safeWidth = width.isFinite && width >= 0 ? width : 0
+            let clampedProgress = max(0, min(progress, 1.0))
+            let progressWidth = max(0, safeWidth * CGFloat(clampedProgress))
+
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color(hex: "#2C2C2E"))
+                    .frame(height: 8)
+
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(hex: "#A78BFA"),
+                                Color(hex: "#F9A8D4"),
+                                Color(hex: "#FCD34D")
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: progressWidth, height: 8)
+            }
         }
+        .frame(height: 8)
     }
 
     private func formatCurrency(_ value: Double) -> String {
@@ -133,7 +152,11 @@ struct SavingsTargetCard: View {
 #Preview {
     ZStack {
         Color.black.ignoresSafeArea()
-        SavingsTargetCard(currentAmount: .constant(4250), targetAmount: 5000)
+        SavingsTargetCard(
+            currentAmount: .constant(4250),
+            targetAmount: 5000,
+            onAdd: {}
+        )
             .padding()
     }
 }

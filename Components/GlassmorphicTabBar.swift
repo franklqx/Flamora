@@ -17,9 +17,7 @@ struct GlassmorphicTabBar: View {
                 label: "Home",
                 isSelected: selectedTab == 0
             ) {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    selectedTab = 0
-                }
+                selectedTab = 0
             }
 
             Spacer()
@@ -29,9 +27,7 @@ struct GlassmorphicTabBar: View {
                 label: "Savings",
                 isSelected: selectedTab == 1
             ) {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    selectedTab = 1
-                }
+                selectedTab = 1
             }
 
             Spacer()
@@ -41,9 +37,7 @@ struct GlassmorphicTabBar: View {
                 label: "Investment",
                 isSelected: selectedTab == 2
             ) {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    selectedTab = 2
-                }
+                selectedTab = 2
             }
         }
         .padding(.horizontal, 32)

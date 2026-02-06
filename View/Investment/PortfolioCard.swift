@@ -22,7 +22,7 @@ struct PortfolioCard: View {
 
             Text("\(formattedChange)")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(Color(hex: "#34C759"))
+                .foregroundColor(Color(hex: "#93C5FD"))
 
             LineChart(values: portfolio.chartData.map(\.value))
                 .frame(height: 140)
@@ -104,43 +104,57 @@ private struct LineChart: View {
         GeometryReader { geo in
             let width = geo.size.width
             let height = geo.size.height
+
+            guard width.isFinite && width > 0 && height.isFinite && height > 0 else {
+                return AnyView(Color.clear)
+            }
+
+            let safeWidth = max(0, width)
+            let safeHeight = max(0, height)
             let minValue = values.min() ?? 0
             let maxValue = values.max() ?? 1
             let range = max(maxValue - minValue, 1)
+            let count = max(values.count - 1, 1)
+
             let points = values.enumerated().map { index, value -> CGPoint in
-                let x = width * CGFloat(index) / CGFloat(max(values.count - 1, 1))
-                let y = height - (height * CGFloat((value - minValue) / range))
-                return CGPoint(x: x, y: y)
+                let x = safeWidth * CGFloat(index) / CGFloat(count)
+                let normalizedValue = (value - minValue) / range
+                let y = safeHeight - (safeHeight * CGFloat(normalizedValue))
+                let safeX = x.isFinite ? max(0, min(x, safeWidth)) : 0
+                let safeY = y.isFinite ? max(0, min(y, safeHeight)) : 0
+                return CGPoint(x: safeX, y: safeY)
             }
 
-            ZStack {
-                Path { path in
-                    guard let first = points.first else { return }
-                    path.move(to: first)
-                    for point in points.dropFirst() {
-                        path.addLine(to: point)
+            return AnyView(
+                ZStack {
+                    Path { path in
+                        guard let first = points.first else { return }
+                        path.move(to: first)
+                        for point in points.dropFirst() {
+                            path.addLine(to: point)
+                        }
                     }
-                }
-                .stroke(Color(hex: "#8B5CF6"), lineWidth: 2)
+                    .stroke(Color(hex: "#A78BFA"), lineWidth: 2)
 
-                Path { path in
-                    guard let first = points.first else { return }
-                    path.move(to: CGPoint(x: first.x, y: height))
-                    path.addLine(to: first)
-                    for point in points.dropFirst() {
-                        path.addLine(to: point)
+                    Path { path in
+                        guard let first = points.first else { return }
+                        path.move(to: CGPoint(x: first.x, y: safeHeight))
+                        path.addLine(to: first)
+                        for point in points.dropFirst() {
+                            path.addLine(to: point)
+                        }
+                        path.addLine(to: CGPoint(x: points.last?.x ?? 0, y: safeHeight))
+                        path.closeSubpath()
                     }
-                    path.addLine(to: CGPoint(x: points.last?.x ?? 0, y: height))
-                    path.closeSubpath()
-                }
-                .fill(
-                    LinearGradient(
-                        colors: [Color(hex: "#8B5CF6").opacity(0.25), Color.clear],
-                        startPoint: .top,
-                        endPoint: .bottom
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(hex: "#A78BFA").opacity(0.25), Color.clear],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
                     )
-                )
-            }
+                }
+            )
         }
     }
 }

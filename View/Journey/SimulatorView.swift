@@ -36,6 +36,7 @@ struct SimulatorView: View {
     @State private var isPulsing = false
     let isFireOn: Bool
     let onFireToggle: (() -> Void)?
+    let bottomPadding: CGFloat
 
     private var progressFraction: Double {
         let target = computedFireCalculation.targetAmount
@@ -49,11 +50,13 @@ struct SimulatorView: View {
     }
 
     init(
+        bottomPadding: CGFloat = AppSpacing.tabBarReserve,
         isFireOn: Bool = true,
         onFireToggle: (() -> Void)? = nil
     ) {
         self.isFireOn = isFireOn
         self.onFireToggle = onFireToggle
+        self.bottomPadding = bottomPadding
     }
 
     var body: some View {
@@ -69,6 +72,8 @@ struct SimulatorView: View {
                 resultsContent
             }
         }
+        .preference(key: HeaderVisibilityPreferenceKey.self, value: displayState == .overview)
+        .animation(nil, value: bottomPadding)
         .fullScreenCover(isPresented: $showEditor) {
             SimulatorEditProfileView(
                 settings: $settings,
@@ -98,47 +103,27 @@ private enum DisplayState {
 // MARK: - Main Content
 private extension SimulatorView {
     var overviewContent: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 24) {
-                header
+        GeometryReader { proxy in
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 24) {
+                    heroTitle
+
+                    circularProgress
+                        .padding(.vertical, 16)
+
+                    detailedAnalysis
+
+                    GradientButton(title: "Enter simulator") {
+                        showEditor = true
+                    }
                     .padding(.top, 8)
 
-                heroTitle
-
-                circularProgress
-                    .padding(.vertical, 16)
-
-                detailedAnalysis
-
-                GradientButton(title: "Enter simulator") {
-                    showEditor = true
                 }
-                .padding(.top, 8)
-
-                Color.clear.frame(height: 120)
+                .frame(minHeight: proxy.size.height, alignment: .top)
+                .padding(.bottom, bottomPadding)
             }
-            .padding(.vertical, AppSpacing.md)
+            .padding(.top, AppSpacing.lg)
         }
-        .preference(key: TabBarVisibilityPreferenceKey.self, value: true)
-    }
-
-    var header: some View {
-        HStack {
-            HStack(spacing: 8) {
-                FlameIcon(size: 20, color: Color(hex: "#FF6B47"))
-                Text("PREDICT")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.white)
-                    .tracking(2)
-            }
-
-            Spacer()
-
-            if let onFireToggle {
-                FlameTogglePill(isOn: isFireOn, action: onFireToggle)
-            }
-        }
-        .padding(.horizontal, AppSpacing.screenPadding)
     }
 
     var heroTitle: some View {
@@ -225,31 +210,32 @@ private extension SimulatorView {
             Spacer()
         }
         .padding(.horizontal, 24)
-        .preference(key: TabBarVisibilityPreferenceKey.self, value: false)
     }
 
     var resultsContent: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 24) {
-                resultsHeader
+        GeometryReader { proxy in
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 24) {
+                    resultsHeader
 
-                resultsTitle
+                    resultsTitle
 
-                resultsChart
+                    resultsChart
 
-                resultsCards
+                    resultsCards
 
-                GradientButton(title: "Save Simulation") {
-                    displayState = .overview
+                    GradientButton(title: "Save Simulation") {
+                        displayState = .overview
+                    }
+                    .padding(.top, 8)
+
                 }
-                .padding(.top, 8)
-
-                Color.clear.frame(height: 120)
+                .frame(minHeight: proxy.size.height, alignment: .top)
+                .padding(.bottom, bottomPadding)
+                .padding(.horizontal, AppSpacing.screenPadding)
             }
-            .padding(.horizontal, AppSpacing.screenPadding)
-            .padding(.top, 8)
+            .padding(.top, AppSpacing.lg)
         }
-        .preference(key: TabBarVisibilityPreferenceKey.self, value: true)
     }
 
     var resultsHeader: some View {

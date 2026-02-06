@@ -10,105 +10,50 @@ import SwiftUI
 struct JourneyView: View {
     private let data = MockData.journeyData
     var onFireTapped: (() -> Void)? = nil
+    let bottomPadding: CGFloat
+
+    init(bottomPadding: CGFloat = AppSpacing.tabBarReserve, onFireTapped: (() -> Void)? = nil) {
+        self.bottomPadding = bottomPadding
+        self.onFireTapped = onFireTapped
+    }
 
     var body: some View {
         ZStack {
             Color.black
                 .ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: AppSpacing.lg) {
-                    header
+            GeometryReader { proxy in
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: AppSpacing.lg) {
+                        NetWorthCard(netWorth: data.netWorth)
 
-                    netWorthCard
+                        VStack(alignment: .leading, spacing: AppSpacing.md) {
+                            Text("Plan")
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, AppSpacing.screenPadding)
 
-                    VStack(alignment: .leading, spacing: AppSpacing.md) {
-                        Text("Plan")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, AppSpacing.screenPadding)
-
-                        VStack(spacing: AppSpacing.cardGap) {
-                            budgetCard
-                            passiveIncomeCard
-                            savingsRateCard
-                            aiInsightsCard
+                            VStack(spacing: AppSpacing.cardGap) {
+                                budgetCard
+                                passiveIncomeCard
+                                savingsRateCard
+                                aiInsightsCard
+                            }
                         }
-                    }
 
-                    Color.clear.frame(height: 120)
+                    }
+                    .frame(minHeight: proxy.size.height, alignment: .top)
+                    .padding(.bottom, bottomPadding)
+                    .padding(.top, AppSpacing.lg)
                 }
-                .padding(.vertical, AppSpacing.md)
             }
         }
+        .animation(nil, value: bottomPadding)
     }
 }
 
 // MARK: - Subviews
 private extension JourneyView {
-    var header: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Welcome back,")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color(hex: "#7C7C7C"))
-
-                Text("Alex Sterling")
-                    .font(.system(size: 30, weight: .bold))
-                    .foregroundColor(.white)
-            }
-
-            Spacer()
-
-            FlameTogglePill(isOn: false, action: {
-                onFireTapped?()
-            })
-        }
-        .padding(.horizontal, AppSpacing.screenPadding)
-    }
-
-    var netWorthCard: some View {
-        let netWorth = data.netWorth
-
-        return VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("Total Net Worth")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(Color(hex: "#7C7C7C"))
-
-            HStack(alignment: .firstTextBaseline, spacing: 0) {
-                Text(formatCurrencyInteger(netWorth.total))
-                    .font(.system(size: 46, weight: .semibold))
-                    .foregroundColor(.white)
-
-                Text(formatCurrencyDecimal(netWorth.total))
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundColor(Color(hex: "#6B7280"))
-            }
-
-            HStack(spacing: 6) {
-                Image(systemName: "arrow.up.right")
-                    .font(.system(size: 12, weight: .bold))
-
-                Text("+\(formatCurrency(netWorth.growthAmount)) (\(String(format: "%.1f", netWorth.growthPercent))%)")
-                    .font(.system(size: 13, weight: .semibold))
-            }
-            .foregroundColor(Color(hex: "#34C759"))
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Color(hex: "#34C759").opacity(0.15))
-            .cornerRadius(20)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(24)
-        .background(Color(hex: "#121212"))
-        .cornerRadius(24)
-        .overlay(
-            RoundedRectangle(cornerRadius: 24)
-                .stroke(Color(hex: "#222222"), lineWidth: 1)
-        )
-        .padding(.horizontal, AppSpacing.screenPadding)
-    }
-
     var budgetCard: some View {
         let budget = data.budget
         let progress = Double(budget.percent) / 100.0
@@ -134,7 +79,7 @@ private extension JourneyView {
 
             ProgressBar(
                 progress: progress,
-                color: Color(hex: "#FF6B47")
+                color: Color(hex: "#A78BFA")
             )
 
             HStack {
@@ -172,7 +117,7 @@ private extension JourneyView {
 
                     Text("CAPACITY REPORT")
                         .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(Color(hex: "#3B82F6"))
+                        .foregroundColor(Color(hex: "#93C5FD"))
                         .textCase(.uppercase)
                         .tracking(0.5)
                 }
@@ -190,7 +135,7 @@ private extension JourneyView {
                             .foregroundColor(.white)
 
                         Circle()
-                            .fill(Color(hex: "#3B82F6"))
+                            .fill(Color(hex: "#93C5FD"))
                             .frame(width: 6, height: 6)
                     }
 
@@ -212,7 +157,7 @@ private extension JourneyView {
 
             ProgressBar(
                 progress: progress,
-                color: Color(hex: "#3B82F6")
+                color: Color(hex: "#93C5FD")
             )
 
             Text("Based on 4% safe withdrawal rate")
@@ -340,22 +285,6 @@ private extension JourneyView {
         formatter.maximumFractionDigits = 0
         formatter.minimumFractionDigits = 0
         return formatter.string(from: NSNumber(value: value)) ?? "$0"
-    }
-
-    func formatCurrencyInteger(_ value: Double) -> String {
-        let integerPart = Int(value)
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        formatter.maximumFractionDigits = 0
-        formatter.minimumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: Double(integerPart))) ?? "$0"
-    }
-
-    func formatCurrencyDecimal(_ value: Double) -> String {
-        let decimalPart = value.truncatingRemainder(dividingBy: 1)
-        let cents = Int(decimalPart * 100)
-        return String(format: ".%02d", cents)
     }
 
     func statusFromString(_ statusString: String) -> MonthIndicator.Status {
