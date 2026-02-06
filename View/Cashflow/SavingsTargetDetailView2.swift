@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct SavingsTargetDetailView2: View {
-    private let targetRate: Double = 0.20
-    private let targetAmount: Double = 2000
+    private let targetRate: Double = MockData.apiMonthlyBudget.savingsRatio / 100.0
+    private let targetAmount: Double = MockData.apiMonthlyBudget.savingsBudget
 
     @Environment(\.dismiss) private var dismiss
 
@@ -75,7 +75,7 @@ struct SavingsTargetDetailView2: View {
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundColor(Color(hex: "#6B7280"))
 
-                            Text("20%")
+                            Text("\(Int(MockData.apiMonthlyBudget.savingsRatio))%")
                                 .font(.system(size: 26, weight: .bold))
                                 .foregroundColor(.white)
                         }

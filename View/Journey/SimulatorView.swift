@@ -27,10 +27,24 @@ struct SimulatorSettings {
             growthRate: data.advancedSettings.forecastGrowthRate
         )
     }
+
+    static func fromAPI() -> SimulatorSettings {
+        let profile = MockData.apiUserProfile
+        let fireGoal = MockData.apiFireGoal
+        return SimulatorSettings(
+            age: fireGoal.currentAge,
+            monthlyIncome: profile.monthlyIncome,
+            monthlyContribution: profile.monthlyIncome - profile.currentMonthlyExpenses,
+            expectedBudget: profile.currentMonthlyExpenses,
+            currentInvestment: fireGoal.currentNetWorth,
+            inflation: MockData.simulatorData.advancedSettings.inflationRate,
+            growthRate: MockData.simulatorData.advancedSettings.forecastGrowthRate
+        )
+    }
 }
 
 struct SimulatorView: View {
-    @State private var settings: SimulatorSettings = .from(MockData.simulatorData)
+    @State private var settings: SimulatorSettings = .fromAPI()
     @State private var showEditor = false
     @State private var displayState: DisplayState = .overview
     @State private var isPulsing = false
@@ -321,7 +335,7 @@ private extension SimulatorView {
             .frame(height: 220)
 
             HStack {
-                Text("Age 32")
+                Text("Age \(settings.age)")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(Color(hex: "#6B7280"))
 
@@ -345,17 +359,21 @@ private extension SimulatorView {
     }
 
     var resultsCards: some View {
-        HStack(spacing: 16) {
+        let fireAge = computedFireCalculation.fireAge
+        let yearsUntilFire = max(fireAge - settings.age, 0)
+        let fireYear = Calendar.current.component(.year, from: Date()) + yearsUntilFire
+
+        return HStack(spacing: 16) {
             resultStatCard(
                 title: "FIRE DATE",
-                value: "June 2032",
-                subvalue: "Age \(computedFireCalculation.fireAge)",
+                value: "\(fireYear)",
+                subvalue: "Age \(fireAge)",
                 accent: Color(hex: "#F59E0B")
             )
 
             resultStatCard(
                 title: "TOTAL WEALTH",
-                value: "$1,250,000",
+                value: formatCurrency(computedFireCalculation.targetAmount),
                 subvalue: "At milestone",
                 accent: Color(hex: "#60A5FA")
             )

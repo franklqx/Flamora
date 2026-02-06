@@ -289,6 +289,78 @@ struct AssetClass: Codable {
     let amount: Double
 }
 
+// MARK: - Income Detail Models
+
+struct IncomeDetailSource: Identifiable {
+    let id: String
+    let name: String
+    let account: String
+    let amount: Double
+    let percentage: Double
+}
+
+struct IncomeMonthData {
+    let total: Double
+    let sources: [IncomeDetailSource]
+}
+
+struct IncomeDetailData {
+    let title: String          // "Active Income" or "Passive Income"
+    let accentColor: String    // hex color
+    let annualTrend: [Double?] // 12 months of data (nil = no data)
+    let monthlyData: [Int: IncomeMonthData] // month index (0-11) -> sources for that month
+}
+
+struct TotalIncomeMonthData {
+    let total: Double
+    let activeAmount: Double
+    let passiveAmount: Double
+    let activePercentage: Double
+    let passivePercentage: Double
+}
+
+struct TotalIncomeDetailData {
+    let title: String          // "Total Income"
+    let annualTrend: [Double?] // 12 months of combined data
+    let monthlyData: [Int: TotalIncomeMonthData]
+}
+
+// MARK: - Spending Detail Models
+
+struct SpendingDetailCategory: Identifiable {
+    let id: String
+    let icon: String
+    let name: String
+    let amount: Double
+    let percentage: Double
+}
+
+struct SpendingDetailMonthData {
+    let total: Double
+    let categories: [SpendingDetailCategory]
+}
+
+struct SpendingDetailData {
+    let title: String          // "Spending Analysis (Needs/Wants)"
+    let accentColor: String    // hex color
+    let annualTrend: [Double?] // 12 months spending totals
+    let monthlyData: [Int: SpendingDetailMonthData]
+}
+
+struct TotalSpendingMonthData {
+    let total: Double
+    let needsAmount: Double
+    let wantsAmount: Double
+    let needsPercentage: Double
+    let wantsPercentage: Double
+}
+
+struct TotalSpendingDetailData {
+    let title: String          // "Spending Analysis"
+    let annualTrend: [Double?] // 12 months total spending
+    let monthlyData: [Int: TotalSpendingMonthData]
+}
+
 // MARK: - Mock Data Instance
 
 struct MockData {
@@ -443,5 +515,417 @@ struct MockData {
             bonds: AssetClass(percent: 15, amount: 18817.62),
             cash: AssetClass(percent: 5, amount: 6272.54)
         )
+    )
+}
+// MARK: - 🔥 Backend API Models (Phase 0 - 后端数据契约)
+
+/// 对应后端 GET /active-fire-goal
+struct APIFireGoal: Codable {
+    let goalId: String
+    let fireNumber: Double
+    let currentNetWorth: Double
+    let gapToFire: Double
+    let requiredSavingsRate: Double
+    let targetRetirementAge: Int
+    let currentAge: Int
+    let yearsRemaining: Int
+    let progressPercentage: Double
+    let onTrack: Bool
+    let createdAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case goalId = "goal_id"
+        case fireNumber = "fire_number"
+        case currentNetWorth = "current_net_worth"
+        case gapToFire = "gap_to_fire"
+        case requiredSavingsRate = "required_savings_rate"
+        case targetRetirementAge = "target_retirement_age"
+        case currentAge = "current_age"
+        case yearsRemaining = "years_remaining"
+        case progressPercentage = "progress_percentage"
+        case onTrack = "on_track"
+        case createdAt = "created_at"
+    }
+}
+
+/// 对应后端 GET /monthly-budget
+struct APIMonthlyBudget: Codable {
+    let budgetId: String
+    let month: String
+    let needsBudget: Double
+    let wantsBudget: Double
+    let savingsBudget: Double
+    let needsSpent: Double
+    let wantsSpent: Double
+    let savingsActual: Double
+    let needsRatio: Double
+    let wantsRatio: Double
+    let savingsRatio: Double
+    let isCustom: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case budgetId = "budget_id"
+        case month
+        case needsBudget = "needs_budget"
+        case wantsBudget = "wants_budget"
+        case savingsBudget = "savings_budget"
+        case needsSpent = "needs_spent"
+        case wantsSpent = "wants_spent"
+        case savingsActual = "savings_actual"
+        case needsRatio = "needs_ratio"
+        case wantsRatio = "wants_ratio"
+        case savingsRatio = "savings_ratio"
+        case isCustom = "is_custom"
+    }
+}
+
+/// 对应后端 GET /user-profile
+struct APIUserProfile: Codable {
+    let profileId: String
+    let userId: String
+    let monthlyIncome: Double
+    let currentNetWorth: Double
+    let currentMonthlyExpenses: Double
+    let currencyCode: String
+    let timezone: String
+    let onboardingCompleted: Bool
+    let onboardingStep: Int
+    let createdAt: String
+    let updatedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case profileId = "profile_id"
+        case userId = "user_id"
+        case monthlyIncome = "monthly_income"
+        case currentNetWorth = "current_net_worth"
+        case currentMonthlyExpenses = "current_monthly_expenses"
+        case currencyCode = "currency_code"
+        case timezone
+        case onboardingCompleted = "onboarding_completed"
+        case onboardingStep = "onboarding_step"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+/// 对应后端 GET /net-worth-summary
+struct APINetWorthSummary: Codable {
+    let totalNetWorth: Double
+    let previousNetWorth: Double
+    let growthAmount: Double
+    let growthPercentage: Double
+    let asOfDate: String
+    let breakdown: NetWorthBreakdown
+    let accounts: [APIAccount]
+
+    enum CodingKeys: String, CodingKey {
+        case totalNetWorth = "total_net_worth"
+        case previousNetWorth = "previous_net_worth"
+        case growthAmount = "growth_amount"
+        case growthPercentage = "growth_percentage"
+        case asOfDate = "as_of_date"
+        case breakdown
+        case accounts
+    }
+
+    struct NetWorthBreakdown: Codable {
+        let assets: Double
+        let liabilities: Double
+    }
+}
+
+struct APIAccount: Codable {
+    let accountId: String
+    let name: String
+    let type: String
+    let balance: Double
+    let institution: String
+
+    enum CodingKeys: String, CodingKey {
+        case accountId = "account_id"
+        case name, type, balance, institution
+    }
+}
+
+// MARK: - 🔥 Backend API Mock Data
+
+extension MockData {
+
+    /// 用户显示名称 (后端暂未提供name字段，临时mock)
+    static let displayName = "Enxi Lin"
+
+    // MARK: - Income Detail Mock Data
+
+    static let activeIncomeDetail: IncomeDetailData = {
+        let salaryBase = 5800.0
+        let consultBase = 200.0
+        let trend: [Double?] = [6250, 3800, 4200, 3600, 4800, 3200, 4500, 5200, 5600, 5800, 6100, 6400]
+        var monthly: [Int: IncomeMonthData] = [:]
+        for i in 0..<12 {
+            if let total = trend[i] {
+                let salaryAmount = total * 0.96
+                let consultAmount = total * 0.04
+                monthly[i] = IncomeMonthData(
+                    total: total,
+                    sources: [
+                        IncomeDetailSource(id: "active-1-\(i)", name: "Tech Corp Salary", account: "Main Account", amount: salaryAmount, percentage: 96),
+                        IncomeDetailSource(id: "active-2-\(i)", name: "Consulting", account: "Business Account", amount: consultAmount, percentage: 4)
+                    ]
+                )
+            }
+        }
+        return IncomeDetailData(
+            title: "Active Income",
+            accentColor: "#93C5FD",
+            annualTrend: trend,
+            monthlyData: monthly
+        )
+    }()
+
+    static let passiveIncomeDetail: IncomeDetailData = {
+        let trend: [Double?] = [1250, 2400, 2800, 3100, 3500, 2900, 4200, 4800, 5100, 5400, 5800, 6200]
+        var monthly: [Int: IncomeMonthData] = [:]
+        for i in 0..<12 {
+            if let total = trend[i] {
+                let dividendAmount = total * 0.68
+                let realEstateAmount = total * 0.32
+                monthly[i] = IncomeMonthData(
+                    total: total,
+                    sources: [
+                        IncomeDetailSource(id: "passive-1-\(i)", name: "Dividends & Interest", account: "Chase Savings", amount: dividendAmount, percentage: 68),
+                        IncomeDetailSource(id: "passive-2-\(i)", name: "Real Estate", account: "Main Account", amount: realEstateAmount, percentage: 32)
+                    ]
+                )
+            }
+        }
+        return IncomeDetailData(
+            title: "Passive Income",
+            accentColor: "#A78BFA",
+            annualTrend: trend,
+            monthlyData: monthly
+        )
+    }()
+
+    // MARK: - Total Income Detail Mock Data
+
+    static let totalIncomeDetail: TotalIncomeDetailData = {
+        let activeTrend: [Double?] = activeIncomeDetail.annualTrend
+        let passiveTrend: [Double?] = passiveIncomeDetail.annualTrend
+        var combinedTrend: [Double?] = []
+        var monthly: [Int: TotalIncomeMonthData] = [:]
+        for i in 0..<12 {
+            let activeVal = activeTrend[i]
+            let passiveVal = passiveTrend[i]
+            if let a = activeVal, let p = passiveVal {
+                let total = a + p
+                let activePct = (a / total) * 100.0
+                let passivePct = (p / total) * 100.0
+                combinedTrend.append(total)
+                monthly[i] = TotalIncomeMonthData(
+                    total: total,
+                    activeAmount: a,
+                    passiveAmount: p,
+                    activePercentage: activePct,
+                    passivePercentage: passivePct
+                )
+            } else {
+                combinedTrend.append(nil)
+            }
+        }
+        return TotalIncomeDetailData(
+            title: "Total Income",
+            annualTrend: combinedTrend,
+            monthlyData: monthly
+        )
+    }()
+
+    // MARK: - Spending Detail Mock Data
+
+    static let needsSpendingDetail: SpendingDetailData = {
+        let trend: [Double?] = [3000, 3250, 3090, 3440, 3180, 3590, 3360, 3040, 3220, 3470, 3810, 3350]
+        let baseCategories: [(name: String, icon: String, amount: Double)] = [
+            ("Rent & Housing", "house.fill", 1850.00),
+            ("Groceries", "cart.fill", 642.50),
+            ("Utilities", "bolt.fill", 310.20),
+            ("Transportation", "car.fill", 215.00),
+            ("Health & Fitness", "cross.case.fill", 120.00)
+        ]
+
+        return SpendingDetailData(
+            title: "Spending Analysis (Needs)",
+            accentColor: "#A78BFA",
+            annualTrend: trend,
+            monthlyData: buildSpendingMonthlyData(
+                prefix: "needs",
+                trend: trend,
+                baseCategories: baseCategories
+            )
+        )
+    }()
+
+    static let wantsSpendingDetail: SpendingDetailData = {
+        let trend: [Double?] = [1240, 1420, 1290, 1640, 1360, 1760, 1480, 1290, 1420, 1560, 1850, 1570]
+        let baseCategories: [(name: String, icon: String, amount: Double)] = [
+            ("Dining & Social", "fork.knife", 420.00),
+            ("Shopping", "bag.fill", 325.50),
+            ("Subscriptions", "tv.fill", 155.00),
+            ("Travel", "airplane", 210.00),
+            ("Hobbies & Leisure", "paintpalette.fill", 129.50)
+        ]
+
+        return SpendingDetailData(
+            title: "Spending Analysis (Wants)",
+            accentColor: "#93C5FD",
+            annualTrend: trend,
+            monthlyData: buildSpendingMonthlyData(
+                prefix: "wants",
+                trend: trend,
+                baseCategories: baseCategories
+            )
+        )
+    }()
+
+    static let totalSpendingDetail: TotalSpendingDetailData = {
+        let needsTrend = needsSpendingDetail.annualTrend
+        let wantsTrend = wantsSpendingDetail.annualTrend
+        var totalTrend: [Double?] = []
+        var monthly: [Int: TotalSpendingMonthData] = [:]
+
+        for index in 0..<12 {
+            let needsAmount = needsTrend[index]
+            let wantsAmount = wantsTrend[index]
+            if let needs = needsAmount, let wants = wantsAmount {
+                let total = needs + wants
+                let needsPct = total > 0 ? (needs / total) * 100.0 : 0
+                let wantsPct = total > 0 ? (wants / total) * 100.0 : 0
+                totalTrend.append(total)
+                monthly[index] = TotalSpendingMonthData(
+                    total: total,
+                    needsAmount: needs,
+                    wantsAmount: wants,
+                    needsPercentage: needsPct,
+                    wantsPercentage: wantsPct
+                )
+            } else {
+                totalTrend.append(nil)
+            }
+        }
+
+        return TotalSpendingDetailData(
+            title: "Spending Analysis",
+            annualTrend: totalTrend,
+            monthlyData: monthly
+        )
+    }()
+
+    private static func buildSpendingMonthlyData(
+        prefix: String,
+        trend: [Double?],
+        baseCategories: [(name: String, icon: String, amount: Double)]
+    ) -> [Int: SpendingDetailMonthData] {
+        let baseTotal = max(baseCategories.reduce(0) { $0 + $1.amount }, 1)
+        var monthly: [Int: SpendingDetailMonthData] = [:]
+
+        for index in 0..<12 {
+            guard let total = trend[index] else { continue }
+            let scale = total / baseTotal
+
+            let categories = baseCategories.enumerated().map { item -> SpendingDetailCategory in
+                let (offset, value) = item
+                let scaledAmount = rounded2(value.amount * scale)
+                let percentage = total > 0 ? (scaledAmount / total) * 100 : 0
+                return SpendingDetailCategory(
+                    id: "\(prefix)-\(offset)-\(index)",
+                    icon: value.icon,
+                    name: value.name,
+                    amount: scaledAmount,
+                    percentage: percentage
+                )
+            }
+            .sorted { $0.amount > $1.amount }
+
+            monthly[index] = SpendingDetailMonthData(total: total, categories: categories)
+        }
+
+        return monthly
+    }
+
+    private static func rounded2(_ value: Double) -> Double {
+        (value * 100).rounded() / 100
+    }
+
+    /// 模拟后端 /active-fire-goal 返回
+    static let apiFireGoal = APIFireGoal(
+        goalId: "a6d9e6d5-46ef-48d8-a85a-45beb992506f",
+        fireNumber: 900000.00,
+        currentNetWorth: 200000.00,
+        gapToFire: 700000.00,
+        requiredSavingsRate: 11.88,
+        targetRetirementAge: 50,
+        currentAge: 30,
+        yearsRemaining: 20,
+        progressPercentage: 22.22,
+        onTrack: true,
+        createdAt: "2026-02-05T13:25:44Z"
+    )
+
+    /// 模拟后端 /monthly-budget 返回
+    static let apiMonthlyBudget = APIMonthlyBudget(
+        budgetId: "b8410610-d803-471d-929c-89fcbabb920c",
+        month: "2026-02-01",
+        needsBudget: 5000.00,
+        wantsBudget: 3000.00,
+        savingsBudget: 2000.00,
+        needsSpent: 2450.30,
+        wantsSpent: 1820.50,
+        savingsActual: 2100.00,
+        needsRatio: 50.00,
+        wantsRatio: 30.00,
+        savingsRatio: 20.00,
+        isCustom: false
+    )
+
+    /// 模拟后端 /user-profile 返回
+    static let apiUserProfile = APIUserProfile(
+        profileId: "mock-profile-id",
+        userId: "00000000-0000-0000-0000-000000000001",
+        monthlyIncome: 10000.00,
+        currentNetWorth: 200000.00,
+        currentMonthlyExpenses: 5000.00,
+        currencyCode: "USD",
+        timezone: "America/New_York",
+        onboardingCompleted: true,
+        onboardingStep: 5,
+        createdAt: "2026-02-01T10:00:00Z",
+        updatedAt: "2026-02-05T13:25:44Z"
+    )
+
+    /// 模拟后端 /net-worth-summary 返回
+    static let apiNetWorthSummary = APINetWorthSummary(
+        totalNetWorth: 208240.00,
+        previousNetWorth: 200000.00,
+        growthAmount: 8240.00,
+        growthPercentage: 4.12,
+        asOfDate: "2026-02-05",
+        breakdown: APINetWorthSummary.NetWorthBreakdown(
+            assets: 250000.00,
+            liabilities: 41760.00
+        ),
+        accounts: [
+            APIAccount(
+                accountId: "mock-account-1",
+                name: "Fidelity 401(k)",
+                type: "investment",
+                balance: 150000.00,
+                institution: "Fidelity"
+            ),
+            APIAccount(
+                accountId: "mock-account-2",
+                name: "Chase Checking",
+                type: "cash",
+                balance: 25000.00,
+                institution: "Chase"
+            )
+        ]
     )
 }

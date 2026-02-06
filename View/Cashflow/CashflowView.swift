@@ -9,24 +9,31 @@ import SwiftUI
 
 struct CashflowView: View {
     private let data = MockData.cashflowData
+    private let apiBudget = MockData.apiMonthlyBudget
     @State private var selectedMonthIndex = 0
     @State private var monthDates: [Date] = []
     @State private var hasInitializedMonths = false
-    @State private var currentSavings: Double = 0
-    @State private var needsTotal: Double = MockData.cashflowData.spending.needs
-    @State private var wantsTotal: Double = MockData.cashflowData.spending.wants
-    @State private var totalSpend: Double = MockData.cashflowData.spending.total
+    @State private var currentSavings: Double = MockData.apiMonthlyBudget.savingsActual
+    @State private var needsTotal: Double = MockData.apiMonthlyBudget.needsSpent
+    @State private var wantsTotal: Double = MockData.apiMonthlyBudget.wantsSpent
+    @State private var totalSpend: Double = MockData.apiMonthlyBudget.needsSpent + MockData.apiMonthlyBudget.wantsSpent
     @State private var reviewTransactions: [Transaction] = MockData.cashflowData.toReview.transactions
     @State private var reviewCount: Int = MockData.cashflowData.toReview.count
     @State private var showSavingsInput = false
     @State private var showSavingsSummary = false
+    @State private var showTotalIncomeDetail = false
+    @State private var showActiveIncomeDetail = false
+    @State private var showPassiveIncomeDetail = false
+    @State private var showTotalSpendingDetail = false
+    @State private var showNeedsSpendingDetail = false
+    @State private var showWantsSpendingDetail = false
 
     private var spendingForDisplay: Spending {
         Spending(
             total: totalSpend,
             needs: needsTotal,
             wants: wantsTotal,
-            budgetLimit: data.spending.budgetLimit
+            budgetLimit: apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget
         )
     }
 
@@ -53,7 +60,10 @@ struct CashflowView: View {
 
                             IncomeCard(
                                 income: data.income,
-                                monthLabel: formattedMonthLabel
+                                monthLabel: formattedMonthLabel,
+                                onCardTapped: { showTotalIncomeDetail = true },
+                                onActiveTapped: { showActiveIncomeDetail = true },
+                                onPassiveTapped: { showPassiveIncomeDetail = true }
                             )
                                 .padding(.horizontal, AppSpacing.screenPadding)
 
@@ -62,7 +72,7 @@ struct CashflowView: View {
 
                             SavingsTargetCard(
                                 currentAmount: $currentSavings,
-                                targetAmount: data.savingsTarget.goal,
+                                targetAmount: apiBudget.savingsBudget,
                                 onAdd: { showSavingsInput = true },
                                 onCardTap: { showSavingsSummary = true }
                             )
@@ -71,7 +81,12 @@ struct CashflowView: View {
                             sectionTitle("Monthly Budget Spend")
                                 .padding(.horizontal, AppSpacing.screenPadding)
 
-                            BudgetCard(spending: spendingForDisplay)
+                            BudgetCard(
+                                spending: spendingForDisplay,
+                                onCardTapped: { showTotalSpendingDetail = true },
+                                onNeedsTapped: { showNeedsSpendingDetail = true },
+                                onWantsTapped: { showWantsSpendingDetail = true }
+                            )
                                 .padding(.horizontal, AppSpacing.screenPadding)
 
                             toReviewSection
@@ -90,6 +105,24 @@ struct CashflowView: View {
         }
         .fullScreenCover(isPresented: $showSavingsSummary) {
             SavingsTargetDetailView2()
+        }
+        .fullScreenCover(isPresented: $showTotalIncomeDetail) {
+            TotalIncomeDetailView(data: MockData.totalIncomeDetail)
+        }
+        .fullScreenCover(isPresented: $showActiveIncomeDetail) {
+            IncomeDetailView(data: MockData.activeIncomeDetail)
+        }
+        .fullScreenCover(isPresented: $showPassiveIncomeDetail) {
+            IncomeDetailView(data: MockData.passiveIncomeDetail)
+        }
+        .fullScreenCover(isPresented: $showTotalSpendingDetail) {
+            TotalSpendingAnalysisDetailView(data: MockData.totalSpendingDetail)
+        }
+        .fullScreenCover(isPresented: $showNeedsSpendingDetail) {
+            SpendingAnalysisDetailView(data: MockData.needsSpendingDetail)
+        }
+        .fullScreenCover(isPresented: $showWantsSpendingDetail) {
+            SpendingAnalysisDetailView(data: MockData.wantsSpendingDetail)
         }
         .sheet(isPresented: $showSavingsInput) {
             SavingsInputSheet(amount: $currentSavings)
@@ -277,30 +310,26 @@ private struct TransactionCard: View {
 
             HStack(spacing: 12) {
                 Button(action: onNeeds) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "house.fill")
-                            .font(.system(size: 12, weight: .bold))
+                    HStack {
                         Text("Needs")
                             .font(.system(size: 12, weight: .bold))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(hex: "#0F172A"))
                     .padding(.vertical, 8)
                     .padding(.horizontal, 16)
-                    .background(Color(hex: "#A78BFA").opacity(0.2))
+                    .background(Color(hex: "#A78BFA"))
                     .clipShape(Capsule())
                 }
 
                 Button(action: onWants) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "bag.fill")
-                            .font(.system(size: 12, weight: .bold))
+                    HStack {
                         Text("Wants")
                             .font(.system(size: 12, weight: .bold))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(hex: "#0F172A"))
                     .padding(.vertical, 8)
                     .padding(.horizontal, 16)
-                    .background(Color(hex: "#93C5FD").opacity(0.2))
+                    .background(Color(hex: "#93C5FD"))
                     .clipShape(Capsule())
                 }
             }

@@ -6,7 +6,9 @@
 import SwiftUI
 
 struct NetWorthCard: View {
-    let netWorth: NetWorth
+    let totalNetWorth: Double
+    let growthAmount: Double
+    let growthPercentage: Double
 
     var body: some View {
         VStack(alignment: .center, spacing: 14) {
@@ -15,11 +17,11 @@ struct NetWorthCard: View {
                 .foregroundColor(Color(hex: "#B0B0B0"))
 
             HStack(alignment: .firstTextBaseline, spacing: 0) {
-                Text(formatCurrencyInteger(netWorth.total))
+                Text(formatCurrencyInteger(totalNetWorth))
                     .font(.system(size: 34, weight: .bold))
                     .foregroundColor(.white)
 
-                Text(formatCurrencyDecimal(netWorth.total))
+                Text(formatCurrencyDecimal(totalNetWorth))
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(Color(hex: "#8A8F98"))
             }
@@ -28,7 +30,7 @@ struct NetWorthCard: View {
                 Image(systemName: "arrow.up.right")
                     .font(.system(size: 12, weight: .bold))
 
-                Text("+\(formatCurrency(netWorth.growthAmount)) (\(String(format: "%.1f", netWorth.growthPercent))%)")
+                Text("+\(formatCurrency(growthAmount)) (\(String(format: "%.1f", growthPercentage))%)")
                     .font(.system(size: 14, weight: .semibold))
             }
             .foregroundColor(Color(hex: "#34C759"))
@@ -72,6 +74,10 @@ struct NetWorthCard: View {
 #Preview {
     ZStack {
         Color.black.ignoresSafeArea()
-        NetWorthCard(netWorth: MockData.journeyData.netWorth)
+        NetWorthCard(
+            totalNetWorth: MockData.apiNetWorthSummary.totalNetWorth,
+            growthAmount: MockData.apiNetWorthSummary.growthAmount,
+            growthPercentage: MockData.apiNetWorthSummary.growthPercentage
+        )
     }
 }

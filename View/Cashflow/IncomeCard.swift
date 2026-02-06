@@ -8,35 +8,43 @@ import SwiftUI
 struct IncomeCard: View {
     let income: Income
     let monthLabel: String
+    var onCardTapped: (() -> Void)? = nil
+    var onActiveTapped: (() -> Void)? = nil
+    var onPassiveTapped: (() -> Void)? = nil
 
     private let breakdownColors: [Color] = [
-        Color(hex: "#F9A8D4"),
         Color(hex: "#A78BFA"),
         Color(hex: "#93C5FD")
     ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            HStack {
-                Text("My Income")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
+            VStack(alignment: .leading, spacing: 18) {
+                HStack {
+                    Text("My Income")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
 
-                Spacer()
+                    Spacer()
 
-                Text(monthLabel)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color(hex: "#9CA3AF"))
-            }
-
-            HStack(alignment: .top, spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    totalAmountView
+                    Text(monthLabel)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(Color(hex: "#9CA3AF"))
                 }
 
-                Spacer()
+                HStack(alignment: .top, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        totalAmountView
+                    }
 
-                miniChart
+                    Spacer()
+
+                    miniChart
+                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onCardTapped?()
             }
 
             breakdownRow
@@ -64,53 +72,47 @@ struct IncomeCard: View {
     }
 
     private var breakdownRow: some View {
-        HStack(spacing: 18) {
-            ForEach(breakdownItems.indices, id: \.self) { index in
-                let item = breakdownItems[index]
-                IncomeBreakdownItem(
-                    title: item.title,
-                    amount: formatCurrencyWithCents(item.amount).full,
-                    color: breakdownColors[index % breakdownColors.count]
-                )
-                .frame(maxWidth: .infinity, alignment: .leading)
+        let items = breakdownItems
+        let actions: [(() -> Void)?] = [onActiveTapped, onPassiveTapped]
+
+        return HStack(spacing: 24) {
+            ForEach(items.indices, id: \.self) { index in
+                let item = items[index]
+                let action = actions[index]
+
+                Button {
+                    action?()
+                } label: {
+                    IncomeBreakdownItem(
+                        title: item.title,
+                        amount: formatCurrencyWithCents(item.amount).full,
+                        color: breakdownColors[index % breakdownColors.count],
+                        hasAction: action != nil
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
             }
         }
     }
 
     private var breakdownItems: [IncomeBreakdown] {
-        let sources = income.sources
-        if sources.count >= 3 {
-            return Array(sources.prefix(3)).map { IncomeBreakdown(title: $0.name, amount: $0.amount) }
-        }
-
-        var items = sources.map { IncomeBreakdown(title: $0.name, amount: $0.amount) }
-        if items.count == 2 {
-            let remainder = max(income.total - items[0].amount - items[1].amount, 0)
-            items.append(IncomeBreakdown(title: "Investment", amount: remainder))
-        } else if items.count == 1 {
-            let remainder = max(income.total - items[0].amount, 0)
-            items.append(IncomeBreakdown(title: "Salary", amount: remainder * 0.6))
-            items.append(IncomeBreakdown(title: "Investment", amount: remainder * 0.4))
-        } else {
-            items = [
-                IncomeBreakdown(title: "Business", amount: income.total * 0.4),
-                IncomeBreakdown(title: "Salary", amount: income.total * 0.35),
-                IncomeBreakdown(title: "Investment", amount: income.total * 0.25)
-            ]
-        }
-        return items
+        [
+            IncomeBreakdown(title: "Active Income", amount: income.active),
+            IncomeBreakdown(title: "Passive income", amount: income.passive)
+        ]
     }
 
     private var miniChart: some View {
         let heights: [CGFloat] = [10, 20, 14, 26, 18, 30, 16]
         let colors: [Color] = [
-            Color(hex: "#F9A8D4"),
-            Color(hex: "#FBCFE8"),
             Color(hex: "#A78BFA"),
             Color(hex: "#C4B5FD"),
             Color(hex: "#93C5FD"),
             Color(hex: "#60A5FA"),
-            Color(hex: "#3B82F6")
+            Color(hex: "#A78BFA"),
+            Color(hex: "#93C5FD"),
+            Color(hex: "#60A5FA")
         ]
 
         return HStack(alignment: .bottom, spacing: 4) {
@@ -140,8 +142,14 @@ struct IncomeCard: View {
 #Preview {
     ZStack {
         Color.black.ignoresSafeArea()
-        IncomeCard(income: MockData.cashflowData.income, monthLabel: "Jan 2026")
-            .padding()
+        IncomeCard(
+            income: MockData.cashflowData.income,
+            monthLabel: "Jan 2026",
+            onCardTapped: {},
+            onActiveTapped: {},
+            onPassiveTapped: {}
+        )
+        .padding()
     }
 }
 
@@ -154,20 +162,29 @@ private struct IncomeBreakdownItem: View {
     let title: String
     let amount: String
     let color: Color
+    var hasAction: Bool = false
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .top, spacing: 12) {
             RoundedRectangle(cornerRadius: 2)
                 .fill(color)
-                .frame(width: 3, height: 34)
+                .frame(width: 3, height: 42)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color(hex: "#9CA3AF"))
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 4) {
+                    Text(title)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Color(hex: "#9CA3AF"))
+
+                    if hasAction {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(Color(hex: "#6B7280"))
+                    }
+                }
 
                 Text(amount)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.white)
             }
         }

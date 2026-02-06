@@ -7,43 +7,75 @@ import SwiftUI
 
 struct BudgetCard: View {
     let spending: Spending
+    let onCardTapped: (() -> Void)?
+    let onNeedsTapped: (() -> Void)?
+    let onWantsTapped: (() -> Void)?
+    private let apiBudget = MockData.apiMonthlyBudget
 
     private var needsColor: Color { Color(hex: "#A78BFA") }
     private var wantsColor: Color { Color(hex: "#93C5FD") }
 
+    init(
+        spending: Spending,
+        onCardTapped: (() -> Void)? = nil,
+        onNeedsTapped: (() -> Void)? = nil,
+        onWantsTapped: (() -> Void)? = nil
+    ) {
+        self.spending = spending
+        self.onCardTapped = onCardTapped
+        self.onNeedsTapped = onNeedsTapped
+        self.onWantsTapped = onWantsTapped
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Total Spend")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(Color(hex: "#7C7C7C"))
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    Text("Total Spend")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Color(hex: "#7C7C7C"))
 
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(formatCurrency(spending.total))
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
+                    Spacer()
 
-                Text("/ \(formatCurrency(spending.budgetLimit))")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color(hex: "#6B7280"))
+                    if onCardTapped != nil {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(Color(hex: "#6B7280"))
+                    }
+                }
+
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(formatCurrency(spending.total))
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(.white)
+
+                    Text("/ \(formatCurrency(spending.budgetLimit))")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color(hex: "#6B7280"))
+                }
+
+                segmentedBar
             }
-
-            segmentedBar
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onCardTapped?()
+            }
 
             VStack(spacing: 12) {
                 BudgetRowItem(
                     title: "Needs",
                     current: formatCurrency(spending.needs),
-                    total: formatCurrency(spending.budgetLimit * 0.75),
+                    total: formatCurrency(apiBudget.needsBudget),
                     color: needsColor,
-                    icon: "house.fill"
+                    onTap: onNeedsTapped
                 )
 
                 BudgetRowItem(
                     title: "Wants",
                     current: formatCurrency(spending.wants),
-                    total: formatCurrency(spending.budgetLimit * 0.25),
+                    total: formatCurrency(apiBudget.wantsBudget),
                     color: wantsColor,
-                    icon: "bag.fill"
+                    onTap: onWantsTapped
                 )
             }
         }
@@ -99,21 +131,31 @@ private struct BudgetRowItem: View {
     let current: String
     let total: String
     let color: Color
-    let icon: String
+    let onTap: (() -> Void)?
 
     var body: some View {
+        Group {
+            if let onTap {
+                Button(action: onTap) {
+                    rowContent
+                }
+                .buttonStyle(.plain)
+            } else {
+                rowContent
+            }
+        }
+    }
+
+    private var rowContent: some View {
         HStack {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(color)
+            HStack(spacing: 6) {
                 Text(title)
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(hex: "#0F172A"))
             }
             .padding(.vertical, 6)
             .padding(.horizontal, 12)
-            .background(color.opacity(0.2))
+            .background(color)
             .clipShape(Capsule())
 
             Spacer()
@@ -123,6 +165,12 @@ private struct BudgetRowItem: View {
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
                 Text("/ \(total)")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(Color(hex: "#6B7280"))
+            }
+
+            if onTap != nil {
+                Image(systemName: "chevron.right")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(Color(hex: "#6B7280"))
             }

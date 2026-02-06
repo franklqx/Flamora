@@ -46,7 +46,7 @@ struct MainTabView: View {
                 }
                 .safeAreaInset(edge: .top, spacing: 0) {
                     TopHeaderBar(
-                        userName: "Enxi Lin",
+                        userName: MockData.displayName,
                         leftAction: headerLeftAction,
                         onSettingsTapped: {},
                         isVisible: shouldShowHeaderBar
