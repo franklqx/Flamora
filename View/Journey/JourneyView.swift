@@ -10,8 +10,6 @@ import SwiftUI
 struct JourneyView: View {
     private let netWorthSummary = MockData.apiNetWorthSummary
     private let apiBudget = MockData.apiMonthlyBudget
-    private let fireGoal = MockData.apiFireGoal
-    private let userProfile = MockData.apiUserProfile
     private let data = MockData.journeyData // for passiveIncome & savingsRate (no API equivalent yet)
     var onFireTapped: (() -> Void)? = nil
     let bottomPadding: CGFloat
@@ -120,7 +118,7 @@ private extension JourneyView {
         return VStack(spacing: AppSpacing.md) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Passive Income")
+                    Text("Sustainable Income")
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(.white)
 
@@ -133,35 +131,10 @@ private extension JourneyView {
 
                 Spacer()
 
-                VStack(alignment: .trailing, spacing: 8) {
-                    HStack(spacing: 4) {
-                        Text("PROJECTED")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(Color(hex: "#6B7280"))
-
-                        Text(formatCurrency(income.projected))
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
-
-                        Circle()
-                            .fill(Color(hex: "#93C5FD"))
-                            .frame(width: 6, height: 6)
-                    }
-
-                    HStack(spacing: 4) {
-                        Text("TARGET")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(Color(hex: "#6B7280"))
-
-                        Text(formatCurrency(income.target))
-                            .font(.system(size: 14))
-                            .foregroundColor(Color(hex: "#6B7280"))
-
-                        Circle()
-                            .fill(Color(hex: "#4B5563"))
-                            .frame(width: 6, height: 6)
-                    }
-                }
+                Image(systemName: "questionmark.circle.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(Color(hex: "#9CA3AF"))
+                    .help("4% safe withdrawal rate: a common annual withdrawal guideline for portfolio sustainability.")
             }
 
             ProgressBar(
@@ -169,52 +142,35 @@ private extension JourneyView {
                 color: Color(hex: "#93C5FD")
             )
 
-            Text("Based on 4% safe withdrawal rate")
-                .font(.system(size: 12))
-                .foregroundColor(Color(hex: "#6B7280"))
-                .italic()
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(AppSpacing.cardPadding)
-        .background(Color(hex: "#121212"))
-        .cornerRadius(20)
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color(hex: "#222222"), lineWidth: 1)
-        )
-        .padding(.horizontal, AppSpacing.screenPadding)
-    }
-
-    var savingsRateCard: some View {
-        let currentPercent = Int(apiBudget.savingsRatio)
-        let targetPercent = Int(fireGoal.requiredSavingsRate)
-        let savings = data.savingsRate
-
-        return VStack(spacing: AppSpacing.md) {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Savings Rate")
-                        .font(.system(size: 20, weight: .semibold))
+                HStack(spacing: 4) {
+                    Text("PROJECTED")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(Color(hex: "#6B7280"))
+
+                    Text(formatCurrency(income.projected))
+                        .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.white)
 
-                    Text("Target: \(targetPercent)% of income")
-                        .font(.system(size: 13))
-                        .foregroundColor(Color(hex: "#6B7280"))
+                    Circle()
+                        .fill(Color(hex: "#93C5FD"))
+                        .frame(width: 6, height: 6)
                 }
 
                 Spacer()
 
-                Text("\(currentPercent)%")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.white)
-            }
+                HStack(spacing: 4) {
+                    Text("TARGET")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(Color(hex: "#6B7280"))
 
-            HStack(spacing: AppSpacing.lg) {
-                ForEach(savings.months, id: \.month) { monthStatus in
-                    MonthIndicator(
-                        month: monthStatus.month,
-                        status: statusFromString(monthStatus.status)
-                    )
+                    Text(formatCurrency(income.target))
+                        .font(.system(size: 14))
+                        .foregroundColor(Color(hex: "#6B7280"))
+
+                    Circle()
+                        .fill(Color(hex: "#4B5563"))
+                        .frame(width: 6, height: 6)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -227,6 +183,75 @@ private extension JourneyView {
                 .stroke(Color(hex: "#222222"), lineWidth: 1)
         )
         .padding(.horizontal, AppSpacing.screenPadding)
+    }
+
+    var savingsRateCard: some View {
+        let savings = data.savingsRate
+        let values = savings.monthlySavings
+        let hasSavingsData = values.contains { $0 > 0 }
+
+        return VStack(spacing: AppSpacing.sm) {
+            HStack(alignment: .bottom) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Savings Streak")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    if hasSavingsData {
+                        Text(formatCurrency(savings.savedThisMonth))
+                            .font(.system(size: 28, weight: .regular))
+                            .foregroundColor(.white)
+
+                        Text("Saved This Month")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(Color(hex: "#9CA3AF"))
+                    } else {
+                        Text("Record Your First Saving")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(Color(hex: "#9FB2CC"))
+                    }
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 10) {
+                    savingsStreakBars(values: values, hasData: hasSavingsData)
+                }
+            }
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(Color(hex: "#121212"))
+        .cornerRadius(20)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color(hex: "#222222"), lineWidth: 1)
+        )
+        .padding(.horizontal, AppSpacing.screenPadding)
+    }
+
+    func savingsStreakBars(values: [Double], hasData: Bool) -> some View {
+        let barValues = values.isEmpty ? Array(repeating: 0.0, count: 6) : values
+        let maxValue = max(barValues.max() ?? 1, 1)
+        let palette = [
+            Color(hex: "#2B3342"),
+            Color(hex: "#3B4861"),
+            Color(hex: "#55698E"),
+            Color(hex: "#728BC0"),
+            Color(hex: "#95A3E2"),
+            Color(hex: "#B5B7FA")
+        ]
+
+        return HStack(alignment: .bottom, spacing: 8) {
+            ForEach(Array(barValues.enumerated()), id: \.offset) { index, value in
+                let normalized = hasData ? max(value / maxValue, 0) : 0
+                let height = hasData ? (18 + CGFloat(normalized) * 48) : 42
+
+                Capsule()
+                    .fill(hasData ? palette[min(index, palette.count - 1)] : Color(hex: "#323845"))
+                    .frame(width: 8, height: height)
+                    .opacity(hasData ? 1 : 0.55)
+            }
+        }
     }
 
     var aiInsightsCard: some View {
@@ -294,17 +319,6 @@ private extension JourneyView {
         formatter.maximumFractionDigits = 0
         formatter.minimumFractionDigits = 0
         return formatter.string(from: NSNumber(value: value)) ?? "$0"
-    }
-
-    func statusFromString(_ statusString: String) -> MonthIndicator.Status {
-        switch statusString.lowercased() {
-        case "success":
-            return .success
-        case "failed":
-            return .failed
-        default:
-            return .pending
-        }
     }
 }
 

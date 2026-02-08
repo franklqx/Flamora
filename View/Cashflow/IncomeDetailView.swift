@@ -16,11 +16,22 @@ struct IncomeDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var dragOffset: CGFloat = 0
     @State private var selectedBarIndex: Int = 0
+    @State private var editableMonthlyData: [Int: IncomeMonthData]
+    @State private var isSourceEditorPresented = false
+    @State private var editingSourceID = ""
+    @State private var editingSourceSeriesKey = ""
+    @State private var editingSourceMonthIndex = 0
+    @State private var editingSourceName = ""
+    @State private var editingSourceType: IncomeSourceType = .active
+    @State private var applySmartRules = true
 
     private let monthLabels = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
     private let monthsFull = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-    private var accentColor: Color { Color(hex: data.accentColor) }
+    init(data: IncomeDetailData) {
+        self.data = data
+        _editableMonthlyData = State(initialValue: data.monthlyData)
+    }
 
     private var maxChartValue: Double {
         let values = data.annualTrend.compactMap { $0 }
@@ -29,7 +40,7 @@ struct IncomeDetailView: View {
 
     /// Current month's data based on selected bar
     private var selectedMonthData: IncomeMonthData? {
-        data.monthlyData[selectedBarIndex]
+        editableMonthlyData[selectedBarIndex]
     }
 
     private var selectedTotal: Double {
@@ -80,6 +91,17 @@ struct IncomeDetailView: View {
                     }
                 }
         )
+        .sheet(isPresented: $isSourceEditorPresented) {
+            IncomeSourceEditorSheet(
+                sourceName: $editingSourceName,
+                selectedType: $editingSourceType,
+                applySmartRules: $applySmartRules,
+                onClose: { isSourceEditorPresented = false },
+                onSave: saveSourceEdits
+            )
+            .presentationDetents([.height(460)])
+            .presentationDragIndicator(.hidden)
+        }
     }
 }
 
@@ -168,8 +190,19 @@ private extension IncomeDetailView {
         let isSelected = index == selectedBarIndex
 
         return VStack(spacing: 10) {
-            RoundedRectangle(cornerRadius: 4)
-                .fill(isSelected ? accentColor : Color(hex: "#D1D5DB").opacity(0.25))
+            Group {
+                if
+                    isSelected,
+                    amount != nil,
+                    let monthData = editableMonthlyData[index],
+                    !monthData.sources.isEmpty
+                {
+                    stackedBarFill(for: monthData)
+                } else {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color(hex: "#D1D5DB").opacity(0.25))
+                }
+            }
                 .frame(width: barWidth, height: height)
                 .opacity(amount == nil ? 0.3 : 1.0)
 
@@ -185,6 +218,26 @@ private extension IncomeDetailView {
         let ratio = min(amount / maxChartValue, 1.0)
         return max(16, maxHeight * CGFloat(ratio))
     }
+
+    func stackedBarFill(for monthData: IncomeMonthData) -> some View {
+        let total = max(monthData.sources.reduce(0) { $0 + $1.amount }, 0.0001)
+        let stackedSources = Array(monthData.sources.reversed())
+
+        return GeometryReader { geometry in
+            let availableHeight = geometry.size.height
+
+            VStack(spacing: 0) {
+                ForEach(stackedSources) { source in
+                    Rectangle()
+                        .fill(sourceColor(for: source))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: availableHeight * CGFloat(source.amount / total))
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 4))
+    }
 }
 
 // MARK: - Sources
@@ -197,47 +250,108 @@ private extension IncomeDetailView {
 
             VStack(spacing: 12) {
                 ForEach(selectedSources) { source in
-                    sourceCard(source: source)
+                    Button {
+                        openSourceEditor(for: source)
+                    } label: {
+                        sourceCard(source: source)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
     }
 
     func sourceCard(source: IncomeDetailSource) -> some View {
-        HStack(spacing: 14) {
-            // Color accent bar
-            RoundedRectangle(cornerRadius: 4)
-                .fill(accentColor)
-                .frame(width: 5, height: 56)
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            let ratio = min(max(source.percentage / 100, 0), 1)
+            let fillWidth = ratio == 0 ? 0 : max(56, width * CGFloat(ratio))
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(source.name)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.white.opacity(0.06))
 
-                Text(source.account)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color(hex: "#6B7280"))
-            }
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(sourceColor(for: source).opacity(0.88))
+                    .frame(width: fillWidth)
 
-            Spacer()
+                HStack(spacing: 14) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(source.name)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
 
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(formatCurrency(source.amount))
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
+                        Text("\(source.account) · \(source.type.displayName)")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(Color(hex: "#D1D5DB").opacity(0.8))
+                    }
 
-                Text("\(Int(source.percentage))%")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color(hex: "#9CA3AF"))
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(formatCurrency(source.amount))
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+
+                        Text("\(Int(source.percentage.rounded()))%")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(Color(hex: "#9CA3AF"))
+                    }
+                }
+                .padding(.horizontal, 18)
             }
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(accentColor.opacity(0.15))
-        )
+        .frame(height: 92)
+    }
+
+    func sourceColor(for source: IncomeDetailSource) -> Color {
+        Color(hex: source.colorHex)
+    }
+
+    func openSourceEditor(for source: IncomeDetailSource) {
+        editingSourceID = source.id
+        editingSourceSeriesKey = sourceSeriesKey(for: source.id)
+        editingSourceMonthIndex = selectedBarIndex
+        editingSourceName = source.name
+        editingSourceType = source.type
+        applySmartRules = true
+        isSourceEditorPresented = true
+    }
+
+    func saveSourceEdits() {
+        let trimmedName = editingSourceName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return }
+
+        if applySmartRules {
+            for monthIndex in editableMonthlyData.keys {
+                guard let monthData = editableMonthlyData[monthIndex] else { continue }
+                let updatedSources = monthData.sources.map { source in
+                    guard sourceSeriesKey(for: source.id) == editingSourceSeriesKey else { return source }
+                    var updated = source
+                    updated.name = trimmedName
+                    updated.type = editingSourceType
+                    return updated
+                }
+                editableMonthlyData[monthIndex] = IncomeMonthData(total: monthData.total, sources: updatedSources)
+            }
+        } else {
+            guard let monthData = editableMonthlyData[editingSourceMonthIndex] else { return }
+            let updatedSources = monthData.sources.map { source in
+                guard source.id == editingSourceID else { return source }
+                var updated = source
+                updated.name = trimmedName
+                updated.type = editingSourceType
+                return updated
+            }
+            editableMonthlyData[editingSourceMonthIndex] = IncomeMonthData(total: monthData.total, sources: updatedSources)
+        }
+
+        isSourceEditorPresented = false
+    }
+
+    func sourceSeriesKey(for sourceID: String) -> String {
+        guard let lastDash = sourceID.lastIndex(of: "-") else { return sourceID }
+        return String(sourceID[..<lastDash])
     }
 }
 
@@ -260,6 +374,175 @@ private extension IncomeDetailView {
 
 #Preview("Passive Income") {
     IncomeDetailView(data: MockData.passiveIncomeDetail)
+}
+
+private extension IncomeSourceType {
+    var helperDescription: String {
+        switch self {
+        case .active:
+            return "Active income comes from your work and services."
+        case .passive:
+            return "Passive income contributes to your retirement withdrawal coverage."
+        }
+    }
+}
+
+private struct IncomeSourceEditorSheet: View {
+    @Binding var sourceName: String
+    @Binding var selectedType: IncomeSourceType
+    @Binding var applySmartRules: Bool
+
+    let onClose: () -> Void
+    let onSave: () -> Void
+
+    private var isSaveDisabled: Bool {
+        sourceName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var body: some View {
+        ZStack {
+            Color(hex: "#17181F").ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                Capsule()
+                    .fill(Color(hex: "#4B5563"))
+                    .frame(width: 44, height: 5)
+                    .padding(.top, 12)
+
+                VStack(alignment: .leading, spacing: 20) {
+                    HStack {
+                        Text("Edit Source")
+                            .font(.system(size: 33, weight: .bold))
+                            .foregroundColor(.white)
+
+                        Spacer()
+
+                        Button(action: onClose) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(Color(hex: "#9CA3AF"))
+                                .frame(width: 30, height: 30)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Source Name")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.white)
+
+                        TextField("Rental Property", text: $sourceName)
+                            .textInputAutocapitalization(.words)
+                            .disableAutocorrection(true)
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 14)
+                            .frame(height: 48)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(Color.white.opacity(0.08))
+                            )
+                    }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Income Type")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.white)
+
+                        HStack(spacing: 6) {
+                            ForEach(IncomeSourceType.allCases, id: \.self) { type in
+                                Button {
+                                    selectedType = type
+                                } label: {
+                                    Text(type.displayName)
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(
+                                            selectedType == type
+                                            ? Color(hex: "#111827")
+                                            : Color(hex: "#9CA3AF")
+                                        )
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 38)
+                                        .background(
+                                            Capsule()
+                                                .fill(selectedType == type ? Color.white : Color.clear)
+                                        )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.white.opacity(0.08))
+                        )
+
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "info.circle.fill")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(Color(hex: "#6B7280"))
+                                .padding(.top, 1)
+
+                            Text(selectedType.helperDescription)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(Color(hex: "#9CA3AF"))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    Divider()
+                        .overlay(Color.white.opacity(0.08))
+
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Smart Rules")
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundColor(.white)
+
+                            Text("Apply to all history & future records")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(Color(hex: "#9CA3AF"))
+                        }
+
+                        Spacer()
+
+                        Toggle("", isOn: $applySmartRules)
+                            .labelsHidden()
+                            .tint(Color(hex: "#A78BFA"))
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+
+                Spacer(minLength: 16)
+
+                Divider()
+                    .overlay(Color.white.opacity(0.08))
+
+                Button(action: onSave) {
+                    Text("Save Changes")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color.white.opacity(0.08))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 14)
+                .disabled(isSaveDisabled)
+                .opacity(isSaveDisabled ? 0.45 : 1)
+            }
+        }
+    }
 }
 
 // MARK: - Spending Detail View (Needs / Wants)

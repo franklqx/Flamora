@@ -46,6 +46,9 @@ struct SavingsRate: Codable {
     let current: Double
     let target: Double
     let months: [MonthStatus]
+    let savedThisMonth: Double
+    let streakMonths: Int
+    let monthlySavings: [Double]
 }
 
 struct MonthStatus: Codable {
@@ -289,14 +292,38 @@ struct AssetClass: Codable {
     let amount: Double
 }
 
+struct InvestmentAccountsBreakdownData: Codable {
+    let title: String
+    let totalAmount: Double
+    let positions: [InvestmentAccountPosition]
+}
+
+struct InvestmentAccountPosition: Codable, Identifiable {
+    let id: String
+    let symbol: String
+    let institution: String
+    let amount: Double
+}
+
 // MARK: - Income Detail Models
+
+enum IncomeSourceType: String, CaseIterable {
+    case active
+    case passive
+
+    var displayName: String {
+        rawValue.capitalized
+    }
+}
 
 struct IncomeDetailSource: Identifiable {
     let id: String
-    let name: String
+    var name: String
     let account: String
     let amount: Double
     let percentage: Double
+    let colorHex: String
+    var type: IncomeSourceType
 }
 
 struct IncomeMonthData {
@@ -392,7 +419,10 @@ struct MockData {
                 MonthStatus(month: "Sep", status: "success"),
                 MonthStatus(month: "Oct", status: "failed"),
                 MonthStatus(month: "Nov", status: "pending")
-            ]
+            ],
+            savedThisMonth: 3200.00,
+            streakMonths: 4,
+            monthlySavings: [1200, 1900, 2750, 2300, 3000, 3200]
         ),
         fireProgress: FireProgress(
             percent: 25,
@@ -515,6 +545,17 @@ struct MockData {
             bonds: AssetClass(percent: 15, amount: 18817.62),
             cash: AssetClass(percent: 5, amount: 6272.54)
         )
+    )
+
+    static let investmentAccountsBreakdown = InvestmentAccountsBreakdownData(
+        title: "Stocks breakdown",
+        totalAmount: 81543.00,
+        positions: [
+            InvestmentAccountPosition(id: "position-1", symbol: "VTI", institution: "Fidelity", amount: 45200.00),
+            InvestmentAccountPosition(id: "position-2", symbol: "VOO", institution: "Schwab", amount: 20150.00),
+            InvestmentAccountPosition(id: "position-3", symbol: "BTC", institution: "Coinbase", amount: 12500.00),
+            InvestmentAccountPosition(id: "position-4", symbol: "AAPL", institution: "Robinhood", amount: 3693.00)
+        ]
     )
 }
 // MARK: - 🔥 Backend API Models (Phase 0 - 后端数据契约)
@@ -668,8 +709,8 @@ extension MockData {
                 monthly[i] = IncomeMonthData(
                     total: total,
                     sources: [
-                        IncomeDetailSource(id: "active-1-\(i)", name: "Tech Corp Salary", account: "Main Account", amount: salaryAmount, percentage: 96),
-                        IncomeDetailSource(id: "active-2-\(i)", name: "Consulting", account: "Business Account", amount: consultAmount, percentage: 4)
+                        IncomeDetailSource(id: "active-1-\(i)", name: "Tech Corp Salary", account: "Main Account", amount: salaryAmount, percentage: 96, colorHex: "#93C5FD", type: .active),
+                        IncomeDetailSource(id: "active-2-\(i)", name: "Consulting", account: "Business Account", amount: consultAmount, percentage: 4, colorHex: "#FDBA74", type: .active)
                     ]
                 )
             }
@@ -692,8 +733,8 @@ extension MockData {
                 monthly[i] = IncomeMonthData(
                     total: total,
                     sources: [
-                        IncomeDetailSource(id: "passive-1-\(i)", name: "Dividends & Interest", account: "Chase Savings", amount: dividendAmount, percentage: 68),
-                        IncomeDetailSource(id: "passive-2-\(i)", name: "Real Estate", account: "Main Account", amount: realEstateAmount, percentage: 32)
+                        IncomeDetailSource(id: "passive-1-\(i)", name: "Dividends & Interest", account: "Chase Savings", amount: dividendAmount, percentage: 68, colorHex: "#A78BFA", type: .passive),
+                        IncomeDetailSource(id: "passive-2-\(i)", name: "Real Estate", account: "Main Account", amount: realEstateAmount, percentage: 32, colorHex: "#5EEAD4", type: .passive)
                     ]
                 )
             }
