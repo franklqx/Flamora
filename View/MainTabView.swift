@@ -67,6 +67,7 @@ struct MainTabView: View {
                 }
             }
         }
+        .ignoresSafeArea(.keyboard, edges: .all)
     }
 
     private var headerLeftAction: HeaderLeftAction {

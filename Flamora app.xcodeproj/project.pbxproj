@@ -39,6 +39,19 @@
 		15FF6EDA2F31096B0005F482 /* GradientButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED92F31043F0005F482 /* GradientButton.swift */; };
 		15FF6EDB2F3109F40005F482 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED72F31033C0005F482 /* Colors.swift */; };
 		15FF6EE02F310A040005F482 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED82F3103F70005F482 /* Typography.swift */; };
+		AAOB00012F38500000000001 /* OnboardingData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00112F38500000000001 /* OnboardingData.swift */; };
+		AAOB00022F38500000000002 /* OnboardingContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00122F38500000000002 /* OnboardingContainerView.swift */; };
+		AAOB00032F38500000000003 /* OB_SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00132F38500000000003 /* OB_SignInView.swift */; };
+		AAOB00042F38500000000004 /* OB_WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00142F38500000000004 /* OB_WelcomeView.swift */; };
+		AAOB00052F38500000000005 /* OB_NameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00152F38500000000005 /* OB_NameView.swift */; };
+		AAOB00062F38500000000006 /* OB_MotivationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00162F38500000000006 /* OB_MotivationView.swift */; };
+		AAOB00072F38500000000007 /* OB_AgeLocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00172F38500000000007 /* OB_AgeLocationView.swift */; };
+		AAOB00082F38500000000008 /* OB_IncomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00182F38500000000008 /* OB_IncomeView.swift */; };
+		AAOB00092F38500000000009 /* OB_ExpensesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00192F38500000000009 /* OB_ExpensesView.swift */; };
+		AAOB000A2F3850000000000A /* OB_NetWorthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001A2F3850000000000A /* OB_NetWorthView.swift */; };
+		AAOB000B2F3850000000000B /* OB_LifestyleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001B2F3850000000000B /* OB_LifestyleView.swift */; };
+		AAOB000C2F3850000000000C /* OB_BlueprintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001C2F3850000000000C /* OB_BlueprintView.swift */; };
+		AAOB000D2F3850000000000D /* OB_SuccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001D2F3850000000000D /* OB_SuccessView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -94,6 +107,19 @@
 		15FF6ED72F31033C0005F482 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
 		15FF6ED82F3103F70005F482 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		15FF6ED92F31043F0005F482 /* GradientButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientButton.swift; sourceTree = "<group>"; };
+		AAOB00112F38500000000001 /* OnboardingData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingData.swift; sourceTree = "<group>"; };
+		AAOB00122F38500000000002 /* OnboardingContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingContainerView.swift; sourceTree = "<group>"; };
+		AAOB00132F38500000000003 /* OB_SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_SignInView.swift; sourceTree = "<group>"; };
+		AAOB00142F38500000000004 /* OB_WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_WelcomeView.swift; sourceTree = "<group>"; };
+		AAOB00152F38500000000005 /* OB_NameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_NameView.swift; sourceTree = "<group>"; };
+		AAOB00162F38500000000006 /* OB_MotivationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_MotivationView.swift; sourceTree = "<group>"; };
+		AAOB00172F38500000000007 /* OB_AgeLocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_AgeLocationView.swift; sourceTree = "<group>"; };
+		AAOB00182F38500000000008 /* OB_IncomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_IncomeView.swift; sourceTree = "<group>"; };
+		AAOB00192F38500000000009 /* OB_ExpensesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_ExpensesView.swift; sourceTree = "<group>"; };
+		AAOB001A2F3850000000000A /* OB_NetWorthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_NetWorthView.swift; sourceTree = "<group>"; };
+		AAOB001B2F3850000000000B /* OB_LifestyleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_LifestyleView.swift; sourceTree = "<group>"; };
+		AAOB001C2F3850000000000C /* OB_BlueprintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_BlueprintView.swift; sourceTree = "<group>"; };
+		AAOB001D2F3850000000000D /* OB_SuccessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_SuccessView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -185,9 +211,30 @@
 			path = Journey;
 			sourceTree = "<group>";
 		};
+		AAOB00202F38500000000020 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				AAOB00112F38500000000001 /* OnboardingData.swift */,
+				AAOB00122F38500000000002 /* OnboardingContainerView.swift */,
+				AAOB00132F38500000000003 /* OB_SignInView.swift */,
+				AAOB00142F38500000000004 /* OB_WelcomeView.swift */,
+				AAOB00152F38500000000005 /* OB_NameView.swift */,
+				AAOB00162F38500000000006 /* OB_MotivationView.swift */,
+				AAOB00172F38500000000007 /* OB_AgeLocationView.swift */,
+				AAOB00182F38500000000008 /* OB_IncomeView.swift */,
+				AAOB00192F38500000000009 /* OB_ExpensesView.swift */,
+				AAOB001A2F3850000000000A /* OB_NetWorthView.swift */,
+				AAOB001B2F3850000000000B /* OB_LifestyleView.swift */,
+				AAOB001C2F3850000000000C /* OB_BlueprintView.swift */,
+				AAOB001D2F3850000000000D /* OB_SuccessView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
 		15E21AA52F3248F500A9BB60 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				AAOB00202F38500000000020 /* Onboarding */,
 				1508832E2F3848C400C5CF03 /* SplashScreenView.swift */,
 				15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */,
 				15E21AEB2F33BE1900A9BB60 /* Investment */,
@@ -391,6 +438,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AAOB000D2F3850000000000D /* OB_SuccessView.swift in Sources */,
+				AAOB00072F38500000000007 /* OB_AgeLocationView.swift in Sources */,
+				AAOB000A2F3850000000000A /* OB_NetWorthView.swift in Sources */,
+				AAOB00042F38500000000004 /* OB_WelcomeView.swift in Sources */,
+				AAOB00052F38500000000005 /* OB_NameView.swift in Sources */,
+				AAOB00082F38500000000008 /* OB_IncomeView.swift in Sources */,
+				AAOB000B2F3850000000000B /* OB_LifestyleView.swift in Sources */,
+				AAOB00032F38500000000003 /* OB_SignInView.swift in Sources */,
+				AAOB00022F38500000000002 /* OnboardingContainerView.swift in Sources */,
+				AAOB00092F38500000000009 /* OB_ExpensesView.swift in Sources */,
+				AAOB00062F38500000000006 /* OB_MotivationView.swift in Sources */,
+				AAOB000C2F3850000000000C /* OB_BlueprintView.swift in Sources */,
 				15E21AF12F33C40000A9BB60 /* BudgetCard.swift in Sources */,
 				15FF6EDB2F3109F40005F482 /* Colors.swift in Sources */,
 				15E21ADB2F33971100A9BB60 /* TabBarVisibilityPreferenceKey.swift in Sources */,
@@ -422,6 +481,7 @@
 				15E21AD92F3394B100A9BB60 /* FlameIcon.swift in Sources */,
 				15E21AB32F3257B000A9BB60 /* CashflowView.swift in Sources */,
 				15E21AF72F33F2C600A9BB60 /* PortfolioCard.swift in Sources */,
+				AAOB00012F38500000000001 /* OnboardingData.swift in Sources */,
 				153CA31C2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -14,6 +14,8 @@ struct Flamora_appApp: App {
 
     init() {
         Self.registerFonts()
+        // 让启动时直接过渡到自定义 Splash 视觉，避免黑屏闪烁
+        UIWindow.appearance().backgroundColor = .clear
     }
 
     /// 手动注册 bundle 内的自定义字体

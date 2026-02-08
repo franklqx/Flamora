@@ -10,13 +10,16 @@ import SwiftUI
 struct SplashScreenView: View {
     var body: some View {
         ZStack {
-            Color.black
+            AppBackgroundView()
+
+            Color.black.opacity(0.25)
                 .ignoresSafeArea()
 
             Text("FLAMORA")
                 .font(.custom("Montserrat-Bold", size: 38))
                 .foregroundColor(.white)
                 .tracking(2)
+                .offset(y: -56)
         }
     }
 }
