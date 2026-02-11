@@ -156,3 +156,8 @@ struct CurrencyPickerSheet: View {
         }
     }
 }
+
+#Preview {
+    OB_AgeLocationView(data: OnboardingData(), onNext: {})
+        .background(AppBackgroundView())
+}

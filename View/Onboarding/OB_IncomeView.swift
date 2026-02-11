@@ -78,3 +78,8 @@ struct OB_IncomeView: View {
         (Double(data.monthlyIncome) ?? 0) > 0
     }
 }
+
+#Preview {
+    OB_IncomeView(data: OnboardingData(), onNext: {})
+        .background(AppBackgroundView())
+}

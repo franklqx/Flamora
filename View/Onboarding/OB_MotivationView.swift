@@ -137,3 +137,10 @@ struct MotivationCard: View {
         .buttonStyle(.plain)
     }
 }
+
+#Preview {
+    let data = OnboardingData()
+    data.userName = "Alex"
+    return OB_MotivationView(data: data, onNext: {})
+        .background(AppBackgroundView())
+}

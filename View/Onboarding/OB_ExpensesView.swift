@@ -95,3 +95,10 @@ struct OB_ExpensesView: View {
         (Double(data.monthlyExpenses) ?? 0) > 0
     }
 }
+
+#Preview {
+    let data = OnboardingData()
+    data.monthlyIncome = "5000"
+    return OB_ExpensesView(data: data, onNext: {})
+        .background(AppBackgroundView())
+}

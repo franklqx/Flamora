@@ -2,74 +2,104 @@
 //  OnboardingContainerView.swift
 //  Flamora app
 //
-//  Onboarding 主容器 - 管理页面流转
+//  Onboarding 主容器 - 管理 13 步引导流程的页面切换
+//  流程: Sign In → Welcome → Name → Motivation → Age/Location → Income →
+//        Expenses → NetWorth → Lifestyle → Blueprint → Success →
+//        Paywall → PlaidLink → 完成
 //
 
 import SwiftUI
 
 struct OnboardingContainerView: View {
-    @Binding var isOnboardingComplete: Bool
-    @State private var currentStep = 0
-    @State private var data = OnboardingData()
-    @State private var showToast = false
-    @State private var toastText = ""
+    @Binding var isOnboardingComplete: Bool  // 绑定到 ContentView，控制是否完成引导
+    @State private var currentStep = 0       // 当前步骤 (0-12)
+    @State private var data = OnboardingData()  // 收集的用户数据
+    @State private var showToast = false     // 是否显示 toast 提示
+    @State private var toastText = ""        // Toast 提示文字
 
-    private let totalSteps = 11
-    private let contentVerticalOffset: CGFloat = -72
+    private let totalSteps = 13              // 总共 13 步 (索引 0-12)
+    private let contentVerticalOffset: CGFloat = -72  // 整体内容向上偏移量
 
     var body: some View {
         ZStack {
-            // 背景
+            // MARK: - 背景渐变
             AppBackgroundView()
 
             VStack(spacing: 0) {
-                // 进度条 (Sign In 后才显示)
-                if currentStep > 0 {
-                    OnboardingProgressBar(current: currentStep, total: totalSteps - 1)
+                // MARK: - 进度条
+                // 只在步骤 1-10 显示（跳过 Sign In、Paywall 和 PlaidLink）
+                if currentStep > 0 && currentStep <= 10 {
+                    OnboardingProgressBar(current: min(currentStep, 10), total: 10)
                         .padding(.horizontal, AppSpacing.screenPadding)
                         .padding(.top, 8)
                 }
 
-                // 只渲染当前页面
+                // MARK: - 页面内容区域
+                // 根据当前步骤渲染对应的 onboarding 页面
                 Group {
                     switch currentStep {
-                    case 0:
+                    case 0:  // 步骤 0: 登录/注册
                         OB_SignInView(data: data, onNext: next)
-                    case 1:
+                    case 1:  // 步骤 1: 欢迎页
                         OB_WelcomeView(onNext: next)
-                    case 2:
+                    case 2:  // 步骤 2: 输入姓名
                         OB_NameView(data: data, onNext: next)
-                    case 3:
+                    case 3:  // 步骤 3: 选择动机
                         OB_MotivationView(data: data, onNext: nextWithToast("Profile Initiated! \u{1F680}"))
-                    case 4:
+                    case 4:  // 步骤 4: 年龄和地区
                         OB_AgeLocationView(data: data, onNext: next)
-                    case 5:
+                    case 5:  // 步骤 5: 月收入
                         OB_IncomeView(data: data, onNext: next)
-                    case 6:
+                    case 6:  // 步骤 6: 月支出
                         OB_ExpensesView(data: data, onNext: next)
-                    case 7:
+                    case 7:  // 步骤 7: 净资产
                         OB_NetWorthView(data: data, onNext: nextWithToast("Foundation Set! \u{1F9F1}"))
-                    case 8:
+                    case 8:  // 步骤 8: 生活方式选择
                         OB_LifestyleView(data: data, onNext: next)
-                    case 9:
+                    case 9:  // 步骤 9: FIRE 蓝图确认
                         OB_BlueprintView(data: data, onNext: next)
-                    default:
-                        OB_SuccessView(data: data, onFinish: {
-                            withAnimation(.easeInOut(duration: 0.5)) {
-                                isOnboardingComplete = true
+                    case 10: // 步骤 10: 成功页面（展示 FIRE 计算结果）
+                        OB_SuccessView(data: data, onFinish: next)
+                    case 11: // 步骤 11: 付费墙（订阅选择）
+                        OB_PaywallView(data: data, onNext: next)
+                    default: // 步骤 12: Plaid 银行连接（最后一步）
+                        OB_PlaidLinkView(
+                            data: data,
+                            onFinish: {
+                                // 用户点击「连接银行」后的处理
+                                // 保存用户选择的订阅方案到本地
+                                UserDefaults.standard.set(data.selectedPlan, forKey: "selectedSubscriptionPlan")
+                                // 标记已连接 Plaid
+                                UserDefaults.standard.set(true, forKey: "isPlaidConnected")
+                                // 完成 onboarding，进入主应用（MainTabView）
+                                withAnimation(.easeInOut(duration: 0.5)) {
+                                    isOnboardingComplete = true
+                                }
+                            },
+                            onSkip: {
+                                // 用户点击「跳过」后的处理
+                                // 保存用户选择的订阅方案到本地
+                                UserDefaults.standard.set(data.selectedPlan, forKey: "selectedSubscriptionPlan")
+                                // 标记未连接 Plaid（可以稍后在设置中连接）
+                                UserDefaults.standard.set(false, forKey: "isPlaidConnected")
+                                // 完成 onboarding，进入主应用（MainTabView）
+                                withAnimation(.easeInOut(duration: 0.5)) {
+                                    isOnboardingComplete = true
+                                }
                             }
-                        })
+                        )
                     }
                 }
                 .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
+                    insertion: .move(edge: .trailing).combined(with: .opacity),  // 新页面从右侧滑入
+                    removal: .move(edge: .leading).combined(with: .opacity)      // 旧页面向左侧滑出
                 ))
-                .id(currentStep)
+                .id(currentStep)  // 强制 SwiftUI 重新渲染当前步骤
             }
             .offset(y: contentVerticalOffset)
 
-            // Toast
+            // MARK: - Toast 提示
+            // 在特定步骤完成后显示的底部提示消息
             if showToast {
                 VStack {
                     Spacer()
@@ -87,21 +117,26 @@ struct OnboardingContainerView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .ignoresSafeArea(.keyboard, edges: .all)
+        .ignoresSafeArea(.keyboard, edges: .all)  // 键盘弹出时不影响布局
     }
 
+    // MARK: - 前进到下一步
     private func next() {
         withAnimation(.easeInOut(duration: 0.3)) {
             currentStep = min(currentStep + 1, totalSteps - 1)
         }
     }
 
+    // MARK: - 带 Toast 提示的前进方法
+    // 显示一个临时提示消息，然后自动前进到下一步
     private func nextWithToast(_ text: String) -> () -> Void {
         return {
             toastText = text
+            // 显示 toast
             withAnimation(.spring(response: 0.5)) {
                 showToast = true
             }
+            // 1.5 秒后隐藏 toast 并前进
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 withAnimation { showToast = false }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -112,18 +147,21 @@ struct OnboardingContainerView: View {
     }
 }
 
-// MARK: - Progress Bar
+// MARK: - 进度条组件
+// 显示 onboarding 流程的完成进度（仅在步骤 1-10 显示）
 struct OnboardingProgressBar: View {
-    let current: Int
-    let total: Int
+    let current: Int  // 当前步骤
+    let total: Int    // 总步骤数
 
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
+                // 背景轨道
                 Capsule()
                     .fill(AppColors.borderDefault)
                     .frame(height: 3)
 
+                // 进度填充（火焰渐变）
                 Capsule()
                     .fill(
                         LinearGradient(
@@ -133,7 +171,7 @@ struct OnboardingProgressBar: View {
                         )
                     )
                     .frame(width: geo.size.width * CGFloat(current) / CGFloat(total), height: 3)
-                    .animation(.easeInOut(duration: 0.4), value: current)
+                    .animation(.easeInOut(duration: 0.4), value: current)  // 进度变化时平滑动画
             }
         }
         .frame(height: 3)

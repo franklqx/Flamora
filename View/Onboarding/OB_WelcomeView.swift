@@ -101,3 +101,8 @@ struct OB_WelcomeView: View {
         .onAppear { appear = true }
     }
 }
+
+#Preview {
+    OB_WelcomeView(onNext: {})
+        .background(AppBackgroundView())
+}

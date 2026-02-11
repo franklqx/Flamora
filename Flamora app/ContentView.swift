@@ -9,7 +9,10 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var showSplash = true
+    // 临时设置：每次启动都显示 onboarding（用于测试）
+    // 正式版本应该保持 @AppStorage 来记住用户状态
     @State private var isOnboardingComplete = false
+    // @AppStorage("hasCompletedOnboarding") private var isOnboardingComplete = false
     @State private var lockedRootSize: CGSize = .zero
 
     var body: some View {

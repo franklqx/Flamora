@@ -95,3 +95,8 @@ struct OB_NetWorthView: View {
         .ignoresSafeArea(.keyboard, edges: .all)
     }
 }
+
+#Preview {
+    OB_NetWorthView(data: OnboardingData(), onNext: {})
+        .background(AppBackgroundView())
+}

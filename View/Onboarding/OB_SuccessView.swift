@@ -99,3 +99,10 @@ struct OB_SuccessView: View {
         }
     }
 }
+
+#Preview {
+    let data = OnboardingData()
+    data.userName = "Alex"
+    return OB_SuccessView(data: data, onFinish: {})
+        .background(AppBackgroundView())
+}

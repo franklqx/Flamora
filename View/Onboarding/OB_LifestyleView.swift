@@ -164,3 +164,11 @@ struct LifestyleCard: View {
         .buttonStyle(.plain)
     }
 }
+
+#Preview {
+    let data = OnboardingData()
+    data.monthlyExpenses = "3000"
+    data.currencySymbol = "$"
+    return OB_LifestyleView(data: data, onNext: {})
+        .background(AppBackgroundView())
+}

@@ -21,6 +21,8 @@ class OnboardingData {
     var currentNetWorth: String = ""
     var fireType: String = "maintain"
     var targetMonthlySpend: Double = 0
+    var selectedPlan: String = ""        // "monthly" or "yearly"
+    var plaidConnected: Bool = false
 
     var savingsRate: Double {
         let income = Double(monthlyIncome) ?? 0

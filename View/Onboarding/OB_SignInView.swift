@@ -92,4 +92,8 @@ struct OB_SignInView: View {
     }
 }
 
+#Preview {
+    OB_SignInView(data: OnboardingData(), onNext: {})
+        .background(AppBackgroundView())
+}
 

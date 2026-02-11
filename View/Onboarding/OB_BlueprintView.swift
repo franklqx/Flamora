@@ -324,3 +324,16 @@ struct StatBox: View {
         }
     }
 }
+
+#Preview {
+    let data = OnboardingData()
+    data.userName = "Alex"
+    data.age = 30
+    data.monthlyIncome = "5000"
+    data.monthlyExpenses = "3000"
+    data.currentNetWorth = "10000"
+    data.fireType = "maintain"
+    data.currencySymbol = "$"
+    return OB_BlueprintView(data: data, onNext: {})
+        .background(AppBackgroundView())
+}

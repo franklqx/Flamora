@@ -71,3 +71,8 @@ struct OB_NameView: View {
         data.userName.trimmingCharacters(in: .whitespaces).count >= 1
     }
 }
+
+#Preview {
+    OB_NameView(data: OnboardingData(), onNext: {})
+        .background(AppBackgroundView())
+}
