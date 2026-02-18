@@ -216,6 +216,7 @@ struct OB_BlueprintView: View {
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
             }
             .opacity(appear ? 1 : 0)
+            .disabled(isLoading)
             .animation(.easeOut(duration: 0.5).delay(0.7), value: appear)
             .padding(.bottom, AppSpacing.xxl)
         }
@@ -261,7 +262,7 @@ struct OB_BlueprintView: View {
     
     // MARK: - Save and Continue
     private func saveDataAndContinue() {
-        guard let summary = fireSummary else { return }
+        let summary = fireSummary ?? buildLocalFallbackSummary()
         
         // 保存到 UserDefaults
         savedFireNumber = summary.fireNumber
@@ -272,6 +273,46 @@ struct OB_BlueprintView: View {
         
         // 继续到下一页
         onNext()
+    }
+
+    private func buildLocalFallbackSummary() -> FireSummaryDisplayData {
+        let income = max(0, Double(data.monthlyIncome) ?? 0)
+        let expenses = max(0, Double(data.monthlyExpenses) ?? 0)
+        let netWorth = max(0, Double(data.currentNetWorth) ?? 0)
+
+        let lifestyleMultiplier: Double
+        switch data.fireType.lowercased() {
+        case "lean":
+            lifestyleMultiplier = 0.8
+        case "fat":
+            lifestyleMultiplier = 1.5
+        default:
+            lifestyleMultiplier = 1.0
+        }
+
+        let fireNumber = expenses * 12 * 25 * lifestyleMultiplier
+        let annualSavings = max(0, (income - expenses) * 12)
+
+        let yearsLeft: Int
+        if annualSavings <= 0 {
+            yearsLeft = 99
+        } else if netWorth >= fireNumber {
+            yearsLeft = 0
+        } else {
+            yearsLeft = Int(ceil((fireNumber - netWorth) / annualSavings))
+        }
+
+        let savingsRate = income > 0 ? max(0, ((income - expenses) / income) * 100) : 0
+
+        return FireSummaryDisplayData(
+            fireNumber: fireNumber,
+            freedomAge: Int(data.age) + yearsLeft,
+            yearsLeft: yearsLeft,
+            savingsRate: savingsRate,
+            currentNetWorth: netWorth,
+            gapToFire: max(0, fireNumber - netWorth),
+            onTrack: yearsLeft < 99
+        )
     }
 
     private func formatCurrency(_ value: Double) -> String {

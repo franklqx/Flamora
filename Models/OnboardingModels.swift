@@ -71,4 +71,22 @@ struct FireSummaryDisplayData {
         self.gapToFire = apiSummary.gapToFire
         self.onTrack = apiSummary.onTrack
     }
+
+    init(
+        fireNumber: Double,
+        freedomAge: Int,
+        yearsLeft: Int,
+        savingsRate: Double,
+        currentNetWorth: Double,
+        gapToFire: Double,
+        onTrack: Bool
+    ) {
+        self.fireNumber = fireNumber
+        self.freedomAge = freedomAge
+        self.yearsLeft = yearsLeft
+        self.savingsRate = savingsRate
+        self.currentNetWorth = currentNetWorth
+        self.gapToFire = gapToFire
+        self.onTrack = onTrack
+    }
 }
