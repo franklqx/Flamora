@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0759EB55753C48D087731FF5 /* OB_PlaidLinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEAA840FA4113EB4E366D9E7 /* OB_PlaidLinkView.swift */; };
 		1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */; };
 		1508832F2F3848C400C5CF03 /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1508832E2F3848C400C5CF03 /* SplashScreenView.swift */; };
 		153CA3182F34E952001ED98E /* NetWorthCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3172F34E952001ED98E /* NetWorthCard.swift */; };
@@ -41,6 +42,9 @@
 		15FF6EDA2F31096B0005F482 /* GradientButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED92F31043F0005F482 /* GradientButton.swift */; };
 		15FF6EDB2F3109F40005F482 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED72F31033C0005F482 /* Colors.swift */; };
 		15FF6EE02F310A040005F482 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED82F3103F70005F482 /* Typography.swift */; };
+		A87F58BBE4A5EED25BA9DDB9 /* OB_PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC87A8636AE0858FF444069 /* OB_PaywallView.swift */; };
+		AA5B00032F38500000001003 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = AA5B00022F38500000001002 /* Supabase */; };
+		AA5B00052F38500000001005 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5B00042F38500000001004 /* SupabaseManager.swift */; };
 		AAOB00012F38500000000001 /* OnboardingData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00112F38500000000001 /* OnboardingData.swift */; };
 		AAOB00022F38500000000002 /* OnboardingContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00122F38500000000002 /* OnboardingContainerView.swift */; };
 		AAOB00032F38500000000003 /* OB_SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00132F38500000000003 /* OB_SignInView.swift */; };
@@ -54,8 +58,6 @@
 		AAOB000B2F3850000000000B /* OB_LifestyleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001B2F3850000000000B /* OB_LifestyleView.swift */; };
 		AAOB000C2F3850000000000C /* OB_BlueprintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001C2F3850000000000C /* OB_BlueprintView.swift */; };
 		AAOB000D2F3850000000000D /* OB_SuccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001D2F3850000000000D /* OB_SuccessView.swift */; };
-		A87F58BBE4A5EED25BA9DDB9 /* OB_PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC87A8636AE0858FF444069 /* OB_PaywallView.swift */; };
-		0759EB55753C48D087731FF5 /* OB_PlaidLinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEAA840FA4113EB4E366D9E7 /* OB_PlaidLinkView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -113,6 +115,7 @@
 		15FF6ED72F31033C0005F482 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
 		15FF6ED82F3103F70005F482 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		15FF6ED92F31043F0005F482 /* GradientButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientButton.swift; sourceTree = "<group>"; };
+		AA5B00042F38500000001004 /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
 		AAOB00112F38500000000001 /* OnboardingData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingData.swift; sourceTree = "<group>"; };
 		AAOB00122F38500000000002 /* OnboardingContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingContainerView.swift; sourceTree = "<group>"; };
 		AAOB00132F38500000000003 /* OB_SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_SignInView.swift; sourceTree = "<group>"; };
@@ -153,6 +156,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA5B00032F38500000001003 /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -202,6 +206,7 @@
 			isa = PBXGroup;
 			children = (
 				1571A1D62F3C2A2C0024A729 /* APIService.swift */,
+				AA5B00042F38500000001004 /* SupabaseManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -334,6 +339,7 @@
 			);
 			name = "Flamora app";
 			packageProductDependencies = (
+				AA5B00022F38500000001002 /* Supabase */,
 			);
 			productName = "Flamora app";
 			productReference = 150899942F30F60F003DDFBF /* Flamora app.app */;
@@ -417,6 +423,9 @@
 			);
 			mainGroup = 1508998B2F30F60F003DDFBF;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AA5B00012F38500000001001 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 150899952F30F60F003DDFBF /* Products */;
 			projectDirPath = "";
@@ -507,6 +516,7 @@
 				15E21AF72F33F2C600A9BB60 /* PortfolioCard.swift in Sources */,
 				AAOB00012F38500000000001 /* OnboardingData.swift in Sources */,
 				153CA31C2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift in Sources */,
+				AA5B00052F38500000001005 /* SupabaseManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -668,7 +678,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 526LTP6Z7D;
+				DEVELOPMENT_TEAM = SKDUW38P9T;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -701,7 +711,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 526LTP6Z7D;
+				DEVELOPMENT_TEAM = SKDUW38P9T;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -847,6 +857,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AA5B00012F38500000001001 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AA5B00022F38500000001002 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA5B00012F38500000001001 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1508998C2F30F60F003DDFBF /* Project object */;
 }

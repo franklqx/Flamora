@@ -6,6 +6,8 @@
 //
 
 import Foundation
+internal import Auth
+import Supabase
 
 class APIService {
     static let shared = APIService()
@@ -17,11 +19,12 @@ class APIService {
     
     // MARK: - Create User Profile
     func createUserProfile(data: OnboardingData) async throws -> CreateProfileResponse {
-        
+        print("🔑 currentUserId: \(String(describing: SupabaseManager.shared.currentUserId))")
+
         let url = URL(string: "\(baseURL)/create-user-profile")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(anonKey)", forHTTPHeaderField: "Authorization")
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         // 转换 fireType 到后端需要的格式
@@ -37,8 +40,15 @@ class APIService {
             lifestyleValue = "current"
         }
         
+        // 使用 OnboardingData 里在登录时存入的 userId（最可靠的来源）
+        let userId = data.userId
+        print("🔑 User ID: \(userId)")
+        let finalUserId = userId.lowercased()
+        print("🔑 最终 userId: \(finalUserId)")
+
         // 构建请求体
         let body: [String: Any] = [
+            "user_id": finalUserId,
             "username": data.userName,
             "motivations": Array(data.motivations),
             "age": Int(data.age),

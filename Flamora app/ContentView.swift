@@ -9,11 +9,11 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var showSplash = true
-    // 临时设置：每次启动都显示 onboarding（用于测试）
-    // 正式版本应该保持 @AppStorage 来记住用户状态
     @State private var isOnboardingComplete = false
-    // @AppStorage("hasCompletedOnboarding") private var isOnboardingComplete = false
     @State private var lockedRootSize: CGSize = .zero
+
+    // 观察 SupabaseManager 的 auth 状态
+    private let supabase = SupabaseManager.shared
 
     var body: some View {
         GeometryReader { proxy in
@@ -46,13 +46,45 @@ struct ContentView: View {
         .animation(.easeInOut(duration: 0.5), value: isOnboardingComplete)
         .ignoresSafeArea(.keyboard, edges: .all)
         .onAppear {
+            // Splash 2 秒后消失
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 withAnimation(.easeOut(duration: 0.6)) {
                     showSplash = false
                 }
             }
+            // 检查现有 session（已登录 → 直接进主应用）
+            Task { await checkExistingSession() }
+            // 持续监听 auth 状态变化（退出登录时回到 onboarding）
+            Task { await listenForAuthChanges() }
+        }
+        // 监听退出登录：isAuthenticated 变 false → 回到 onboarding
+        .onChange(of: supabase.isAuthenticated) { _, isAuthenticated in
+            if !isAuthenticated && isOnboardingComplete {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    isOnboardingComplete = false
+                }
+            }
         }
     }
+
+    // MARK: - 启动时检查现有 session
+
+    private func checkExistingSession() async {
+        await supabase.checkSession()
+        if supabase.isAuthenticated {
+            withAnimation(.easeInOut(duration: 0.5)) {
+                isOnboardingComplete = true
+            }
+        }
+    }
+
+    // MARK: - 持续监听 auth 状态（Task 内无限循环）
+
+    private func listenForAuthChanges() async {
+        await supabase.listenToAuthChanges()
+    }
+
+    // MARK: - Display Size Helpers
 
     private func effectiveDisplaySize(for currentSize: CGSize) -> CGSize {
         guard lockedRootSize != .zero else { return currentSize }

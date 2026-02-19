@@ -10,6 +10,7 @@ import SwiftUI
 @Observable
 class OnboardingData {
     var email: String = ""
+    var userId: String = ""   // 登录/注册成功后立即存入，供后续 API 调用使用
     var userName: String = ""
     var motivations: Set<String> = []
     var age: Double = 28
