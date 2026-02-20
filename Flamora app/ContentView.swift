@@ -12,6 +12,8 @@ struct ContentView: View {
     @State private var isOnboardingComplete = false
     @State private var lockedRootSize: CGSize = .zero
 
+    @Environment(SubscriptionManager.self) private var subscriptionManager
+
     // 观察 SupabaseManager 的 auth 状态
     private let supabase = SupabaseManager.shared
 
@@ -45,6 +47,15 @@ struct ContentView: View {
         }
         .animation(.easeInOut(duration: 0.5), value: isOnboardingComplete)
         .ignoresSafeArea(.keyboard, edges: .all)
+        // Plaid Link 通过 PlaidLinkPresenter（UIWindow overlay）呈现，无 SwiftUI sheet
+        // 全局 Paywall Sheet
+        .sheet(isPresented: Binding(
+            get: { subscriptionManager.showPaywall },
+            set: { subscriptionManager.showPaywall = $0 }
+        )) {
+            PaywallSheet()
+                .environment(subscriptionManager)
+        }
         .onAppear {
             // Splash 2 秒后消失
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
