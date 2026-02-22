@@ -1,0 +1,963 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0759EB55753C48D087731FF5 /* OB_PlaidLinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEAA840FA4113EB4E366D9E7 /* OB_PlaidLinkView.swift */; };
+		12123E2F2F4717FB0011B385 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 12123E2E2F4717FB0011B385 /* RevenueCat */; };
+		12123E312F4717FB0011B385 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 12123E302F4717FB0011B385 /* RevenueCatUI */; };
+		12123E342F4719A20011B385 /* LinkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 12123E332F4719A20011B385 /* LinkKit */; };
+		12123E372F4859CB0011B385 /* PlaidManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E352F4859CB0011B385 /* PlaidManager.swift */; };
+		12123E382F4859CB0011B385 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E362F4859CB0011B385 /* SubscriptionManager.swift */; };
+		12123E412F485B920011B385 /* PlaidLinkRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E3F2F485B920011B385 /* PlaidLinkRepresentable.swift */; };
+		12123E422F485B920011B385 /* PaywallSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E3E2F485B920011B385 /* PaywallSheet.swift */; };
+		12123E432F485B920011B385 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E3C2F485B920011B385 /* SettingsView.swift */; };
+		12123E452F48D7E20011B385 /* PlaidLinkPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E442F48D7E20011B385 /* PlaidLinkPresenter.swift */; };
+		1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */; };
+		1508832F2F3848C400C5CF03 /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1508832E2F3848C400C5CF03 /* SplashScreenView.swift */; };
+		153CA3182F34E952001ED98E /* NetWorthCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3172F34E952001ED98E /* NetWorthCard.swift */; };
+		153CA31A2F34EDEC001ED98E /* TopHeaderBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3192F34EDEC001ED98E /* TopHeaderBar.swift */; };
+		153CA31C2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA31B2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift */; };
+		153CA32C2F3562AC001ED98E /* SavingsTargetDetailView2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA32B2F3562AC001ED98E /* SavingsTargetDetailView2.swift */; };
+		1571A1D82F3C2A2C0024A729 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1571A1D62F3C2A2C0024A729 /* APIService.swift */; };
+		1571A1DA2F3C2A5B0024A729 /* OnboardingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1571A1D92F3C2A5B0024A729 /* OnboardingModels.swift */; };
+		15A115992F3246460085ED9B /* mockdata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A115972F3246460085ED9B /* mockdata.swift */; };
+		15ABCD012F36A00000AABB01 /* IncomeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15ABCD002F36A00000AABB01 /* IncomeDetailView.swift */; };
+		15ABCD032F36B00000AABB02 /* TotalIncomeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15ABCD022F36B00000AABB02 /* TotalIncomeDetailView.swift */; };
+		15E21AA62F3248F500A9BB60 /* JourneyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AA32F3248F500A9BB60 /* JourneyView.swift */; };
+		15E21AAB2F324EFA00A9BB60 /* Spacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AAA2F324EFA00A9BB60 /* Spacing.swift */; };
+		15E21AAD2F324F0E00A9BB60 /* ProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AAC2F324F0E00A9BB60 /* ProgressBar.swift */; };
+		15E21AAF2F324F1F00A9BB60 /* MonthIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AAE2F324F1F00A9BB60 /* MonthIndicator.swift */; };
+		15E21AB12F32548A00A9BB60 /* SimulatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB02F32548A00A9BB60 /* SimulatorView.swift */; };
+		15E21AB32F3257B000A9BB60 /* CashflowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB22F3257B000A9BB60 /* CashflowView.swift */; };
+		15E21AB72F3257C600A9BB60 /* InvestmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB62F3257C600A9BB60 /* InvestmentView.swift */; };
+		15E21AB92F3257D700A9BB60 /* GlassmorphicTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */; };
+		15E21ABB2F325A9D00A9BB60 /* JourneyContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21ABA2F325A9D00A9BB60 /* JourneyContainerView.swift */; };
+		15E21AD92F3394B100A9BB60 /* FlameIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AD82F3394B100A9BB60 /* FlameIcon.swift */; };
+		15E21ADB2F33971100A9BB60 /* TabBarVisibilityPreferenceKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21ADA2F33971100A9BB60 /* TabBarVisibilityPreferenceKey.swift */; };
+		15E21ADD2F33973100A9BB60 /* FlameTogglePill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21ADC2F33973100A9BB60 /* FlameTogglePill.swift */; };
+		15E21AE12F33BB9300A9BB60 /* SavingsTargetCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AE02F33BB9200A9BB60 /* SavingsTargetCard.swift */; };
+		15E21AE32F33BBB600A9BB60 /* SavingsInputSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AE22F33BBB600A9BB60 /* SavingsInputSheet.swift */; };
+		15E21AED2F33C11A00A9BB60 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */; };
+		15E21AEF2F33C3F600A9BB60 /* IncomeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AEE2F33C3F600A9BB60 /* IncomeCard.swift */; };
+		15E21AF12F33C40000A9BB60 /* BudgetCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF02F33C40000A9BB60 /* BudgetCard.swift */; };
+		15E21AF32F33F2AD00A9BB60 /* AccountsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF22F33F2AD00A9BB60 /* AccountsCard.swift */; };
+		15E21AF52F33F2BE00A9BB60 /* AssetAllocationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */; };
+		15E21AF72F33F2C600A9BB60 /* PortfolioCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF62F33F2C600A9BB60 /* PortfolioCard.swift */; };
+		15FF6EDA2F31096B0005F482 /* GradientButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED92F31043F0005F482 /* GradientButton.swift */; };
+		15FF6EDB2F3109F40005F482 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED72F31033C0005F482 /* Colors.swift */; };
+		15FF6EE02F310A040005F482 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED82F3103F70005F482 /* Typography.swift */; };
+		A87F58BBE4A5EED25BA9DDB9 /* OB_PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC87A8636AE0858FF444069 /* OB_PaywallView.swift */; };
+		AA5B00032F38500000001003 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = AA5B00022F38500000001002 /* Supabase */; };
+		AA5B00052F38500000001005 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5B00042F38500000001004 /* SupabaseManager.swift */; };
+		AAOB00012F38500000000001 /* OnboardingData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00112F38500000000001 /* OnboardingData.swift */; };
+		AAOB00022F38500000000002 /* OnboardingContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00122F38500000000002 /* OnboardingContainerView.swift */; };
+		AAOB00032F38500000000003 /* OB_SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00132F38500000000003 /* OB_SignInView.swift */; };
+		AAOB00042F38500000000004 /* OB_WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00142F38500000000004 /* OB_WelcomeView.swift */; };
+		AAOB00052F38500000000005 /* OB_NameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00152F38500000000005 /* OB_NameView.swift */; };
+		AAOB00062F38500000000006 /* OB_MotivationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00162F38500000000006 /* OB_MotivationView.swift */; };
+		AAOB00072F38500000000007 /* OB_AgeLocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00172F38500000000007 /* OB_AgeLocationView.swift */; };
+		AAOB00082F38500000000008 /* OB_IncomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00182F38500000000008 /* OB_IncomeView.swift */; };
+		AAOB00092F38500000000009 /* OB_ExpensesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00192F38500000000009 /* OB_ExpensesView.swift */; };
+		AAOB000A2F3850000000000A /* OB_NetWorthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001A2F3850000000000A /* OB_NetWorthView.swift */; };
+		AAOB000B2F3850000000000B /* OB_LifestyleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001B2F3850000000000B /* OB_LifestyleView.swift */; };
+		AAOB000C2F3850000000000C /* OB_BlueprintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001C2F3850000000000C /* OB_BlueprintView.swift */; };
+		AAOB000D2F3850000000000D /* OB_SuccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001D2F3850000000000D /* OB_SuccessView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		150899A42F30F611003DDFBF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1508998C2F30F60F003DDFBF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 150899932F30F60F003DDFBF;
+			remoteInfo = "Flamora app";
+		};
+		150899AE2F30F611003DDFBF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1508998C2F30F60F003DDFBF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 150899932F30F60F003DDFBF;
+			remoteInfo = "Flamora app";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		12123E352F4859CB0011B385 /* PlaidManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidManager.swift; sourceTree = "<group>"; };
+		12123E362F4859CB0011B385 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
+		12123E3C2F485B920011B385 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		12123E3E2F485B920011B385 /* PaywallSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallSheet.swift; sourceTree = "<group>"; };
+		12123E3F2F485B920011B385 /* PlaidLinkRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidLinkRepresentable.swift; sourceTree = "<group>"; };
+		12123E442F48D7E20011B385 /* PlaidLinkPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidLinkPresenter.swift; sourceTree = "<group>"; };
+		1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBackgroundView.swift; sourceTree = "<group>"; };
+		1508832E2F3848C400C5CF03 /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreenView.swift; sourceTree = "<group>"; };
+		150899942F30F60F003DDFBF /* Flamora app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Flamora app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		150899A32F30F611003DDFBF /* Flamora appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		150899AD2F30F611003DDFBF /* Flamora appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		153CA3172F34E952001ED98E /* NetWorthCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetWorthCard.swift; sourceTree = "<group>"; };
+		153CA3192F34EDEC001ED98E /* TopHeaderBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopHeaderBar.swift; sourceTree = "<group>"; };
+		153CA31B2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeaderVisibilityPreferenceKey.swift; sourceTree = "<group>"; };
+		153CA32B2F3562AC001ED98E /* SavingsTargetDetailView2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsTargetDetailView2.swift; sourceTree = "<group>"; };
+		1571A1D62F3C2A2C0024A729 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
+		1571A1D92F3C2A5B0024A729 /* OnboardingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingModels.swift; sourceTree = "<group>"; };
+		15A115972F3246460085ED9B /* mockdata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mockdata.swift; sourceTree = "<group>"; };
+		15ABCD002F36A00000AABB01 /* IncomeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomeDetailView.swift; sourceTree = "<group>"; };
+		15ABCD022F36B00000AABB02 /* TotalIncomeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotalIncomeDetailView.swift; sourceTree = "<group>"; };
+		15E21AA32F3248F500A9BB60 /* JourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyView.swift; sourceTree = "<group>"; };
+		15E21AAA2F324EFA00A9BB60 /* Spacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spacing.swift; sourceTree = "<group>"; };
+		15E21AAC2F324F0E00A9BB60 /* ProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBar.swift; sourceTree = "<group>"; };
+		15E21AAE2F324F1F00A9BB60 /* MonthIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthIndicator.swift; sourceTree = "<group>"; };
+		15E21AB02F32548A00A9BB60 /* SimulatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorView.swift; sourceTree = "<group>"; };
+		15E21AB22F3257B000A9BB60 /* CashflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowView.swift; sourceTree = "<group>"; };
+		15E21AB62F3257C600A9BB60 /* InvestmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentView.swift; sourceTree = "<group>"; };
+		15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassmorphicTabBar.swift; sourceTree = "<group>"; };
+		15E21ABA2F325A9D00A9BB60 /* JourneyContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyContainerView.swift; sourceTree = "<group>"; };
+		15E21AD82F3394B100A9BB60 /* FlameIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlameIcon.swift; sourceTree = "<group>"; };
+		15E21ADA2F33971100A9BB60 /* TabBarVisibilityPreferenceKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarVisibilityPreferenceKey.swift; sourceTree = "<group>"; };
+		15E21ADC2F33973100A9BB60 /* FlameTogglePill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlameTogglePill.swift; sourceTree = "<group>"; };
+		15E21AE02F33BB9200A9BB60 /* SavingsTargetCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsTargetCard.swift; sourceTree = "<group>"; };
+		15E21AE22F33BBB600A9BB60 /* SavingsInputSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsInputSheet.swift; sourceTree = "<group>"; };
+		15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		15E21AEE2F33C3F600A9BB60 /* IncomeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomeCard.swift; sourceTree = "<group>"; };
+		15E21AF02F33C40000A9BB60 /* BudgetCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetCard.swift; sourceTree = "<group>"; };
+		15E21AF22F33F2AD00A9BB60 /* AccountsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountsCard.swift; sourceTree = "<group>"; };
+		15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetAllocationCard.swift; sourceTree = "<group>"; };
+		15E21AF62F33F2C600A9BB60 /* PortfolioCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioCard.swift; sourceTree = "<group>"; };
+		15FF6ED72F31033C0005F482 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
+		15FF6ED82F3103F70005F482 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
+		15FF6ED92F31043F0005F482 /* GradientButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientButton.swift; sourceTree = "<group>"; };
+		AA5B00042F38500000001004 /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
+		AAOB00112F38500000000001 /* OnboardingData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingData.swift; sourceTree = "<group>"; };
+		AAOB00122F38500000000002 /* OnboardingContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingContainerView.swift; sourceTree = "<group>"; };
+		AAOB00132F38500000000003 /* OB_SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_SignInView.swift; sourceTree = "<group>"; };
+		AAOB00142F38500000000004 /* OB_WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_WelcomeView.swift; sourceTree = "<group>"; };
+		AAOB00152F38500000000005 /* OB_NameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_NameView.swift; sourceTree = "<group>"; };
+		AAOB00162F38500000000006 /* OB_MotivationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_MotivationView.swift; sourceTree = "<group>"; };
+		AAOB00172F38500000000007 /* OB_AgeLocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_AgeLocationView.swift; sourceTree = "<group>"; };
+		AAOB00182F38500000000008 /* OB_IncomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_IncomeView.swift; sourceTree = "<group>"; };
+		AAOB00192F38500000000009 /* OB_ExpensesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_ExpensesView.swift; sourceTree = "<group>"; };
+		AAOB001A2F3850000000000A /* OB_NetWorthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_NetWorthView.swift; sourceTree = "<group>"; };
+		AAOB001B2F3850000000000B /* OB_LifestyleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_LifestyleView.swift; sourceTree = "<group>"; };
+		AAOB001C2F3850000000000C /* OB_BlueprintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_BlueprintView.swift; sourceTree = "<group>"; };
+		AAOB001D2F3850000000000D /* OB_SuccessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_SuccessView.swift; sourceTree = "<group>"; };
+		EBC87A8636AE0858FF444069 /* OB_PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_PaywallView.swift; sourceTree = "<group>"; };
+		EEAA840FA4113EB4E366D9E7 /* OB_PlaidLinkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_PlaidLinkView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		150899962F30F60F003DDFBF /* Flamora app */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Flamora app";
+			sourceTree = "<group>";
+		};
+		150899A62F30F611003DDFBF /* Flamora appTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Flamora appTests";
+			sourceTree = "<group>";
+		};
+		150899B02F30F611003DDFBF /* Flamora appUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Flamora appUITests";
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		150899912F30F60F003DDFBF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				12123E2F2F4717FB0011B385 /* RevenueCat in Frameworks */,
+				12123E342F4719A20011B385 /* LinkKit in Frameworks */,
+				AA5B00032F38500000001003 /* Supabase in Frameworks */,
+				12123E312F4717FB0011B385 /* RevenueCatUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		150899A02F30F611003DDFBF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		150899AA2F30F611003DDFBF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		12123E3D2F485B920011B385 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				12123E3C2F485B920011B385 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		12123E402F485B920011B385 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				12123E3E2F485B920011B385 /* PaywallSheet.swift */,
+				12123E3F2F485B920011B385 /* PlaidLinkRepresentable.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		1508998B2F30F60F003DDFBF = {
+			isa = PBXGroup;
+			children = (
+				1571A1D72F3C2A2C0024A729 /* Services */,
+				150899962F30F60F003DDFBF /* Flamora app */,
+				150899B02F30F611003DDFBF /* Flamora appUITests */,
+				150899A62F30F611003DDFBF /* Flamora appTests */,
+				15E21AA52F3248F500A9BB60 /* View */,
+				15A115982F3246460085ED9B /* Models */,
+				15FF6ED62F31031D0005F482 /* Components */,
+				15FF6ED52F3102D50005F482 /* Style */,
+				150899952F30F60F003DDFBF /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		150899952F30F60F003DDFBF /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				150899942F30F60F003DDFBF /* Flamora app.app */,
+				150899A32F30F611003DDFBF /* Flamora appTests.xctest */,
+				150899AD2F30F611003DDFBF /* Flamora appUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		1571A1D72F3C2A2C0024A729 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				12123E442F48D7E20011B385 /* PlaidLinkPresenter.swift */,
+				12123E352F4859CB0011B385 /* PlaidManager.swift */,
+				12123E362F4859CB0011B385 /* SubscriptionManager.swift */,
+				1571A1D62F3C2A2C0024A729 /* APIService.swift */,
+				AA5B00042F38500000001004 /* SupabaseManager.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		15A115982F3246460085ED9B /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				1571A1D92F3C2A5B0024A729 /* OnboardingModels.swift */,
+				15A115972F3246460085ED9B /* mockdata.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		15E21AA42F3248F500A9BB60 /* Journey */ = {
+			isa = PBXGroup;
+			children = (
+				153CA3172F34E952001ED98E /* NetWorthCard.swift */,
+				15E21ABA2F325A9D00A9BB60 /* JourneyContainerView.swift */,
+				15E21AA32F3248F500A9BB60 /* JourneyView.swift */,
+				15E21AAE2F324F1F00A9BB60 /* MonthIndicator.swift */,
+				15E21AB02F32548A00A9BB60 /* SimulatorView.swift */,
+				15E21ADC2F33973100A9BB60 /* FlameTogglePill.swift */,
+				15E21AAC2F324F0E00A9BB60 /* ProgressBar.swift */,
+			);
+			path = Journey;
+			sourceTree = "<group>";
+		};
+		15E21AA52F3248F500A9BB60 /* View */ = {
+			isa = PBXGroup;
+			children = (
+				12123E3D2F485B920011B385 /* Settings */,
+				12123E402F485B920011B385 /* Shared */,
+				AAOB00202F38500000000020 /* Onboarding */,
+				1508832E2F3848C400C5CF03 /* SplashScreenView.swift */,
+				15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */,
+				15E21AEB2F33BE1900A9BB60 /* Investment */,
+				15E21AE72F33BC5E00A9BB60 /* Cashflow */,
+				15E21AA42F3248F500A9BB60 /* Journey */,
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		15E21AE72F33BC5E00A9BB60 /* Cashflow */ = {
+			isa = PBXGroup;
+			children = (
+				153CA32B2F3562AC001ED98E /* SavingsTargetDetailView2.swift */,
+				15ABCD002F36A00000AABB01 /* IncomeDetailView.swift */,
+				15ABCD022F36B00000AABB02 /* TotalIncomeDetailView.swift */,
+				15E21AB22F3257B000A9BB60 /* CashflowView.swift */,
+				15E21AF02F33C40000A9BB60 /* BudgetCard.swift */,
+				15E21AEE2F33C3F600A9BB60 /* IncomeCard.swift */,
+				15E21AE22F33BBB600A9BB60 /* SavingsInputSheet.swift */,
+				15E21AE02F33BB9200A9BB60 /* SavingsTargetCard.swift */,
+			);
+			path = Cashflow;
+			sourceTree = "<group>";
+		};
+		15E21AEB2F33BE1900A9BB60 /* Investment */ = {
+			isa = PBXGroup;
+			children = (
+				15E21AF62F33F2C600A9BB60 /* PortfolioCard.swift */,
+				15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */,
+				15E21AF22F33F2AD00A9BB60 /* AccountsCard.swift */,
+				15E21AB62F3257C600A9BB60 /* InvestmentView.swift */,
+			);
+			path = Investment;
+			sourceTree = "<group>";
+		};
+		15FF6ED52F3102D50005F482 /* Style */ = {
+			isa = PBXGroup;
+			children = (
+				15E21AAA2F324EFA00A9BB60 /* Spacing.swift */,
+				15FF6ED72F31033C0005F482 /* Colors.swift */,
+				15FF6ED82F3103F70005F482 /* Typography.swift */,
+			);
+			path = Style;
+			sourceTree = "<group>";
+		};
+		15FF6ED62F31031D0005F482 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */,
+				153CA31B2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift */,
+				153CA3192F34EDEC001ED98E /* TopHeaderBar.swift */,
+				15E21ADA2F33971100A9BB60 /* TabBarVisibilityPreferenceKey.swift */,
+				15E21AD82F3394B100A9BB60 /* FlameIcon.swift */,
+				15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */,
+				15FF6ED92F31043F0005F482 /* GradientButton.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		AAOB00202F38500000000020 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				AAOB00112F38500000000001 /* OnboardingData.swift */,
+				AAOB00122F38500000000002 /* OnboardingContainerView.swift */,
+				AAOB00132F38500000000003 /* OB_SignInView.swift */,
+				AAOB00142F38500000000004 /* OB_WelcomeView.swift */,
+				AAOB00152F38500000000005 /* OB_NameView.swift */,
+				AAOB00162F38500000000006 /* OB_MotivationView.swift */,
+				AAOB00172F38500000000007 /* OB_AgeLocationView.swift */,
+				AAOB00182F38500000000008 /* OB_IncomeView.swift */,
+				AAOB00192F38500000000009 /* OB_ExpensesView.swift */,
+				AAOB001A2F3850000000000A /* OB_NetWorthView.swift */,
+				AAOB001B2F3850000000000B /* OB_LifestyleView.swift */,
+				AAOB001C2F3850000000000C /* OB_BlueprintView.swift */,
+				AAOB001D2F3850000000000D /* OB_SuccessView.swift */,
+				EBC87A8636AE0858FF444069 /* OB_PaywallView.swift */,
+				EEAA840FA4113EB4E366D9E7 /* OB_PlaidLinkView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		150899932F30F60F003DDFBF /* Flamora app */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 150899B72F30F611003DDFBF /* Build configuration list for PBXNativeTarget "Flamora app" */;
+			buildPhases = (
+				150899902F30F60F003DDFBF /* Sources */,
+				150899912F30F60F003DDFBF /* Frameworks */,
+				150899922F30F60F003DDFBF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				150899962F30F60F003DDFBF /* Flamora app */,
+			);
+			name = "Flamora app";
+			packageProductDependencies = (
+				AA5B00022F38500000001002 /* Supabase */,
+				12123E2E2F4717FB0011B385 /* RevenueCat */,
+				12123E302F4717FB0011B385 /* RevenueCatUI */,
+				12123E332F4719A20011B385 /* LinkKit */,
+			);
+			productName = "Flamora app";
+			productReference = 150899942F30F60F003DDFBF /* Flamora app.app */;
+			productType = "com.apple.product-type.application";
+		};
+		150899A22F30F611003DDFBF /* Flamora appTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 150899BA2F30F611003DDFBF /* Build configuration list for PBXNativeTarget "Flamora appTests" */;
+			buildPhases = (
+				1508999F2F30F611003DDFBF /* Sources */,
+				150899A02F30F611003DDFBF /* Frameworks */,
+				150899A12F30F611003DDFBF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				150899A52F30F611003DDFBF /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				150899A62F30F611003DDFBF /* Flamora appTests */,
+			);
+			name = "Flamora appTests";
+			packageProductDependencies = (
+			);
+			productName = "Flamora appTests";
+			productReference = 150899A32F30F611003DDFBF /* Flamora appTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		150899AC2F30F611003DDFBF /* Flamora appUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 150899BD2F30F611003DDFBF /* Build configuration list for PBXNativeTarget "Flamora appUITests" */;
+			buildPhases = (
+				150899A92F30F611003DDFBF /* Sources */,
+				150899AA2F30F611003DDFBF /* Frameworks */,
+				150899AB2F30F611003DDFBF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				150899AF2F30F611003DDFBF /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				150899B02F30F611003DDFBF /* Flamora appUITests */,
+			);
+			name = "Flamora appUITests";
+			packageProductDependencies = (
+			);
+			productName = "Flamora appUITests";
+			productReference = 150899AD2F30F611003DDFBF /* Flamora appUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1508998C2F30F60F003DDFBF /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2620;
+				LastUpgradeCheck = 2620;
+				TargetAttributes = {
+					150899932F30F60F003DDFBF = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					150899A22F30F611003DDFBF = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 150899932F30F60F003DDFBF;
+					};
+					150899AC2F30F611003DDFBF = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 150899932F30F60F003DDFBF;
+					};
+				};
+			};
+			buildConfigurationList = 1508998F2F30F60F003DDFBF /* Build configuration list for PBXProject "Flamora app" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 1508998B2F30F60F003DDFBF;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AA5B00012F38500000001001 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				12123E2D2F4717FB0011B385 /* XCRemoteSwiftPackageReference "purchases-ios" */,
+				12123E322F4719A20011B385 /* XCRemoteSwiftPackageReference "plaid-link-ios" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 150899952F30F60F003DDFBF /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				150899932F30F60F003DDFBF /* Flamora app */,
+				150899A22F30F611003DDFBF /* Flamora appTests */,
+				150899AC2F30F611003DDFBF /* Flamora appUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		150899922F30F60F003DDFBF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		150899A12F30F611003DDFBF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		150899AB2F30F611003DDFBF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		150899902F30F60F003DDFBF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AAOB000D2F3850000000000D /* OB_SuccessView.swift in Sources */,
+				A87F58BBE4A5EED25BA9DDB9 /* OB_PaywallView.swift in Sources */,
+				0759EB55753C48D087731FF5 /* OB_PlaidLinkView.swift in Sources */,
+				AAOB00072F38500000000007 /* OB_AgeLocationView.swift in Sources */,
+				AAOB000A2F3850000000000A /* OB_NetWorthView.swift in Sources */,
+				AAOB00042F38500000000004 /* OB_WelcomeView.swift in Sources */,
+				AAOB00052F38500000000005 /* OB_NameView.swift in Sources */,
+				AAOB00082F38500000000008 /* OB_IncomeView.swift in Sources */,
+				AAOB000B2F3850000000000B /* OB_LifestyleView.swift in Sources */,
+				AAOB00032F38500000000003 /* OB_SignInView.swift in Sources */,
+				AAOB00022F38500000000002 /* OnboardingContainerView.swift in Sources */,
+				AAOB00092F38500000000009 /* OB_ExpensesView.swift in Sources */,
+				AAOB00062F38500000000006 /* OB_MotivationView.swift in Sources */,
+				AAOB000C2F3850000000000C /* OB_BlueprintView.swift in Sources */,
+				15E21AF12F33C40000A9BB60 /* BudgetCard.swift in Sources */,
+				15FF6EDB2F3109F40005F482 /* Colors.swift in Sources */,
+				15E21ADB2F33971100A9BB60 /* TabBarVisibilityPreferenceKey.swift in Sources */,
+				12123E372F4859CB0011B385 /* PlaidManager.swift in Sources */,
+				12123E382F4859CB0011B385 /* SubscriptionManager.swift in Sources */,
+				15E21AB72F3257C600A9BB60 /* InvestmentView.swift in Sources */,
+				15E21ABB2F325A9D00A9BB60 /* JourneyContainerView.swift in Sources */,
+				15E21AAD2F324F0E00A9BB60 /* ProgressBar.swift in Sources */,
+				15E21AED2F33C11A00A9BB60 /* MainTabView.swift in Sources */,
+				1508832F2F3848C400C5CF03 /* SplashScreenView.swift in Sources */,
+				15FF6EDA2F31096B0005F482 /* GradientButton.swift in Sources */,
+				15E21AE12F33BB9300A9BB60 /* SavingsTargetCard.swift in Sources */,
+				1571A1D82F3C2A2C0024A729 /* APIService.swift in Sources */,
+				15FF6EE02F310A040005F482 /* Typography.swift in Sources */,
+				15E21AA62F3248F500A9BB60 /* JourneyView.swift in Sources */,
+				1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */,
+				153CA3182F34E952001ED98E /* NetWorthCard.swift in Sources */,
+				15E21AE32F33BBB600A9BB60 /* SavingsInputSheet.swift in Sources */,
+				153CA31A2F34EDEC001ED98E /* TopHeaderBar.swift in Sources */,
+				15E21AAF2F324F1F00A9BB60 /* MonthIndicator.swift in Sources */,
+				15E21AEF2F33C3F600A9BB60 /* IncomeCard.swift in Sources */,
+				15E21AAB2F324EFA00A9BB60 /* Spacing.swift in Sources */,
+				15E21AB92F3257D700A9BB60 /* GlassmorphicTabBar.swift in Sources */,
+				15E21AB12F32548A00A9BB60 /* SimulatorView.swift in Sources */,
+				15E21ADD2F33973100A9BB60 /* FlameTogglePill.swift in Sources */,
+				15A115992F3246460085ED9B /* mockdata.swift in Sources */,
+				15E21AF52F33F2BE00A9BB60 /* AssetAllocationCard.swift in Sources */,
+				15E21AF32F33F2AD00A9BB60 /* AccountsCard.swift in Sources */,
+				153CA32C2F3562AC001ED98E /* SavingsTargetDetailView2.swift in Sources */,
+				15ABCD012F36A00000AABB01 /* IncomeDetailView.swift in Sources */,
+				15ABCD032F36B00000AABB02 /* TotalIncomeDetailView.swift in Sources */,
+				1571A1DA2F3C2A5B0024A729 /* OnboardingModels.swift in Sources */,
+				15E21AD92F3394B100A9BB60 /* FlameIcon.swift in Sources */,
+				15E21AB32F3257B000A9BB60 /* CashflowView.swift in Sources */,
+				15E21AF72F33F2C600A9BB60 /* PortfolioCard.swift in Sources */,
+				12123E412F485B920011B385 /* PlaidLinkRepresentable.swift in Sources */,
+				12123E422F485B920011B385 /* PaywallSheet.swift in Sources */,
+				12123E432F485B920011B385 /* SettingsView.swift in Sources */,
+				AAOB00012F38500000000001 /* OnboardingData.swift in Sources */,
+				12123E452F48D7E20011B385 /* PlaidLinkPresenter.swift in Sources */,
+				153CA31C2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift in Sources */,
+				AA5B00052F38500000001005 /* SupabaseManager.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1508999F2F30F611003DDFBF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		150899A92F30F611003DDFBF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		150899A52F30F611003DDFBF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 150899932F30F60F003DDFBF /* Flamora app */;
+			targetProxy = 150899A42F30F611003DDFBF /* PBXContainerItemProxy */;
+		};
+		150899AF2F30F611003DDFBF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 150899932F30F60F003DDFBF /* Flamora app */;
+			targetProxy = 150899AE2F30F611003DDFBF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		150899B52F30F611003DDFBF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		150899B62F30F611003DDFBF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		150899B82F30F611003DDFBF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = SKDUW38P9T;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.FL.fire.Flamora-app";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		150899B92F30F611003DDFBF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = SKDUW38P9T;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.FL.fire.Flamora-app";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		150899BB2F30F611003DDFBF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.FL.fire.Flamora-appTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Flamora app.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Flamora app";
+			};
+			name = Debug;
+		};
+		150899BC2F30F611003DDFBF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.FL.fire.Flamora-appTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Flamora app.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Flamora app";
+			};
+			name = Release;
+		};
+		150899BE2F30F611003DDFBF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.FL.fire.Flamora-appUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Flamora app";
+			};
+			name = Debug;
+		};
+		150899BF2F30F611003DDFBF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.FL.fire.Flamora-appUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Flamora app";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1508998F2F30F60F003DDFBF /* Build configuration list for PBXProject "Flamora app" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				150899B52F30F611003DDFBF /* Debug */,
+				150899B62F30F611003DDFBF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		150899B72F30F611003DDFBF /* Build configuration list for PBXNativeTarget "Flamora app" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				150899B82F30F611003DDFBF /* Debug */,
+				150899B92F30F611003DDFBF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		150899BA2F30F611003DDFBF /* Build configuration list for PBXNativeTarget "Flamora appTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				150899BB2F30F611003DDFBF /* Debug */,
+				150899BC2F30F611003DDFBF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		150899BD2F30F611003DDFBF /* Build configuration list for PBXNativeTarget "Flamora appUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				150899BE2F30F611003DDFBF /* Debug */,
+				150899BF2F30F611003DDFBF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		12123E2D2F4717FB0011B385 /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.59.0;
+			};
+		};
+		12123E322F4719A20011B385 /* XCRemoteSwiftPackageReference "plaid-link-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/plaid/plaid-link-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.4.3;
+			};
+		};
+		AA5B00012F38500000001001 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		12123E2E2F4717FB0011B385 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 12123E2D2F4717FB0011B385 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
+		};
+		12123E302F4717FB0011B385 /* RevenueCatUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 12123E2D2F4717FB0011B385 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCatUI;
+		};
+		12123E332F4719A20011B385 /* LinkKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 12123E322F4719A20011B385 /* XCRemoteSwiftPackageReference "plaid-link-ios" */;
+			productName = LinkKit;
+		};
+		AA5B00022F38500000001002 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA5B00012F38500000001001 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 1508998C2F30F60F003DDFBF /* Project object */;
+}
