@@ -83,6 +83,90 @@ class APIService {
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         return try decoder.decode(CreateProfileResponse.self, from: responseData)
     }
+
+    // MARK: - Private Helpers
+
+    private struct APIResponse<T: Decodable>: Decodable {
+        let success: Bool
+        let data: T
+    }
+
+    private func authenticatedRequest(
+        function: String,
+        queryParams: [String: String] = [:],
+        body: Data? = nil
+    ) async throws -> URLRequest {
+        let session = try await SupabaseManager.shared.client.auth.session
+        var urlComponents = URLComponents(string: "\(baseURL)/\(function)")!
+        if !queryParams.isEmpty {
+            urlComponents.queryItems = queryParams.map { URLQueryItem(name: $0.key, value: $0.value) }
+        }
+        var request = URLRequest(url: urlComponents.url!)
+        request.httpMethod = "POST"
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = body ?? "{}".data(using: .utf8)
+        return request
+    }
+
+    private func perform<T: Decodable>(_ request: URLRequest) async throws -> T {
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        guard (200...299).contains(httpResponse.statusCode) else {
+            if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
+                throw APIError.serverError(errorResponse.error.message)
+            }
+            throw APIError.httpError(httpResponse.statusCode)
+        }
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let wrapper = try decoder.decode(APIResponse<T>.self, from: data)
+        return wrapper.data
+    }
+
+    // MARK: - Authenticated Data Calls
+
+    func getActiveFireGoal() async throws -> APIFireGoal {
+        let request = try await authenticatedRequest(function: "get-active-fire-goal")
+        return try await perform(request)
+    }
+
+    func getNetWorthSummary() async throws -> APINetWorthSummary {
+        let request = try await authenticatedRequest(function: "get-net-worth-summary")
+        return try await perform(request)
+    }
+
+    func getSpendingSummary(month: String) async throws -> APISpendingSummary {
+        let request = try await authenticatedRequest(function: "get-spending-summary", queryParams: ["month": month])
+        return try await perform(request)
+    }
+
+    func getTransactions(page: Int = 1, limit: Int = 20, category: String? = nil, pendingReview: Bool? = nil) async throws -> APITransactionsResponse {
+        var params: [String: String] = ["page": "\(page)", "limit": "\(limit)"]
+        if let cat = category { params["category"] = cat }
+        if let pr = pendingReview { params["pending_review"] = pr ? "true" : "false" }
+        let request = try await authenticatedRequest(function: "get-transactions", queryParams: params)
+        return try await perform(request)
+    }
+
+    func getMonthlyBudget(month: String) async throws -> APIMonthlyBudget {
+        let request = try await authenticatedRequest(function: "get-monthly-budget", queryParams: ["month": month])
+        return try await perform(request)
+    }
+
+    func getInvestmentHoldings() async throws -> APIHoldingsResponse {
+        let request = try await authenticatedRequest(function: "get-investment-holdings")
+        return try await perform(request)
+    }
+
+    func calculateAvgSpending(months: Int) async throws -> APIAvgSpending {
+        let body = try JSONEncoder().encode(["months": months])
+        let request = try await authenticatedRequest(function: "calculate-avg-spending", body: body)
+        return try await perform(request)
+    }
 }
 
 // MARK: - API Errors
@@ -104,4 +188,49 @@ enum APIError: Error, LocalizedError {
             return "Failed to decode response"
         }
     }
+}
+
+// MARK: - New API Response Models
+
+struct APISpendingSummary: Codable {
+    let month: String
+    let needsSpent: Double
+    let wantsSpent: Double
+    let totalSpent: Double
+}
+
+struct APITransactionsResponse: Codable {
+    let transactions: [APITransaction]
+    let total: Int
+    let page: Int
+    let limit: Int
+}
+
+struct APITransaction: Codable {
+    let id: String
+    let merchant: String
+    let amount: Double
+    let date: String
+    let pendingReview: Bool
+}
+
+struct APIHoldingsResponse: Codable {
+    let holdings: [APIHolding]
+    let totalValue: Double
+}
+
+struct APIHolding: Codable {
+    let id: String
+    let name: String
+    let symbol: String?
+    let value: Double
+    let type: String
+    let institution: String
+}
+
+struct APIAvgSpending: Codable {
+    let averageMonthlySpending: Double
+    let months: Int
+    let needsAvg: Double
+    let wantsAvg: Double
 }

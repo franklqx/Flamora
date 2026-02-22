@@ -1,6 +1,24 @@
 {
-  "originHash" : "5f3436049b395fcbc71828c07d82e81a46af698ebe0b146cdc52345a5a60558d",
+  "originHash" : "c43053af33776c941dda5e96eb8d5f9d3a5bae567dcd208b7ba2f8e76fb6c320",
   "pins" : [
+    {
+      "identity" : "plaid-link-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/plaid/plaid-link-ios",
+      "state" : {
+        "revision" : "0b283e965b60b911744f662e8e203ae0f3de37ea",
+        "version" : "6.4.3"
+      }
+    },
+    {
+      "identity" : "purchases-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/RevenueCat/purchases-ios",
+      "state" : {
+        "revision" : "524b94b8c36ff60bc1412e248678147ccc607e09",
+        "version" : "5.59.0"
+      }
+    },
     {
       "identity" : "supabase-swift",
       "kind" : "remoteSourceControl",

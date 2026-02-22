@@ -13,6 +13,9 @@ struct OB_PlaidLinkView: View {
     var onFinish: () -> Void  // 连接银行后的回调
     var onSkip: () -> Void    // 跳过连接的回调
 
+    @Environment(PlaidManager.self) private var plaidManager
+    @Environment(SubscriptionManager.self) private var subscriptionManager
+
     // MARK: - 状态变量
     @State private var appear = false          // 控制进场动画
     @State private var glowScale: CGFloat = 0  // 控制图标光晕缩放
@@ -144,26 +147,32 @@ struct OB_PlaidLinkView: View {
             // 包含主要的「连接银行」按钮和「跳过」链接
             VStack(spacing: AppSpacing.md) {
                 Button(action: {
-                    // 标记用户已连接银行账户
-                    data.plaidConnected = true
-                    // TODO: 未来这里会调用 Plaid Link SDK
-                    // 现在只是占位，直接完成 onboarding
-                    onFinish()
+                    // 未订阅则弹出 Paywall，已订阅则直接触发 Plaid Link
+                    if subscriptionManager.isPremium {
+                        Task { await plaidManager.startLinkFlow() }
+                    } else {
+                        subscriptionManager.showPaywall = true
+                    }
                 }) {
-                    Text("Connect Your Bank")
-                        .font(.bodyRegular)
-                        .fontWeight(.semibold)
-                        .foregroundColor(AppColors.textInverse)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+                    Group {
+                        if plaidManager.isConnecting {
+                            ProgressView().tint(AppColors.textInverse)
+                        } else {
+                            Text("Connect Your Bank")
+                                .font(.bodyRegular)
+                                .fontWeight(.semibold)
+                                .foregroundColor(AppColors.textInverse)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
                 }
+                .disabled(plaidManager.isConnecting)
 
                 Button(action: {
-                    // 标记用户跳过了银行连接
                     data.plaidConnected = false
-                    // 直接完成 onboarding，稍后可以在设置中连接
                     onSkip()
                 }) {
                     Text("Skip for now")
@@ -177,13 +186,18 @@ struct OB_PlaidLinkView: View {
         }
         .padding(.horizontal, AppSpacing.screenPadding)
         .onAppear {
-            // 触发进场动画
             withAnimation(.spring(response: 0.8, dampingFraction: 0.7).delay(0.1)) {
                 appear = true
             }
-            // 启动光晕缩放动画
             withAnimation(.easeOut(duration: 1.0)) {
                 glowScale = 1.0
+            }
+        }
+        // Plaid Link 成功后自动完成 onboarding
+        .onChange(of: plaidManager.hasLinkedBank) { _, isLinked in
+            if isLinked {
+                data.plaidConnected = true
+                onFinish()
             }
         }
     }

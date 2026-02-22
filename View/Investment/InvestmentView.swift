@@ -8,18 +8,31 @@
 import SwiftUI
 
 struct InvestmentView: View {
+    @Environment(PlaidManager.self) private var plaidManager
+    @Environment(SubscriptionManager.self) private var subscriptionManager
+
     private let data = MockData.investmentData
     private let accountsBreakdown = MockData.investmentAccountsBreakdown
     @State private var showAccountsBreakdown = false
+    @State private var apiNetWorth: APINetWorthSummary? = nil
+    @State private var apiHoldings: APIHoldingsResponse? = nil
 
     var body: some View {
+        if plaidManager.hasLinkedBank {
+            connectedView
+        } else {
+            InvestmentCTAView()
+        }
+    }
+
+    var connectedView: some View {
         ZStack {
             Color.clear
 
             GeometryReader { proxy in
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
-                        PortfolioCard(portfolio: data.portfolio)
+                        PortfolioCard(portfolio: computedPortfolio)
                             .padding(.horizontal, AppSpacing.screenPadding)
 
                         sectionHeader(title: "Accounts", actionTitle: "View all") {
@@ -27,7 +40,7 @@ struct InvestmentView: View {
                         }
                         .padding(.horizontal, AppSpacing.screenPadding)
 
-                        AccountsCard(accounts: data.accounts)
+                        AccountsCard(accounts: computedAccounts)
                             .padding(.horizontal, AppSpacing.screenPadding)
 
                         sectionHeader(title: "Asset allocation")
@@ -35,7 +48,6 @@ struct InvestmentView: View {
 
                         AssetAllocationCard(allocation: data.allocation)
                             .padding(.horizontal, AppSpacing.screenPadding)
-
                     }
                     .frame(minHeight: proxy.size.height, alignment: .top)
                     .padding(.bottom, AppSpacing.tabBarReserve)
@@ -43,8 +55,168 @@ struct InvestmentView: View {
             }
         }
         .fullScreenCover(isPresented: $showAccountsBreakdown) {
-            InvestmentAccountsBreakdownDetailView(data: accountsBreakdown)
+            InvestmentAccountsBreakdownDetailView(data: computedBreakdown)
         }
+        .task {
+            await loadInvestmentData()
+        }
+    }
+}
+
+// MARK: - Investment 初始状态 CTA
+
+private struct InvestmentCTAView: View {
+    @Environment(PlaidManager.self) private var plaidManager
+    @Environment(SubscriptionManager.self) private var subscriptionManager
+
+    var body: some View {
+        GeometryReader { proxy in
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: AppSpacing.lg) {
+                    Spacer().frame(height: AppSpacing.xl)
+
+                    ZStack {
+                        Circle()
+                            .fill(
+                                RadialGradient(
+                                    colors: [Color(hex: "#34D399").opacity(0.15), Color.clear],
+                                    center: .center,
+                                    startRadius: 0,
+                                    endRadius: 80
+                                )
+                            )
+                            .frame(width: 160, height: 160)
+
+                        Image(systemName: "chart.pie.fill")
+                            .font(.system(size: 52))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [Color(hex: "#34D399"), Color(hex: "#60A5FA")],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    }
+
+                    VStack(spacing: AppSpacing.sm) {
+                        Text("Track Your\nInvestments")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+
+                        Text("Connect your brokerage and bank accounts\nto see your full portfolio in one place.")
+                            .font(.system(size: 15))
+                            .foregroundColor(Color(hex: "#9CA3AF"))
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(4)
+                    }
+
+                    VStack(spacing: 12) {
+                        ForEach(features, id: \.0) { icon, text in
+                            HStack(spacing: 12) {
+                                Image(systemName: icon)
+                                    .font(.system(size: 16))
+                                    .foregroundColor(Color(hex: "#34D399"))
+                                    .frame(width: 24)
+                                Text(text)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.white)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 14)
+                            .background(Color(hex: "#121212"))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#222222"), lineWidth: 1))
+                        }
+                    }
+                    .padding(.horizontal, AppSpacing.screenPadding)
+
+                    Spacer(minLength: AppSpacing.xl)
+
+                    Button(action: {
+                        Task {
+                            if !subscriptionManager.isPremium {
+                                await subscriptionManager.checkStatus()
+                            }
+                            if subscriptionManager.isPremium {
+                                await plaidManager.startLinkFlow()
+                            } else {
+                                subscriptionManager.showPaywall = true
+                            }
+                        }
+                    }) {
+                        HStack(spacing: 8) {
+                            if plaidManager.isConnecting {
+                                ProgressView().tint(.black)
+                            } else {
+                                Text("Connect to Accounts")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundColor(.black)
+                                Image(systemName: "arrow.right")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(.black)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+                    .disabled(plaidManager.isConnecting)
+                    .padding(.horizontal, AppSpacing.screenPadding)
+                    .padding(.bottom, 120)
+                }
+                .frame(minHeight: proxy.size.height, alignment: .top)
+                .padding(.bottom, AppSpacing.tabBarReserve)
+                .padding(.top, TopHeaderBar.height + AppSpacing.lg)
+            }
+        }
+    }
+
+    private let features: [(String, String)] = [
+        ("chart.line.uptrend.xyaxis", "Live portfolio performance"),
+        ("building.columns.fill", "All accounts in one view"),
+        ("chart.pie", "Asset allocation breakdown"),
+        ("arrow.up.right", "Net worth growth tracking")
+    ]
+}
+
+// MARK: - Data Loading & Computed Data
+private extension InvestmentView {
+    func loadInvestmentData() async {
+        async let nwTask = try? await APIService.shared.getNetWorthSummary()
+        async let holdingsTask = try? await APIService.shared.getInvestmentHoldings()
+        let (nw, holdings) = await (nwTask, holdingsTask)
+        apiNetWorth = nw
+        apiHoldings = holdings
+    }
+
+    var computedPortfolio: Portfolio {
+        guard let nw = apiNetWorth else { return data.portfolio }
+        return Portfolio(
+            totalBalance: nw.totalNetWorth,
+            performance: data.portfolio.performance,
+            chartData: data.portfolio.chartData
+        )
+    }
+
+    var computedAccounts: [Account] {
+        guard let nw = apiNetWorth, !nw.accounts.isEmpty else { return data.accounts }
+        return nw.accounts.map {
+            Account(id: $0.accountId, institution: $0.institution, type: $0.type, balance: $0.balance, connected: true)
+        }
+    }
+
+    var computedBreakdown: InvestmentAccountsBreakdownData {
+        guard let h = apiHoldings, !h.holdings.isEmpty else { return accountsBreakdown }
+        return InvestmentAccountsBreakdownData(
+            title: "Holdings",
+            totalAmount: h.totalValue,
+            positions: h.holdings.map {
+                InvestmentAccountPosition(id: $0.id, symbol: $0.symbol ?? $0.name, institution: $0.institution, amount: $0.value)
+            }
+        )
     }
 }
 

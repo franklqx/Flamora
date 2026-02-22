@@ -8,8 +8,9 @@
 import SwiftUI
 
 struct JourneyView: View {
-    private let netWorthSummary = MockData.apiNetWorthSummary
-    private let apiBudget = MockData.apiMonthlyBudget
+    @State private var netWorthSummary = MockData.apiNetWorthSummary
+    @State private var apiBudget = MockData.apiMonthlyBudget
+    @State private var fireGoal: APIFireGoal? = nil
     private let data = MockData.journeyData // for passiveIncome & savingsRate (no API equivalent yet)
     var onFireTapped: (() -> Void)? = nil
     let bottomPadding: CGFloat
@@ -39,6 +40,7 @@ struct JourneyView: View {
                                 .padding(.horizontal, AppSpacing.screenPadding)
 
                             VStack(spacing: AppSpacing.cardGap) {
+                                fireProgressCard
                                 budgetCard
                                 passiveIncomeCard
                                 savingsRateCard
@@ -54,11 +56,53 @@ struct JourneyView: View {
             }
         }
         .animation(nil, value: bottomPadding)
+        .task { await loadData() }
     }
 }
 
 // MARK: - Subviews
 private extension JourneyView {
+    @ViewBuilder
+    var fireProgressCard: some View {
+        if let goal = fireGoal {
+            let progress = min(goal.progressPercentage / 100.0, 1.0)
+            VStack(spacing: AppSpacing.md) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("FIRE Progress")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white)
+                        Text("Retire at age \(goal.targetRetirementAge)")
+                            .font(.system(size: 13))
+                            .foregroundColor(Color(hex: "#6B7280"))
+                    }
+                    Spacer()
+                    Text("\(Int(goal.progressPercentage))%")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                }
+                ProgressBar(progress: progress, color: Color(hex: "#F97316"))
+                HStack {
+                    Text(formatCurrency(goal.currentNetWorth))
+                        .font(.system(size: 14))
+                        .foregroundColor(.white)
+                    Spacer()
+                    Text("Goal: \(formatCurrency(goal.fireNumber))")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color(hex: "#6B7280"))
+                }
+            }
+            .padding(AppSpacing.cardPadding)
+            .background(Color(hex: "#121212"))
+            .cornerRadius(20)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(Color(hex: "#222222"), lineWidth: 1)
+            )
+            .padding(.horizontal, AppSpacing.screenPadding)
+        }
+    }
+
     var budgetCard: some View {
         let totalSpent = apiBudget.needsSpent + apiBudget.wantsSpent
         let totalBudget = apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget
@@ -312,6 +356,23 @@ private extension JourneyView {
 
 // MARK: - Helpers
 private extension JourneyView {
+    func loadData() async {
+        let monthStr = currentMonthString
+        async let nwTask = try? await APIService.shared.getNetWorthSummary()
+        async let budgetTask = try? await APIService.shared.getMonthlyBudget(month: monthStr)
+        async let fireTask = try? await APIService.shared.getActiveFireGoal()
+        let (nw, budget, fire) = await (nwTask, budgetTask, fireTask)
+        if let nw { netWorthSummary = nw }
+        if let budget { apiBudget = budget }
+        fireGoal = fire
+    }
+
+    var currentMonthString: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM"
+        return formatter.string(from: Date())
+    }
+
     func formatCurrency(_ value: Double) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency

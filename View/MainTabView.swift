@@ -6,11 +6,16 @@
 //
 
 import SwiftUI
+internal import Auth
 
 struct MainTabView: View {
     @State private var selectedTab = 0
     @State private var showHeaderBar = true
     @State private var isSimulatorShown = false
+    @State private var showSettings = false
+
+    @Environment(SubscriptionManager.self) private var subscriptionManager
+    @Environment(PlaidManager.self) private var plaidManager
 
     var body: some View {
         GeometryReader { proxy in
@@ -46,9 +51,10 @@ struct MainTabView: View {
                 }
                 .safeAreaInset(edge: .top, spacing: 0) {
                     TopHeaderBar(
-                        userName: MockData.displayName,
+                        userName: SupabaseManager.shared.currentUser?.email?.components(separatedBy: "@").first
+                            ?? MockData.displayName,
                         leftAction: headerLeftAction,
-                        onSettingsTapped: {},
+                        onSettingsTapped: { showSettings = true },
                         isVisible: shouldShowHeaderBar
                     )
                 }
@@ -68,6 +74,11 @@ struct MainTabView: View {
             }
         }
         .ignoresSafeArea(.keyboard, edges: .all)
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+                .environment(subscriptionManager)
+                .environment(plaidManager)
+        }
     }
 
     private var headerLeftAction: HeaderLeftAction {

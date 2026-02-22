@@ -7,14 +7,18 @@
 //
 
 import SwiftUI
+import RevenueCat
 
 struct OB_PaywallView: View {
     var data: OnboardingData
     var onNext: () -> Void
 
+    @Environment(SubscriptionManager.self) private var subscriptionManager
+
     // MARK: - 状态变量
     @State private var selectedPlan: String = "yearly"  // 默认选择年付方案
     @State private var appear = false                   // 控制进场动画
+    @State private var isPurchasing = false
 
     // MARK: - Pro 功能列表
     // 展示订阅后可以解锁的所有高级功能
@@ -152,30 +156,39 @@ struct OB_PaywallView: View {
             // 包含主要的「开始试用」按钮和「恢复购买」链接
             VStack(spacing: AppSpacing.md) {
                 Button(action: {
-                    // 保存用户选择的订阅方案到数据模型
                     data.selectedPlan = selectedPlan
-                    // TODO: 未来这里会调用 App Store 订阅 API
-                    // 现在只是占位，直接进入下一步
-                    onNext()
+                    Task { await purchase() }
                 }) {
-                    Text("Start Free Trial")
-                        .font(.bodyRegular)
-                        .fontWeight(.semibold)
-                        .foregroundColor(AppColors.textInverse)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+                    Group {
+                        if isPurchasing {
+                            ProgressView().tint(AppColors.textInverse)
+                        } else {
+                            Text("Start Free Trial")
+                                .font(.bodyRegular)
+                                .fontWeight(.semibold)
+                                .foregroundColor(AppColors.textInverse)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
                 }
+                .disabled(isPurchasing)
 
                 Button(action: {
-                    // TODO: 未来这里会调用 App Store 恢复购买 API
-                    // 现在只是占位按钮
+                    Task {
+                        isPurchasing = true
+                        _ = await subscriptionManager.restorePurchases()
+                        isPurchasing = false
+                        onNext()
+                    }
                 }) {
                     Text("Restore Purchases")
                         .font(.bodySmall)
                         .foregroundColor(AppColors.textSecondary)
                 }
+                .disabled(isPurchasing)
             }
             .opacity(appear ? 1 : 0)
             .animation(.easeOut(duration: 0.5).delay(0.7), value: appear)
@@ -192,6 +205,41 @@ struct OB_PaywallView: View {
                 appear = true
             }
         }
+    }
+}
+
+// MARK: - Purchase Logic
+
+private extension OB_PaywallView {
+    func purchase() async {
+        isPurchasing = true
+        defer { isPurchasing = false }
+
+        do {
+            let offerings = try await Purchases.shared.offerings()
+            guard let offering = offerings.current else {
+                onNext()
+                return
+            }
+            // 找到对应方案的 package
+            let targetPackage = offering.availablePackages.first {
+                $0.storeProduct.productIdentifier.contains(selectedPlan)
+            } ?? offering.availablePackages.first
+
+            guard let package = targetPackage else {
+                onNext()
+                return
+            }
+
+            let (_, customerInfo, userCancelled) = try await Purchases.shared.purchase(package: package)
+            if !userCancelled {
+                subscriptionManager.isPremium = customerInfo.entitlements["Flamora Pro"]?.isActive == true
+            }
+        } catch {
+            print("Purchase error: \(error)")
+        }
+
+        onNext()
     }
 }
 

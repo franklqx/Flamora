@@ -8,14 +8,18 @@
 import SwiftUI
 import SwiftData
 import CoreText
+import RevenueCat
 
 @main
 struct Flamora_appApp: App {
 
+    @State private var subscriptionManager = SubscriptionManager.shared
+    @State private var plaidManager = PlaidManager.shared
+
     init() {
         Self.registerFonts()
-        // 让启动时直接过渡到自定义 Splash 视觉，避免黑屏闪烁
         UIWindow.appearance().backgroundColor = .clear
+        SubscriptionManager.configure()
     }
 
     /// 手动注册 bundle 内的自定义字体
@@ -46,6 +50,8 @@ struct Flamora_appApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(subscriptionManager)
+                .environment(plaidManager)
         }
         .modelContainer(sharedModelContainer)
     }

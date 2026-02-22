@@ -8,8 +8,11 @@
 import SwiftUI
 
 struct CashflowView: View {
+    @Environment(PlaidManager.self) private var plaidManager
+    @Environment(SubscriptionManager.self) private var subscriptionManager
+
     private let data = MockData.cashflowData
-    private let apiBudget = MockData.apiMonthlyBudget
+    @State private var apiBudget = MockData.apiMonthlyBudget
     @State private var selectedMonthIndex = 0
     @State private var monthDates: [Date] = []
     @State private var hasInitializedMonths = false
@@ -49,6 +52,14 @@ struct CashflowView: View {
     }
 
     var body: some View {
+        if plaidManager.hasLinkedBank {
+            connectedView
+        } else {
+            CashflowCTAView()
+        }
+    }
+
+    var connectedView: some View {
         NavigationStack {
             ZStack {
                 AppBackgroundView()
@@ -103,6 +114,9 @@ struct CashflowView: View {
         .onAppear {
             initializeMonths()
         }
+        .task {
+            await loadCashflowData()
+        }
         .fullScreenCover(isPresented: $showSavingsSummary) {
             SavingsTargetDetailView2()
         }
@@ -131,6 +145,35 @@ struct CashflowView: View {
                 .presentationCornerRadius(28)
                 .presentationBackground(Color.black)
         }
+    }
+}
+
+// MARK: - Data Loading
+private extension CashflowView {
+    func loadCashflowData() async {
+        let monthStr = apiMonthString(from: Date())
+        async let budgetTask = try? await APIService.shared.getMonthlyBudget(month: monthStr)
+        async let txTask = try? await APIService.shared.getTransactions(page: 1, limit: 20, pendingReview: true)
+        let (budget, txResponse) = await (budgetTask, txTask)
+        if let b = budget {
+            apiBudget = b
+            currentSavings = b.savingsActual
+            needsTotal = b.needsSpent
+            wantsTotal = b.wantsSpent
+            totalSpend = b.needsSpent + b.wantsSpent
+        }
+        if let tx = txResponse {
+            reviewTransactions = tx.transactions.map {
+                Transaction(id: $0.id, merchant: $0.merchant, amount: $0.amount, date: $0.date, pendingClassification: $0.pendingReview)
+            }
+            reviewCount = reviewTransactions.count
+        }
+    }
+
+    func apiMonthString(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM"
+        return formatter.string(from: date)
     }
 }
 
@@ -355,6 +398,126 @@ private struct TransactionCard: View {
         formatter.minimumFractionDigits = 2
         return formatter.string(from: NSNumber(value: amount)) ?? "$0.00"
     }
+}
+
+// MARK: - Cashflow 初始状态 CTA
+
+private struct CashflowCTAView: View {
+    @Environment(PlaidManager.self) private var plaidManager
+    @Environment(SubscriptionManager.self) private var subscriptionManager
+
+    var body: some View {
+        GeometryReader { proxy in
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: AppSpacing.lg) {
+                    Spacer().frame(height: AppSpacing.xl)
+
+                    // Hero icon
+                    ZStack {
+                        Circle()
+                            .fill(
+                                RadialGradient(
+                                    colors: [Color(hex: "#93C5FD").opacity(0.15), Color.clear],
+                                    center: .center,
+                                    startRadius: 0,
+                                    endRadius: 80
+                                )
+                            )
+                            .frame(width: 160, height: 160)
+
+                        Image(systemName: "creditcard.fill")
+                            .font(.system(size: 52))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [Color(hex: "#60A5FA"), Color(hex: "#A78BFA")],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    }
+
+                    VStack(spacing: AppSpacing.sm) {
+                        Text("Track Your\nCashflow")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+
+                        Text("Connect your accounts to automatically\ntrack spending, savings, and budgets.")
+                            .font(.system(size: 15))
+                            .foregroundColor(Color(hex: "#9CA3AF"))
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(4)
+                    }
+
+                    VStack(spacing: 12) {
+                        ForEach(features, id: \.0) { icon, text in
+                            HStack(spacing: 12) {
+                                Image(systemName: icon)
+                                    .font(.system(size: 16))
+                                    .foregroundColor(Color(hex: "#60A5FA"))
+                                    .frame(width: 24)
+                                Text(text)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.white)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 14)
+                            .background(Color(hex: "#121212"))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#222222"), lineWidth: 1))
+                        }
+                    }
+                    .padding(.horizontal, AppSpacing.screenPadding)
+
+                    Spacer(minLength: AppSpacing.xl)
+
+                    Button(action: {
+                        Task {
+                            if !subscriptionManager.isPremium {
+                                await subscriptionManager.checkStatus()
+                            }
+                            if subscriptionManager.isPremium {
+                                await plaidManager.startLinkFlow()
+                            } else {
+                                subscriptionManager.showPaywall = true
+                            }
+                        }
+                    }) {
+                        HStack(spacing: 8) {
+                            if plaidManager.isConnecting {
+                                ProgressView().tint(.black)
+                            } else {
+                                Text("Connect to Accounts")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundColor(.black)
+                                Image(systemName: "arrow.right")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(.black)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+                    .disabled(plaidManager.isConnecting)
+                    .padding(.horizontal, AppSpacing.screenPadding)
+                    .padding(.bottom, 120)
+                }
+                .frame(minHeight: proxy.size.height, alignment: .top)
+                .padding(.bottom, AppSpacing.tabBarReserve)
+                .padding(.top, TopHeaderBar.height + AppSpacing.lg)
+            }
+        }
+    }
+
+    private let features: [(String, String)] = [
+        ("list.bullet.rectangle", "Auto transaction categorization"),
+        ("chart.bar.fill", "Monthly needs vs wants breakdown"),
+        ("arrow.up.arrow.down", "To Review — flag unusual spending"),
+        ("banknote", "Savings goal tracking")
+    ]
 }
 
 #Preview {

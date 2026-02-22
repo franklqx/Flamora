@@ -7,6 +7,7 @@
 
 import Foundation
 import Supabase
+import RevenueCat
 
 @Observable
 class SupabaseManager {
@@ -40,11 +41,23 @@ class SupabaseManager {
         }
     }
 
-    // MARK: - 持续监听 auth 状态变化
+    // MARK: - 持续监听 auth 状态变化，同步 RevenueCat
     func listenToAuthChanges() async {
-        for await (_, session) in await client.auth.authStateChanges {
+        for await (event, session) in await client.auth.authStateChanges {
             currentUser = session?.user
             isAuthenticated = session != nil
+
+            switch event {
+            case .signedIn:
+                if let userId = session?.user.id.uuidString {
+                    Task { await SubscriptionManager.shared.loginUser(userId: userId) }
+                    Task { await PlaidManager.shared.loadStatus() }
+                }
+            case .signedOut:
+                SubscriptionManager.shared.logoutUser()
+            default:
+                break
+            }
         }
     }
 
@@ -62,6 +75,9 @@ class SupabaseManager {
         let session = try await client.auth.signIn(email: email, password: password)
         currentUser = session.user
         isAuthenticated = true
+        let userId = session.user.id.uuidString
+        Task { await SubscriptionManager.shared.loginUser(userId: userId) }
+        Task { await PlaidManager.shared.loadStatus() }
     }
 
     // MARK: - 退出登录
@@ -69,6 +85,7 @@ class SupabaseManager {
         try await client.auth.signOut()
         currentUser = nil
         isAuthenticated = false
+        SubscriptionManager.shared.logoutUser()
     }
 
     // MARK: - Helpers

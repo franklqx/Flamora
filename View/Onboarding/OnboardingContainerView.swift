@@ -2,22 +2,22 @@
 //  OnboardingContainerView.swift
 //  Flamora app
 //
-//  Onboarding 主容器 - 管理 13 步引导流程的页面切换
-//  流程: Sign In → Welcome → Name → Motivation → Age/Location → Income →
-//        Expenses → NetWorth → Lifestyle → Blueprint → Success →
-//        Paywall → PlaidLink → 完成
+//  Onboarding 主容器 - 管理 11 步引导流程的页面切换
+//  流程: Welcome(0) → Sign In(1) → Name(2) → Motivation(3) → Age/Location(4) →
+//        Income(5) → Expenses(6) → NetWorth(7) → Lifestyle(8) → Blueprint(9) →
+//        Paywall(10) → 完成
 //
 
 import SwiftUI
 
 struct OnboardingContainerView: View {
     @Binding var isOnboardingComplete: Bool  // 绑定到 ContentView，控制是否完成引导
-    @State private var currentStep = 0       // 当前步骤 (0-12)
+    @State private var currentStep = 0       // 当前步骤 (0-10)
     @State private var data = OnboardingData()  // 收集的用户数据
     @State private var showToast = false     // 是否显示 toast 提示
     @State private var toastText = ""        // Toast 提示文字
 
-    private let totalSteps = 13              // 总共 13 步 (索引 0-12)
+    private let totalSteps = 11              // 总共 11 步 (索引 0-10)
     private let contentVerticalOffset: CGFloat = -72  // 整体内容向上偏移量
 
     var body: some View {
@@ -27,21 +27,20 @@ struct OnboardingContainerView: View {
 
             VStack(spacing: 0) {
                 // MARK: - 进度条
-                // 只在步骤 1-10 显示（跳过 Sign In、Paywall 和 PlaidLink）
-                if currentStep > 0 && currentStep <= 10 {
-                    OnboardingProgressBar(current: min(currentStep, 10), total: 10)
+                // 步骤 2-9 显示（Name 到 Blueprint，共 8 格）
+                if currentStep >= 2 && currentStep <= 9 {
+                    OnboardingProgressBar(current: currentStep - 1, total: 8)
                         .padding(.horizontal, AppSpacing.screenPadding)
                         .padding(.top, 8)
                 }
 
                 // MARK: - 页面内容区域
-                // 根据当前步骤渲染对应的 onboarding 页面
                 Group {
                     switch currentStep {
-                    case 0:  // 步骤 0: 登录/注册
-                        OB_SignInView(data: data, onNext: next)
-                    case 1:  // 步骤 1: 欢迎页
+                    case 0:  // 步骤 0: 欢迎页
                         OB_WelcomeView(onNext: next)
+                    case 1:  // 步骤 1: 登录/注册
+                        OB_SignInView(data: data, onNext: next)
                     case 2:  // 步骤 2: 输入姓名
                         OB_NameView(data: data, onNext: next)
                     case 3:  // 步骤 3: 选择动机
@@ -58,36 +57,12 @@ struct OnboardingContainerView: View {
                         OB_LifestyleView(data: data, onNext: next)
                     case 9:  // 步骤 9: FIRE 蓝图确认
                         OB_BlueprintView(data: data, onNext: next)
-                    case 10: // 步骤 10: 成功页面（展示 FIRE 计算结果）
-                        OB_SuccessView(data: data, onFinish: next)
-                    case 11: // 步骤 11: 付费墙（订阅选择）
-                        OB_PaywallView(data: data, onNext: next)
-                    default: // 步骤 12: Plaid 银行连接（最后一步）
-                        OB_PlaidLinkView(
-                            data: data,
-                            onFinish: {
-                                // 用户点击「连接银行」后的处理
-                                // 保存用户选择的订阅方案到本地
-                                UserDefaults.standard.set(data.selectedPlan, forKey: "selectedSubscriptionPlan")
-                                // 标记已连接 Plaid
-                                UserDefaults.standard.set(true, forKey: "isPlaidConnected")
-                                // 完成 onboarding，进入主应用（MainTabView）
-                                withAnimation(.easeInOut(duration: 0.5)) {
-                                    isOnboardingComplete = true
-                                }
-                            },
-                            onSkip: {
-                                // 用户点击「跳过」后的处理
-                                // 保存用户选择的订阅方案到本地
-                                UserDefaults.standard.set(data.selectedPlan, forKey: "selectedSubscriptionPlan")
-                                // 标记未连接 Plaid（可以稍后在设置中连接）
-                                UserDefaults.standard.set(false, forKey: "isPlaidConnected")
-                                // 完成 onboarding，进入主应用（MainTabView）
-                                withAnimation(.easeInOut(duration: 0.5)) {
-                                    isOnboardingComplete = true
-                                }
+                    default: // 步骤 10: 付费墙（最后一步，完成后进入主页面）
+                        OB_PaywallView(data: data, onNext: {
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                isOnboardingComplete = true
                             }
-                        )
+                        })
                     }
                 }
                 .transition(.asymmetric(
@@ -148,7 +123,7 @@ struct OnboardingContainerView: View {
 }
 
 // MARK: - 进度条组件
-// 显示 onboarding 流程的完成进度（仅在步骤 1-10 显示）
+// 显示 onboarding 流程的完成进度（步骤 2-9，共 8 格）
 struct OnboardingProgressBar: View {
     let current: Int  // 当前步骤
     let total: Int    // 总步骤数
