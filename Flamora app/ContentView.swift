@@ -12,6 +12,9 @@ struct ContentView: View {
     @State private var isOnboardingComplete = false
     @State private var lockedRootSize: CGSize = .zero
 
+    // 持久化 Onboarding 完成状态：只有走完全部步骤（Blueprint → Paywall → PlaidLink）才为 true
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+
     @Environment(SubscriptionManager.self) private var subscriptionManager
 
     // 观察 SupabaseManager 的 auth 状态
@@ -63,11 +66,12 @@ struct ContentView: View {
                     showSplash = false
                 }
             }
-            // 检查现有 session（已登录 → 直接进主应用）
-            Task { await checkExistingSession() }
-            // 持续监听 auth 状态变化（退出登录时回到 onboarding）
-            Task { await listenForAuthChanges() }
         }
+        // 检查现有 session（已登录 → 直接进主应用）
+        .task { await checkExistingSession() }
+        // 持续监听 auth 状态变化（退出登录时回到 onboarding）
+        // 使用 .task 让 SwiftUI 自动管理 Task 生命周期
+        .task { await listenForAuthChanges() }
         // 监听退出登录：isAuthenticated 变 false → 回到 onboarding
         .onChange(of: supabase.isAuthenticated) { _, isAuthenticated in
             if !isAuthenticated && isOnboardingComplete {
@@ -79,10 +83,12 @@ struct ContentView: View {
     }
 
     // MARK: - 启动时检查现有 session
+    // 必须同时满足：已登录 AND 已完成 Onboarding，才跳过 Onboarding 进入主界面
+    // 防止用户在 Step 1 注册后重启 App 时直接跳过剩余 10 个步骤
 
     private func checkExistingSession() async {
         await supabase.checkSession()
-        if supabase.isAuthenticated {
+        if supabase.isAuthenticated && hasCompletedOnboarding {
             withAnimation(.easeInOut(duration: 0.5)) {
                 isOnboardingComplete = true
             }
@@ -127,4 +133,6 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+        .environment(SubscriptionManager.shared)
+        .environment(PlaidManager.shared)
 }

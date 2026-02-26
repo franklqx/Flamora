@@ -25,7 +25,7 @@ struct OB_SignInView: View {
                 Spacer()
                     .frame(height: 80)
 
-                Text(isSignUp ? "Create Account" : "Sign In")
+                Text(isSignUp ? "Save Your Progress" : "Welcome Back")
                     .font(.h1)
                     .foregroundColor(AppColors.textPrimary)
 
@@ -79,7 +79,7 @@ struct OB_SignInView: View {
                     Task { await handleAuth() }
                 }) {
                     ZStack {
-                        Text(isSignUp ? "Create Account" : "Sign In")
+                        Text(isSignUp ? "Secure My Plan" : "Continue My Journey")
                             .font(.bodyRegular)
                             .fontWeight(.semibold)
                             .foregroundColor(isValid ? AppColors.textInverse : AppColors.textTertiary)
@@ -194,7 +194,7 @@ struct OB_SignInView: View {
                 )
                 if needsEmailConfirmation {
                     // 需要邮箱验证，提示用户后切换回登录模式
-                    errorMessage = "Check your email to confirm your account, then sign in."
+                    errorMessage = "Almost there! Check your inbox to verify your email, then come back to sign in."
                     isSignUp = false
                 } else {
                     data.userId = SupabaseManager.shared.currentUserId ?? ""

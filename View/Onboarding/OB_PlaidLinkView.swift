@@ -19,6 +19,7 @@ struct OB_PlaidLinkView: View {
     // MARK: - 状态变量
     @State private var appear = false          // 控制进场动画
     @State private var glowScale: CGFloat = 0  // 控制图标光晕缩放
+    @State private var hasTriggeredFinish = false  // 防止 onChange 重复触发 onFinish
 
     // MARK: - 账户类型列表
     // 展示可以连接的不同类型的金融账户
@@ -68,7 +69,7 @@ struct OB_PlaidLinkView: View {
             Spacer().frame(height: AppSpacing.xl)
 
             // MARK: - 页面标题
-            Text("Connect Your\nAccounts")
+            Text("See the full picture\nof your wealth")
                 .font(.h1)
                 .foregroundColor(AppColors.textPrimary)
                 .multilineTextAlignment(.center)
@@ -78,7 +79,7 @@ struct OB_PlaidLinkView: View {
 
             Spacer().frame(height: AppSpacing.md)
 
-            Text("Link your bank accounts to automatically\ntrack your path to financial independence.")
+            Text("Link your accounts once — Flamora automatically\ntracks every dollar moving toward your freedom.")
                 .font(.bodySmall)
                 .foregroundColor(AppColors.textSecondary)
                 .multilineTextAlignment(.center)
@@ -134,7 +135,7 @@ struct OB_PlaidLinkView: View {
                     .font(.system(size: 14))
                     .foregroundColor(AppColors.success)
 
-                Text("Bank-level 256-bit encryption")
+                Text("Bank-level security. We never store your credentials.")
                     .font(.caption)
                     .foregroundColor(AppColors.textSecondary)
             }
@@ -147,18 +148,14 @@ struct OB_PlaidLinkView: View {
             // 包含主要的「连接银行」按钮和「跳过」链接
             VStack(spacing: AppSpacing.md) {
                 Button(action: {
-                    // 未订阅则弹出 Paywall，已订阅则直接触发 Plaid Link
-                    if subscriptionManager.isPremium {
-                        Task { await plaidManager.startLinkFlow() }
-                    } else {
-                        subscriptionManager.showPaywall = true
-                    }
+                    // Onboarding 场景：用户已通过 Paywall 步骤，直接触发 Plaid Link
+                    Task { await plaidManager.startLinkFlow() }
                 }) {
                     Group {
                         if plaidManager.isConnecting {
                             ProgressView().tint(AppColors.textInverse)
                         } else {
-                            Text("Connect Your Bank")
+                            Text("Connect & Unlock My Dashboard")
                                 .font(.bodyRegular)
                                 .fontWeight(.semibold)
                                 .foregroundColor(AppColors.textInverse)
@@ -175,7 +172,7 @@ struct OB_PlaidLinkView: View {
                     data.plaidConnected = false
                     onSkip()
                 }) {
-                    Text("Skip for now")
+                    Text("I'll connect later")
                         .font(.bodySmall)
                         .foregroundColor(AppColors.textSecondary)
                 }
@@ -193,12 +190,12 @@ struct OB_PlaidLinkView: View {
                 glowScale = 1.0
             }
         }
-        // Plaid Link 成功后自动完成 onboarding
+        // Plaid Link 成功后自动完成 onboarding（仅触发一次）
         .onChange(of: plaidManager.hasLinkedBank) { _, isLinked in
-            if isLinked {
-                data.plaidConnected = true
-                onFinish()
-            }
+            guard isLinked, !hasTriggeredFinish else { return }
+            hasTriggeredFinish = true
+            data.plaidConnected = true
+            onFinish()
         }
     }
 }
@@ -206,4 +203,6 @@ struct OB_PlaidLinkView: View {
 #Preview {
     OB_PlaidLinkView(data: OnboardingData(), onFinish: {}, onSkip: {})
         .background(AppBackgroundView())
+        .environment(PlaidManager.shared)
+        .environment(SubscriptionManager.shared)
 }

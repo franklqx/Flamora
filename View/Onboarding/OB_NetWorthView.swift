@@ -19,13 +19,13 @@ struct OB_NetWorthView: View {
                 Spacer()
                     .frame(height: 80)
 
-                Text("What is your current\ninvestment amount?")
+                Text("Do you have any\nsavings or investments?")
                     .font(.h1)
                     .foregroundColor(AppColors.textPrimary)
 
                 Spacer().frame(height: 8)
 
-                Text("We use this to calculate your head start.")
+                Text("Any 401k, IRA, savings, or investments count. This is your head start.")
                     .font(.bodySmall)
                     .foregroundColor(AppColors.textSecondary)
 
@@ -50,7 +50,7 @@ struct OB_NetWorthView: View {
 
                 Spacer().frame(height: 12)
 
-                Text("Not sure? You can skip and add this later.")
+                Text("Guessing is totally fine — you can update this anytime.")
                     .font(.caption)
                     .foregroundColor(AppColors.textTertiary)
 
@@ -60,7 +60,7 @@ struct OB_NetWorthView: View {
                     isFocused = false
                     onNext()
                 } label: {
-                    Text("Skip for now")
+                    Text("I'll Add This Later")
                         .font(.bodySmall)
                         .foregroundColor(AppColors.info)
                 }
@@ -76,7 +76,7 @@ struct OB_NetWorthView: View {
                 isFocused = false
                 onNext()
             }) {
-                Text("Next")
+                Text("This Is My Head Start →")
                     .font(.bodyRegular)
                     .fontWeight(.semibold)
                     .foregroundColor(AppColors.textInverse)

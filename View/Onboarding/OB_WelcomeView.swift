@@ -72,7 +72,7 @@ struct OB_WelcomeView: View {
             Spacer()
                 .frame(height: AppSpacing.md)
 
-            Text("Answer a few simple questions.\nLet's build your personalized map\nto Financial Independence.")
+            Text("Answer 8 quick questions.\nWe'll calculate your exact date\nto Financial Independence.")
                 .font(.bodySmall)
                 .foregroundColor(AppColors.textSecondary)
                 .multilineTextAlignment(.center)
@@ -84,7 +84,7 @@ struct OB_WelcomeView: View {
 
             // Start My Journey 按钮
             Button(action: onNext) {
-                Text("Start My Journey")
+                Text("Calculate My Freedom Date")
                     .font(.bodyRegular)
                     .fontWeight(.semibold)
                     .foregroundColor(AppColors.textInverse)

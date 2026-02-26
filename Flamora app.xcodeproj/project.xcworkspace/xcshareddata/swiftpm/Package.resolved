@@ -1,5 +1,5 @@
 {
-  "originHash" : "c43053af33776c941dda5e96eb8d5f9d3a5bae567dcd208b7ba2f8e76fb6c320",
+  "originHash" : "92b1c85b57c3fa3e772599f2f3d45d2ddbb66da68c0c847e3873e81b47b2b516",
   "pins" : [
     {
       "identity" : "plaid-link-ios",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/RevenueCat/purchases-ios",
       "state" : {
-        "revision" : "524b94b8c36ff60bc1412e248678147ccc607e09",
-        "version" : "5.59.0"
+        "revision" : "828a464d12ff8fe4f633ef1b0116e76fd2a1e462",
+        "version" : "5.59.2"
       }
     },
     {

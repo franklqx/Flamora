@@ -19,13 +19,13 @@ struct OB_ExpensesView: View {
                 Spacer()
                     .frame(height: 80)
 
-                Text("And how much do\nyou spend monthly?")
+                Text("How much do you\nspend each month?")
                     .font(.h1)
                     .foregroundColor(AppColors.textPrimary)
 
                 Spacer().frame(height: 8)
 
-                Text("Rent, food, bills, fun. A rough estimate is fine.")
+                Text("Rent, food, bills, subscriptions — a rough number is perfect.")
                     .font(.bodySmall)
                     .foregroundColor(AppColors.textSecondary)
 
@@ -51,7 +51,7 @@ struct OB_ExpensesView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "chart.line.uptrend.xyaxis")
                             .font(.caption)
-                        Text("You're saving \(Int(data.savingsRate))% of your income.")
+                        Text("🔥 You're saving \(Int(data.savingsRate))% of your income — that's your FIRE rate!")
                             .font(.bodySmall)
                     }
                     .foregroundColor(AppColors.success)
@@ -71,7 +71,7 @@ struct OB_ExpensesView: View {
                 isFocused = false
                 onNext()
             }) {
-                Text("Next")
+                Text("That's My Spend →")
                     .font(.bodyRegular)
                     .fontWeight(.semibold)
                     .foregroundColor(isValid ? AppColors.textInverse : AppColors.textTertiary)

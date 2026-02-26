@@ -271,4 +271,6 @@ struct ScaleButtonStyle: ButtonStyle {
 // MARK: - Preview
 #Preview {
     JourneyContainerView(isSimulatorShown: .constant(false))
+        .environment(PlaidManager.shared)
+        .environment(SubscriptionManager.shared)
 }

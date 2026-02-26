@@ -18,14 +18,14 @@ struct OB_LifestyleView: View {
             Spacer()
                 .frame(height: 60)
 
-            Text("How do you want to live\nafter financial freedom?")
+            Text("What does your\nfree life look like?")
                 .font(.h1)
                 .foregroundColor(AppColors.textPrimary)
 
             Spacer().frame(height: 8)
 
             let expenseStr = data.currencySymbol + (data.monthlyExpenses.isEmpty ? "0" : data.monthlyExpenses)
-            Text("Based on your current spending of \(expenseStr)/mo.")
+            Text("Your FIRE Number depends on this choice. Based on \(expenseStr)/mo.")
                 .font(.bodySmall)
                 .foregroundColor(AppColors.textSecondary)
 
@@ -35,9 +35,9 @@ struct OB_LifestyleView: View {
             VStack(spacing: 14) {
                 LifestyleCard(
                     icon: "bicycle",
-                    title: "Simpler Life",
-                    desc: "Efficient & low stress",
-                    detail: "80% of current spending",
+                    title: "Lean FIRE",
+                    desc: "Less stuff, more freedom",
+                    detail: "80% of today's spending",
                     key: "minimalist",
                     isSelected: selected == "minimalist",
                     onTap: { selected = "minimalist" }
@@ -45,9 +45,9 @@ struct OB_LifestyleView: View {
 
                 LifestyleCard(
                     icon: "equal.circle",
-                    title: "Current Lifestyle",
-                    desc: "Same life, just no work",
-                    detail: "100% of current spending",
+                    title: "Regular FIRE",
+                    desc: "Same life, zero boss",
+                    detail: "100% of today's spending",
                     key: "maintain",
                     isSelected: selected == "maintain",
                     onTap: { selected = "maintain" }
@@ -55,9 +55,9 @@ struct OB_LifestyleView: View {
 
                 LifestyleCard(
                     icon: "wineglass",
-                    title: "Dream Life",
-                    desc: "Travel more, spend more",
-                    detail: "150% of current spending",
+                    title: "Fat FIRE",
+                    desc: "Upgrade everything",
+                    detail: "150% of today's spending",
                     key: "upgrade",
                     isSelected: selected == "upgrade",
                     onTap: { selected = "upgrade" }
@@ -77,7 +77,7 @@ struct OB_LifestyleView: View {
                 }
                 onNext()
             }) {
-                Text("Generate My Plan")
+                Text("Build My FIRE Blueprint")
                     .font(.bodyRegular)
                     .fontWeight(.semibold)
                     .foregroundColor(AppColors.textInverse)

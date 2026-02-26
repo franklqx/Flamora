@@ -98,4 +98,6 @@ struct MainTabView: View {
 
 #Preview {
     MainTabView()
+        .environment(SubscriptionManager.shared)
+        .environment(PlaidManager.shared)
 }

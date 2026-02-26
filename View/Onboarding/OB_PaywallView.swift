@@ -23,16 +23,16 @@ struct OB_PaywallView: View {
     // MARK: - Pro 功能列表
     // 展示订阅后可以解锁的所有高级功能
     private let features: [(icon: String, text: String)] = [
-        ("link", "Bank & credit card linking"),              // 银行和信用卡连接
-        ("list.bullet.rectangle", "Auto transaction tracking"), // 自动交易跟踪
-        ("creditcard", "Debt & liability tracking"),          // 债务和负债跟踪
-        ("repeat", "Recurring transaction alerts"),           // 定期交易提醒
-        ("flame", "FIRE calculator & simulator"),             // FIRE 计算器和模拟器
-        ("chart.pie", "Smart budget tools"),                  // 智能预算工具
-        ("chart.line.uptrend.xyaxis", "Investment portfolio tracking"), // 投资组合跟踪
-        ("brain.head.profile", "AI-powered FIRE insights"),   // AI 驱动的 FIRE 洞察
-        ("building.2", "Enriched merchant data & logos"),     // 丰富的商家数据和 logo
-        ("sparkles", "Advanced FIRE scenarios"),              // 高级 FIRE 场景
+        ("link", "Auto-sync your bank accounts"),
+        ("list.bullet.rectangle", "Transactions categorized for you"),
+        ("creditcard", "Track what you owe, reduce it faster"),
+        ("repeat", "Never miss a subscription charge"),
+        ("flame", "FIRE simulator — see your future, change it"),
+        ("chart.pie", "Smart budgets that adapt to your FIRE goal"),
+        ("chart.line.uptrend.xyaxis", "All your investments in one view"),
+        ("brain.head.profile", "AI tells you exactly what to do next"),
+        ("building.2", "Beautiful, enriched transaction details"),
+        ("sparkles", "Play with your future: what-if scenarios"),
     ]
 
     var body: some View {
@@ -58,11 +58,11 @@ struct OB_PaywallView: View {
                             .font(.h1)
                             .foregroundColor(AppColors.textPrimary)
 
-                        Text("Unlock your complete FIRE journey")
+                        Text("Your complete toolkit for Financial Independence")
                             .font(.bodySmall)
                             .foregroundColor(AppColors.textSecondary)
 
-                        Text("Start with a 7-day free trial")
+                        Text("7-day free trial, cancel anytime")
                             .font(.bodySmall)
                             .fontWeight(.medium)
                             .foregroundColor(AppColors.success)
@@ -115,10 +115,10 @@ struct OB_PaywallView: View {
                         // 年付方案（推荐，更优惠）
                         PlanCard(
                             title: "Yearly",
-                            price: "$69.99",
+                            price: "$79.99",
                             period: "/year",
-                            detail: "$5.83/mo",
-                            badge: "SAVE 42%",
+                            detail: "$6.67/mo",
+                            badge: "BEST VALUE",
                             isSelected: selectedPlan == "yearly",
                             isRecommended: true
                         ) {
@@ -163,7 +163,7 @@ struct OB_PaywallView: View {
                         if isPurchasing {
                             ProgressView().tint(AppColors.textInverse)
                         } else {
-                            Text("Start Free Trial")
+                            Text("Start My Free Trial")
                                 .font(.bodyRegular)
                                 .fontWeight(.semibold)
                                 .foregroundColor(AppColors.textInverse)
@@ -184,7 +184,7 @@ struct OB_PaywallView: View {
                         onNext()
                     }
                 }) {
-                    Text("Restore Purchases")
+                    Text("Already a Pro? Restore")
                         .font(.bodySmall)
                         .foregroundColor(AppColors.textSecondary)
                 }
@@ -338,4 +338,5 @@ struct PlanCard: View {
 #Preview {
     OB_PaywallView(data: OnboardingData(), onNext: {})
         .background(AppBackgroundView())
+        .environment(SubscriptionManager.shared)
 }

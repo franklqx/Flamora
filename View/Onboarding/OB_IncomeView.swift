@@ -19,13 +19,13 @@ struct OB_IncomeView: View {
                 Spacer()
                     .frame(height: 80)
 
-                Text("What's your\nmonthly income?")
+                Text("What's your monthly\ntake-home pay?")
                     .font(.h1)
                     .foregroundColor(AppColors.textPrimary)
 
                 Spacer().frame(height: 8)
 
-                Text("After taxes. This is the fuel for your freedom engine.")
+                Text("After taxes. This is the fuel that powers your FIRE engine.")
                     .font(.bodySmall)
                     .foregroundColor(AppColors.textSecondary)
 
@@ -54,7 +54,7 @@ struct OB_IncomeView: View {
                 isFocused = false
                 onNext()
             }) {
-                Text("Next")
+                Text("That's My Fuel →")
                     .font(.bodyRegular)
                     .fontWeight(.semibold)
                     .foregroundColor(isValid ? AppColors.textInverse : AppColors.textTertiary)

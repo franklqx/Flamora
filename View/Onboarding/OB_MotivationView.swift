@@ -22,13 +22,13 @@ struct OB_MotivationView: View {
 
             Spacer().frame(height: 8)
 
-            Text("What does Financial Freedom\nlook like to you?")
+            Text("Why are you chasing\nFinancial Independence?")
                 .font(.h2)
                 .foregroundColor(AppColors.textPrimary)
 
             Spacer().frame(height: 8)
 
-            Text("Select all that apply. We'll adapt your strategy.")
+            Text("Pick all that resonate. This shapes your whole plan.")
                 .font(.bodySmall)
                 .foregroundColor(AppColors.textSecondary)
 
@@ -57,7 +57,7 @@ struct OB_MotivationView: View {
 
             // Next 按钮
             Button(action: onNext) {
-                Text("Next")
+                Text("This Is My Why →")
                     .font(.bodyRegular)
                     .fontWeight(.semibold)
                     .foregroundColor(isValid ? AppColors.textInverse : AppColors.textTertiary)

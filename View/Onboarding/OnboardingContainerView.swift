@@ -2,22 +2,25 @@
 //  OnboardingContainerView.swift
 //  Flamora app
 //
-//  Onboarding 主容器 - 管理 11 步引导流程的页面切换
+//  Onboarding 主容器 - 管理 12 步引导流程的页面切换
 //  流程: Welcome(0) → Sign In(1) → Name(2) → Motivation(3) → Age/Location(4) →
 //        Income(5) → Expenses(6) → NetWorth(7) → Lifestyle(8) → Blueprint(9) →
-//        Paywall(10) → 完成
+//        Paywall(10) → PlaidLink(11) → 完成
 //
 
 import SwiftUI
 
 struct OnboardingContainerView: View {
     @Binding var isOnboardingComplete: Bool  // 绑定到 ContentView，控制是否完成引导
-    @State private var currentStep = 0       // 当前步骤 (0-10)
+    @State private var currentStep = 0       // 当前步骤 (0-11)
     @State private var data = OnboardingData()  // 收集的用户数据
     @State private var showToast = false     // 是否显示 toast 提示
     @State private var toastText = ""        // Toast 提示文字
 
-    private let totalSteps = 11              // 总共 11 步 (索引 0-10)
+    // 只有走完全部步骤（Blueprint → Paywall → PlaidLink 完成/跳过）才写 true
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+
+    private let totalSteps = 12              // 总共 12 步 (索引 0-11)
     private let contentVerticalOffset: CGFloat = -72  // 整体内容向上偏移量
 
     var body: some View {
@@ -57,12 +60,24 @@ struct OnboardingContainerView: View {
                         OB_LifestyleView(data: data, onNext: next)
                     case 9:  // 步骤 9: FIRE 蓝图确认
                         OB_BlueprintView(data: data, onNext: next)
-                    default: // 步骤 10: 付费墙（最后一步，完成后进入主页面）
-                        OB_PaywallView(data: data, onNext: {
-                            withAnimation(.easeInOut(duration: 0.5)) {
-                                isOnboardingComplete = true
+                    case 10: // 步骤 10: 付费墙（完成后进入 PlaidLink）
+                        OB_PaywallView(data: data, onNext: next)
+                    default: // 步骤 11: 银行连接（最后一步，完成或跳过后进入主页面）
+                        OB_PlaidLinkView(
+                            data: data,
+                            onFinish: {
+                                hasCompletedOnboarding = true  // 全流程完成，持久化标记
+                                withAnimation(.easeInOut(duration: 0.5)) {
+                                    isOnboardingComplete = true
+                                }
+                            },
+                            onSkip: {
+                                hasCompletedOnboarding = true  // 跳过银行绑定也算完成
+                                withAnimation(.easeInOut(duration: 0.5)) {
+                                    isOnboardingComplete = true
+                                }
                             }
-                        })
+                        )
                     }
                 }
                 .transition(.asymmetric(

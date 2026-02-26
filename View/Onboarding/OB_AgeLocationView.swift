@@ -17,9 +17,15 @@ struct OB_AgeLocationView: View {
             Spacer()
                 .frame(height: 60)
 
-            Text("Let's set your\ntimeline and currency.")
+            Text("When does your\ncountdown start?")
                 .font(.h1)
                 .foregroundColor(AppColors.textPrimary)
+
+            Spacer().frame(height: 8)
+
+            Text("Your age determines how long compounding works for you.")
+                .font(.bodySmall)
+                .foregroundColor(AppColors.textSecondary)
 
             Spacer().frame(height: AppSpacing.xl)
 
@@ -60,7 +66,7 @@ struct OB_AgeLocationView: View {
 
             // MARK: - Currency Section
             VStack(alignment: .leading, spacing: 12) {
-                Text("Currency")
+                Text("Your Currency")
                     .font(.bodySmall)
                     .foregroundColor(AppColors.textSecondary)
 
@@ -93,7 +99,7 @@ struct OB_AgeLocationView: View {
 
             // Next 按钮
             Button(action: onNext) {
-                Text("Next")
+                Text("Lock In My Starting Point")
                     .font(.bodyRegular)
                     .fontWeight(.semibold)
                     .foregroundColor(AppColors.textInverse)
@@ -115,11 +121,11 @@ struct OB_AgeLocationView: View {
     private var ageMicrocopy: String {
         let age = Int(data.age)
         if age < 30 {
-            return "Time is your superpower! Compound interest loves you."
+            return "You have time on your side. Even small savings snowball fast."
         } else if age <= 45 {
-            return "The prime building years. Let's maximize them."
+            return "Your earning power is at its peak. Let's use it."
         } else {
-            return "It's never too late. The best time to start is now."
+            return "Every year you start earlier than you think. Let's prove it."
         }
     }
 }

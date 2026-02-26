@@ -43,7 +43,7 @@ class SupabaseManager {
 
     // MARK: - 持续监听 auth 状态变化，同步 RevenueCat
     func listenToAuthChanges() async {
-        for await (event, session) in await client.auth.authStateChanges {
+        for await (event, session) in client.auth.authStateChanges {
             currentUser = session?.user
             isAuthenticated = session != nil
 
@@ -102,3 +102,4 @@ class SupabaseManager {
         }
     }
 }
+

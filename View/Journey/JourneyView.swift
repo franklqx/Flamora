@@ -358,13 +358,25 @@ private extension JourneyView {
 private extension JourneyView {
     func loadData() async {
         let monthStr = currentMonthString
-        async let nwTask = try? await APIService.shared.getNetWorthSummary()
-        async let budgetTask = try? await APIService.shared.getMonthlyBudget(month: monthStr)
-        async let fireTask = try? await APIService.shared.getActiveFireGoal()
+        async let nwTask = fetchNetWorth()
+        async let budgetTask = fetchBudget(month: monthStr)
+        async let fireTask = fetchFireGoal()
         let (nw, budget, fire) = await (nwTask, budgetTask, fireTask)
         if let nw { netWorthSummary = nw }
         if let budget { apiBudget = budget }
         fireGoal = fire
+    }
+
+    // async let + try? 组合会触发 Swift runtime crash (swift_task_dealloc)
+    // 将 try? 包裹在独立函数中避免此问题
+    private func fetchNetWorth() async -> APINetWorthSummary? {
+        try? await APIService.shared.getNetWorthSummary()
+    }
+    private func fetchBudget(month: String) async -> APIMonthlyBudget? {
+        try? await APIService.shared.getMonthlyBudget(month: month)
+    }
+    private func fetchFireGoal() async -> APIFireGoal? {
+        try? await APIService.shared.getActiveFireGoal()
     }
 
     var currentMonthString: String {

@@ -48,6 +48,7 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showPaywall) {
             PaywallSheet()
+                .environment(subscriptionManager)
         }
         .confirmationDialog(
             "Disconnect Bank",

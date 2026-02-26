@@ -152,8 +152,8 @@ struct CashflowView: View {
 private extension CashflowView {
     func loadCashflowData() async {
         let monthStr = apiMonthString(from: Date())
-        async let budgetTask = try? await APIService.shared.getMonthlyBudget(month: monthStr)
-        async let txTask = try? await APIService.shared.getTransactions(page: 1, limit: 20, pendingReview: true)
+        async let budgetTask = fetchBudget(month: monthStr)
+        async let txTask = fetchTransactions()
         let (budget, txResponse) = await (budgetTask, txTask)
         if let b = budget {
             apiBudget = b
@@ -168,6 +168,15 @@ private extension CashflowView {
             }
             reviewCount = reviewTransactions.count
         }
+    }
+
+    // async let + try? 组合会触发 Swift runtime crash (swift_task_dealloc)
+    // 将 try? 包裹在独立函数中避免此问题
+    private func fetchBudget(month: String) async -> APIMonthlyBudget? {
+        try? await APIService.shared.getMonthlyBudget(month: month)
+    }
+    private func fetchTransactions() async -> APITransactionsResponse? {
+        try? await APIService.shared.getTransactions(page: 1, limit: 20, pendingReview: true)
     }
 
     func apiMonthString(from date: Date) -> String {
@@ -522,4 +531,6 @@ private struct CashflowCTAView: View {
 
 #Preview {
     CashflowView()
+        .environment(PlaidManager.shared)
+        .environment(SubscriptionManager.shared)
 }

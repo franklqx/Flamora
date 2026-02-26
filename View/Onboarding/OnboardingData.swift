@@ -80,11 +80,11 @@ struct MotivationOption: Identifiable {
 }
 
 let motivationOptions: [MotivationOption] = [
-    MotivationOption(icon: "airplane.departure", title: "Quit the 9-to-5", subtitle: "Work less, live more", key: "quit"),
-    MotivationOption(icon: "figure.2.and.child.holdinghands", title: "Family First", subtitle: "More time with loved ones", key: "family"),
-    MotivationOption(icon: "shield.checkered", title: "Security", subtitle: "No more money stress", key: "security"),
-    MotivationOption(icon: "globe.americas", title: "Adventure", subtitle: "Travel the world", key: "adventure"),
-    MotivationOption(icon: "paintpalette", title: "Passion", subtitle: "Work on what I love", key: "passion"),
+    MotivationOption(icon: "airplane.departure", title: "Quit the 9-to-5", subtitle: "Work because you want to, not have to", key: "quit"),
+    MotivationOption(icon: "figure.2.and.child.holdinghands", title: "Family First", subtitle: "Be there for every moment that matters", key: "family"),
+    MotivationOption(icon: "shield.checkered", title: "Security", subtitle: "Sleep well knowing you're covered", key: "security"),
+    MotivationOption(icon: "globe.americas", title: "Adventure", subtitle: "Go anywhere, anytime", key: "adventure"),
+    MotivationOption(icon: "paintpalette", title: "Passion", subtitle: "Build what you actually care about", key: "passion"),
 ]
 
 // MARK: - Country / Currency

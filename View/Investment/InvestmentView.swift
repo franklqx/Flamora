@@ -185,11 +185,20 @@ private struct InvestmentCTAView: View {
 // MARK: - Data Loading & Computed Data
 private extension InvestmentView {
     func loadInvestmentData() async {
-        async let nwTask = try? await APIService.shared.getNetWorthSummary()
-        async let holdingsTask = try? await APIService.shared.getInvestmentHoldings()
+        async let nwTask = fetchNetWorth()
+        async let holdingsTask = fetchHoldings()
         let (nw, holdings) = await (nwTask, holdingsTask)
         apiNetWorth = nw
         apiHoldings = holdings
+    }
+
+    // async let + try? 组合会触发 Swift runtime crash (swift_task_dealloc)
+    // 将 try? 包裹在独立函数中避免此问题
+    private func fetchNetWorth() async -> APINetWorthSummary? {
+        try? await APIService.shared.getNetWorthSummary()
+    }
+    private func fetchHoldings() async -> APIHoldingsResponse? {
+        try? await APIService.shared.getInvestmentHoldings()
     }
 
     var computedPortfolio: Portfolio {
@@ -404,4 +413,6 @@ private struct InvestmentAccountPositionRow: View {
 
 #Preview {
     InvestmentView()
+        .environment(PlaidManager.shared)
+        .environment(SubscriptionManager.shared)
 }

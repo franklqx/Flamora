@@ -53,7 +53,7 @@ struct OB_SuccessView: View {
 
             Spacer().frame(height: AppSpacing.xxl)
 
-            Text("Welcome to the\nExplorer Club, \(data.userName)! \u{1F680}")
+            Text("Your FIRE journey\nstarts now, \(data.userName)! 🔥")
                 .font(.h1)
                 .foregroundColor(AppColors.textPrimary)
                 .multilineTextAlignment(.center)
@@ -63,7 +63,7 @@ struct OB_SuccessView: View {
 
             Spacer().frame(height: AppSpacing.md)
 
-            Text("We've created your dashboard.\nYour first quest is waiting for you.")
+            Text("Your personalized FIRE dashboard is ready.\nLet's see how close you are to freedom.")
                 .font(.bodySmall)
                 .foregroundColor(AppColors.textSecondary)
                 .multilineTextAlignment(.center)
@@ -75,7 +75,7 @@ struct OB_SuccessView: View {
 
             // Go to Dashboard 按钮
             Button(action: onFinish) {
-                Text("Go to Dashboard")
+                Text("See My Dashboard 🔥")
                     .font(.bodyRegular)
                     .fontWeight(.semibold)
                     .foregroundColor(AppColors.textInverse)

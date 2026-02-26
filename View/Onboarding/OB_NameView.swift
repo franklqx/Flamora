@@ -19,14 +19,20 @@ struct OB_NameView: View {
                 Spacer()
                     .frame(height: 80)
 
-                Text("What's your name?")
+                Text("First, what should\nwe call you?")
                     .font(.h1)
                     .foregroundColor(AppColors.textPrimary)
+
+                Spacer().frame(height: 8)
+
+                Text("Your plan will be personalized just for you.")
+                    .font(.bodySmall)
+                    .foregroundColor(AppColors.textSecondary)
 
                 Spacer()
                     .frame(height: AppSpacing.lg)
 
-                TextField("", text: $data.userName, prompt: Text("Your Name").foregroundColor(AppColors.textTertiary))
+                TextField("", text: $data.userName, prompt: Text("Your first name").foregroundColor(AppColors.textTertiary))
                     .font(.bodyRegular)
                     .foregroundColor(AppColors.textPrimary)
                     .textContentType(.givenName)
@@ -47,7 +53,7 @@ struct OB_NameView: View {
                 isFocused = false
                 onNext()
             }) {
-                Text("Next")
+                Text("That's Me →")
                     .font(.bodyRegular)
                     .fontWeight(.semibold)
                     .foregroundColor(isValid ? AppColors.textInverse : AppColors.textTertiary)

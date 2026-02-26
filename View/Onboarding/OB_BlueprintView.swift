@@ -31,7 +31,7 @@ struct OB_BlueprintView: View {
             Spacer()
                 .frame(height: 60)
 
-            Text("\(data.userName), here is\nyour roadmap.")
+            Text("\(data.userName), your FIRE\nnumber is ready.")
                 .font(.h1)
                 .foregroundColor(AppColors.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -100,7 +100,7 @@ struct OB_BlueprintView: View {
                         .scaleEffect(1.5)
                         .tint(Color.white)
                     
-                    Text("Calculating your path to freedom...")
+                    Text("Running the numbers on your freedom... ✨")
                         .font(.bodyRegular)
                         .foregroundColor(AppColors.textSecondary)
                 }
@@ -114,15 +114,15 @@ struct OB_BlueprintView: View {
                         value: "\(summary.freedomAge)",
                         delay: 0.3
                     )
-                    
+
                     StatBox(
-                        label: "Years Left",
+                        label: "Years Away",
                         value: "\(summary.yearsLeft)",
                         delay: 0.4
                     )
-                    
+
                     StatBox(
-                        label: "Target",
+                        label: "FIRE Number",
                         value: formatCurrency(summary.fireNumber),
                         delay: 0.5
                     )
@@ -137,7 +137,7 @@ struct OB_BlueprintView: View {
                         .font(.system(size: 32))
                         .foregroundColor(.red)
                     
-                    Text("Oops!")
+                    Text("Couldn't crunch the numbers.")
                         .font(.h3)
                         .foregroundColor(AppColors.textPrimary)
                     
@@ -175,12 +175,12 @@ struct OB_BlueprintView: View {
                         .font(.h3)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Your Savings Rate")
+                        Text("Your FIRE Rate")
                             .font(.bodySmall)
                             .fontWeight(.semibold)
                             .foregroundColor(AppColors.textPrimary)
 
-                        Text("Keep saving \(summary.savingsRate, specifier: "%.1f")% of your income to reach FIRE.")
+                        Text("Save \(summary.savingsRate, specifier: "%.1f")% monthly and you'll hit your FIRE number on schedule.")
                             .font(.caption)
                             .foregroundColor(AppColors.textSecondary)
                     }
@@ -203,7 +203,7 @@ struct OB_BlueprintView: View {
                 saveDataAndContinue()
             }) {
                 HStack(spacing: 8) {
-                    Text("Save My Plan")
+                    Text("Lock In My Blueprint 🔥")
                     Image(systemName: "arrow.right")
                         .font(.caption)
                 }
@@ -269,8 +269,8 @@ struct OB_BlueprintView: View {
         savedFreedomAge = summary.freedomAge
         savedYearsLeft = summary.yearsLeft
         savedSavingsRate = summary.savingsRate
-        hasCompletedOnboarding = true
-        
+        // hasCompletedOnboarding 不在这里写——必须走完 Paywall + PlaidLink 才算完成
+
         // 继续到下一页
         onNext()
     }
