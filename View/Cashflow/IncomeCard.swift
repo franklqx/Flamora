@@ -7,131 +7,185 @@ import SwiftUI
 
 struct IncomeCard: View {
     let income: Income
-    let monthLabel: String
+    let monthDates: [Date]
+    let selectedMonthIndex: Int
+    var onMonthSelected: ((Int) -> Void)? = nil
     var onCardTapped: (() -> Void)? = nil
     var onActiveTapped: (() -> Void)? = nil
     var onPassiveTapped: (() -> Void)? = nil
 
-    private let breakdownColors: [Color] = [
-        Color(hex: "#A78BFA"),
-        Color(hex: "#93C5FD")
-    ]
+    // Relative bar heights per month (last 5 visible months)
+    // These are proportion values 0.0–1.0 representing historical income levels
+    private let monthBarRatios: [Double] = [0.68, 0.55, 0.62, 0.80, 0.95, 1.0, 0.88, 0.92, 0.78, 0.85, 0.90, 1.0]
+
+    private var visibleMonthIndices: [Int] {
+        let total = monthDates.count
+        guard total > 0 else { return [] }
+        let end = min(selectedMonthIndex + 1, total)
+        let start = max(end - 5, 0)
+        return Array(start..<end)
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 18) {
-                HStack {
-                    Text("My Income")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
+        VStack(spacing: 0) {
+            // Header
+            Text("TOTAL INCOME")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(AppColors.textTertiary)
+                .tracking(1.0)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.top, AppSpacing.cardPadding)
+                .padding(.bottom, 2)
+                .contentShape(Rectangle())
+                .onTapGesture { onCardTapped?() }
 
-                    Spacer()
+            // Large total amount
+            totalAmountView
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .contentShape(Rectangle())
+                .onTapGesture { onCardTapped?() }
 
-                    Text(monthLabel)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(Color(hex: "#9CA3AF"))
-                }
+            // Monthly bar chart
+            monthlyBarChart
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.top, 16)
+                .padding(.bottom, 4)
 
-                HStack(alignment: .top, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        totalAmountView
-                    }
+            // Divider
+            Rectangle()
+                .fill(AppColors.surfaceBorder)
+                .frame(height: 0.5)
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.vertical, 12)
 
-                    Spacer()
-
-                    miniChart
-                }
+            // Breakdown rows
+            VStack(spacing: 14) {
+                incomeRow(
+                    title: "Active Income",
+                    amount: income.active,
+                    color: AppColors.accentBlue,
+                    onTap: onActiveTapped
+                )
+                incomeRow(
+                    title: "Passive Income",
+                    amount: income.passive,
+                    color: AppColors.accentBlue,
+                    onTap: onPassiveTapped
+                )
             }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                onCardTapped?()
-            }
-
-            breakdownRow
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.bottom, AppSpacing.cardPadding)
         }
-        .padding(20)
-        .background(Color(hex: "#121212"))
-        .cornerRadius(20)
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color(hex: "#222222"), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.xl)
+                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
         )
     }
+
+    // MARK: - Sub-views
 
     private var totalAmountView: some View {
         let parts = formatCurrencyWithCents(income.total)
         return HStack(alignment: .firstTextBaseline, spacing: 0) {
             Text(parts.dollars)
-                .font(.system(size: 30, weight: .bold))
+                .font(.system(size: 32, weight: .bold))
                 .foregroundColor(.white)
-
             Text(parts.cents)
-                .font(.system(size: 30, weight: .bold))
-                .foregroundColor(Color(hex: "#6B7280"))
+                .font(.system(size: 18, weight: .bold))
+                .foregroundColor(AppColors.textTertiary)
         }
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
-    private var breakdownRow: some View {
-        let items = breakdownItems
-        let actions: [(() -> Void)?] = [onActiveTapped, onPassiveTapped]
+    private var monthlyBarChart: some View {
+        let indices = visibleMonthIndices
 
-        return HStack(spacing: 24) {
-            ForEach(items.indices, id: \.self) { index in
-                let item = items[index]
-                let action = actions[index]
+        return HStack(alignment: .bottom, spacing: 0) {
+            ForEach(indices, id: \.self) { idx in
+                let isSelected = idx == selectedMonthIndex
+                let ratioIdx = min(idx, monthBarRatios.count - 1)
+                let ratio = monthBarRatios[ratioIdx]
+                let barH = CGFloat(20 + ratio * 60)
+                let monthLabel = Self.barMonthFormatter.string(from: monthDates[idx])
 
-                Button {
-                    action?()
-                } label: {
-                    IncomeBreakdownItem(
-                        title: item.title,
-                        amount: formatCurrencyWithCents(item.amount).full,
-                        color: breakdownColors[index % breakdownColors.count],
-                        hasAction: action != nil
-                    )
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                VStack(spacing: 6) {
+                    // Bar
+                    ZStack(alignment: .bottom) {
+                        // Background capsule
+                        Capsule()
+                            .fill(AppColors.surfaceInput)
+                            .frame(width: 16, height: 80)
+
+                        // Fill capsule
+                        Capsule()
+                            .fill(
+                                isSelected
+                                ? LinearGradient(
+                                    colors: [AppColors.accentBlueBright, AppColors.accentPurple],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                  )
+                                : LinearGradient(
+                                    colors: [AppColors.accentBlue.opacity(0.5), AppColors.accentBlue.opacity(0.3)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                  )
+                            )
+                            .frame(width: 16, height: max(12, barH * 0.85))
+                    }
+
+                    // Month label
+                    Text(monthLabel)
+                        .font(.system(size: 10, weight: isSelected ? .bold : .medium))
+                        .foregroundColor(isSelected ? .white : AppColors.textTertiary)
                 }
-                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    onMonthSelected?(idx)
+                }
             }
         }
+        .frame(height: 100)
     }
 
-    private var breakdownItems: [IncomeBreakdown] {
-        [
-            IncomeBreakdown(title: "Active Income", amount: income.active),
-            IncomeBreakdown(title: "Passive income", amount: income.passive)
-        ]
-    }
-
-    private var miniChart: some View {
-        let heights: [CGFloat] = [10, 20, 14, 26, 18, 30, 16]
-        let colors: [Color] = [
-            Color(hex: "#A78BFA"),
-            Color(hex: "#C4B5FD"),
-            Color(hex: "#93C5FD"),
-            Color(hex: "#60A5FA"),
-            Color(hex: "#A78BFA"),
-            Color(hex: "#93C5FD"),
-            Color(hex: "#60A5FA")
-        ]
-
-        return HStack(alignment: .bottom, spacing: 4) {
-            ForEach(heights.indices, id: \.self) { index in
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(colors[index])
-                    .frame(width: 6, height: heights[index])
+    private func incomeRow(title: String, amount: Double, color: Color, onTap: (() -> Void)?) -> some View {
+        Button { onTap?() } label: {
+            HStack {
+                Circle()
+                    .fill(color)
+                    .frame(width: 8, height: 8)
+                Text(title)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(AppColors.textSecondary)
+                Spacer()
+                Text(formatCurrencyWithCents(amount).full)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(.white)
             }
         }
-        .padding(.top, 6)
+        .buttonStyle(.plain)
+        .disabled(onTap == nil)
     }
+
+    // MARK: - Formatters
+
+    private static let barMonthFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMM''yy"
+        return f
+    }()
 
     private func formatCurrencyWithCents(_ value: Double) -> CurrencyParts {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        formatter.maximumFractionDigits = 2
-        formatter.minimumFractionDigits = 2
-        let formatted = formatter.string(from: NSNumber(value: value)) ?? "$0.00"
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.currencyCode = "USD"
+        f.maximumFractionDigits = 2
+        f.minimumFractionDigits = 2
+        let formatted = f.string(from: NSNumber(value: value)) ?? "$0.00"
         let pieces = formatted.split(separator: ".")
         let dollars = pieces.first.map(String.init) ?? "$0"
         let cents = pieces.count > 1 ? ".\(pieces[1])" : ".00"
@@ -139,60 +193,24 @@ struct IncomeCard: View {
     }
 }
 
+private struct CurrencyParts { let dollars: String; let cents: String; let full: String }
+
 #Preview {
     ZStack {
         Color.black.ignoresSafeArea()
+        let dates: [Date] = {
+            let cal = Calendar.current
+            let now = Date()
+            let base = cal.date(from: cal.dateComponents([.year, .month], from: now))!
+            return (-4...0).compactMap { cal.date(byAdding: .month, value: $0, to: base) }
+        }()
         IncomeCard(
             income: MockData.cashflowData.income,
-            monthLabel: "Jan 2026",
+            monthDates: dates,
+            selectedMonthIndex: dates.count - 1,
             onCardTapped: {},
             onActiveTapped: {},
             onPassiveTapped: {}
-        )
-        .padding()
+        ).padding()
     }
-}
-
-private struct IncomeBreakdown {
-    let title: String
-    let amount: Double
-}
-
-private struct IncomeBreakdownItem: View {
-    let title: String
-    let amount: String
-    let color: Color
-    var hasAction: Bool = false
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(color)
-                .frame(width: 3, height: 42)
-
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 4) {
-                    Text(title)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color(hex: "#9CA3AF"))
-
-                    if hasAction {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(Color(hex: "#6B7280"))
-                    }
-                }
-
-                Text(amount)
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.white)
-            }
-        }
-    }
-}
-
-private struct CurrencyParts {
-    let dollars: String
-    let cents: String
-    let full: String
 }

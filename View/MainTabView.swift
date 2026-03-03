@@ -10,7 +10,6 @@ internal import Auth
 
 struct MainTabView: View {
     @State private var selectedTab = 0
-    @State private var showHeaderBar = true
     @State private var isSimulatorShown = false
     @State private var showSettings = false
 
@@ -18,66 +17,54 @@ struct MainTabView: View {
     @Environment(PlaidManager.self) private var plaidManager
 
     var body: some View {
-        GeometryReader { proxy in
-            let topInset = proxy.safeAreaInsets.top
-            let bottomInset = proxy.safeAreaInsets.bottom
-            let shouldShowTabBar = true
-            let shouldShowHeaderBar = selectedTab == 0
-            ? (isSimulatorShown ? showHeaderBar : true)
-            : showHeaderBar
-            ZStack {
-                // 背景
-                AppBackgroundView()
+        ZStack {
+            // 全局纯黑背景
+            AppBackgroundView()
 
-                // 内容区域
-                Group {
-                    switch selectedTab {
-                    case 0:
-                        JourneyContainerView(isSimulatorShown: $isSimulatorShown)
-                    case 1:
-                        CashflowView()
-                    case 2:
-                        InvestmentView()
-                    default:
-                        JourneyContainerView(isSimulatorShown: $isSimulatorShown)
-                    }
-                }
-                .background(Color.clear)
-                .transaction { $0.animation = nil }
-                .onPreferenceChange(HeaderVisibilityPreferenceKey.self) { value in
-                    withAnimation(nil) {
-                        showHeaderBar = value
-                    }
-                }
-                .safeAreaInset(edge: .top, spacing: 0) {
-                    TopHeaderBar(
-                        userName: SupabaseManager.shared.currentUser?.email?.components(separatedBy: "@").first
-                            ?? MockData.displayName,
-                        leftAction: headerLeftAction,
-                        onSettingsTapped: { showSettings = true },
-                        isVisible: shouldShowHeaderBar
-                    )
+            // 内容区域
+            Group {
+                switch selectedTab {
+                case 0:
+                    JourneyContainerView(isSimulatorShown: $isSimulatorShown)
+                case 1:
+                    CashflowView()
+                case 2:
+                    InvestmentView()
+                default:
+                    JourneyContainerView(isSimulatorShown: $isSimulatorShown)
                 }
             }
-            .overlay(alignment: .top) {
-                Color.clear
-                    .frame(height: topInset)
-                    .ignoresSafeArea(edges: .top)
+            .background(Color.clear)
+            .transaction { $0.animation = nil }
+            // 顶部栏始终使用 safeAreaInset 固定在顶部，不响应滚动隐藏
+            .safeAreaInset(edge: .top, spacing: 0) {
+                TopHeaderBar(
+                    pageTitle: pageTitleFor(selectedTab),
+                    leftAction: headerLeftAction,
+                    onSettingsTapped: { showSettings = true },
+                    isVisible: true
+                )
             }
-            .overlay(alignment: .bottom) {
-                if shouldShowTabBar {
-                    GlassmorphicTabBar(selectedTab: $selectedTab)
-                        .padding(.bottom, bottomInset + 48)
-                        .zIndex(10)
-                        .allowsHitTesting(true)
-                }
-            }
+        }
+        // 底部导航贴底：safeAreaInset 自动处理安全区，无需手动偏移
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            GlassmorphicTabBar(selectedTab: $selectedTab)
+                .allowsHitTesting(true)
         }
         .ignoresSafeArea(.keyboard, edges: .all)
         .sheet(isPresented: $showSettings) {
             SettingsView()
                 .environment(subscriptionManager)
                 .environment(plaidManager)
+        }
+    }
+
+    private func pageTitleFor(_ tab: Int) -> String {
+        switch tab {
+        case 0: return isSimulatorShown ? "Simulator" : "Home"
+        case 1: return "Cash Flow"
+        case 2: return "Investment"
+        default: return "Home"
         }
     }
 
@@ -93,7 +80,6 @@ struct MainTabView: View {
             return .none
         }
     }
-
 }
 
 #Preview {

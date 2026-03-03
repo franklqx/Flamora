@@ -2,30 +2,35 @@
 //  TopHeaderBar.swift
 //  Flamora app
 //
+//  顶部导航栏 - 页面标题风格
+//
 
 import SwiftUI
 
 struct TopHeaderBar: View {
-    let userName: String
+    let pageTitle: String
     let leftAction: HeaderLeftAction
     let onSettingsTapped: () -> Void
     let isVisible: Bool
-    static let height: CGFloat = 72
+    static let height: CGFloat = 60
 
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Welcome back,")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color(hex: "#7C7C7C"))
+        HStack(spacing: 10) {
+            // Left: dot-grid icon + page title
+            HStack(spacing: 8) {
+                Image(systemName: "circle.grid.3x3.fill")
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundColor(AppColors.textTertiary)
 
-                Text(userName)
-                    .font(.system(size: 30, weight: .bold))
+                Text(pageTitle.uppercased())
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundColor(.white)
+                    .tracking(0.6)
             }
 
             Spacer()
 
+            // Right: contextual action + settings
             HStack(spacing: 10) {
                 switch leftAction {
                 case .none:
@@ -36,12 +41,11 @@ struct TopHeaderBar: View {
                     FlameTogglePill(isOn: isOn, action: action)
                 }
 
-                HeaderIconButton(icon: "gearshape.fill", action: onSettingsTapped)
+                HeaderIconButton(icon: "gearshape", action: onSettingsTapped)
             }
         }
         .padding(.horizontal, AppSpacing.screenPadding)
-        .padding(.top, 6)
-        .padding(.bottom, 8)
+        .padding(.vertical, 10)
         .frame(maxWidth: .infinity)
         .background(Color.clear)
         .opacity(isVisible ? 1 : 0)
@@ -64,16 +68,16 @@ private struct HeaderIconButton: View {
     var body: some View {
         Button(action: action) {
             Circle()
-                .fill(Color(hex: "#121212"))
+                .fill(AppColors.surface)
                 .frame(width: 34, height: 34)
                 .overlay(
                     Image(systemName: icon)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white)
                 )
                 .overlay(
                     Circle()
-                        .stroke(Color(hex: "#222222"), lineWidth: 1)
+                        .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
                 )
         }
         .buttonStyle(.plain)
@@ -83,11 +87,14 @@ private struct HeaderIconButton: View {
 #Preview {
     ZStack {
         Color.black.ignoresSafeArea()
-        TopHeaderBar(
-            userName: "Enxi Lin",
-            leftAction: .flameToggle(isOn: true, action: {}),
-            onSettingsTapped: {},
-            isVisible: true
-        )
+        VStack {
+            TopHeaderBar(
+                pageTitle: "Home",
+                leftAction: .flameToggle(isOn: true, action: {}),
+                onSettingsTapped: {},
+                isVisible: true
+            )
+            Spacer()
+        }
     }
 }

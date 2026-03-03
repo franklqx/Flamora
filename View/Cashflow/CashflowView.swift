@@ -40,17 +40,6 @@ struct CashflowView: View {
         )
     }
 
-    private var formattedMonthLabel: String {
-        monthHeaderLabel(selectedMonthDate)
-    }
-
-    private var selectedMonthDate: Date {
-        guard selectedMonthIndex >= 0, selectedMonthIndex < monthDates.count else {
-            return Date()
-        }
-        return monthDates[selectedMonthIndex]
-    }
-
     var body: some View {
         if plaidManager.hasLinkedBank {
             connectedView
@@ -62,24 +51,21 @@ struct CashflowView: View {
     var connectedView: some View {
         NavigationStack {
             ZStack {
-                AppBackgroundView()
+                Color.black.ignoresSafeArea()
 
                 GeometryReader { proxy in
                     ScrollView(showsIndicators: false) {
-                        VStack(spacing: 20) {
-                            monthSelector
-
+                        VStack(spacing: 16) {
                             IncomeCard(
                                 income: data.income,
-                                monthLabel: formattedMonthLabel,
+                                monthDates: monthDates,
+                                selectedMonthIndex: selectedMonthIndex,
+                                onMonthSelected: { idx in selectedMonthIndex = idx },
                                 onCardTapped: { showTotalIncomeDetail = true },
                                 onActiveTapped: { showActiveIncomeDetail = true },
                                 onPassiveTapped: { showPassiveIncomeDetail = true }
                             )
-                                .padding(.horizontal, AppSpacing.screenPadding)
-
-                            sectionTitle("Monthly Savings")
-                                .padding(.horizontal, AppSpacing.screenPadding)
+                            .padding(.horizontal, AppSpacing.screenPadding)
 
                             SavingsTargetCard(
                                 currentAmount: $currentSavings,
@@ -89,23 +75,19 @@ struct CashflowView: View {
                             )
                             .padding(.horizontal, AppSpacing.screenPadding)
 
-                            sectionTitle("Monthly Budget Spend")
-                                .padding(.horizontal, AppSpacing.screenPadding)
-
                             BudgetCard(
                                 spending: spendingForDisplay,
                                 onCardTapped: { showTotalSpendingDetail = true },
                                 onNeedsTapped: { showNeedsSpendingDetail = true },
                                 onWantsTapped: { showWantsSpendingDetail = true }
                             )
-                                .padding(.horizontal, AppSpacing.screenPadding)
+                            .padding(.horizontal, AppSpacing.screenPadding)
 
                             toReviewSection
-
                         }
                         .frame(minHeight: proxy.size.height, alignment: .top)
-                        .padding(.top, TopHeaderBar.height)
-                        .padding(.bottom, AppSpacing.tabBarReserve)
+                        .padding(.top, AppSpacing.md)
+                        .padding(.bottom, AppSpacing.lg)
                     }
                 }
             }
@@ -149,6 +131,7 @@ struct CashflowView: View {
 }
 
 // MARK: - Data Loading
+
 private extension CashflowView {
     func loadCashflowData() async {
         let monthStr = apiMonthString(from: Date())
@@ -170,8 +153,6 @@ private extension CashflowView {
         }
     }
 
-    // async let + try? 组合会触发 Swift runtime crash (swift_task_dealloc)
-    // 将 try? 包裹在独立函数中避免此问题
     private func fetchBudget(month: String) async -> APIMonthlyBudget? {
         try? await APIService.shared.getMonthlyBudget(month: month)
     }
@@ -186,78 +167,9 @@ private extension CashflowView {
     }
 }
 
-// MARK: - Header
-private extension CashflowView {
-    var monthSelector: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 10) {
-                    ForEach(monthDates.indices, id: \.self) { index in
-                        let isSelected = index == selectedMonthIndex
-                        Text(monthPillLabel(monthDates[index]))
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(isSelected ? .white : Color(hex: "#6B7280"))
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 16)
-                            .background(
-                                Capsule()
-                                    .fill(isSelected ? Color(hex: "#121212") : Color.clear)
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(isSelected ? Color(hex: "#222222") : Color.clear, lineWidth: 1)
-                                    )
-                            )
-                            .id(index)
-                            .onTapGesture {
-                                selectedMonthIndex = index
-                            }
-                    }
-                }
-                .padding(.horizontal, AppSpacing.screenPadding)
-            }
-            .onAppear {
-                scrollToCurrentMonth(using: proxy, animated: false)
-            }
-            .onChange(of: selectedMonthIndex) { _, _ in
-                scrollToCurrentMonth(using: proxy, animated: true)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-// MARK: - Sections
-private extension CashflowView {
-    func sectionTitle(_ title: String) -> some View {
-        Text(title)
-            .font(.system(size: 18, weight: .bold))
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
 // MARK: - Month Helpers
+
 private extension CashflowView {
-    static let monthPillFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM yy"
-        return formatter
-    }()
-
-    static let monthHeaderFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM yyyy"
-        return formatter
-    }()
-
-    func monthPillLabel(_ date: Date) -> String {
-        Self.monthPillFormatter.string(from: date)
-    }
-
-    func monthHeaderLabel(_ date: Date) -> String {
-        Self.monthHeaderFormatter.string(from: date)
-    }
-
     func initializeMonths() {
         guard !hasInitializedMonths else { return }
         let calendar = Calendar.current
@@ -268,131 +180,132 @@ private extension CashflowView {
         selectedMonthIndex = 5
         hasInitializedMonths = true
     }
-
-    func scrollToCurrentMonth(using proxy: ScrollViewProxy, animated: Bool) {
-        guard selectedMonthIndex >= 0, selectedMonthIndex < monthDates.count else { return }
-        if animated {
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                proxy.scrollTo(selectedMonthIndex, anchor: .center)
-            }
-        } else {
-            proxy.scrollTo(selectedMonthIndex, anchor: .center)
-        }
-    }
 }
 
 // MARK: - To Review
+
 private extension CashflowView {
     var toReviewSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("To Review")
-                    .font(.system(size: 18, weight: .bold))
+                Text("TO REVIEW")
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundColor(.white)
+                    .tracking(0.6)
 
                 Spacer()
 
-                Text("\(reviewCount) Left")
+                Text("\(reviewCount) LEFT")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color(hex: "#9CA3AF"))
-                    .padding(.vertical, 4)
-                    .padding(.horizontal, 10)
-                    .background(Color(hex: "#1A1A1A"))
-                    .clipShape(Capsule())
+                    .foregroundColor(AppColors.textSecondary)
+                    .tracking(0.4)
             }
             .padding(.horizontal, AppSpacing.screenPadding)
 
-            ForEach(reviewTransactions, id: \.id) { transaction in
-                TransactionCard(
-                    transaction: transaction,
-                    onNeeds: { classify(transaction, as: .needs) },
-                    onWants: { classify(transaction, as: .wants) }
-                )
-                .padding(.horizontal, AppSpacing.screenPadding)
+            if reviewTransactions.isEmpty {
+                Text("All transactions reviewed")
+                    .font(.system(size: 14))
+                    .foregroundColor(AppColors.textTertiary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 20)
+            } else {
+                ForEach(reviewTransactions, id: \.id) { transaction in
+                    TransactionCard(
+                        transaction: transaction,
+                        onNeeds: { classify(transaction, as: .needs) },
+                        onWants: { classify(transaction, as: .wants) }
+                    )
+                    .padding(.horizontal, AppSpacing.screenPadding)
+                }
             }
         }
+        .padding(.top, 4)
     }
 
-    enum ReviewCategory {
-        case needs
-        case wants
-    }
+    enum ReviewCategory { case needs; case wants }
 
     func classify(_ transaction: Transaction, as category: ReviewCategory) {
         if let index = reviewTransactions.firstIndex(where: { $0.id == transaction.id }) {
             reviewTransactions.remove(at: index)
             reviewCount = max(reviewCount - 1, 0)
-
             totalSpend += transaction.amount
             switch category {
-            case .needs:
-                needsTotal += transaction.amount
-            case .wants:
-                wantsTotal += transaction.amount
+            case .needs: needsTotal += transaction.amount
+            case .wants: wantsTotal += transaction.amount
             }
         }
     }
 }
 
-// MARK: - Transaction Card
+// MARK: - Transaction Card (line style per reference)
+
 private struct TransactionCard: View {
     let transaction: Transaction
     let onNeeds: () -> Void
     let onWants: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(transaction.merchant)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-
-                    Text(formattedDate(transaction.date))
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(Color(hex: "#6B7280"))
-                }
-
-                Spacer()
-
-                Text(formattedAmount(transaction.amount))
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
+        HStack(spacing: 14) {
+            // Icon circle
+            ZStack {
+                Circle()
+                    .fill(AppColors.surfaceElevated)
+                    .frame(width: 40, height: 40)
+                    .overlay(Circle().stroke(AppColors.surfaceBorder, lineWidth: 0.75))
+                Image(systemName: "bag")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(AppColors.textSecondary)
             }
 
-            HStack(spacing: 12) {
-                Button(action: onNeeds) {
-                    HStack {
-                        Text("Needs")
-                            .font(.system(size: 12, weight: .bold))
-                    }
-                    .foregroundColor(Color(hex: "#0F172A"))
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .background(Color(hex: "#A78BFA"))
-                    .clipShape(Capsule())
-                }
+            // Merchant + date
+            VStack(alignment: .leading, spacing: 3) {
+                Text(transaction.merchant)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white)
+                Text(formattedDate(transaction.date))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(AppColors.textTertiary)
+            }
 
-                Button(action: onWants) {
-                    HStack {
-                        Text("Wants")
-                            .font(.system(size: 12, weight: .bold))
-                    }
-                    .foregroundColor(Color(hex: "#0F172A"))
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .background(Color(hex: "#93C5FD"))
-                    .clipShape(Capsule())
+            Spacer()
+
+            // Amount + category badge
+            VStack(alignment: .trailing, spacing: 6) {
+                Text(formattedAmount(transaction.amount))
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(.white)
+
+                HStack(spacing: 8) {
+                    categoryButton(title: "Needs", action: onNeeds)
+                    categoryButton(title: "Wants", action: onWants)
                 }
             }
         }
-        .padding(20)
-        .background(Color(hex: "#121212"))
-        .cornerRadius(20)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color(hex: "#222222"), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
         )
+    }
+
+    private func categoryButton(title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(AppColors.textSecondary)
+                .padding(.vertical, 5)
+                .padding(.horizontal, 12)
+                .background(Color.clear)
+                .overlay(
+                    Capsule()
+                        .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
+                )
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 
     private func formattedDate(_ raw: String) -> String {
@@ -405,11 +318,11 @@ private struct TransactionCard: View {
         formatter.currencyCode = "USD"
         formatter.maximumFractionDigits = 2
         formatter.minimumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: amount)) ?? "$0.00"
+        return formatter.string(from: NSNumber(value: -amount)) ?? "$0.00"
     }
 }
 
-// MARK: - Cashflow 初始状态 CTA
+// MARK: - Cashflow CTA
 
 private struct CashflowCTAView: View {
     @Environment(PlaidManager.self) private var plaidManager
@@ -421,12 +334,11 @@ private struct CashflowCTAView: View {
                 VStack(spacing: AppSpacing.lg) {
                     Spacer().frame(height: AppSpacing.xl)
 
-                    // Hero icon
                     ZStack {
                         Circle()
                             .fill(
                                 RadialGradient(
-                                    colors: [Color(hex: "#93C5FD").opacity(0.15), Color.clear],
+                                    colors: [AppColors.accentBlue.opacity(0.15), Color.clear],
                                     center: .center,
                                     startRadius: 0,
                                     endRadius: 80
@@ -434,11 +346,11 @@ private struct CashflowCTAView: View {
                             )
                             .frame(width: 160, height: 160)
 
-                        Image(systemName: "creditcard.fill")
+                        Image(systemName: "creditcard")
                             .font(.system(size: 52))
                             .foregroundStyle(
                                 LinearGradient(
-                                    colors: [Color(hex: "#60A5FA"), Color(hex: "#A78BFA")],
+                                    colors: [AppColors.accentBlueBright, AppColors.accentPurple],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -453,7 +365,7 @@ private struct CashflowCTAView: View {
 
                         Text("Connect your accounts to automatically\ntrack spending, savings, and budgets.")
                             .font(.system(size: 15))
-                            .foregroundColor(Color(hex: "#9CA3AF"))
+                            .foregroundColor(AppColors.textSecondary)
                             .multilineTextAlignment(.center)
                             .lineSpacing(4)
                     }
@@ -463,7 +375,7 @@ private struct CashflowCTAView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: icon)
                                     .font(.system(size: 16))
-                                    .foregroundColor(Color(hex: "#60A5FA"))
+                                    .foregroundColor(AppColors.accentBlueBright)
                                     .frame(width: 24)
                                 Text(text)
                                     .font(.system(size: 14, weight: .medium))
@@ -472,9 +384,9 @@ private struct CashflowCTAView: View {
                             }
                             .padding(.horizontal, 20)
                             .padding(.vertical, 14)
-                            .background(Color(hex: "#121212"))
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#222222"), lineWidth: 1))
+                            .background(AppColors.surface)
+                            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+                            .overlay(RoundedRectangle(cornerRadius: AppRadius.md).stroke(AppColors.surfaceBorder, lineWidth: 0.75))
                         }
                     }
                     .padding(.horizontal, AppSpacing.screenPadding)
@@ -482,16 +394,7 @@ private struct CashflowCTAView: View {
                     Spacer(minLength: AppSpacing.xl)
 
                     Button(action: {
-                        Task {
-                            if !subscriptionManager.isPremium {
-                                await subscriptionManager.checkStatus()
-                            }
-                            if subscriptionManager.isPremium {
-                                await plaidManager.startLinkFlow()
-                            } else {
-                                subscriptionManager.showPaywall = true
-                            }
-                        }
+                        Task { await plaidManager.startLinkFlow() }
                     }) {
                         HStack(spacing: 8) {
                             if plaidManager.isConnecting {
@@ -507,23 +410,29 @@ private struct CashflowCTAView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .background(
+                            LinearGradient(
+                                colors: AppColors.gradientFlamePill,
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
                     }
                     .disabled(plaidManager.isConnecting)
                     .padding(.horizontal, AppSpacing.screenPadding)
                     .padding(.bottom, 120)
                 }
                 .frame(minHeight: proxy.size.height, alignment: .top)
-                .padding(.bottom, AppSpacing.tabBarReserve)
-                .padding(.top, TopHeaderBar.height + AppSpacing.lg)
+                .padding(.bottom, AppSpacing.lg)
+                .padding(.top, AppSpacing.lg)
             }
         }
     }
 
     private let features: [(String, String)] = [
         ("list.bullet.rectangle", "Auto transaction categorization"),
-        ("chart.bar.fill", "Monthly needs vs wants breakdown"),
+        ("chart.bar", "Monthly needs vs wants breakdown"),
         ("arrow.up.arrow.down", "To Review — flag unusual spending"),
         ("banknote", "Savings goal tracking")
     ]

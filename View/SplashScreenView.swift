@@ -10,9 +10,7 @@ import SwiftUI
 struct SplashScreenView: View {
     var body: some View {
         ZStack {
-            AppBackgroundView()
-
-            Color.black.opacity(0.25)
+            AppColors.backgroundPrimary
                 .ignoresSafeArea()
 
             Text("FLAMORA")

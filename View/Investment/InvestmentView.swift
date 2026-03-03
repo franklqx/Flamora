@@ -31,26 +31,22 @@ struct InvestmentView: View {
 
             GeometryReader { proxy in
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
+                    VStack(spacing: 16) {
                         PortfolioCard(portfolio: computedPortfolio)
                             .padding(.horizontal, AppSpacing.screenPadding)
 
-                        sectionHeader(title: "Accounts", actionTitle: "View all") {
-                            showAccountsBreakdown = true
-                        }
+                        AccountsCard(
+                            accounts: computedAccounts,
+                            onViewAllTapped: { showAccountsBreakdown = true }
+                        )
                         .padding(.horizontal, AppSpacing.screenPadding)
-
-                        AccountsCard(accounts: computedAccounts)
-                            .padding(.horizontal, AppSpacing.screenPadding)
-
-                        sectionHeader(title: "Asset allocation")
-                            .padding(.horizontal, AppSpacing.screenPadding)
 
                         AssetAllocationCard(allocation: data.allocation)
                             .padding(.horizontal, AppSpacing.screenPadding)
                     }
                     .frame(minHeight: proxy.size.height, alignment: .top)
-                    .padding(.bottom, AppSpacing.tabBarReserve)
+                    .padding(.top, AppSpacing.md)
+                    .padding(.bottom, AppSpacing.lg)
                 }
             }
         }
@@ -79,7 +75,7 @@ private struct InvestmentCTAView: View {
                         Circle()
                             .fill(
                                 RadialGradient(
-                                    colors: [Color(hex: "#34D399").opacity(0.15), Color.clear],
+                                    colors: [AppColors.accentGreen.opacity(0.15), Color.clear],
                                     center: .center,
                                     startRadius: 0,
                                     endRadius: 80
@@ -91,7 +87,7 @@ private struct InvestmentCTAView: View {
                             .font(.system(size: 52))
                             .foregroundStyle(
                                 LinearGradient(
-                                    colors: [Color(hex: "#34D399"), Color(hex: "#60A5FA")],
+                                    colors: [AppColors.accentGreen, AppColors.accentBlueBright],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -106,7 +102,7 @@ private struct InvestmentCTAView: View {
 
                         Text("Connect your brokerage and bank accounts\nto see your full portfolio in one place.")
                             .font(.system(size: 15))
-                            .foregroundColor(Color(hex: "#9CA3AF"))
+                            .foregroundColor(AppColors.textSecondary)
                             .multilineTextAlignment(.center)
                             .lineSpacing(4)
                     }
@@ -116,7 +112,7 @@ private struct InvestmentCTAView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: icon)
                                     .font(.system(size: 16))
-                                    .foregroundColor(Color(hex: "#34D399"))
+                                    .foregroundColor(AppColors.accentGreen)
                                     .frame(width: 24)
                                 Text(text)
                                     .font(.system(size: 14, weight: .medium))
@@ -125,9 +121,9 @@ private struct InvestmentCTAView: View {
                             }
                             .padding(.horizontal, 20)
                             .padding(.vertical, 14)
-                            .background(Color(hex: "#121212"))
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#222222"), lineWidth: 1))
+                            .background(AppColors.surface)
+                            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+                            .overlay(RoundedRectangle(cornerRadius: AppRadius.md).stroke(AppColors.surfaceBorder, lineWidth: 0.75))
                         }
                     }
                     .padding(.horizontal, AppSpacing.screenPadding)
@@ -136,14 +132,7 @@ private struct InvestmentCTAView: View {
 
                     Button(action: {
                         Task {
-                            if !subscriptionManager.isPremium {
-                                await subscriptionManager.checkStatus()
-                            }
-                            if subscriptionManager.isPremium {
-                                await plaidManager.startLinkFlow()
-                            } else {
-                                subscriptionManager.showPaywall = true
-                            }
+                            await plaidManager.startLinkFlow()
                         }
                     }) {
                         HStack(spacing: 8) {
@@ -160,16 +149,22 @@ private struct InvestmentCTAView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .background(
+                            LinearGradient(
+                                colors: AppColors.gradientFire,
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
                     }
                     .disabled(plaidManager.isConnecting)
                     .padding(.horizontal, AppSpacing.screenPadding)
                     .padding(.bottom, 120)
                 }
                 .frame(minHeight: proxy.size.height, alignment: .top)
-                .padding(.bottom, AppSpacing.tabBarReserve)
-                .padding(.top, TopHeaderBar.height + AppSpacing.lg)
+                .padding(.bottom, AppSpacing.lg)
+                .padding(.top, AppSpacing.lg)
             }
         }
     }
@@ -229,37 +224,6 @@ private extension InvestmentView {
     }
 }
 
-// MARK: - Header
-private extension InvestmentView {
-    func sectionHeader(
-        title: String,
-        actionTitle: String? = nil,
-        action: (() -> Void)? = nil
-    ) -> some View {
-        HStack {
-            Text(title)
-                .font(.system(size: 18, weight: .bold))
-                .foregroundColor(.white)
-
-            Spacer()
-
-            if let actionTitle {
-                if let action {
-                    Button(action: action) {
-                        Text(actionTitle)
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(Color(hex: "#A78BFA"))
-                    }
-                    .buttonStyle(.plain)
-                } else {
-                    Text(actionTitle)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color(hex: "#A78BFA"))
-                }
-            }
-        }
-    }
-}
 
 private struct InvestmentAccountsBreakdownDetailView: View {
     let data: InvestmentAccountsBreakdownData
@@ -328,7 +292,7 @@ private struct InvestmentAccountsBreakdownDetailView: View {
 
                 Text("across connected accounts")
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(Color(hex: "#9CA3AF"))
+                    .foregroundColor(AppColors.textSecondary)
             }
         }
     }
@@ -376,7 +340,7 @@ private struct InvestmentAccountPositionRow: View {
                 Text(position.institution.uppercased())
                     .font(.system(size: 12, weight: .semibold))
                     .tracking(0.4)
-                    .foregroundColor(Color(hex: "#9CA3AF"))
+                    .foregroundColor(AppColors.textSecondary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
                     .background(

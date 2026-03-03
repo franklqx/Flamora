@@ -2,7 +2,7 @@
 //  FlameTogglePill.swift
 //  Flamora app
 //
-//  Unified flame toggle pill
+//  Fire/Simulator toggle — circular blue-purple style per reference design
 //
 
 import SwiftUI
@@ -14,48 +14,37 @@ struct FlameTogglePill: View {
     var body: some View {
         Button(action: action) {
             ZStack {
-                Capsule()
+                Circle()
                     .fill(
                         isOn
                         ? LinearGradient(
-                            colors: [
-                                Color(hex: "#A78BFA"),
-                                Color(hex: "#F9A8D4"),
-                                Color(hex: "#FCD34D")
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
+                            colors: AppColors.gradientFlamePill,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                          )
                         : LinearGradient(
-                            colors: [
-                                Color(hex: "#121212"),
-                                Color(hex: "#121212")
-                            ],
+                            colors: [AppColors.surface, AppColors.surface],
                             startPoint: .leading,
                             endPoint: .trailing
-                        )
+                          )
                     )
+                    .frame(width: 36, height: 36)
                     .overlay(
-                        Capsule()
-                            .stroke(Color(hex: "#222222"), lineWidth: 1)
+                        Circle()
+                            .stroke(
+                                isOn ? Color.clear : AppColors.surfaceBorder,
+                                lineWidth: 0.75
+                            )
                     )
-                    .frame(width: 80, height: 46)
+                    .shadow(
+                        color: isOn ? AppColors.gradientFlamePill[0].opacity(0.45) : .clear,
+                        radius: 8, x: 0, y: 4
+                    )
 
-                HStack {
-                    if isOn { Spacer() }
-
-                    Circle()
-                        .fill(.white)
-                        .frame(width: 34, height: 34)
-                        .overlay(
-                            FlameIcon(size: 22, color: .black)
-                        )
-                        .shadow(color: .black.opacity(0.45), radius: 6, y: 3)
-
-                    if !isOn { Spacer() }
-                }
-                .padding(.horizontal, 6)
-                .frame(width: 80, height: 46)
+                FlameIcon(
+                    size: 17,
+                    color: isOn ? .white : AppColors.textTertiary
+                )
             }
         }
         .buttonStyle(.plain)

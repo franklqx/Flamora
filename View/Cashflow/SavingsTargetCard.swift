@@ -2,7 +2,7 @@
 //  SavingsTargetCard.swift
 //  Flamora app
 //
-//  Savings target summary card
+//  Savings target summary card - reference design style
 //
 
 import SwiftUI
@@ -21,142 +21,132 @@ struct SavingsTargetCard: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             VStack(spacing: 0) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Savings Target")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(Color(hex: "#7C7C7C"))
-
-                        if currentAmount > 0 {
-                            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                Text(formatCurrency(currentAmount))
-                                    .font(.system(size: 28, weight: .bold))
-                                    .foregroundColor(.white)
-
-                                Text("/ \(formatCurrency(targetAmount))")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(Color(hex: "#6B7280"))
-                            }
-                        } else {
-                            Text(formatCurrency(targetAmount))
-                                .font(.system(size: 28, weight: .bold))
-                                .foregroundColor(.white)
-                        }
-                    }
-
+                // Header row
+                HStack(spacing: 6) {
+                    Text("SAVINGS TARGET")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(AppColors.textTertiary)
+                        .tracking(0.8)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundColor(AppColors.textTertiary)
                     Spacer()
                 }
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.top, AppSpacing.cardPadding)
+                .padding(.bottom, 12)
 
-                if currentAmount > 0 {
-                    VStack(spacing: 10) {
-                        HStack {
-                            Text("\(Int(progress * 100))% Achieved")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(Color(hex: "#6B7280"))
+                Rectangle()
+                    .fill(AppColors.surfaceBorder)
+                    .frame(height: 0.5)
+                    .padding(.horizontal, AppSpacing.cardPadding)
 
-                            Spacer()
-
-                            Text("Fire Goal")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(Color(hex: "#6B7280"))
+                VStack(alignment: .leading, spacing: 0) {
+                    if currentAmount > 0 {
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text(formatCurrency(currentAmount))
+                                .font(.system(size: 28, weight: .bold))
+                                .foregroundColor(.white)
+                            Text("/ \(formatCurrency(targetAmount))")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(AppColors.textTertiary)
                         }
-                        .padding(.top, 16)
-
-                        progressBar
+                        .padding(.top, AppSpacing.md)
+                    } else {
+                        Text(formatCurrency(targetAmount))
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.top, AppSpacing.md)
                     }
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+
+                    if currentAmount > 0 {
+                        VStack(spacing: 10) {
+                            HStack {
+                                Text("CURRENT STATUS")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(AppColors.textTertiary)
+                                    .tracking(0.6)
+                                Spacer()
+                                Text("\(Int(progress * 100))% ACHIEVED")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .tracking(0.4)
+                            }
+                            .padding(.top, 14)
+
+                            progressBar
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                onCardTap?()
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.bottom, AppSpacing.cardPadding)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .onTapGesture { onCardTap?() }
             }
 
             if currentAmount <= 0 {
-                Button(action: {
-                    onAdd()
-                }) {
+                Button(action: onAdd) {
                     ZStack {
                         Circle()
                             .fill(
                                 LinearGradient(
-                                    colors: [
-                                        Color(hex: "#A78BFA"),
-                                        Color(hex: "#F9A8D4"),
-                                        Color(hex: "#FCD34D")
-                                    ],
+                                    colors: AppColors.gradientFlamePill,
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .frame(width: 48, height: 48)
-
+                            .frame(width: 40, height: 40)
                         Image(systemName: "plus")
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundColor(.black)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
                     }
                 }
                 .buttonStyle(.plain)
+                .padding(.top, 14)
+                .padding(.trailing, AppSpacing.cardPadding)
             }
         }
-        .padding(20)
-        .background(Color(hex: "#121212"))
-        .cornerRadius(20)
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color(hex: "#222222"), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
         )
     }
 
     private var progressBar: some View {
         GeometryReader { geo in
-            let width = geo.size.width
-            let safeWidth = width.isFinite && width >= 0 ? width : 0
-            let clampedProgress = max(0, min(progress, 1.0))
-            let progressWidth = max(0, safeWidth * CGFloat(clampedProgress))
+            let w = geo.size.width
+            let safeW = w.isFinite && w >= 0 ? w : 0
+            let pW = max(0, safeW * CGFloat(max(0, min(progress, 1.0))))
 
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(Color(hex: "#2C2C2E"))
-                    .frame(height: 8)
-
+                    .fill(AppColors.progressTrack)
+                    .frame(height: 6)
                 Capsule()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(hex: "#A78BFA"),
-                                Color(hex: "#F9A8D4"),
-                                Color(hex: "#FCD34D")
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .frame(width: progressWidth, height: 8)
+                    .fill(Color.white)
+                    .frame(width: pW, height: 6)
             }
         }
-        .frame(height: 8)
+        .frame(height: 6)
     }
 
     private func formatCurrency(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        formatter.maximumFractionDigits = 0
-        formatter.minimumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "$0"
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.currencyCode = "USD"
+        f.maximumFractionDigits = 0
+        f.minimumFractionDigits = 0
+        return f.string(from: NSNumber(value: value)) ?? "$0"
     }
 }
 
 #Preview {
     ZStack {
         Color.black.ignoresSafeArea()
-        SavingsTargetCard(
-            currentAmount: .constant(4250),
-            targetAmount: 5000,
-            onAdd: {}
-        )
-            .padding()
+        SavingsTargetCard(currentAmount: .constant(2100), targetAmount: 2000, onAdd: {}).padding()
     }
 }

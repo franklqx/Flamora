@@ -25,6 +25,7 @@
 		153CA32C2F3562AC001ED98E /* SavingsTargetDetailView2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA32B2F3562AC001ED98E /* SavingsTargetDetailView2.swift */; };
 		1571A1D82F3C2A2C0024A729 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1571A1D62F3C2A2C0024A729 /* APIService.swift */; };
 		1571A1DA2F3C2A5B0024A729 /* OnboardingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1571A1D92F3C2A5B0024A729 /* OnboardingModels.swift */; };
+		158CDE572F5637FA0038554A /* AppCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 158CDE562F5637FA0038554A /* AppCard.swift */; };
 		15A115992F3246460085ED9B /* mockdata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A115972F3246460085ED9B /* mockdata.swift */; };
 		15ABCD012F36A00000AABB01 /* IncomeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15ABCD002F36A00000AABB01 /* IncomeDetailView.swift */; };
 		15ABCD032F36B00000AABB02 /* TotalIncomeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15ABCD022F36B00000AABB02 /* TotalIncomeDetailView.swift */; };
@@ -104,6 +105,7 @@
 		153CA32B2F3562AC001ED98E /* SavingsTargetDetailView2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsTargetDetailView2.swift; sourceTree = "<group>"; };
 		1571A1D62F3C2A2C0024A729 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
 		1571A1D92F3C2A5B0024A729 /* OnboardingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingModels.swift; sourceTree = "<group>"; };
+		158CDE562F5637FA0038554A /* AppCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCard.swift; sourceTree = "<group>"; };
 		15A115972F3246460085ED9B /* mockdata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mockdata.swift; sourceTree = "<group>"; };
 		15ABCD002F36A00000AABB01 /* IncomeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomeDetailView.swift; sourceTree = "<group>"; };
 		15ABCD022F36B00000AABB02 /* TotalIncomeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotalIncomeDetailView.swift; sourceTree = "<group>"; };
@@ -326,6 +328,7 @@
 		15FF6ED62F31031D0005F482 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				158CDE562F5637FA0038554A /* AppCard.swift */,
 				1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */,
 				153CA31B2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift */,
 				153CA3192F34EDEC001ED98E /* TopHeaderBar.swift */,
@@ -523,6 +526,7 @@
 				AAOB000B2F3850000000000B /* OB_LifestyleView.swift in Sources */,
 				AAOB00032F38500000000003 /* OB_SignInView.swift in Sources */,
 				AAOB00022F38500000000002 /* OnboardingContainerView.swift in Sources */,
+				158CDE572F5637FA0038554A /* AppCard.swift in Sources */,
 				AAOB00092F38500000000009 /* OB_ExpensesView.swift in Sources */,
 				AAOB00062F38500000000006 /* OB_MotivationView.swift in Sources */,
 				AAOB000C2F3850000000000C /* OB_BlueprintView.swift in Sources */,
@@ -729,7 +733,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SKDUW38P9T;
+				DEVELOPMENT_TEAM = 526LTP6Z7D;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -762,7 +766,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SKDUW38P9T;
+				DEVELOPMENT_TEAM = 526LTP6Z7D;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

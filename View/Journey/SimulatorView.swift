@@ -64,7 +64,7 @@ struct SimulatorView: View {
     }
 
     init(
-        bottomPadding: CGFloat = AppSpacing.tabBarReserve,
+        bottomPadding: CGFloat = 0,
         isFireOn: Bool = true,
         onFireToggle: (() -> Void)? = nil
     ) {
@@ -144,11 +144,7 @@ private extension SimulatorView {
         let fireAge = computedFireCalculation.fireAge
 
         let ageGradient = LinearGradient(
-            colors: [
-                Color(hex: "#A78BFA"),
-                Color(hex: "#F9A8D4"),
-                Color(hex: "#FCD34D")
-            ],
+            colors: AppColors.gradientFire,
             startPoint: .leading,
             endPoint: .trailing
         )
@@ -178,7 +174,7 @@ private extension SimulatorView {
         VStack(alignment: .leading, spacing: 16) {
             Text("DETAILED WEALTH ANALYSIS")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(Color(hex: "#6B7280"))
+                .foregroundColor(AppColors.textTertiary)
                 .tracking(1.5)
                 .padding(.horizontal, AppSpacing.screenPadding)
 
@@ -194,16 +190,16 @@ private extension SimulatorView {
 
             ZStack {
                 Circle()
-                    .stroke(Color(hex: "#2B2B2B"), style: StrokeStyle(lineWidth: 2, dash: [6, 6]))
+                    .stroke(AppColors.surfaceBorder, style: StrokeStyle(lineWidth: 2, dash: [6, 6]))
                     .frame(width: 220, height: 220)
 
                 Circle()
-                    .fill(Color(hex: "#1A1A1A"))
+                    .fill(AppColors.surfaceElevated)
                     .frame(width: 140, height: 140)
                     .overlay(
                         FlameIcon(size: 64, color: .white)
                     )
-                    .shadow(color: Color(hex: "#FF8A65").opacity(0.25), radius: 30)
+                    .shadow(color: AppColors.brandSecondary.opacity(0.25), radius: 30)
                     .scaleEffect(isPulsing ? 1.06 : 0.94)
                     .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: isPulsing)
             }
@@ -217,7 +213,7 @@ private extension SimulatorView {
 
                 Text("ANALYZING CONTRIBUTION PATTERNS…")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color(hex: "#6B7280"))
+                    .foregroundColor(AppColors.textTertiary)
                     .tracking(1.5)
             }
 
@@ -254,11 +250,11 @@ private extension SimulatorView {
 
     var resultsHeader: some View {
         HStack(spacing: 10) {
-            FlameIcon(size: 18, color: Color(hex: "#FF6B47"))
+            FlameIcon(size: 18, color: AppColors.brandPrimary)
 
             Text("PREDICT")
                 .font(.system(size: 14, weight: .bold))
-                .foregroundColor(Color(hex: "#FF8A65"))
+                .foregroundColor(AppColors.brandSecondary)
                 .tracking(2)
 
             Spacer()
@@ -268,7 +264,7 @@ private extension SimulatorView {
             }) {
                 Image(systemName: "xmark")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Color(hex: "#9CA3AF"))
+                    .foregroundColor(AppColors.textSecondary)
                     .frame(width: 28, height: 28)
             }
             .buttonStyle(.plain)
@@ -287,7 +283,7 @@ private extension SimulatorView {
 
             Text("Detailed FIRE progress analysis")
                 .font(.system(size: 15, weight: .medium))
-                .foregroundColor(Color(hex: "#6B7280"))
+                .foregroundColor(AppColors.textTertiary)
         }
     }
 
@@ -313,7 +309,7 @@ private extension SimulatorView {
                     }
                     .stroke(
                         LinearGradient(
-                            colors: [Color(hex: "#60A5FA"), Color(hex: "#F59E0B")],
+                            colors: [AppColors.accentBlueBright, AppColors.warning],
                             startPoint: .leading,
                             endPoint: .trailing
                         ),
@@ -329,7 +325,7 @@ private extension SimulatorView {
                         path.move(to: CGPoint(x: width * 0.55, y: height * 0.35))
                         path.addLine(to: CGPoint(x: width * 0.55, y: height))
                     }
-                    .stroke(Color(hex: "#2B2B2B"), style: StrokeStyle(lineWidth: 1, dash: [4, 6]))
+                    .stroke(AppColors.surfaceBorder, style: StrokeStyle(lineWidth: 1, dash: [4, 6]))
                 }
             }
             .frame(height: 220)
@@ -337,7 +333,7 @@ private extension SimulatorView {
             HStack {
                 Text("Age \(settings.age)")
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color(hex: "#6B7280"))
+                    .foregroundColor(AppColors.textTertiary)
 
                 Spacer()
 
@@ -346,14 +342,14 @@ private extension SimulatorView {
                     .foregroundColor(.white)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 6)
-                    .background(Color(hex: "#1A1A1A"))
+                    .background(AppColors.surfaceElevated)
                     .clipShape(Capsule())
 
                 Spacer()
 
                 Text("Age 90")
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color(hex: "#6B7280"))
+                    .foregroundColor(AppColors.textTertiary)
             }
         }
     }
@@ -368,14 +364,14 @@ private extension SimulatorView {
                 title: "FIRE DATE",
                 value: "\(fireYear)",
                 subvalue: "Age \(fireAge)",
-                accent: Color(hex: "#F59E0B")
+                accent: AppColors.warning
             )
 
             resultStatCard(
                 title: "TOTAL WEALTH",
                 value: formatCurrency(computedFireCalculation.targetAmount),
                 subvalue: "At milestone",
-                accent: Color(hex: "#60A5FA")
+                accent: AppColors.accentBlueBright
             )
         }
     }
@@ -384,7 +380,7 @@ private extension SimulatorView {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
                 .font(.system(size: 12, weight: .bold))
-                .foregroundColor(Color(hex: "#6B7280"))
+                .foregroundColor(AppColors.textTertiary)
                 .tracking(1.2)
 
             Text(value)
@@ -397,12 +393,12 @@ private extension SimulatorView {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)
-        .background(Color(hex: "#121212"))
+        .background(AppColors.surface)
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color(hex: "#222222"), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
         )
-        .cornerRadius(20)
+        .cornerRadius(AppRadius.lg)
     }
 }
 
@@ -452,11 +448,11 @@ private struct SimulatorEditProfileView: View {
 private extension SimulatorEditProfileView {
     var header: some View {
         HStack(spacing: 10) {
-            FlameIcon(size: 18, color: Color(hex: "#FF6B47"))
+            FlameIcon(size: 18, color: AppColors.brandPrimary)
 
             Text("PREDICT")
                 .font(.system(size: 14, weight: .bold))
-                .foregroundColor(Color(hex: "#9CA3AF"))
+                .foregroundColor(AppColors.textSecondary)
                 .tracking(2)
 
             Spacer()
@@ -464,7 +460,7 @@ private extension SimulatorEditProfileView {
             Button(action: onClose) {
                 Image(systemName: "xmark")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Color(hex: "#9CA3AF"))
+                    .foregroundColor(AppColors.textSecondary)
                     .frame(width: 28, height: 28)
             }
             .buttonStyle(.plain)
@@ -523,14 +519,14 @@ private extension SimulatorEditProfileView {
 
                     Image(systemName: showAdvanced ? "chevron.up" : "chevron.down")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color(hex: "#9CA3AF"))
+                        .foregroundColor(AppColors.textSecondary)
                 }
                 .padding(.vertical, 12)
                 .padding(.horizontal, 18)
-                .background(Color(hex: "#121212"))
+                .background(AppColors.surface)
                 .overlay(
                     Capsule()
-                        .stroke(Color(hex: "#222222"), lineWidth: 1)
+                        .stroke(AppColors.surfaceBorder, lineWidth: 1)
                 )
                 .clipShape(Capsule())
             }
@@ -554,7 +550,7 @@ private extension SimulatorEditProfileView {
 
     var divider: some View {
         Divider()
-            .overlay(Color(hex: "#1F1F1F"))
+            .overlay(AppColors.surfaceElevated)
             .padding(.vertical, 4)
     }
 
@@ -584,7 +580,7 @@ private struct SettingRow: View {
             HStack {
                 Text(title)
                     .font(.body)
-                    .foregroundColor(Color(hex: "#9CA3AF"))
+                    .foregroundColor(AppColors.textSecondary)
 
                 Spacer()
 
@@ -596,12 +592,12 @@ private struct SettingRow: View {
                     if !unit.isEmpty {
                         Text(unit)
                             .font(.body)
-                            .foregroundColor(Color(hex: "#6B7280"))
+                            .foregroundColor(AppColors.textTertiary)
                     }
 
                     Image(systemName: "chevron.down")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color(hex: "#6B7280"))
+                        .foregroundColor(AppColors.textTertiary)
                 }
             }
             .padding(.vertical, 16)
@@ -689,7 +685,7 @@ private struct SettingEditorSheet: View {
                     if !field.suffix.isEmpty {
                         Text(field.suffix)
                             .font(.body)
-                            .foregroundColor(Color(hex: "#9CA3AF"))
+                            .foregroundColor(AppColors.textSecondary)
                     }
                 }
 
@@ -788,9 +784,9 @@ private extension SimulatorView {
     func gradientText(_ text: String) -> some View {
         LinearGradient(
             colors: [
-                Color(hex: "#A78BFA"),
-                Color(hex: "#F9A8D4"),
-                Color(hex: "#FCD34D")
+                AppColors.accentPurple,
+                AppColors.accentPink,
+                AppColors.accentAmber
             ],
             startPoint: .leading,
             endPoint: .trailing
@@ -811,13 +807,13 @@ private struct CircularProgressView: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color(hex: "#2C2C2E"), lineWidth: 14)
+                .stroke(AppColors.progressTrack, lineWidth: 14)
 
             Circle()
                 .trim(from: 0, to: progress)
                 .stroke(
                     LinearGradient(
-                        colors: [Color(hex: "#A78BFA"), Color(hex: "#F9A8D4")],
+                        colors: [AppColors.accentPurple, AppColors.accentPink],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
@@ -840,7 +836,7 @@ private struct CircularProgressView: View {
                     .blur(radius: 6)
 
                 LinearGradient(
-                    colors: [Color(hex: "#A78BFA"), Color(hex: "#F9A8D4"), Color(hex: "#FCD34D")],
+                    colors: [AppColors.accentPurple, AppColors.accentPink, AppColors.accentAmber],
                     startPoint: .leading,
                     endPoint: .trailing
                 )
@@ -850,7 +846,7 @@ private struct CircularProgressView: View {
                         .scaledToFit()
                         .frame(width: 44, height: 44)
                 )
-                .shadow(color: Color(hex: "#F9A8D4").opacity(0.6), radius: 10)
+                .shadow(color: AppColors.accentPink.opacity(0.6), radius: 10)
             }
             .frame(height: 44)
 
@@ -860,7 +856,7 @@ private struct CircularProgressView: View {
 
             Text("ACHIEVED")
                 .font(.system(size: 9, weight: .semibold))
-                .foregroundColor(Color(hex: "#6B7280"))
+                .foregroundColor(AppColors.textTertiary)
                 .tracking(2)
         }
     }

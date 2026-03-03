@@ -14,7 +14,7 @@ struct JourneyContainerView: View {
 
     @State private var isFlipping = false
 
-    private var bottomPadding: CGFloat { isSimulatorShown ? 0 : AppSpacing.tabBarReserve }
+    private var bottomPadding: CGFloat { 0 }
 
     var body: some View {
         ZStack {
@@ -96,7 +96,7 @@ private struct JourneyCTAView: View {
                             .fill(
                                 RadialGradient(
                                     colors: [
-                                        Color(hex: "#A78BFA").opacity(0.2),
+                                        AppColors.accentPurple.opacity(0.2),
                                         Color.clear
                                     ],
                                     center: .center,
@@ -110,7 +110,7 @@ private struct JourneyCTAView: View {
                             .font(.system(size: 56))
                             .foregroundStyle(
                                 LinearGradient(
-                                    colors: [Color(hex: "#A78BFA"), Color(hex: "#EC4899")],
+                                    colors: [AppColors.accentPurple, AppColors.accentPink],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -125,7 +125,7 @@ private struct JourneyCTAView: View {
 
                         Text("Connect your accounts to see your real\nFIRE progress and net worth.")
                             .font(.system(size: 15))
-                            .foregroundColor(Color(hex: "#9CA3AF"))
+                            .foregroundColor(AppColors.textSecondary)
                             .multilineTextAlignment(.center)
                             .lineSpacing(4)
                     }
@@ -138,7 +138,7 @@ private struct JourneyCTAView: View {
                                     .font(.system(size: 16))
                                     .foregroundStyle(
                                         LinearGradient(
-                                            colors: [Color(hex: "#A78BFA"), Color(hex: "#EC4899")],
+                                            colors: [AppColors.accentPurple, AppColors.accentPink],
                                             startPoint: .topLeading,
                                             endPoint: .bottomTrailing
                                         )
@@ -153,11 +153,11 @@ private struct JourneyCTAView: View {
                             }
                             .padding(.horizontal, 20)
                             .padding(.vertical, 14)
-                            .background(Color(hex: "#121212"))
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .background(AppColors.surface)
+                            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .stroke(Color(hex: "#222222"), lineWidth: 1)
+                                RoundedRectangle(cornerRadius: AppRadius.md)
+                                    .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
                             )
                         }
                     }
@@ -168,21 +168,14 @@ private struct JourneyCTAView: View {
                     // CTA Button
                     Button(action: {
                         Task {
-                            if !subscriptionManager.isPremium {
-                                await subscriptionManager.checkStatus()
-                            }
-                            if subscriptionManager.isPremium {
-                                await plaidManager.startLinkFlow()
-                            } else {
-                                subscriptionManager.showPaywall = true
-                            }
+                            await plaidManager.startLinkFlow()
                         }
                     }) {
                         HStack(spacing: 8) {
                             if plaidManager.isConnecting {
                                 ProgressView().tint(.black)
                             } else {
-                                Text("Build My Plan")
+                                Text("Connect Accounts")
                                     .font(.system(size: 17, weight: .semibold))
                                     .foregroundColor(.black)
                                 Image(systemName: "arrow.right")
@@ -192,15 +185,21 @@ private struct JourneyCTAView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .background(
+                            LinearGradient(
+                                colors: AppColors.gradientFire,
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
                     }
                     .disabled(plaidManager.isConnecting)
                     .padding(.horizontal, AppSpacing.screenPadding)
                     .padding(.bottom, 120)
                 }
                 .frame(minHeight: proxy.size.height, alignment: .top)
-                .padding(.bottom, bottomPadding)
+                .padding(.bottom, AppSpacing.lg)
                 .padding(.top, AppSpacing.lg)
             }
         }
@@ -223,15 +222,15 @@ struct AnalysisCard: View {
     var body: some View {
         HStack(spacing: 16) {
             ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(hex: "#1A1A1A"))
+                RoundedRectangle(cornerRadius: AppRadius.md)
+                    .fill(AppColors.surfaceElevated)
                     .frame(width: 48, height: 48)
 
                 Image(systemName: icon)
                     .font(.system(size: 22, weight: .medium))
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [Color(hex: "#A78BFA"), Color(hex: "#F9A8D4")],
+                            colors: [AppColors.accentPurple, AppColors.accentPink],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -249,11 +248,11 @@ struct AnalysisCard: View {
                 .foregroundColor(.white)
         }
         .padding(18)
-        .background(Color(hex: "#121212"))
-        .cornerRadius(20)
+        .background(AppColors.surface)
+        .cornerRadius(AppRadius.lg)
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color(hex: "#222222"), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
         )
         .padding(.horizontal, AppSpacing.screenPadding)
     }

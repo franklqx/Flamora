@@ -9,36 +9,50 @@ import SwiftUI
 
 struct MonthIndicator: View {
     let month: String
-    
+    let status: Status
+
     enum Status {
         case success
         case failed
         case pending
     }
-    let status: Status
-    
+
     var body: some View {
         VStack(spacing: 8) {
             ZStack {
                 Circle()
-                    .fill(backgroundColor)
+                    .fill(circleBackground)
                     .frame(width: 48, height: 48)
+                    .overlay(
+                        Circle()
+                            .stroke(circleBorder, lineWidth: 0.75)
+                    )
+
                 icon
             }
+
             Text(month)
-                .font(.system(size: 13))
-                .foregroundColor(status == .pending ? .white : Color(hex: "#7C7C7C"))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(labelColor)
         }
     }
-    
-    private var backgroundColor: Color {
+
+    private var circleBackground: Color {
         switch status {
         case .success: return .white
-        case .failed: return Color(hex: "#3C3C3E")
-        case .pending: return Color(hex: "#2C2C2E")
+        case .failed:  return AppColors.surfaceElevated
+        case .pending: return AppColors.surfaceInput
         }
     }
-    
+
+    private var circleBorder: Color {
+        switch status {
+        case .success: return Color.clear
+        case .failed:  return AppColors.surfaceBorder
+        case .pending: return AppColors.surfaceBorder
+        }
+    }
+
     private var icon: some View {
         Group {
             switch status {
@@ -49,12 +63,19 @@ struct MonthIndicator: View {
             case .failed:
                 Image(systemName: "xmark")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(Color(hex: "#7C7C7C"))
+                    .foregroundColor(AppColors.textTertiary)
             case .pending:
                 Image(systemName: "ellipsis")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(Color(hex: "#5C5C5C"))
+                    .foregroundColor(AppColors.textMuted)
             }
+        }
+    }
+
+    private var labelColor: Color {
+        switch status {
+        case .pending: return .white
+        default:       return AppColors.textSecondary
         }
     }
 }

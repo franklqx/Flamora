@@ -2,20 +2,30 @@
 //  JourneyView.swift
 //  Flamora app
 //
-//  Journey 主页面 - 使用 MockData API 模型
+//  Journey 主页面 - 参考图风格重排
 //
 
 import SwiftUI
+
+// MARK: - Daily Quote Data
+
+private let dailyQuotes: [String] = [
+    "It's not about being rich\nIt's about being free.",
+    "Financial freedom is available to those who learn about it and work for it.",
+    "Do not save what is left after spending,\nbut spend what is left after saving."
+]
 
 struct JourneyView: View {
     @State private var netWorthSummary = MockData.apiNetWorthSummary
     @State private var apiBudget = MockData.apiMonthlyBudget
     @State private var fireGoal: APIFireGoal? = nil
-    private let data = MockData.journeyData // for passiveIncome & savingsRate (no API equivalent yet)
+    @State private var quoteIndex: Int = 0
+    @State private var quoteVisible: Bool = true
+    private let data = MockData.journeyData
     var onFireTapped: (() -> Void)? = nil
     let bottomPadding: CGFloat
 
-    init(bottomPadding: CGFloat = AppSpacing.tabBarReserve, onFireTapped: (() -> Void)? = nil) {
+    init(bottomPadding: CGFloat = 0, onFireTapped: (() -> Void)? = nil) {
         self.bottomPadding = bottomPadding
         self.onFireTapped = onFireTapped
     }
@@ -33,25 +43,26 @@ struct JourneyView: View {
                             growthPercentage: netWorthSummary.growthPercentage
                         )
 
+                        if quoteVisible {
+                            dailyQuoteCard
+                        }
+
                         VStack(alignment: .leading, spacing: AppSpacing.md) {
                             Text("Plan")
-                                .font(.system(size: 20, weight: .bold))
+                                .font(.system(size: 18, weight: .bold))
                                 .foregroundColor(.white)
                                 .padding(.horizontal, AppSpacing.screenPadding)
 
                             VStack(spacing: AppSpacing.cardGap) {
-                                fireProgressCard
                                 budgetCard
                                 passiveIncomeCard
                                 savingsRateCard
-                                aiInsightsCard
                             }
                         }
-
                     }
                     .frame(minHeight: proxy.size.height, alignment: .top)
-                    .padding(.bottom, bottomPadding)
-                    .padding(.top, AppSpacing.lg)
+                    .padding(.bottom, max(bottomPadding, AppSpacing.lg))
+                    .padding(.top, AppSpacing.md)
                 }
             }
         }
@@ -60,97 +71,108 @@ struct JourneyView: View {
     }
 }
 
-// MARK: - Subviews
+// MARK: - Daily Quote
+
 private extension JourneyView {
-    @ViewBuilder
-    var fireProgressCard: some View {
-        if let goal = fireGoal {
-            let progress = min(goal.progressPercentage / 100.0, 1.0)
-            VStack(spacing: AppSpacing.md) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("FIRE Progress")
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundColor(.white)
-                        Text("Retire at age \(goal.targetRetirementAge)")
-                            .font(.system(size: 13))
-                            .foregroundColor(Color(hex: "#6B7280"))
+    var dailyQuoteCard: some View {
+        ZStack(alignment: .topTrailing) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("DAILY QUOTE")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(AppColors.dailyQuoteAccent.opacity(0.75))
+                    .tracking(1.2)
+
+                Text(dailyQuotes[quoteIndex])
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(.white)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: 8) {
+                    HStack(spacing: 6) {
+                        ForEach(0..<dailyQuotes.count, id: \.self) { i in
+                            Capsule()
+                                .fill(i == quoteIndex ? Color.white : Color.white.opacity(0.30))
+                                .frame(width: i == quoteIndex ? 20 : 6, height: 3)
+                                .animation(.easeInOut(duration: 0.2), value: quoteIndex)
+                        }
                     }
-                    Spacer()
-                    Text("\(Int(goal.progressPercentage))%")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                }
-                ProgressBar(progress: progress, color: Color(hex: "#F97316"))
-                HStack {
-                    Text(formatCurrency(goal.currentNetWorth))
-                        .font(.system(size: 14))
-                        .foregroundColor(.white)
-                    Spacer()
-                    Text("Goal: \(formatCurrency(goal.fireNumber))")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color(hex: "#6B7280"))
+                    Text("\(quoteIndex + 1)/\(dailyQuotes.count)")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(Color.white.opacity(0.45))
                 }
             }
-            .padding(AppSpacing.cardPadding)
-            .background(Color(hex: "#121212"))
-            .cornerRadius(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.vertical, AppSpacing.cardPadding)
+            .background(AppColors.dailyQuoteBg)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(Color(hex: "#222222"), lineWidth: 1)
+                RoundedRectangle(cornerRadius: AppRadius.lg)
+                    .stroke(AppColors.dailyQuoteAccent.opacity(0.20), lineWidth: 0.75)
             )
-            .padding(.horizontal, AppSpacing.screenPadding)
-        }
-    }
 
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    quoteIndex = (quoteIndex + 1) % dailyQuotes.count
+                }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(Color.white.opacity(0.50))
+                    .frame(width: 28, height: 28)
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 14)
+            .padding(.trailing, 14)
+        }
+        .padding(.horizontal, AppSpacing.screenPadding)
+    }
+}
+
+// MARK: - Plan Cards
+
+private extension JourneyView {
     var budgetCard: some View {
         let totalSpent = apiBudget.needsSpent + apiBudget.wantsSpent
         let totalBudget = apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget
+        let progress = totalBudget > 0 ? min(totalSpent / totalBudget, 1.0) : 0
         let spentPercent = totalBudget > 0 ? Int(totalSpent / totalBudget * 100) : 0
-        let progress = Double(spentPercent) / 100.0
 
-        return VStack(spacing: AppSpacing.md) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Budget")
-                        .font(.system(size: 20, weight: .semibold))
+        return VStack(spacing: 0) {
+            cardHeader(title: "BUDGET IN \(apiBudget.month.uppercased())", hasChevron: true)
+
+            Rectangle()
+                .fill(AppColors.surfaceBorder)
+                .frame(height: 0.5)
+
+            VStack(spacing: AppSpacing.sm) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(formatCurrency(totalSpent))
+                        .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
-
-                    Text("\(apiBudget.month)")
+                    Text("of \(formatCurrency(totalBudget))")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(AppColors.textTertiary)
+                    Image(systemName: "info.circle")
                         .font(.system(size: 13))
-                        .foregroundColor(Color(hex: "#6B7280"))
+                        .foregroundColor(AppColors.textTertiary)
+                    Spacer()
+                    Text("\(spentPercent)%")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(AppColors.textSecondary)
                 }
 
-                Spacer()
-
-                Text("\(spentPercent)%")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
+                ProgressBar(progress: progress, color: AppColors.progressGreen, height: 4)
             }
-
-            ProgressBar(
-                progress: progress,
-                color: Color(hex: "#A78BFA")
-            )
-
-            HStack {
-                Text("\(formatCurrency(totalSpent)) spent")
-                    .font(.system(size: 14))
-                    .foregroundColor(.white)
-
-                Spacer()
-
-                Text("Limit: \(formatCurrency(totalBudget))")
-                    .font(.system(size: 14))
-                    .foregroundColor(Color(hex: "#6B7280"))
-            }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.vertical, AppSpacing.md)
         }
-        .padding(AppSpacing.cardPadding)
-        .background(Color(hex: "#121212"))
-        .cornerRadius(20)
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color(hex: "#222222"), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
         )
         .padding(.horizontal, AppSpacing.screenPadding)
     }
@@ -159,72 +181,37 @@ private extension JourneyView {
         let income = data.passiveIncome
         let progress = Double(income.percent) / 100.0
 
-        return VStack(spacing: AppSpacing.md) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Sustainable Income")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.white)
+        return VStack(spacing: 0) {
+            cardHeader(title: "SUSTAINABLE INCOME", hasChevron: true)
 
-                    Text("CAPACITY REPORT")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(Color(hex: "#93C5FD"))
-                        .textCase(.uppercase)
-                        .tracking(0.5)
-                }
+            Rectangle()
+                .fill(AppColors.surfaceBorder)
+                .frame(height: 0.5)
 
-                Spacer()
-
-                Image(systemName: "questionmark.circle.fill")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color(hex: "#9CA3AF"))
-                    .help("4% safe withdrawal rate: a common annual withdrawal guideline for portfolio sustainability.")
-            }
-
-            ProgressBar(
-                progress: progress,
-                color: Color(hex: "#93C5FD")
-            )
-
-            HStack {
-                HStack(spacing: 4) {
-                    Text("PROJECTED")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(Color(hex: "#6B7280"))
-
+            VStack(spacing: AppSpacing.sm) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(formatCurrency(income.projected))
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
-
-                    Circle()
-                        .fill(Color(hex: "#93C5FD"))
-                        .frame(width: 6, height: 6)
+                    Text("of \(formatCurrency(income.target))")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(AppColors.textTertiary)
+                    Spacer()
+                    Text("\(income.percent)%")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(AppColors.textSecondary)
                 }
 
-                Spacer()
-
-                HStack(spacing: 4) {
-                    Text("TARGET")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(Color(hex: "#6B7280"))
-
-                    Text(formatCurrency(income.target))
-                        .font(.system(size: 14))
-                        .foregroundColor(Color(hex: "#6B7280"))
-
-                    Circle()
-                        .fill(Color(hex: "#4B5563"))
-                        .frame(width: 6, height: 6)
-                }
+                ProgressBar(progress: progress, color: AppColors.progressBlue, height: 4)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.vertical, AppSpacing.md)
         }
-        .padding(AppSpacing.cardPadding)
-        .background(Color(hex: "#121212"))
-        .cornerRadius(20)
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color(hex: "#222222"), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
         )
         .padding(.horizontal, AppSpacing.screenPadding)
     }
@@ -234,127 +221,84 @@ private extension JourneyView {
         let values = savings.monthlySavings
         let hasSavingsData = values.contains { $0 > 0 }
 
-        return VStack(spacing: AppSpacing.sm) {
+        return VStack(spacing: 0) {
+            cardHeader(title: "MONTHLY SAVINGS", hasChevron: true)
+
+            Rectangle()
+                .fill(AppColors.surfaceBorder)
+                .frame(height: 0.5)
+
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Savings Streak")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.white)
-
                     if hasSavingsData {
                         Text(formatCurrency(savings.savedThisMonth))
-                            .font(.system(size: 28, weight: .regular))
+                            .font(.system(size: 28, weight: .bold))
                             .foregroundColor(.white)
-
                         Text("Saved This Month")
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(Color(hex: "#9CA3AF"))
+                            .foregroundColor(AppColors.textSecondary)
                     } else {
                         Text("Record Your First Saving")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(Color(hex: "#9FB2CC"))
+                            .foregroundColor(AppColors.progressBlue)
                     }
                 }
-
                 Spacer()
-
-                VStack(alignment: .trailing, spacing: 10) {
-                    savingsStreakBars(values: values, hasData: hasSavingsData)
-                }
+                savingsStreakBars(values: values, hasData: hasSavingsData)
             }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.vertical, AppSpacing.md)
         }
-        .padding(AppSpacing.cardPadding)
-        .background(Color(hex: "#121212"))
-        .cornerRadius(20)
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color(hex: "#222222"), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
         )
         .padding(.horizontal, AppSpacing.screenPadding)
+    }
+
+    func cardHeader(title: String, hasChevron: Bool = false) -> some View {
+        HStack(spacing: 6) {
+            Text(title)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(AppColors.textTertiary)
+                .tracking(0.8)
+            if hasChevron {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundColor(AppColors.textTertiary)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.vertical, 12)
     }
 
     func savingsStreakBars(values: [Double], hasData: Bool) -> some View {
         let barValues = values.isEmpty ? Array(repeating: 0.0, count: 6) : values
         let maxValue = max(barValues.max() ?? 1, 1)
-        let palette = [
-            Color(hex: "#2B3342"),
-            Color(hex: "#3B4861"),
-            Color(hex: "#55698E"),
-            Color(hex: "#728BC0"),
-            Color(hex: "#95A3E2"),
-            Color(hex: "#B5B7FA")
+        let palette: [Color] = [
+            Color(hex: "#2B3342"), Color(hex: "#3B4861"),
+            Color(hex: "#55698E"), AppColors.accentPurple.opacity(0.7),
+            AppColors.accentPurpleLight.opacity(0.85), AppColors.accentPurpleLight
         ]
 
-        return HStack(alignment: .bottom, spacing: 8) {
+        return HStack(alignment: .bottom, spacing: 6) {
             ForEach(Array(barValues.enumerated()), id: \.offset) { index, value in
                 let normalized = hasData ? max(value / maxValue, 0) : 0
-                let height = hasData ? (18 + CGFloat(normalized) * 48) : 42
-
+                let height = hasData ? (14 + CGFloat(normalized) * 44) : 38
                 Capsule()
-                    .fill(hasData ? palette[min(index, palette.count - 1)] : Color(hex: "#323845"))
-                    .frame(width: 8, height: height)
+                    .fill(hasData ? palette[min(index, palette.count - 1)] : AppColors.surfaceInput)
+                    .frame(width: 7, height: height)
                     .opacity(hasData ? 1 : 0.55)
             }
         }
     }
-
-    var aiInsightsCard: some View {
-        HStack(spacing: AppSpacing.md) {
-            ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.md)
-                    .fill(Color(hex: "#1A1A1A"))
-                    .frame(width: 48, height: 48)
-
-                Image(systemName: "sparkles")
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [Color(hex: "#A78BFA"), Color(hex: "#EC4899")],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("AI Insights")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
-
-                Text("Evaluate your spending patterns")
-                    .font(.system(size: 14))
-                    .foregroundColor(Color(hex: "#6B7280"))
-            }
-
-            Spacer()
-
-            Image(systemName: "arrow.right")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(Color(hex: "#9CA3AF"))
-        }
-        .padding(AppSpacing.cardPadding)
-        .background(Color(hex: "#121212"))
-        .cornerRadius(20)
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            Color(hex: "#1D4ED8"),
-                            Color(hex: "#7C3AED"),
-                            Color(hex: "#DB2777")
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ),
-                    lineWidth: 2
-                )
-        )
-        .padding(.horizontal, AppSpacing.screenPadding)
-    }
 }
 
-// MARK: - Helpers
+// MARK: - Data Loading
+
 private extension JourneyView {
     func loadData() async {
         let monthStr = currentMonthString
@@ -367,8 +311,6 @@ private extension JourneyView {
         fireGoal = fire
     }
 
-    // async let + try? 组合会触发 Swift runtime crash (swift_task_dealloc)
-    // 将 try? 包裹在独立函数中避免此问题
     private func fetchNetWorth() async -> APINetWorthSummary? {
         try? await APIService.shared.getNetWorthSummary()
     }
@@ -380,18 +322,18 @@ private extension JourneyView {
     }
 
     var currentMonthString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM"
-        return formatter.string(from: Date())
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM"
+        return f.string(from: Date())
     }
 
     func formatCurrency(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        formatter.maximumFractionDigits = 0
-        formatter.minimumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "$0"
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.currencyCode = "USD"
+        f.maximumFractionDigits = 0
+        f.minimumFractionDigits = 0
+        return f.string(from: NSNumber(value: value)) ?? "$0"
     }
 }
 

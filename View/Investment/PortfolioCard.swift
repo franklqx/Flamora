@@ -7,51 +7,71 @@ import SwiftUI
 
 struct PortfolioCard: View {
     let portfolio: Portfolio
-    @State private var selectedRange: TimeRange = .threeMonths
+    @State private var selectedRange: PortfolioTimeRange = .oneMonth
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("PORTFOLIO")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(Color(hex: "#7C7C7C"))
-                .tracking(1.2)
+        VStack(alignment: .leading, spacing: 0) {
+            // Header inside card
+            HStack {
+                Text("PORTFOLIO")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(AppColors.textTertiary)
+                    .tracking(1.0)
+                Spacer()
+            }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.top, AppSpacing.cardPadding)
+            .padding(.bottom, 10)
 
-            Text(formatCurrency(portfolio.totalBalance))
-                .font(.system(size: 32, weight: .bold))
-                .foregroundColor(.white)
+            // Amount + change
+            VStack(alignment: .leading, spacing: 6) {
+                Text(formatCurrency(portfolio.totalBalance))
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundColor(.white)
 
-            Text("\(formattedChange)")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(Color(hex: "#93C5FD"))
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 11, weight: .bold))
+                    Text(formattedChange)
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .foregroundColor(AppColors.accentGreen)
+            }
+            .padding(.horizontal, AppSpacing.cardPadding)
 
+            // Chart
             LineChart(values: portfolio.chartData.map(\.value))
                 .frame(height: 140)
+                .padding(.top, 16)
+                .padding(.bottom, 4)
 
+            // Range selector
             rangeSelector
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.bottom, AppSpacing.cardPadding)
         }
-        .padding(20)
-        .background(Color(hex: "#121212"))
-        .cornerRadius(24)
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
         .overlay(
-            RoundedRectangle(cornerRadius: 24)
-                .stroke(Color(hex: "#222222"), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.xl)
+                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
         )
     }
 
     private var rangeSelector: some View {
-        HStack(spacing: 8) {
-            ForEach(TimeRange.allCases, id: \.self) { range in
+        HStack(spacing: 4) {
+            ForEach(PortfolioTimeRange.allCases, id: \.self) { range in
                 Text(range.label)
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(range == selectedRange ? .white : Color(hex: "#6B7280"))
+                    .foregroundColor(range == selectedRange ? .white : AppColors.textTertiary)
                     .padding(.vertical, 6)
-                    .padding(.horizontal, 14)
+                    .padding(.horizontal, 12)
                     .background(
                         Capsule()
-                            .fill(range == selectedRange ? Color(hex: "#1A1A1A") : Color.clear)
+                            .fill(range == selectedRange ? AppColors.surfaceElevated : Color.clear)
                             .overlay(
                                 Capsule()
-                                    .stroke(range == selectedRange ? Color(hex: "#222222") : Color.clear, lineWidth: 1)
+                                    .stroke(range == selectedRange ? AppColors.surfaceBorder : Color.clear, lineWidth: 0.75)
                             )
                     )
                     .onTapGesture { selectedRange = range }
@@ -63,96 +83,86 @@ struct PortfolioCard: View {
     private var formattedChange: String {
         let percent = portfolio.performance.oneMonth
         let amount = portfolio.totalBalance * (percent / 100)
-        let amountText = formatCurrency(abs(amount))
-        let percentText = String(format: "%.1f%%", abs(percent))
         let sign = amount >= 0 ? "+" : "-"
-        return "\(sign)\(amountText) (\(percentText))"
+        return "\(sign)\(formatCurrency(abs(amount))) (\(String(format: "%.1f%%", abs(percent))))"
     }
 
     private func formatCurrency(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        formatter.maximumFractionDigits = 2
-        formatter.minimumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: value)) ?? "$0.00"
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.currencyCode = "USD"
+        f.maximumFractionDigits = 0
+        f.minimumFractionDigits = 0
+        return f.string(from: NSNumber(value: value)) ?? "$0"
     }
 }
 
-private enum TimeRange: CaseIterable {
-    case day
-    case week
-    case threeMonths
-    case year
-    case all
+// MARK: - Time Range
 
+enum PortfolioTimeRange: CaseIterable {
+    case oneWeek, oneMonth, threeMonths, ytd, all
     var label: String {
         switch self {
-        case .day: return "1D"
-        case .week: return "1W"
+        case .oneWeek:     return "1W"
+        case .oneMonth:    return "1M"
         case .threeMonths: return "3M"
-        case .year: return "1Y"
-        case .all: return "All"
+        case .ytd:         return "YTD"
+        case .all:         return "ALL"
         }
     }
 }
+
+// MARK: - Line Chart
 
 private struct LineChart: View {
     let values: [Double]
 
     var body: some View {
         GeometryReader { geo in
-            let width = geo.size.width
-            let height = geo.size.height
-
-            guard width.isFinite && width > 0 && height.isFinite && height > 0 else {
+            let w = geo.size.width
+            let h = geo.size.height
+            guard w.isFinite && w > 0 && h.isFinite && h > 0 else {
                 return AnyView(Color.clear)
             }
-
-            let safeWidth = max(0, width)
-            let safeHeight = max(0, height)
-            let minValue = values.min() ?? 0
-            let maxValue = values.max() ?? 1
-            let range = max(maxValue - minValue, 1)
+            let safeW = max(0, w), safeH = max(0, h)
+            let minV = values.min() ?? 0
+            let maxV = values.max() ?? 1
+            let range = max(maxV - minV, 1)
             let count = max(values.count - 1, 1)
-
-            let points = values.enumerated().map { index, value -> CGPoint in
-                let x = safeWidth * CGFloat(index) / CGFloat(count)
-                let normalizedValue = (value - minValue) / range
-                let y = safeHeight - (safeHeight * CGFloat(normalizedValue))
-                let safeX = x.isFinite ? max(0, min(x, safeWidth)) : 0
-                let safeY = y.isFinite ? max(0, min(y, safeHeight)) : 0
-                return CGPoint(x: safeX, y: safeY)
+            let pts = values.enumerated().map { (i, v) -> CGPoint in
+                let x = safeW * CGFloat(i) / CGFloat(count)
+                let y = safeH - (safeH * 0.85 * CGFloat((v - minV) / range)) - safeH * 0.06
+                return CGPoint(
+                    x: x.isFinite ? max(0, min(x, safeW)) : 0,
+                    y: y.isFinite ? max(0, min(y, safeH)) : 0
+                )
             }
-
             return AnyView(
                 ZStack {
+                    // Area fill with gradient from line to bottom (X axis)
                     Path { path in
-                        guard let first = points.first else { return }
-                        path.move(to: first)
-                        for point in points.dropFirst() {
-                            path.addLine(to: point)
-                        }
-                    }
-                    .stroke(Color(hex: "#A78BFA"), lineWidth: 2)
-
-                    Path { path in
-                        guard let first = points.first else { return }
-                        path.move(to: CGPoint(x: first.x, y: safeHeight))
+                        guard let first = pts.first else { return }
+                        path.move(to: CGPoint(x: first.x, y: safeH))
                         path.addLine(to: first)
-                        for point in points.dropFirst() {
-                            path.addLine(to: point)
-                        }
-                        path.addLine(to: CGPoint(x: points.last?.x ?? 0, y: safeHeight))
+                        for p in pts.dropFirst() { path.addLine(to: p) }
+                        path.addLine(to: CGPoint(x: pts.last?.x ?? 0, y: safeH))
                         path.closeSubpath()
                     }
                     .fill(
                         LinearGradient(
-                            colors: [Color(hex: "#A78BFA").opacity(0.25), Color.clear],
+                            colors: [AppColors.accentGreen.opacity(0.30), Color.clear],
                             startPoint: .top,
                             endPoint: .bottom
                         )
                     )
+
+                    // Line stroke
+                    Path { path in
+                        guard let first = pts.first else { return }
+                        path.move(to: first)
+                        for p in pts.dropFirst() { path.addLine(to: p) }
+                    }
+                    .stroke(AppColors.accentGreen, lineWidth: 2)
                 }
             )
         }
@@ -162,7 +172,6 @@ private struct LineChart: View {
 #Preview {
     ZStack {
         Color.black.ignoresSafeArea()
-        PortfolioCard(portfolio: MockData.investmentData.portfolio)
-            .padding()
+        PortfolioCard(portfolio: MockData.investmentData.portfolio).padding()
     }
 }

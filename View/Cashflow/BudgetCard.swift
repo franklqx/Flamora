@@ -12,8 +12,8 @@ struct BudgetCard: View {
     let onWantsTapped: (() -> Void)?
     private let apiBudget = MockData.apiMonthlyBudget
 
-    private var needsColor: Color { Color(hex: "#A78BFA") }
-    private var wantsColor: Color { Color(hex: "#93C5FD") }
+    private var needsColor: Color { AppColors.accentPurple }
+    private var wantsColor: Color { AppColors.accentBlue }
 
     init(
         spending: Spending,
@@ -28,39 +28,48 @@ struct BudgetCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    Text("Total Spend")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(Color(hex: "#7C7C7C"))
+        VStack(spacing: 0) {
+            // Header
+            HStack(spacing: 6) {
+                Text("TOTAL SPEND")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(AppColors.textTertiary)
+                    .tracking(0.8)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundColor(AppColors.textTertiary)
+                Spacer()
+            }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.top, AppSpacing.cardPadding)
+            .padding(.bottom, 12)
+            .contentShape(Rectangle())
+            .onTapGesture { onCardTapped?() }
 
-                    Spacer()
+            Rectangle()
+                .fill(AppColors.surfaceBorder)
+                .frame(height: 0.5)
+                .padding(.horizontal, AppSpacing.cardPadding)
 
-                    if onCardTapped != nil {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(Color(hex: "#6B7280"))
-                    }
-                }
-
+            // Amount + bar
+            VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(formatCurrency(spending.total))
                         .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
-
                     Text("/ \(formatCurrency(spending.budgetLimit))")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color(hex: "#6B7280"))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(AppColors.textTertiary)
                 }
 
                 segmentedBar
             }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.top, AppSpacing.md)
             .contentShape(Rectangle())
-            .onTapGesture {
-                onCardTapped?()
-            }
+            .onTapGesture { onCardTapped?() }
 
+            // Breakdown rows
             VStack(spacing: 12) {
                 BudgetRowItem(
                     title: "Needs",
@@ -69,7 +78,6 @@ struct BudgetCard: View {
                     color: needsColor,
                     onTap: onNeedsTapped
                 )
-
                 BudgetRowItem(
                     title: "Wants",
                     current: formatCurrency(spending.wants),
@@ -78,51 +86,51 @@ struct BudgetCard: View {
                     onTap: onWantsTapped
                 )
             }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.top, 16)
+            .padding(.bottom, AppSpacing.cardPadding)
         }
-        .padding(20)
-        .background(Color(hex: "#121212"))
-        .cornerRadius(20)
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color(hex: "#222222"), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
         )
     }
 
     private var segmentedBar: some View {
         GeometryReader { geo in
-            let width = geo.size.width
-            let safeWidth = width.isFinite && width >= 0 ? width : 0
+            let w = geo.size.width
+            let safeW = w.isFinite && w >= 0 ? w : 0
             let limit = max(spending.budgetLimit, 1)
-            let needsRatio = min(max(spending.needs / limit, 0), 1)
-            let wantsRatio = min(max(spending.wants / limit, 0), 1)
-            let needsWidth = max(0, safeWidth * CGFloat(needsRatio))
-            let wantsWidth = max(0, safeWidth * CGFloat(wantsRatio))
+            let nRatio = min(max(spending.needs / limit, 0), 1)
+            let wRatio = min(max(spending.wants / limit, 0), 1)
+            let nWidth = max(0, safeW * CGFloat(nRatio))
+            let wWidth = max(0, safeW * CGFloat(wRatio))
 
             ZStack(alignment: .leading) {
+                Capsule().fill(AppColors.progressTrack).frame(height: 6)
                 Capsule()
-                    .fill(Color(hex: "#2C2C2E"))
-                    .frame(height: 8)
-
-                Capsule()
-                    .fill(needsColor)
-                    .frame(width: needsWidth, height: 8)
-
-                Capsule()
-                    .fill(wantsColor)
-                    .frame(width: wantsWidth, height: 8)
-                    .offset(x: needsWidth)
+                    .fill(
+                        LinearGradient(
+                            colors: [AppColors.accentBlueBright, AppColors.accentGreen],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: max(nWidth + wWidth, 0), height: 6)
             }
         }
-        .frame(height: 8)
+        .frame(height: 6)
     }
 
     private func formatCurrency(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        formatter.maximumFractionDigits = 0
-        formatter.minimumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "$0"
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.currencyCode = "USD"
+        f.maximumFractionDigits = 0
+        f.minimumFractionDigits = 0
+        return f.string(from: NSNumber(value: value)) ?? "$0"
     }
 }
 
@@ -135,44 +143,31 @@ private struct BudgetRowItem: View {
 
     var body: some View {
         Group {
-            if let onTap {
-                Button(action: onTap) {
-                    rowContent
-                }
-                .buttonStyle(.plain)
-            } else {
-                rowContent
-            }
+            if let onTap { Button(action: onTap) { rowContent }.buttonStyle(.plain) }
+            else { rowContent }
         }
     }
 
     private var rowContent: some View {
         HStack {
             HStack(spacing: 6) {
+                Circle()
+                    .fill(color)
+                    .frame(width: 8, height: 8)
                 Text(title)
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(Color(hex: "#0F172A"))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(AppColors.textSecondary)
             }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 12)
-            .background(color)
-            .clipShape(Capsule())
 
             Spacer()
 
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(current)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 15, weight: .bold))
                     .foregroundColor(.white)
                 Text("/ \(total)")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color(hex: "#6B7280"))
-            }
-
-            if onTap != nil {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color(hex: "#6B7280"))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(AppColors.textTertiary)
             }
         }
     }
@@ -181,7 +176,6 @@ private struct BudgetRowItem: View {
 #Preview {
     ZStack {
         Color.black.ignoresSafeArea()
-        BudgetCard(spending: MockData.cashflowData.spending)
-            .padding()
+        BudgetCard(spending: MockData.cashflowData.spending).padding()
     }
 }

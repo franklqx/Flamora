@@ -8,47 +8,107 @@ import SwiftUI
 struct AssetAllocationCard: View {
     let allocation: Allocation
 
+    private var totalAmount: Double {
+        allocation.stocks.amount + allocation.bonds.amount + allocation.cash.amount
+    }
+
     var body: some View {
-        HStack(spacing: 20) {
-            DonutChart(
-                segments: [
-                    ChartSegment(percent: allocation.stocks.percent, color: Color(hex: "#93C5FD")),
-                    ChartSegment(percent: allocation.bonds.percent, color: Color(hex: "#A78BFA")),
-                    ChartSegment(percent: allocation.cash.percent, color: Color(hex: "#F9A8D4"))
-                ]
-            )
-            .frame(width: 120, height: 120)
-
-            VStack(alignment: .leading, spacing: 12) {
-                AllocationRow(
-                    title: "Stocks",
-                    percent: allocation.stocks.percent,
-                    amount: allocation.stocks.amount,
-                    color: Color(hex: "#93C5FD")
-                )
-                AllocationRow(
-                    title: "Bonds",
-                    percent: allocation.bonds.percent,
-                    amount: allocation.bonds.amount,
-                    color: Color(hex: "#A78BFA")
-                )
-                AllocationRow(
-                    title: "Cash",
-                    percent: allocation.cash.percent,
-                    amount: allocation.cash.amount,
-                    color: Color(hex: "#F9A8D4")
-                )
+        VStack(spacing: 0) {
+            // Header
+            HStack(spacing: 6) {
+                Text("ASSET ALLOCATION")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(AppColors.textTertiary)
+                    .tracking(0.8)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundColor(AppColors.textTertiary)
+                Spacer()
             }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.top, AppSpacing.cardPadding)
+            .padding(.bottom, 12)
 
-            Spacer()
+            Rectangle()
+                .fill(AppColors.surfaceBorder)
+                .frame(height: 0.5)
+                .padding(.horizontal, AppSpacing.cardPadding)
+
+            // Chart + breakdown
+            HStack(spacing: 20) {
+                // Donut with center total
+                ZStack {
+                    DonutChart(segments: allocationSegments)
+                        .frame(width: 110, height: 110)
+
+                    VStack(spacing: 1) {
+                        Text("TOTAL")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(AppColors.textTertiary)
+                            .tracking(0.5)
+                        Text(formatCompact(totalAmount))
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    AllocationRow(
+                        title: "U.S. Stocks",
+                        percent: allocation.stocks.percent,
+                        amount: allocation.stocks.amount,
+                        color: AppColors.accentBlue
+                    )
+                    AllocationRow(
+                        title: "Cash",
+                        percent: allocation.cash.percent,
+                        amount: allocation.cash.amount,
+                        color: AppColors.accentGreen
+                    )
+                    AllocationRow(
+                        title: "Crypto",
+                        percent: allocation.bonds.percent,
+                        amount: allocation.bonds.amount,
+                        color: AppColors.accentAmber
+                    )
+                    AllocationRow(
+                        title: "Other",
+                        percent: max(100 - allocation.stocks.percent - allocation.bonds.percent - allocation.cash.percent, 0),
+                        amount: max(totalAmount * 0.02, 0),
+                        color: AppColors.accentPink
+                    )
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.vertical, AppSpacing.cardPadding)
         }
-        .padding(20)
-        .background(Color(hex: "#121212"))
-        .cornerRadius(24)
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
         .overlay(
-            RoundedRectangle(cornerRadius: 24)
-                .stroke(Color(hex: "#222222"), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.xl)
+                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
         )
+    }
+
+    private var allocationSegments: [ChartSegment] {
+        let otherPct = max(100 - allocation.stocks.percent - allocation.bonds.percent - allocation.cash.percent, 0)
+        return [
+            ChartSegment(percent: allocation.stocks.percent, color: AppColors.accentBlue),
+            ChartSegment(percent: allocation.cash.percent,   color: AppColors.accentGreen),
+            ChartSegment(percent: allocation.bonds.percent,  color: AppColors.accentAmber),
+            ChartSegment(percent: otherPct,                  color: AppColors.accentPink)
+        ]
+    }
+
+    private func formatCompact(_ value: Double) -> String {
+        if value >= 1_000_000 {
+            return String(format: "$%.1fM", value / 1_000_000)
+        } else if value >= 1_000 {
+            return String(format: "$%.0fk", value / 1_000)
+        }
+        return "$\(Int(value))"
     }
 }
 
@@ -60,84 +120,68 @@ private struct AllocationRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Circle()
-                .fill(color)
-                .frame(width: 6, height: 6)
-
+            Circle().fill(color).frame(width: 8, height: 8)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.white)
-
                 Text("\(percent)% · \(formatCurrency(amount))")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(Color(hex: "#6B7280"))
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(AppColors.textTertiary)
             }
         }
     }
 
-    private func formatCurrency(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        formatter.maximumFractionDigits = 0
-        formatter.minimumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "$0"
+    private func formatCurrency(_ v: Double) -> String {
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.currencyCode = "USD"
+        f.maximumFractionDigits = 0
+        return f.string(from: NSNumber(value: v)) ?? "$0"
     }
 }
 
 private struct DonutChart: View {
     let segments: [ChartSegment]
-
     var body: some View {
         ZStack {
-            ForEach(segments.indices, id: \.self) { index in
-                DonutSegmentShape(
-                    startAngle: startAngle(for: index),
-                    endAngle: endAngle(for: index)
-                )
-                .stroke(segments[index].color, lineWidth: 14)
+            // Background track
+            Circle()
+                .stroke(AppColors.surfaceInput, lineWidth: 14)
+
+            ForEach(segments.indices, id: \.self) { i in
+                if segments[i].percent > 0 {
+                    DonutSegmentShape(startAngle: startAngle(for: i), endAngle: endAngle(for: i))
+                        .stroke(segments[i].color, lineWidth: 14)
+                }
             }
         }
     }
-
-    private func startAngle(for index: Int) -> Angle {
-        let sum = segments.prefix(index).map(\.percent).reduce(0, +)
-        return .degrees(Double(sum) / 100 * 360 - 90)
+    private func startAngle(for i: Int) -> Angle {
+        .degrees(Double(segments.prefix(i).map(\.percent).reduce(0, +)) / 100 * 360 - 90)
     }
-
-    private func endAngle(for index: Int) -> Angle {
-        let sum = segments.prefix(index + 1).map(\.percent).reduce(0, +)
-        return .degrees(Double(sum) / 100 * 360 - 90)
+    private func endAngle(for i: Int) -> Angle {
+        .degrees(Double(segments.prefix(i + 1).map(\.percent).reduce(0, +)) / 100 * 360 - 90)
     }
 }
 
 private struct DonutSegmentShape: Shape {
     let startAngle: Angle
     let endAngle: Angle
-
     func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.addArc(
-            center: CGPoint(x: rect.midX, y: rect.midY),
-            radius: min(rect.width, rect.height) / 2,
-            startAngle: startAngle,
-            endAngle: endAngle,
-            clockwise: false
-        )
-        return path
+        var p = Path()
+        p.addArc(center: CGPoint(x: rect.midX, y: rect.midY),
+                 radius: min(rect.width, rect.height) / 2,
+                 startAngle: startAngle, endAngle: endAngle, clockwise: false)
+        return p
     }
 }
 
-private struct ChartSegment {
-    let percent: Int
-    let color: Color
-}
+private struct ChartSegment { let percent: Int; let color: Color }
 
 #Preview {
     ZStack {
         Color.black.ignoresSafeArea()
-        AssetAllocationCard(allocation: MockData.investmentData.allocation)
-            .padding()
+        AssetAllocationCard(allocation: MockData.investmentData.allocation).padding()
     }
 }

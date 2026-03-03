@@ -79,7 +79,7 @@ private extension SettingsView {
             cardContainer {
                 row(
                     icon: "person.fill",
-                    iconColor: Color(hex: "#A78BFA"),
+                            iconColor: AppColors.accentPurple,
                     title: SupabaseManager.shared.currentUser?.email ?? "—",
                     subtitle: nil
                 )
@@ -97,7 +97,7 @@ private extension SettingsView {
                     }) {
                         row(
                             icon: "flame.fill",
-                            iconColor: Color(hex: "#F97316"),
+                            iconColor: AppColors.brandPrimary,
                             title: "Flamora Pro",
                             trailing: {
                                 AnyView(
@@ -105,8 +105,8 @@ private extension SettingsView {
                                         .font(.system(size: 13, weight: .semibold))
                                         .foregroundColor(
                                             subscriptionManager.isPremium
-                                                ? Color(hex: "#34D399")
-                                                : Color(hex: "#A78BFA")
+                                                ? AppColors.accentGreen
+                                                : AppColors.accentPurple
                                         )
                                 )
                             }
@@ -115,7 +115,7 @@ private extension SettingsView {
                     .buttonStyle(.plain)
 
                     if subscriptionManager.isPremium {
-                        Divider().background(Color(hex: "#2A2A2A")).padding(.leading, 60)
+                        Divider().background(AppColors.borderLight).padding(.leading, 60)
 
                         Button(action: {
                             if let url = URL(string: "itms-apps://apps.apple.com/account/subscriptions") {
@@ -124,13 +124,13 @@ private extension SettingsView {
                         }) {
                             row(
                                 icon: "gear",
-                                iconColor: Color(hex: "#6B7280"),
-                                title: "Manage Subscription",
-                                trailing: {
-                                    AnyView(
-                                        Image(systemName: "arrow.up.right")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(Color(hex: "#6B7280"))
+                            iconColor: AppColors.textTertiary,
+                            title: "Manage Subscription",
+                            trailing: {
+                                AnyView(
+                                    Image(systemName: "arrow.up.right")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(AppColors.textTertiary)
                                     )
                                 }
                             )
@@ -138,7 +138,7 @@ private extension SettingsView {
                         .buttonStyle(.plain)
                     }
 
-                    Divider().background(Color(hex: "#2A2A2A")).padding(.leading, 60)
+                    Divider().background(AppColors.borderLight).padding(.leading, 60)
 
                     Button(action: {
                         Task {
@@ -149,7 +149,7 @@ private extension SettingsView {
                     }) {
                         row(
                             icon: "arrow.clockwise",
-                            iconColor: Color(hex: "#60A5FA"),
+                            iconColor: AppColors.accentBlueBright,
                             title: "Restore Purchases",
                             trailing: {
                                 isRestoringPurchases
@@ -172,23 +172,23 @@ private extension SettingsView {
                 VStack(spacing: 0) {
                     row(
                         icon: "building.columns.fill",
-                        iconColor: Color(hex: "#34D399"),
-                        title: plaidManager.connectedInstitutionName ?? "Connected Account",
-                        subtitle: "Linked via Plaid",
-                        trailing: {
-                            AnyView(
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(Color(hex: "#34D399"))
+                            iconColor: AppColors.accentGreen,
+                            title: plaidManager.connectedInstitutionName ?? "Connected Account",
+                            subtitle: "Linked via Plaid",
+                            trailing: {
+                                AnyView(
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(AppColors.accentGreen)
                             )
                         }
                     )
 
-                    Divider().background(Color(hex: "#2A2A2A")).padding(.leading, 60)
+                    Divider().background(AppColors.borderLight).padding(.leading, 60)
 
                     Button(action: { showDisconnectConfirm = true }) {
                         row(
                             icon: "link.badge.minus",
-                            iconColor: Color(hex: "#F87171"),
+                            iconColor: AppColors.error,
                             title: "Disconnect Bank",
                             trailing: {
                                 isDisconnecting
@@ -196,7 +196,7 @@ private extension SettingsView {
                                     : AnyView(EmptyView())
                             }
                         )
-                        .foregroundColor(Color(hex: "#F87171"))
+                        .foregroundColor(AppColors.error)
                     }
                     .buttonStyle(.plain)
                     .disabled(isDisconnecting)
@@ -215,14 +215,14 @@ private extension SettingsView {
         }) {
             Text("Sign Out")
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(Color(hex: "#F87171"))
+                .foregroundColor(AppColors.error)
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
-                .background(Color(hex: "#1A1A1A"))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .background(AppColors.surfaceElevated)
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(Color(hex: "#2A2A2A"), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: AppRadius.md)
+                        .stroke(AppColors.borderLight, lineWidth: 0.75)
                 )
         }
     }
@@ -231,12 +231,12 @@ private extension SettingsView {
         HStack(spacing: 16) {
             Text("Privacy Policy")
                 .font(.system(size: 12))
-                .foregroundColor(Color(hex: "#4B5563"))
+                .foregroundColor(AppColors.textMuted)
             Text("•")
-                .foregroundColor(Color(hex: "#4B5563"))
+                .foregroundColor(AppColors.textMuted)
             Text("Terms of Service")
                 .font(.system(size: 12))
-                .foregroundColor(Color(hex: "#4B5563"))
+                .foregroundColor(AppColors.textMuted)
         }
         .frame(maxWidth: .infinity)
     }
@@ -249,7 +249,7 @@ private extension SettingsView {
     func sectionLabel(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 12, weight: .semibold))
-            .foregroundColor(Color(hex: "#6B7280"))
+            .foregroundColor(AppColors.textTertiary)
             .textCase(.uppercase)
             .tracking(0.8)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -260,11 +260,11 @@ private extension SettingsView {
         VStack(spacing: 0) {
             content()
         }
-        .background(Color(hex: "#121212"))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color(hex: "#222222"), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
         )
     }
 
@@ -292,7 +292,7 @@ private extension SettingsView {
                 if let subtitle {
                     Text(subtitle)
                         .font(.system(size: 12))
-                        .foregroundColor(Color(hex: "#6B7280"))
+                        .foregroundColor(AppColors.textTertiary)
                 }
             }
 
