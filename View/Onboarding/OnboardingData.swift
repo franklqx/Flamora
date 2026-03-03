@@ -24,6 +24,7 @@ class OnboardingData {
     var targetMonthlySpend: Double = 0
     var selectedPlan: String = ""        // "monthly" or "yearly"
     var plaidConnected: Bool = false
+    var painPoint: String = ""           // pain_money_tracking, pain_saving, pain_investing, pain_fire
 
     var savingsRate: Double {
         let income = Double(monthlyIncome) ?? 0
@@ -68,6 +69,85 @@ class OnboardingData {
     var freedomAge: Int {
         Int(age) + yearsToFire
     }
+
+    // MARK: - V2 Computed Properties
+
+    /// 额外投入建议金额（基于收入）
+    var suggestedExtraInvestment: Double {
+        let income = Double(monthlyIncome) ?? 0
+        if income < 3000 { return 100 }
+        if income < 6000 { return 200 }
+        if income < 10000 { return 300 }
+        if income < 20000 { return 500 }
+        return 1000
+    }
+
+    /// 优化后的 Freedom Age（额外投入后）
+    var optimizedFreedomAge: Int {
+        let optimizedMonthlySavings = monthlySavings + suggestedExtraInvestment
+        guard optimizedMonthlySavings > 0 else { return freedomAge }
+        var accumulated = Double(currentNetWorth) ?? 0
+        var years = 0
+        let target = fireNumber
+        guard target > 0 else { return Int(age) }
+        while accumulated < target && years < 100 {
+            accumulated = accumulated * 1.07 + optimizedMonthlySavings * 12
+            years += 1
+        }
+        return Int(age) + years
+    }
+
+    /// 提前年数
+    var yearsSaved: Int {
+        return max(0, freedomAge - optimizedFreedomAge)
+    }
+
+    /// 延迟1年的代价
+    var delayPenalty: Int {
+        let currentSavings = monthlySavings
+        guard currentSavings > 0 else { return 0 }
+        var accumulated = Double(currentNetWorth) ?? 0
+        var years = 0
+        let target = fireNumber
+        guard target > 0 else { return 0 }
+        // 第一年不投入，只有复利
+        accumulated = accumulated * 1.07
+        while accumulated < target && years < 100 {
+            accumulated = accumulated * 1.07 + currentSavings * 12
+            years += 1
+        }
+        let delayedAge = Int(age) + 1 + years
+        return max(0, delayedAge - freedomAge)
+    }
+
+    /// 当前 FIRE 进度百分比
+    var fireProgress: Double {
+        guard fireNumber > 0 else { return 0 }
+        let netWorth = Double(currentNetWorth) ?? 0
+        let monthlyPassiveIncome = (netWorth * 0.04) / 12
+        let expenses = Double(monthlyExpenses) ?? 0
+        let targetMonthly = targetMonthlySpend > 0 ? targetMonthlySpend : expenses
+        guard targetMonthly > 0 else { return 0 }
+        return min(100, (monthlyPassiveIncome / targetMonthly) * 100)
+    }
+
+    var userSituation: UserSituation {
+        let netWorth = Double(currentNetWorth) ?? 0
+        if savingsRate <= 0 { return .cannotSave }
+        if freedomAge <= Int(age) + 5 { return .almostFree }
+        if netWorth == 0 && savingsRate > 0 { return .notInvesting }
+        if freedomAge > 65 { return .veryFar }
+        return .normal
+    }
+}
+
+// MARK: - User Situation
+enum UserSituation {
+    case cannotSave       // 储蓄率 <= 0
+    case almostFree       // freedom age <= 当前年龄 + 5
+    case notInvesting     // 净资产 = 0，储蓄率 > 0
+    case veryFar          // freedom age > 65
+    case normal           // 正常情况
 }
 
 // MARK: - Motivation Options

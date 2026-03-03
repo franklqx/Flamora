@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var showSplash = true
     @State private var isOnboardingComplete = false
     @State private var lockedRootSize: CGSize = .zero
+    @AppStorage("hasCompletedOnboardingV2") private var hasCompletedOnboardingV2 = false
 
     @Environment(SubscriptionManager.self) private var subscriptionManager
 
@@ -23,11 +24,11 @@ struct ContentView: View {
             let displaySize = effectiveDisplaySize(for: currentSize)
 
             ZStack {
-                if isOnboardingComplete {
+                if isOnboardingComplete && hasCompletedOnboardingV2 {
                     MainTabView()
                         .transition(.opacity)
                 } else {
-                    OnboardingContainerView(isOnboardingComplete: $isOnboardingComplete)
+                    OBV2_ContainerView(isOnboardingComplete: $isOnboardingComplete)
                         .transition(.opacity)
                 }
 
@@ -74,6 +75,7 @@ struct ContentView: View {
                 withAnimation(.easeInOut(duration: 0.5)) {
                     isOnboardingComplete = false
                 }
+                hasCompletedOnboardingV2 = false
             }
         }
     }
