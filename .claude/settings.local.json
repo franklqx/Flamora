@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xcodebuild:*)",
+      "Bash(file:*)",
+      "Bash(curl:*)",
+      "Bash(xxd:*)",
+      "Bash(test:*)",
+      "Bash(python3:*)",
+      "WebFetch(domain:openclaw.ai)",
+      "Bash(bash)",
+      "Bash(node --version:*)",
+      "Bash(npm --version:*)",
+      "Bash(env)",
+      "Bash(git restore --staged \"Flamora app.xcodeproj/project.pbxproj\" \"Flamora app.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved\")",
+      "Bash(git restore \"Flamora app.xcodeproj/project.pbxproj\" \"Flamora app.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved\")"
+    ]
+  }
+}
