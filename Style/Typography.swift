@@ -66,4 +66,8 @@ extension Font {
     static var label: Font {
         .system(size: AppTypography.label, weight: .semibold)
     }
+
+    static var obSlideTitle: Font {
+        .system(size: 28, weight: .light, design: .serif)
+    }
 }

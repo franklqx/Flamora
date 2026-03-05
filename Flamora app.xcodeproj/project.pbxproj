@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0759EB55753C48D087731FF5 /* OB_PlaidLinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEAA840FA4113EB4E366D9E7 /* OB_PlaidLinkView.swift */; };
 		12123E2F2F4717FB0011B385 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 12123E2E2F4717FB0011B385 /* RevenueCat */; };
 		12123E312F4717FB0011B385 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 12123E302F4717FB0011B385 /* RevenueCatUI */; };
 		12123E342F4719A20011B385 /* LinkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 12123E332F4719A20011B385 /* LinkKit */; };
@@ -17,34 +16,33 @@
 		12123E422F485B920011B385 /* PaywallSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E3E2F485B920011B385 /* PaywallSheet.swift */; };
 		12123E432F485B920011B385 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E3C2F485B920011B385 /* SettingsView.swift */; };
 		12123E452F48D7E20011B385 /* PlaidLinkPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E442F48D7E20011B385 /* PlaidLinkPresenter.swift */; };
-		124C46492F56F65E00E4EA8B /* OBV2_IntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46372F56F65E00E4EA8B /* OBV2_IntroView.swift */; };
-		124C464A2F56F65E00E4EA8B /* OBV2_MotivationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C463B2F56F65E00E4EA8B /* OBV2_MotivationView.swift */; };
-		124C464B2F56F65E00E4EA8B /* OBV2_IncomeSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C462D2F56F65E00E4EA8B /* OBV2_IncomeSlider.swift */; };
-		124C464C2F56F65E00E4EA8B /* OBV2_MicroInsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C462E2F56F65E00E4EA8B /* OBV2_MicroInsightCard.swift */; };
-		124C464D2F56F65E00E4EA8B /* OBV2_LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C463A2F56F65E00E4EA8B /* OBV2_LoadingView.swift */; };
-		124C464E2F56F65E00E4EA8B /* OBV2_BackButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C462C2F56F65E00E4EA8B /* OBV2_BackButton.swift */; };
-		124C464F2F56F65E00E4EA8B /* OBV2_SpendingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46422F56F65E00E4EA8B /* OBV2_SpendingView.swift */; };
-		124C46502F56F65E00E4EA8B /* OBV2_SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46432F56F65E00E4EA8B /* OBV2_SplashView.swift */; };
-		124C46512F56F65E00E4EA8B /* OBV2_AhaMomentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46352F56F65E00E4EA8B /* OBV2_AhaMomentView.swift */; };
-		124C46522F56F65E00E4EA8B /* OBV2_WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46452F56F65E00E4EA8B /* OBV2_WelcomeView.swift */; };
-		124C46532F56F65E00E4EA8B /* OBV2_InvestmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46382F56F65E00E4EA8B /* OBV2_InvestmentView.swift */; };
-		124C46542F56F65E00E4EA8B /* OBV2_RoadmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C463F2F56F65E00E4EA8B /* OBV2_RoadmapView.swift */; };
-		124C46552F56F65E00E4EA8B /* OBV2_LifestyleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46392F56F65E00E4EA8B /* OBV2_LifestyleView.swift */; };
-		124C46562F56F65E00E4EA8B /* OBV2_IncomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46362F56F65E00E4EA8B /* OBV2_IncomeView.swift */; };
-		124C46572F56F65E00E4EA8B /* OBV2_ValueScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46442F56F65E00E4EA8B /* OBV2_ValueScreenView.swift */; };
-		124C46582F56F65E00E4EA8B /* OBV2_PainPointsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C463D2F56F65E00E4EA8B /* OBV2_PainPointsView.swift */; };
-		124C46592F56F65E00E4EA8B /* OBV2_AgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46342F56F65E00E4EA8B /* OBV2_AgeView.swift */; };
-		124C465A2F56F65E00E4EA8B /* OBV2_NameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C463C2F56F65E00E4EA8B /* OBV2_NameView.swift */; };
-		124C465B2F56F65E00E4EA8B /* OBV2_SocialProofView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46412F56F65E00E4EA8B /* OBV2_SocialProofView.swift */; };
-		124C465C2F56F65E00E4EA8B /* OBV2_PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C463E2F56F65E00E4EA8B /* OBV2_PaywallView.swift */; };
-		124C465D2F56F65E00E4EA8B /* OBV2_SnapshotProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46322F56F65E00E4EA8B /* OBV2_SnapshotProgress.swift */; };
-		124C465E2F56F65E00E4EA8B /* OBV2_ContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46472F56F65E00E4EA8B /* OBV2_ContainerView.swift */; };
-		124C465F2F56F65E00E4EA8B /* OBV2_SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46402F56F65E00E4EA8B /* OBV2_SignInView.swift */; };
-		124C46602F56F65E00E4EA8B /* OBV2_SelectionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46312F56F65E00E4EA8B /* OBV2_SelectionCard.swift */; };
-		124C46612F56F65E00E4EA8B /* OBV2_PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46302F56F65E00E4EA8B /* OBV2_PrimaryButton.swift */; };
-		124C46622F56F65E00E4EA8B /* OBV2_PersonalizeProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C462F2F56F65E00E4EA8B /* OBV2_PersonalizeProgress.swift */; };
+		124C46492F56F65E00E4EA8B /* OB_IntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46372F56F65E00E4EA8B /* OB_IntroView.swift */; };
+		124C464A2F56F65E00E4EA8B /* OB_MotivationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C463B2F56F65E00E4EA8B /* OB_MotivationView.swift */; };
+		124C464B2F56F65E00E4EA8B /* OB_IncomeSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C462D2F56F65E00E4EA8B /* OB_IncomeSlider.swift */; };
+		124C464C2F56F65E00E4EA8B /* OB_MicroInsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C462E2F56F65E00E4EA8B /* OB_MicroInsightCard.swift */; };
+		124C464D2F56F65E00E4EA8B /* OB_LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C463A2F56F65E00E4EA8B /* OB_LoadingView.swift */; };
+		124C464E2F56F65E00E4EA8B /* OB_BackButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C462C2F56F65E00E4EA8B /* OB_BackButton.swift */; };
+		124C464F2F56F65E00E4EA8B /* OB_SpendingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46422F56F65E00E4EA8B /* OB_SpendingView.swift */; };
+		124C46502F56F65E00E4EA8B /* OB_SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46432F56F65E00E4EA8B /* OB_SplashView.swift */; };
+		124C46512F56F65E00E4EA8B /* OB_AhaMomentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46352F56F65E00E4EA8B /* OB_AhaMomentView.swift */; };
+		124C46522F56F65E00E4EA8B /* OB_WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46452F56F65E00E4EA8B /* OB_WelcomeView.swift */; };
+		124C46532F56F65E00E4EA8B /* OB_InvestmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46382F56F65E00E4EA8B /* OB_InvestmentView.swift */; };
+		124C46542F56F65E00E4EA8B /* OB_RoadmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C463F2F56F65E00E4EA8B /* OB_RoadmapView.swift */; };
+		124C46552F56F65E00E4EA8B /* OB_LifestyleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46392F56F65E00E4EA8B /* OB_LifestyleView.swift */; };
+		124C46562F56F65E00E4EA8B /* OB_IncomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46362F56F65E00E4EA8B /* OB_IncomeView.swift */; };
+		124C46572F56F65E00E4EA8B /* OB_ValueScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46442F56F65E00E4EA8B /* OB_ValueScreenView.swift */; };
+		124C46582F56F65E00E4EA8B /* OB_PainPointsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C463D2F56F65E00E4EA8B /* OB_PainPointsView.swift */; };
+		124C46592F56F65E00E4EA8B /* OB_AgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46342F56F65E00E4EA8B /* OB_AgeView.swift */; };
+		124C465A2F56F65E00E4EA8B /* OB_NameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C463C2F56F65E00E4EA8B /* OB_NameView.swift */; };
+		124C465B2F56F65E00E4EA8B /* OB_SocialProofView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46412F56F65E00E4EA8B /* OB_SocialProofView.swift */; };
+		124C465C2F56F65E00E4EA8B /* OB_PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C463E2F56F65E00E4EA8B /* OB_PaywallView.swift */; };
+		124C465D2F56F65E00E4EA8B /* OB_SnapshotProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46322F56F65E00E4EA8B /* OB_SnapshotProgress.swift */; };
+		124C465E2F56F65E00E4EA8B /* OB_ContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46472F56F65E00E4EA8B /* OB_ContainerView.swift */; };
+		124C465F2F56F65E00E4EA8B /* OB_SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46402F56F65E00E4EA8B /* OB_SignInView.swift */; };
+		124C46602F56F65E00E4EA8B /* OB_SelectionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46312F56F65E00E4EA8B /* OB_SelectionCard.swift */; };
+		124C46612F56F65E00E4EA8B /* OB_PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46302F56F65E00E4EA8B /* OB_PrimaryButton.swift */; };
+		124C46622F56F65E00E4EA8B /* OB_PersonalizeProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C462F2F56F65E00E4EA8B /* OB_PersonalizeProgress.swift */; };
 		1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */; };
-		1508832F2F3848C400C5CF03 /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1508832E2F3848C400C5CF03 /* SplashScreenView.swift */; };
 		153CA3182F34E952001ED98E /* NetWorthCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3172F34E952001ED98E /* NetWorthCard.swift */; };
 		153CA31A2F34EDEC001ED98E /* TopHeaderBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3192F34EDEC001ED98E /* TopHeaderBar.swift */; };
 		153CA31C2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA31B2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift */; };
@@ -78,22 +76,9 @@
 		15FF6EDA2F31096B0005F482 /* GradientButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED92F31043F0005F482 /* GradientButton.swift */; };
 		15FF6EDB2F3109F40005F482 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED72F31033C0005F482 /* Colors.swift */; };
 		15FF6EE02F310A040005F482 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED82F3103F70005F482 /* Typography.swift */; };
-		A87F58BBE4A5EED25BA9DDB9 /* OB_PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC87A8636AE0858FF444069 /* OB_PaywallView.swift */; };
 		AA5B00032F38500000001003 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = AA5B00022F38500000001002 /* Supabase */; };
 		AA5B00052F38500000001005 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5B00042F38500000001004 /* SupabaseManager.swift */; };
 		AAOB00012F38500000000001 /* OnboardingData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00112F38500000000001 /* OnboardingData.swift */; };
-		AAOB00022F38500000000002 /* OnboardingContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00122F38500000000002 /* OnboardingContainerView.swift */; };
-		AAOB00032F38500000000003 /* OB_SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00132F38500000000003 /* OB_SignInView.swift */; };
-		AAOB00042F38500000000004 /* OB_WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00142F38500000000004 /* OB_WelcomeView.swift */; };
-		AAOB00052F38500000000005 /* OB_NameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00152F38500000000005 /* OB_NameView.swift */; };
-		AAOB00062F38500000000006 /* OB_MotivationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00162F38500000000006 /* OB_MotivationView.swift */; };
-		AAOB00072F38500000000007 /* OB_AgeLocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00172F38500000000007 /* OB_AgeLocationView.swift */; };
-		AAOB00082F38500000000008 /* OB_IncomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00182F38500000000008 /* OB_IncomeView.swift */; };
-		AAOB00092F38500000000009 /* OB_ExpensesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00192F38500000000009 /* OB_ExpensesView.swift */; };
-		AAOB000A2F3850000000000A /* OB_NetWorthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001A2F3850000000000A /* OB_NetWorthView.swift */; };
-		AAOB000B2F3850000000000B /* OB_LifestyleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001B2F3850000000000B /* OB_LifestyleView.swift */; };
-		AAOB000C2F3850000000000C /* OB_BlueprintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001C2F3850000000000C /* OB_BlueprintView.swift */; };
-		AAOB000D2F3850000000000D /* OB_SuccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001D2F3850000000000D /* OB_SuccessView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -120,34 +105,33 @@
 		12123E3E2F485B920011B385 /* PaywallSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallSheet.swift; sourceTree = "<group>"; };
 		12123E3F2F485B920011B385 /* PlaidLinkRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidLinkRepresentable.swift; sourceTree = "<group>"; };
 		12123E442F48D7E20011B385 /* PlaidLinkPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidLinkPresenter.swift; sourceTree = "<group>"; };
-		124C462C2F56F65E00E4EA8B /* OBV2_BackButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_BackButton.swift; sourceTree = "<group>"; };
-		124C462D2F56F65E00E4EA8B /* OBV2_IncomeSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_IncomeSlider.swift; sourceTree = "<group>"; };
-		124C462E2F56F65E00E4EA8B /* OBV2_MicroInsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_MicroInsightCard.swift; sourceTree = "<group>"; };
-		124C462F2F56F65E00E4EA8B /* OBV2_PersonalizeProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_PersonalizeProgress.swift; sourceTree = "<group>"; };
-		124C46302F56F65E00E4EA8B /* OBV2_PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_PrimaryButton.swift; sourceTree = "<group>"; };
-		124C46312F56F65E00E4EA8B /* OBV2_SelectionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_SelectionCard.swift; sourceTree = "<group>"; };
-		124C46322F56F65E00E4EA8B /* OBV2_SnapshotProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_SnapshotProgress.swift; sourceTree = "<group>"; };
-		124C46342F56F65E00E4EA8B /* OBV2_AgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_AgeView.swift; sourceTree = "<group>"; };
-		124C46352F56F65E00E4EA8B /* OBV2_AhaMomentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_AhaMomentView.swift; sourceTree = "<group>"; };
-		124C46362F56F65E00E4EA8B /* OBV2_IncomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_IncomeView.swift; sourceTree = "<group>"; };
-		124C46372F56F65E00E4EA8B /* OBV2_IntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_IntroView.swift; sourceTree = "<group>"; };
-		124C46382F56F65E00E4EA8B /* OBV2_InvestmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_InvestmentView.swift; sourceTree = "<group>"; };
-		124C46392F56F65E00E4EA8B /* OBV2_LifestyleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_LifestyleView.swift; sourceTree = "<group>"; };
-		124C463A2F56F65E00E4EA8B /* OBV2_LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_LoadingView.swift; sourceTree = "<group>"; };
-		124C463B2F56F65E00E4EA8B /* OBV2_MotivationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_MotivationView.swift; sourceTree = "<group>"; };
-		124C463C2F56F65E00E4EA8B /* OBV2_NameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_NameView.swift; sourceTree = "<group>"; };
-		124C463D2F56F65E00E4EA8B /* OBV2_PainPointsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_PainPointsView.swift; sourceTree = "<group>"; };
-		124C463E2F56F65E00E4EA8B /* OBV2_PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_PaywallView.swift; sourceTree = "<group>"; };
-		124C463F2F56F65E00E4EA8B /* OBV2_RoadmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_RoadmapView.swift; sourceTree = "<group>"; };
-		124C46402F56F65E00E4EA8B /* OBV2_SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_SignInView.swift; sourceTree = "<group>"; };
-		124C46412F56F65E00E4EA8B /* OBV2_SocialProofView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_SocialProofView.swift; sourceTree = "<group>"; };
-		124C46422F56F65E00E4EA8B /* OBV2_SpendingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_SpendingView.swift; sourceTree = "<group>"; };
-		124C46432F56F65E00E4EA8B /* OBV2_SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_SplashView.swift; sourceTree = "<group>"; };
-		124C46442F56F65E00E4EA8B /* OBV2_ValueScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_ValueScreenView.swift; sourceTree = "<group>"; };
-		124C46452F56F65E00E4EA8B /* OBV2_WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_WelcomeView.swift; sourceTree = "<group>"; };
-		124C46472F56F65E00E4EA8B /* OBV2_ContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBV2_ContainerView.swift; sourceTree = "<group>"; };
+		124C462C2F56F65E00E4EA8B /* OB_BackButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_BackButton.swift; sourceTree = "<group>"; };
+		124C462D2F56F65E00E4EA8B /* OB_IncomeSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_IncomeSlider.swift; sourceTree = "<group>"; };
+		124C462E2F56F65E00E4EA8B /* OB_MicroInsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_MicroInsightCard.swift; sourceTree = "<group>"; };
+		124C462F2F56F65E00E4EA8B /* OB_PersonalizeProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_PersonalizeProgress.swift; sourceTree = "<group>"; };
+		124C46302F56F65E00E4EA8B /* OB_PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_PrimaryButton.swift; sourceTree = "<group>"; };
+		124C46312F56F65E00E4EA8B /* OB_SelectionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_SelectionCard.swift; sourceTree = "<group>"; };
+		124C46322F56F65E00E4EA8B /* OB_SnapshotProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_SnapshotProgress.swift; sourceTree = "<group>"; };
+		124C46342F56F65E00E4EA8B /* OB_AgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_AgeView.swift; sourceTree = "<group>"; };
+		124C46352F56F65E00E4EA8B /* OB_AhaMomentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_AhaMomentView.swift; sourceTree = "<group>"; };
+		124C46362F56F65E00E4EA8B /* OB_IncomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_IncomeView.swift; sourceTree = "<group>"; };
+		124C46372F56F65E00E4EA8B /* OB_IntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_IntroView.swift; sourceTree = "<group>"; };
+		124C46382F56F65E00E4EA8B /* OB_InvestmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_InvestmentView.swift; sourceTree = "<group>"; };
+		124C46392F56F65E00E4EA8B /* OB_LifestyleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_LifestyleView.swift; sourceTree = "<group>"; };
+		124C463A2F56F65E00E4EA8B /* OB_LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_LoadingView.swift; sourceTree = "<group>"; };
+		124C463B2F56F65E00E4EA8B /* OB_MotivationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_MotivationView.swift; sourceTree = "<group>"; };
+		124C463C2F56F65E00E4EA8B /* OB_NameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_NameView.swift; sourceTree = "<group>"; };
+		124C463D2F56F65E00E4EA8B /* OB_PainPointsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_PainPointsView.swift; sourceTree = "<group>"; };
+		124C463E2F56F65E00E4EA8B /* OB_PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_PaywallView.swift; sourceTree = "<group>"; };
+		124C463F2F56F65E00E4EA8B /* OB_RoadmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_RoadmapView.swift; sourceTree = "<group>"; };
+		124C46402F56F65E00E4EA8B /* OB_SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_SignInView.swift; sourceTree = "<group>"; };
+		124C46412F56F65E00E4EA8B /* OB_SocialProofView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_SocialProofView.swift; sourceTree = "<group>"; };
+		124C46422F56F65E00E4EA8B /* OB_SpendingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_SpendingView.swift; sourceTree = "<group>"; };
+		124C46432F56F65E00E4EA8B /* OB_SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_SplashView.swift; sourceTree = "<group>"; };
+		124C46442F56F65E00E4EA8B /* OB_ValueScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_ValueScreenView.swift; sourceTree = "<group>"; };
+		124C46452F56F65E00E4EA8B /* OB_WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_WelcomeView.swift; sourceTree = "<group>"; };
+		124C46472F56F65E00E4EA8B /* OB_ContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_ContainerView.swift; sourceTree = "<group>"; };
 		1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBackgroundView.swift; sourceTree = "<group>"; };
-		1508832E2F3848C400C5CF03 /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreenView.swift; sourceTree = "<group>"; };
 		150899942F30F60F003DDFBF /* Flamora app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Flamora app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899A32F30F611003DDFBF /* Flamora appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899AD2F30F611003DDFBF /* Flamora appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -186,20 +170,6 @@
 		15FF6ED92F31043F0005F482 /* GradientButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientButton.swift; sourceTree = "<group>"; };
 		AA5B00042F38500000001004 /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
 		AAOB00112F38500000000001 /* OnboardingData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingData.swift; sourceTree = "<group>"; };
-		AAOB00122F38500000000002 /* OnboardingContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingContainerView.swift; sourceTree = "<group>"; };
-		AAOB00132F38500000000003 /* OB_SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_SignInView.swift; sourceTree = "<group>"; };
-		AAOB00142F38500000000004 /* OB_WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_WelcomeView.swift; sourceTree = "<group>"; };
-		AAOB00152F38500000000005 /* OB_NameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_NameView.swift; sourceTree = "<group>"; };
-		AAOB00162F38500000000006 /* OB_MotivationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_MotivationView.swift; sourceTree = "<group>"; };
-		AAOB00172F38500000000007 /* OB_AgeLocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_AgeLocationView.swift; sourceTree = "<group>"; };
-		AAOB00182F38500000000008 /* OB_IncomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_IncomeView.swift; sourceTree = "<group>"; };
-		AAOB00192F38500000000009 /* OB_ExpensesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_ExpensesView.swift; sourceTree = "<group>"; };
-		AAOB001A2F3850000000000A /* OB_NetWorthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_NetWorthView.swift; sourceTree = "<group>"; };
-		AAOB001B2F3850000000000B /* OB_LifestyleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_LifestyleView.swift; sourceTree = "<group>"; };
-		AAOB001C2F3850000000000C /* OB_BlueprintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_BlueprintView.swift; sourceTree = "<group>"; };
-		AAOB001D2F3850000000000D /* OB_SuccessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_SuccessView.swift; sourceTree = "<group>"; };
-		EBC87A8636AE0858FF444069 /* OB_PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_PaywallView.swift; sourceTree = "<group>"; };
-		EEAA840FA4113EB4E366D9E7 /* OB_PlaidLinkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_PlaidLinkView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -269,13 +239,13 @@
 		124C46332F56F65E00E4EA8B /* Components */ = {
 			isa = PBXGroup;
 			children = (
-				124C462C2F56F65E00E4EA8B /* OBV2_BackButton.swift */,
-				124C462D2F56F65E00E4EA8B /* OBV2_IncomeSlider.swift */,
-				124C462E2F56F65E00E4EA8B /* OBV2_MicroInsightCard.swift */,
-				124C462F2F56F65E00E4EA8B /* OBV2_PersonalizeProgress.swift */,
-				124C46302F56F65E00E4EA8B /* OBV2_PrimaryButton.swift */,
-				124C46312F56F65E00E4EA8B /* OBV2_SelectionCard.swift */,
-				124C46322F56F65E00E4EA8B /* OBV2_SnapshotProgress.swift */,
+				124C462C2F56F65E00E4EA8B /* OB_BackButton.swift */,
+				124C46302F56F65E00E4EA8B /* OB_PrimaryButton.swift */,
+				124C462D2F56F65E00E4EA8B /* OB_IncomeSlider.swift */,
+				124C462E2F56F65E00E4EA8B /* OB_MicroInsightCard.swift */,
+				124C462F2F56F65E00E4EA8B /* OB_PersonalizeProgress.swift */,
+				124C46312F56F65E00E4EA8B /* OB_SelectionCard.swift */,
+				124C46322F56F65E00E4EA8B /* OB_SnapshotProgress.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -283,36 +253,36 @@
 		124C46462F56F65E00E4EA8B /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				124C46342F56F65E00E4EA8B /* OBV2_AgeView.swift */,
-				124C46352F56F65E00E4EA8B /* OBV2_AhaMomentView.swift */,
-				124C46362F56F65E00E4EA8B /* OBV2_IncomeView.swift */,
-				124C46372F56F65E00E4EA8B /* OBV2_IntroView.swift */,
-				124C46382F56F65E00E4EA8B /* OBV2_InvestmentView.swift */,
-				124C46392F56F65E00E4EA8B /* OBV2_LifestyleView.swift */,
-				124C463A2F56F65E00E4EA8B /* OBV2_LoadingView.swift */,
-				124C463B2F56F65E00E4EA8B /* OBV2_MotivationView.swift */,
-				124C463C2F56F65E00E4EA8B /* OBV2_NameView.swift */,
-				124C463D2F56F65E00E4EA8B /* OBV2_PainPointsView.swift */,
-				124C463E2F56F65E00E4EA8B /* OBV2_PaywallView.swift */,
-				124C463F2F56F65E00E4EA8B /* OBV2_RoadmapView.swift */,
-				124C46402F56F65E00E4EA8B /* OBV2_SignInView.swift */,
-				124C46412F56F65E00E4EA8B /* OBV2_SocialProofView.swift */,
-				124C46422F56F65E00E4EA8B /* OBV2_SpendingView.swift */,
-				124C46432F56F65E00E4EA8B /* OBV2_SplashView.swift */,
-				124C46442F56F65E00E4EA8B /* OBV2_ValueScreenView.swift */,
-				124C46452F56F65E00E4EA8B /* OBV2_WelcomeView.swift */,
+				124C46432F56F65E00E4EA8B /* OB_SplashView.swift */,
+				124C46452F56F65E00E4EA8B /* OB_WelcomeView.swift */,
+				124C46402F56F65E00E4EA8B /* OB_SignInView.swift */,
+				124C46372F56F65E00E4EA8B /* OB_IntroView.swift */,
+				124C463C2F56F65E00E4EA8B /* OB_NameView.swift */,
+				124C463B2F56F65E00E4EA8B /* OB_MotivationView.swift */,
+				124C46412F56F65E00E4EA8B /* OB_SocialProofView.swift */,
+				124C463D2F56F65E00E4EA8B /* OB_PainPointsView.swift */,
+				124C46442F56F65E00E4EA8B /* OB_ValueScreenView.swift */,
+				124C46342F56F65E00E4EA8B /* OB_AgeView.swift */,
+				124C46362F56F65E00E4EA8B /* OB_IncomeView.swift */,
+				124C46422F56F65E00E4EA8B /* OB_SpendingView.swift */,
+				124C46382F56F65E00E4EA8B /* OB_InvestmentView.swift */,
+				124C46392F56F65E00E4EA8B /* OB_LifestyleView.swift */,
+				124C463A2F56F65E00E4EA8B /* OB_LoadingView.swift */,
+				124C463F2F56F65E00E4EA8B /* OB_RoadmapView.swift */,
+				124C46352F56F65E00E4EA8B /* OB_AhaMomentView.swift */,
+				124C463E2F56F65E00E4EA8B /* OB_PaywallView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
 		};
-		124C46482F56F65E00E4EA8B /* OnboardingV2 */ = {
+		124C46482F56F65E00E4EA8B /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
-				124C46332F56F65E00E4EA8B /* Components */,
+				124C46472F56F65E00E4EA8B /* OB_ContainerView.swift */,
 				124C46462F56F65E00E4EA8B /* Views */,
-				124C46472F56F65E00E4EA8B /* OBV2_ContainerView.swift */,
+				124C46332F56F65E00E4EA8B /* Components */,
 			);
-			path = OnboardingV2;
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		1508998B2F30F60F003DDFBF = {
@@ -347,6 +317,7 @@
 				12123E352F4859CB0011B385 /* PlaidManager.swift */,
 				12123E362F4859CB0011B385 /* SubscriptionManager.swift */,
 				1571A1D62F3C2A2C0024A729 /* APIService.swift */,
+				AAOB00112F38500000000001 /* OnboardingData.swift */,
 				AA5B00042F38500000001004 /* SupabaseManager.swift */,
 			);
 			path = Services;
@@ -378,11 +349,9 @@
 		15E21AA52F3248F500A9BB60 /* View */ = {
 			isa = PBXGroup;
 			children = (
-				124C46482F56F65E00E4EA8B /* OnboardingV2 */,
+				124C46482F56F65E00E4EA8B /* Onboarding */,
 				12123E3D2F485B920011B385 /* Settings */,
 				12123E402F485B920011B385 /* Shared */,
-				AAOB00202F38500000000020 /* Onboarding */,
-				1508832E2F3848C400C5CF03 /* SplashScreenView.swift */,
 				15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */,
 				15E21AEB2F33BE1900A9BB60 /* Investment */,
 				15E21AE72F33BC5E00A9BB60 /* Cashflow */,
@@ -440,28 +409,6 @@
 				15FF6ED92F31043F0005F482 /* GradientButton.swift */,
 			);
 			path = Components;
-			sourceTree = "<group>";
-		};
-		AAOB00202F38500000000020 /* Onboarding */ = {
-			isa = PBXGroup;
-			children = (
-				AAOB00112F38500000000001 /* OnboardingData.swift */,
-				AAOB00122F38500000000002 /* OnboardingContainerView.swift */,
-				AAOB00132F38500000000003 /* OB_SignInView.swift */,
-				AAOB00142F38500000000004 /* OB_WelcomeView.swift */,
-				AAOB00152F38500000000005 /* OB_NameView.swift */,
-				AAOB00162F38500000000006 /* OB_MotivationView.swift */,
-				AAOB00172F38500000000007 /* OB_AgeLocationView.swift */,
-				AAOB00182F38500000000008 /* OB_IncomeView.swift */,
-				AAOB00192F38500000000009 /* OB_ExpensesView.swift */,
-				AAOB001A2F3850000000000A /* OB_NetWorthView.swift */,
-				AAOB001B2F3850000000000B /* OB_LifestyleView.swift */,
-				AAOB001C2F3850000000000C /* OB_BlueprintView.swift */,
-				AAOB001D2F3850000000000D /* OB_SuccessView.swift */,
-				EBC87A8636AE0858FF444069 /* OB_PaywallView.swift */,
-				EEAA840FA4113EB4E366D9E7 /* OB_PlaidLinkView.swift */,
-			);
-			path = Onboarding;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -617,21 +564,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AAOB000D2F3850000000000D /* OB_SuccessView.swift in Sources */,
-				A87F58BBE4A5EED25BA9DDB9 /* OB_PaywallView.swift in Sources */,
-				0759EB55753C48D087731FF5 /* OB_PlaidLinkView.swift in Sources */,
-				AAOB00072F38500000000007 /* OB_AgeLocationView.swift in Sources */,
-				AAOB000A2F3850000000000A /* OB_NetWorthView.swift in Sources */,
-				AAOB00042F38500000000004 /* OB_WelcomeView.swift in Sources */,
-				AAOB00052F38500000000005 /* OB_NameView.swift in Sources */,
-				AAOB00082F38500000000008 /* OB_IncomeView.swift in Sources */,
-				AAOB000B2F3850000000000B /* OB_LifestyleView.swift in Sources */,
-				AAOB00032F38500000000003 /* OB_SignInView.swift in Sources */,
-				AAOB00022F38500000000002 /* OnboardingContainerView.swift in Sources */,
 				158CDE572F5637FA0038554A /* AppCard.swift in Sources */,
-				AAOB00092F38500000000009 /* OB_ExpensesView.swift in Sources */,
-				AAOB00062F38500000000006 /* OB_MotivationView.swift in Sources */,
-				AAOB000C2F3850000000000C /* OB_BlueprintView.swift in Sources */,
 				15E21AF12F33C40000A9BB60 /* BudgetCard.swift in Sources */,
 				15FF6EDB2F3109F40005F482 /* Colors.swift in Sources */,
 				15E21ADB2F33971100A9BB60 /* TabBarVisibilityPreferenceKey.swift in Sources */,
@@ -641,7 +574,6 @@
 				15E21ABB2F325A9D00A9BB60 /* JourneyContainerView.swift in Sources */,
 				15E21AAD2F324F0E00A9BB60 /* ProgressBar.swift in Sources */,
 				15E21AED2F33C11A00A9BB60 /* MainTabView.swift in Sources */,
-				1508832F2F3848C400C5CF03 /* SplashScreenView.swift in Sources */,
 				15FF6EDA2F31096B0005F482 /* GradientButton.swift in Sources */,
 				15E21AE12F33BB9300A9BB60 /* SavingsTargetCard.swift in Sources */,
 				1571A1D82F3C2A2C0024A729 /* APIService.swift in Sources */,
@@ -673,32 +605,32 @@
 				AAOB00012F38500000000001 /* OnboardingData.swift in Sources */,
 				12123E452F48D7E20011B385 /* PlaidLinkPresenter.swift in Sources */,
 				153CA31C2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift in Sources */,
-				124C46492F56F65E00E4EA8B /* OBV2_IntroView.swift in Sources */,
-				124C464A2F56F65E00E4EA8B /* OBV2_MotivationView.swift in Sources */,
-				124C464B2F56F65E00E4EA8B /* OBV2_IncomeSlider.swift in Sources */,
-				124C464C2F56F65E00E4EA8B /* OBV2_MicroInsightCard.swift in Sources */,
-				124C464D2F56F65E00E4EA8B /* OBV2_LoadingView.swift in Sources */,
-				124C464E2F56F65E00E4EA8B /* OBV2_BackButton.swift in Sources */,
-				124C464F2F56F65E00E4EA8B /* OBV2_SpendingView.swift in Sources */,
-				124C46502F56F65E00E4EA8B /* OBV2_SplashView.swift in Sources */,
-				124C46512F56F65E00E4EA8B /* OBV2_AhaMomentView.swift in Sources */,
-				124C46522F56F65E00E4EA8B /* OBV2_WelcomeView.swift in Sources */,
-				124C46532F56F65E00E4EA8B /* OBV2_InvestmentView.swift in Sources */,
-				124C46542F56F65E00E4EA8B /* OBV2_RoadmapView.swift in Sources */,
-				124C46552F56F65E00E4EA8B /* OBV2_LifestyleView.swift in Sources */,
-				124C46562F56F65E00E4EA8B /* OBV2_IncomeView.swift in Sources */,
-				124C46572F56F65E00E4EA8B /* OBV2_ValueScreenView.swift in Sources */,
-				124C46582F56F65E00E4EA8B /* OBV2_PainPointsView.swift in Sources */,
-				124C46592F56F65E00E4EA8B /* OBV2_AgeView.swift in Sources */,
-				124C465A2F56F65E00E4EA8B /* OBV2_NameView.swift in Sources */,
-				124C465B2F56F65E00E4EA8B /* OBV2_SocialProofView.swift in Sources */,
-				124C465C2F56F65E00E4EA8B /* OBV2_PaywallView.swift in Sources */,
-				124C465D2F56F65E00E4EA8B /* OBV2_SnapshotProgress.swift in Sources */,
-				124C465E2F56F65E00E4EA8B /* OBV2_ContainerView.swift in Sources */,
-				124C465F2F56F65E00E4EA8B /* OBV2_SignInView.swift in Sources */,
-				124C46602F56F65E00E4EA8B /* OBV2_SelectionCard.swift in Sources */,
-				124C46612F56F65E00E4EA8B /* OBV2_PrimaryButton.swift in Sources */,
-				124C46622F56F65E00E4EA8B /* OBV2_PersonalizeProgress.swift in Sources */,
+				124C46492F56F65E00E4EA8B /* OB_IntroView.swift in Sources */,
+				124C464A2F56F65E00E4EA8B /* OB_MotivationView.swift in Sources */,
+				124C464B2F56F65E00E4EA8B /* OB_IncomeSlider.swift in Sources */,
+				124C464C2F56F65E00E4EA8B /* OB_MicroInsightCard.swift in Sources */,
+				124C464D2F56F65E00E4EA8B /* OB_LoadingView.swift in Sources */,
+				124C464E2F56F65E00E4EA8B /* OB_BackButton.swift in Sources */,
+				124C464F2F56F65E00E4EA8B /* OB_SpendingView.swift in Sources */,
+				124C46502F56F65E00E4EA8B /* OB_SplashView.swift in Sources */,
+				124C46512F56F65E00E4EA8B /* OB_AhaMomentView.swift in Sources */,
+				124C46522F56F65E00E4EA8B /* OB_WelcomeView.swift in Sources */,
+				124C46532F56F65E00E4EA8B /* OB_InvestmentView.swift in Sources */,
+				124C46542F56F65E00E4EA8B /* OB_RoadmapView.swift in Sources */,
+				124C46552F56F65E00E4EA8B /* OB_LifestyleView.swift in Sources */,
+				124C46562F56F65E00E4EA8B /* OB_IncomeView.swift in Sources */,
+				124C46572F56F65E00E4EA8B /* OB_ValueScreenView.swift in Sources */,
+				124C46582F56F65E00E4EA8B /* OB_PainPointsView.swift in Sources */,
+				124C46592F56F65E00E4EA8B /* OB_AgeView.swift in Sources */,
+				124C465A2F56F65E00E4EA8B /* OB_NameView.swift in Sources */,
+				124C465B2F56F65E00E4EA8B /* OB_SocialProofView.swift in Sources */,
+				124C465C2F56F65E00E4EA8B /* OB_PaywallView.swift in Sources */,
+				124C465D2F56F65E00E4EA8B /* OB_SnapshotProgress.swift in Sources */,
+				124C465E2F56F65E00E4EA8B /* OB_ContainerView.swift in Sources */,
+				124C465F2F56F65E00E4EA8B /* OB_SignInView.swift in Sources */,
+				124C46602F56F65E00E4EA8B /* OB_SelectionCard.swift in Sources */,
+				124C46612F56F65E00E4EA8B /* OB_PrimaryButton.swift in Sources */,
+				124C46622F56F65E00E4EA8B /* OB_PersonalizeProgress.swift in Sources */,
 				AA5B00052F38500000001005 /* SupabaseManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0759EB55753C48D087731FF5 /* OB_PlaidLinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEAA840FA4113EB4E366D9E7 /* OB_PlaidLinkView.swift */; };
 		12123E2F2F4717FB0011B385 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 12123E2E2F4717FB0011B385 /* RevenueCat */; };
 		12123E312F4717FB0011B385 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 12123E302F4717FB0011B385 /* RevenueCatUI */; };
 		12123E342F4719A20011B385 /* LinkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 12123E332F4719A20011B385 /* LinkKit */; };
@@ -18,7 +17,6 @@
 		12123E432F485B920011B385 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E3C2F485B920011B385 /* SettingsView.swift */; };
 		12123E452F48D7E20011B385 /* PlaidLinkPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E442F48D7E20011B385 /* PlaidLinkPresenter.swift */; };
 		1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */; };
-		1508832F2F3848C400C5CF03 /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1508832E2F3848C400C5CF03 /* SplashScreenView.swift */; };
 		153CA3182F34E952001ED98E /* NetWorthCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3172F34E952001ED98E /* NetWorthCard.swift */; };
 		153CA31A2F34EDEC001ED98E /* TopHeaderBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3192F34EDEC001ED98E /* TopHeaderBar.swift */; };
 		153CA31C2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA31B2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift */; };
@@ -51,22 +49,9 @@
 		15FF6EDA2F31096B0005F482 /* GradientButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED92F31043F0005F482 /* GradientButton.swift */; };
 		15FF6EDB2F3109F40005F482 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED72F31033C0005F482 /* Colors.swift */; };
 		15FF6EE02F310A040005F482 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED82F3103F70005F482 /* Typography.swift */; };
-		A87F58BBE4A5EED25BA9DDB9 /* OB_PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC87A8636AE0858FF444069 /* OB_PaywallView.swift */; };
 		AA5B00032F38500000001003 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = AA5B00022F38500000001002 /* Supabase */; };
 		AA5B00052F38500000001005 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5B00042F38500000001004 /* SupabaseManager.swift */; };
 		AAOB00012F38500000000001 /* OnboardingData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00112F38500000000001 /* OnboardingData.swift */; };
-		AAOB00022F38500000000002 /* OnboardingContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00122F38500000000002 /* OnboardingContainerView.swift */; };
-		AAOB00032F38500000000003 /* OB_SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00132F38500000000003 /* OB_SignInView.swift */; };
-		AAOB00042F38500000000004 /* OB_WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00142F38500000000004 /* OB_WelcomeView.swift */; };
-		AAOB00052F38500000000005 /* OB_NameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00152F38500000000005 /* OB_NameView.swift */; };
-		AAOB00062F38500000000006 /* OB_MotivationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00162F38500000000006 /* OB_MotivationView.swift */; };
-		AAOB00072F38500000000007 /* OB_AgeLocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00172F38500000000007 /* OB_AgeLocationView.swift */; };
-		AAOB00082F38500000000008 /* OB_IncomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00182F38500000000008 /* OB_IncomeView.swift */; };
-		AAOB00092F38500000000009 /* OB_ExpensesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00192F38500000000009 /* OB_ExpensesView.swift */; };
-		AAOB000A2F3850000000000A /* OB_NetWorthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001A2F3850000000000A /* OB_NetWorthView.swift */; };
-		AAOB000B2F3850000000000B /* OB_LifestyleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001B2F3850000000000B /* OB_LifestyleView.swift */; };
-		AAOB000C2F3850000000000C /* OB_BlueprintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001C2F3850000000000C /* OB_BlueprintView.swift */; };
-		AAOB000D2F3850000000000D /* OB_SuccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB001D2F3850000000000D /* OB_SuccessView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -94,7 +79,6 @@
 		12123E3F2F485B920011B385 /* PlaidLinkRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidLinkRepresentable.swift; sourceTree = "<group>"; };
 		12123E442F48D7E20011B385 /* PlaidLinkPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidLinkPresenter.swift; sourceTree = "<group>"; };
 		1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBackgroundView.swift; sourceTree = "<group>"; };
-		1508832E2F3848C400C5CF03 /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreenView.swift; sourceTree = "<group>"; };
 		150899942F30F60F003DDFBF /* Flamora app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Flamora app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899A32F30F611003DDFBF /* Flamora appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899AD2F30F611003DDFBF /* Flamora appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -132,20 +116,6 @@
 		15FF6ED92F31043F0005F482 /* GradientButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientButton.swift; sourceTree = "<group>"; };
 		AA5B00042F38500000001004 /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
 		AAOB00112F38500000000001 /* OnboardingData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingData.swift; sourceTree = "<group>"; };
-		AAOB00122F38500000000002 /* OnboardingContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingContainerView.swift; sourceTree = "<group>"; };
-		AAOB00132F38500000000003 /* OB_SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_SignInView.swift; sourceTree = "<group>"; };
-		AAOB00142F38500000000004 /* OB_WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_WelcomeView.swift; sourceTree = "<group>"; };
-		AAOB00152F38500000000005 /* OB_NameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_NameView.swift; sourceTree = "<group>"; };
-		AAOB00162F38500000000006 /* OB_MotivationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_MotivationView.swift; sourceTree = "<group>"; };
-		AAOB00172F38500000000007 /* OB_AgeLocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_AgeLocationView.swift; sourceTree = "<group>"; };
-		AAOB00182F38500000000008 /* OB_IncomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_IncomeView.swift; sourceTree = "<group>"; };
-		AAOB00192F38500000000009 /* OB_ExpensesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_ExpensesView.swift; sourceTree = "<group>"; };
-		AAOB001A2F3850000000000A /* OB_NetWorthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_NetWorthView.swift; sourceTree = "<group>"; };
-		AAOB001B2F3850000000000B /* OB_LifestyleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_LifestyleView.swift; sourceTree = "<group>"; };
-		AAOB001C2F3850000000000C /* OB_BlueprintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_BlueprintView.swift; sourceTree = "<group>"; };
-		AAOB001D2F3850000000000D /* OB_SuccessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_SuccessView.swift; sourceTree = "<group>"; };
-		EBC87A8636AE0858FF444069 /* OB_PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_PaywallView.swift; sourceTree = "<group>"; };
-		EEAA840FA4113EB4E366D9E7 /* OB_PlaidLinkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_PlaidLinkView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -244,6 +214,7 @@
 				12123E352F4859CB0011B385 /* PlaidManager.swift */,
 				12123E362F4859CB0011B385 /* SubscriptionManager.swift */,
 				1571A1D62F3C2A2C0024A729 /* APIService.swift */,
+				AAOB00112F38500000000001 /* OnboardingData.swift */,
 				AA5B00042F38500000001004 /* SupabaseManager.swift */,
 			);
 			path = Services;
@@ -277,8 +248,6 @@
 			children = (
 				12123E3D2F485B920011B385 /* Settings */,
 				12123E402F485B920011B385 /* Shared */,
-				AAOB00202F38500000000020 /* Onboarding */,
-				1508832E2F3848C400C5CF03 /* SplashScreenView.swift */,
 				15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */,
 				15E21AEB2F33BE1900A9BB60 /* Investment */,
 				15E21AE72F33BC5E00A9BB60 /* Cashflow */,
@@ -335,28 +304,6 @@
 				15FF6ED92F31043F0005F482 /* GradientButton.swift */,
 			);
 			path = Components;
-			sourceTree = "<group>";
-		};
-		AAOB00202F38500000000020 /* Onboarding */ = {
-			isa = PBXGroup;
-			children = (
-				AAOB00112F38500000000001 /* OnboardingData.swift */,
-				AAOB00122F38500000000002 /* OnboardingContainerView.swift */,
-				AAOB00132F38500000000003 /* OB_SignInView.swift */,
-				AAOB00142F38500000000004 /* OB_WelcomeView.swift */,
-				AAOB00152F38500000000005 /* OB_NameView.swift */,
-				AAOB00162F38500000000006 /* OB_MotivationView.swift */,
-				AAOB00172F38500000000007 /* OB_AgeLocationView.swift */,
-				AAOB00182F38500000000008 /* OB_IncomeView.swift */,
-				AAOB00192F38500000000009 /* OB_ExpensesView.swift */,
-				AAOB001A2F3850000000000A /* OB_NetWorthView.swift */,
-				AAOB001B2F3850000000000B /* OB_LifestyleView.swift */,
-				AAOB001C2F3850000000000C /* OB_BlueprintView.swift */,
-				AAOB001D2F3850000000000D /* OB_SuccessView.swift */,
-				EBC87A8636AE0858FF444069 /* OB_PaywallView.swift */,
-				EEAA840FA4113EB4E366D9E7 /* OB_PlaidLinkView.swift */,
-			);
-			path = Onboarding;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -512,20 +459,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AAOB000D2F3850000000000D /* OB_SuccessView.swift in Sources */,
-				A87F58BBE4A5EED25BA9DDB9 /* OB_PaywallView.swift in Sources */,
-				0759EB55753C48D087731FF5 /* OB_PlaidLinkView.swift in Sources */,
-				AAOB00072F38500000000007 /* OB_AgeLocationView.swift in Sources */,
-				AAOB000A2F3850000000000A /* OB_NetWorthView.swift in Sources */,
-				AAOB00042F38500000000004 /* OB_WelcomeView.swift in Sources */,
-				AAOB00052F38500000000005 /* OB_NameView.swift in Sources */,
-				AAOB00082F38500000000008 /* OB_IncomeView.swift in Sources */,
-				AAOB000B2F3850000000000B /* OB_LifestyleView.swift in Sources */,
-				AAOB00032F38500000000003 /* OB_SignInView.swift in Sources */,
-				AAOB00022F38500000000002 /* OnboardingContainerView.swift in Sources */,
-				AAOB00092F38500000000009 /* OB_ExpensesView.swift in Sources */,
-				AAOB00062F38500000000006 /* OB_MotivationView.swift in Sources */,
-				AAOB000C2F3850000000000C /* OB_BlueprintView.swift in Sources */,
 				15E21AF12F33C40000A9BB60 /* BudgetCard.swift in Sources */,
 				15FF6EDB2F3109F40005F482 /* Colors.swift in Sources */,
 				15E21ADB2F33971100A9BB60 /* TabBarVisibilityPreferenceKey.swift in Sources */,
@@ -535,7 +468,6 @@
 				15E21ABB2F325A9D00A9BB60 /* JourneyContainerView.swift in Sources */,
 				15E21AAD2F324F0E00A9BB60 /* ProgressBar.swift in Sources */,
 				15E21AED2F33C11A00A9BB60 /* MainTabView.swift in Sources */,
-				1508832F2F3848C400C5CF03 /* SplashScreenView.swift in Sources */,
 				15FF6EDA2F31096B0005F482 /* GradientButton.swift in Sources */,
 				15E21AE12F33BB9300A9BB60 /* SavingsTargetCard.swift in Sources */,
 				1571A1D82F3C2A2C0024A729 /* APIService.swift in Sources */,

@@ -8,13 +8,9 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var showSplash = true
     @State private var isOnboardingComplete = false
     @State private var lockedRootSize: CGSize = .zero
-    @AppStorage("hasCompletedOnboardingV2") private var hasCompletedOnboardingV2 = false
-
-    // 持久化 Onboarding 完成状态：只有走完全部步骤（Blueprint → Paywall → PlaidLink）才为 true
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("hasCompletedOnboardingV2") private var hasCompletedOnboarding = false  // key 保留兼容已完程用户
 
     @Environment(SubscriptionManager.self) private var subscriptionManager
 
@@ -27,18 +23,12 @@ struct ContentView: View {
             let displaySize = effectiveDisplaySize(for: currentSize)
 
             ZStack {
-                if isOnboardingComplete && hasCompletedOnboardingV2 {
+                if isOnboardingComplete && hasCompletedOnboarding {
                     MainTabView()
                         .transition(.opacity)
                 } else {
-                    OBV2_ContainerView(isOnboardingComplete: $isOnboardingComplete)
+                    OB_ContainerView(isOnboardingComplete: $isOnboardingComplete)
                         .transition(.opacity)
-                }
-
-                if showSplash {
-                    SplashScreenView()
-                        .transition(.opacity)
-                        .zIndex(1)
                 }
             }
             .frame(width: displaySize.width, height: displaySize.height, alignment: .top)
@@ -60,14 +50,6 @@ struct ContentView: View {
             PaywallSheet()
                 .environment(subscriptionManager)
         }
-        .onAppear {
-            // Splash 2 秒后消失
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                withAnimation(.easeOut(duration: 0.6)) {
-                    showSplash = false
-                }
-            }
-        }
         // 检查现有 session（已登录 → 直接进主应用）
         .task { await checkExistingSession() }
         // 持续监听 auth 状态变化（退出登录时回到 onboarding）
@@ -79,7 +61,7 @@ struct ContentView: View {
                 withAnimation(.easeInOut(duration: 0.5)) {
                     isOnboardingComplete = false
                 }
-                hasCompletedOnboardingV2 = false
+                hasCompletedOnboarding = false
             }
         }
     }
