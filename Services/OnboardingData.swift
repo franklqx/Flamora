@@ -160,11 +160,27 @@ struct MotivationOption: Identifiable {
 }
 
 let motivationOptions: [MotivationOption] = [
-    MotivationOption(icon: "airplane.departure", title: "Quit the 9-to-5", subtitle: "Work because you want to, not have to", key: "quit"),
+    MotivationOption(icon: "briefcase", title: "Quit the 9-to-5", subtitle: "Work because you want to, not have to", key: "quit"),
     MotivationOption(icon: "figure.2.and.child.holdinghands", title: "Family First", subtitle: "Be there for every moment that matters", key: "family"),
     MotivationOption(icon: "shield.checkered", title: "Security", subtitle: "Sleep well knowing you're covered", key: "security"),
     MotivationOption(icon: "globe.americas", title: "Adventure", subtitle: "Go anywhere, anytime", key: "adventure"),
     MotivationOption(icon: "paintpalette", title: "Passion", subtitle: "Build what you actually care about", key: "passion"),
+]
+
+// MARK: - Challenge Options (Pain Points)
+struct ChallengeOption: Identifiable {
+    let id = UUID()
+    let icon: String
+    let title: String
+    let subtitle: String?
+    let key: String
+}
+
+let challengeOptions: [ChallengeOption] = [
+    ChallengeOption(icon: "chart.pie", title: "I don't know where my money goes", subtitle: "Losing track of spending", key: "pain_money_tracking"),
+    ChallengeOption(icon: "banknote", title: "I'm not saving enough", subtitle: "Struggling to set money aside", key: "pain_saving"),
+    ChallengeOption(icon: "chart.line.uptrend.xyaxis", title: "I have too little to invest", subtitle: "I'm not sure how to get started", key: "pain_investing"),
+    ChallengeOption(icon: "flame", title: "I want to retire early", subtitle: "I need a clear path to financial freedom", key: "pain_fire"),
 ]
 
 // MARK: - Country / Currency

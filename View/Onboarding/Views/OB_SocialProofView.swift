@@ -20,15 +20,22 @@ struct OB_SocialProofView: View {
         ZStack {
             AppColors.backgroundPrimary.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                // Back button
-                HStack {
-                    OB_BackButton(action: onBack)
-                    Spacer()
+            // 左半屏点击返回区域（在底层，按钮优先接收点击）
+            GeometryReader { geo in
+                HStack(spacing: 0) {
+                    Color.clear
+                        .frame(width: geo.size.width / 2)
+                        .contentShape(Rectangle())
+                        .onTapGesture { onBack() }
+                    Color.clear
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
                 }
-                .padding(.horizontal, AppSpacing.md)
+            }
 
+            VStack(spacing: 0) {
                 Spacer()
+                    .allowsHitTesting(false)
 
                 // MARK: - Comparison Cards
                 HStack(alignment: .bottom, spacing: 20) {
@@ -60,10 +67,10 @@ struct OB_SocialProofView: View {
                                 VStack(spacing: 6) {
                                     Text("3x")
                                         .font(.system(size: 42, weight: .bold))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(.black)
                                     Text("more confidence\nin your freedom")
                                         .font(.system(size: 13))
-                                        .foregroundColor(.white.opacity(0.9))
+                                        .foregroundColor(.black)
                                         .multilineTextAlignment(.center)
                                 }
                             }
@@ -76,13 +83,15 @@ struct OB_SocialProofView: View {
                             .opacity(showLabels ? 1 : 0)
                     }
                 }
+                .allowsHitTesting(false)
 
                 Spacer().frame(height: 40)
+                    .allowsHitTesting(false)
 
                 // MARK: - Text Section
                 VStack(spacing: 16) {
                     Text("You can't reach a goal\nwithout tracking it.")
-                        .font(.h2)
+                        .font(.obQuestion)
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
 
@@ -94,8 +103,10 @@ struct OB_SocialProofView: View {
                 }
                 .padding(.horizontal, AppSpacing.lg)
                 .opacity(showText ? 1 : 0)
+                .allowsHitTesting(false)
 
                 Spacer()
+                    .allowsHitTesting(false)
 
                 // CTA
                 OB_PrimaryButton(title: "Continue", action: onNext)

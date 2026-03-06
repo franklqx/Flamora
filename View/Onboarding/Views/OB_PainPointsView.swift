@@ -2,83 +2,186 @@
 //  OB_PainPointsView.swift
 //  Flamora app
 //
-//  Onboarding - Step 7: Pain Point Single-Select
+//  Onboarding Step - Primary financial challenge (single-select cards)
 //
 
 import SwiftUI
 
 struct OB_PainPointsView: View {
-    let data: OnboardingData
-    let onNext: () -> Void
-    let onBack: () -> Void
-
-    @State private var selectedPainPoint: String?
-
-    private let options: [(emoji: String, title: String, key: String)] = [
-        ("🔮", "I don't know where my money goes", "pain_money_tracking"),
-        ("💸", "I'm not saving enough", "pain_saving"),
-        ("🌱", "I have too little to invest", "pain_investing"),
-        ("🔥", "I want to retire early but don't know how", "pain_fire"),
-    ]
+    @Bindable var data: OnboardingData
+    var onNext: () -> Void
+    var onBack: () -> Void
 
     var body: some View {
-        ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+        ZStack(alignment: .bottom) {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    OB_PersonalizeProgress(currentStep: 4, totalSteps: 5)
+                        .padding(.horizontal, AppSpacing.screenPadding)
+                        .padding(.top, AppSpacing.md)
 
-            VStack(alignment: .leading, spacing: 0) {
-                // Header
-                HStack {
-                    OB_BackButton(action: onBack)
-                    Spacer()
-                }
-                .padding(.horizontal, AppSpacing.md)
+                    Spacer().frame(height: 48)
 
-                OB_PersonalizeProgress(currentStep: 4, totalSteps: 5)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.top, AppSpacing.sm)
+                    Text("What's your biggest financial challenge right now?")
+                        .font(.obQuestion)
+                        .foregroundColor(.white)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                Spacer().frame(height: 32)
+                    Spacer().frame(height: 8)
 
-                // Title
-                Text("What's your biggest\nfinancial challenge\nright now?")
-                    .font(.h1)
-                    .foregroundColor(AppColors.textPrimary)
-                    .lineSpacing(2)
-                    .padding(.horizontal, AppSpacing.lg)
+                    Text("Select the one that feels most true right now.")
+                        .font(.bodySmall)
+                        .foregroundColor(AppColors.textSecondary)
 
-                Spacer().frame(height: 24)
+                    Spacer().frame(height: AppSpacing.lg)
 
-                // Options
-                VStack(spacing: 12) {
-                    ForEach(options, id: \.key) { option in
-                        OB_SelectionCard(
-                            emoji: option.emoji,
-                            title: option.title,
-                            isSelected: selectedPainPoint == option.key
-                        ) {
-                            selectedPainPoint = option.key
+                    VStack(spacing: 10) {
+                        ForEach(challengeOptions) { option in
+                            ChallengeCard(
+                                option: option,
+                                isSelected: data.painPoint == option.key,
+                                onTap: {
+                                    withAnimation(.easeInOut(duration: 0.18)) {
+                                        if data.painPoint == option.key {
+                                            data.painPoint = ""
+                                        } else {
+                                            data.painPoint = option.key
+                                        }
+                                    }
+                                }
+                            )
                         }
                     }
-                }
-                .padding(.horizontal, AppSpacing.lg)
 
-                Spacer()
-
-                // CTA
-                OB_PrimaryButton(
-                    title: "Continue",
-                    disabled: selectedPainPoint == nil
-                ) {
-                    data.painPoint = selectedPainPoint ?? ""
-                    onNext()
+                    Spacer().frame(height: 120)
                 }
-                .padding(.bottom, AppSpacing.lg)
+                .padding(.horizontal, AppSpacing.screenPadding)
+            }
+
+            // Sticky CTA
+            VStack(spacing: 0) {
+                LinearGradient(
+                    colors: [Color.black.opacity(0), Color.black],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 32)
+
+                Button(action: onNext) {
+                    Text("Continue")
+                        .font(.bodyRegular)
+                        .fontWeight(.semibold)
+                        .foregroundColor(isValid ? .black : AppColors.textTertiary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(isValid ? Color.white : AppColors.backgroundCard)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+                }
+                .disabled(!isValid)
+                .padding(.horizontal, AppSpacing.screenPadding)
+                .padding(.bottom, AppSpacing.xxl)
+                .background(Color.black)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Color.black)
+    }
+
+    private var isValid: Bool {
+        !data.painPoint.isEmpty
+    }
+}
+
+// MARK: - Challenge Card
+
+private struct ChallengeCard: View {
+    let option: ChallengeOption
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 16) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(
+                            isSelected
+                                ? AnyShapeStyle(LinearGradient(
+                                    colors: AppColors.gradientFire,
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                  ))
+                                : AnyShapeStyle(AppColors.surfaceElevated)
+                        )
+                        .frame(width: 36, height: 36)
+
+                    Image(systemName: option.icon)
+                        .font(.system(size: 17))
+                        .foregroundColor(isSelected ? .black : AppColors.textSecondary)
+                }
+                .frame(width: 36, height: 36)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(option.title)
+                        .font(.bodyRegular)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+
+                    if let subtitle = option.subtitle {
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundColor(AppColors.textSecondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.85)
+                    }
+                }
+                .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+
+                // 始终预留勾选位宽度，选中与否文字区域不变，避免换行
+                Group {
+                    if isSelected {
+                        Image(systemName: "checkmark.circle")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: AppColors.gradientFire,
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    } else {
+                        Color.clear
+                    }
+                }
+                .frame(width: 28, height: 28)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(
+                isSelected
+                    ? AppColors.surface.opacity(0.9)
+                    : AppColors.surface.opacity(0.5)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.lg)
+                    .stroke(
+                        isSelected
+                            ? LinearGradient(colors: AppColors.gradientFire, startPoint: .leading, endPoint: .trailing)
+                            : LinearGradient(colors: [AppColors.borderDefault], startPoint: .leading, endPoint: .trailing),
+                        lineWidth: isSelected ? 1 : 0.75
+                    )
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 
 #Preview {
-    OB_PainPointsView(data: OnboardingData(), onNext: {}, onBack: {})
-        .background(AppBackgroundView())
+    ZStack {
+        Color.black.ignoresSafeArea()
+        OB_PainPointsView(data: OnboardingData(), onNext: {}, onBack: {})
+    }
 }

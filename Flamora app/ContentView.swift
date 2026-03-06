@@ -21,7 +21,7 @@ struct ContentView: View {
         GeometryReader { proxy in
             let currentSize = proxy.size
             let displaySize = effectiveDisplaySize(for: currentSize)
-
+  
             ZStack {
                 if isOnboardingComplete && hasCompletedOnboarding {
                     MainTabView()

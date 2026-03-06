@@ -2,81 +2,135 @@
 //  OB_NameView.swift
 //  Flamora app
 //
-//  Onboarding - Step 4: Name Input
+//  Onboarding Step 2 - 名字输入
 //
 
 import SwiftUI
 
 struct OB_NameView: View {
-    let data: OnboardingData
-    let onNext: () -> Void
-    let onBack: () -> Void
+    @Bindable var data: OnboardingData
+    var onNext: () -> Void
+    var onBack: () -> Void
 
-    @State private var name = ""
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+        ZStack(alignment: .bottom) {
+            Color.black.ignoresSafeArea()
+
+            // 左半屏点击返回区域（在底层，按钮和输入框优先接收点击）
+            GeometryReader { geo in
+                HStack(spacing: 0) {
+                    Color.clear
+                        .frame(width: geo.size.width / 2)
+                        .contentShape(Rectangle())
+                        .onTapGesture { onBack() }
+                    Color.clear
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
+                        .onTapGesture { isFocused = false }
+                }
+            }
 
             VStack(alignment: .leading, spacing: 0) {
-                // Header
-                HStack {
-                    OB_BackButton(action: onBack)
+                OB_PersonalizeProgress(currentStep: 2, totalSteps: 5)
+                    .padding(.horizontal, AppSpacing.screenPadding)
+                    .padding(.top, AppSpacing.md)
+                    .allowsHitTesting(false)
+
+                Spacer().frame(height: 64)
+                    .allowsHitTesting(false)
+
+                HStack(alignment: .center, spacing: 16) {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(AppColors.surfaceElevated)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(AppColors.borderDefault, lineWidth: 1)
+                        )
+                        .frame(width: 44, height: 44)
+                        .overlay(
+                            Image(systemName: "person.crop.circle")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                        )
                     Spacer()
                 }
-                .padding(.horizontal, AppSpacing.md)
+                .allowsHitTesting(false)
 
-                OB_PersonalizeProgress(currentStep: 2, totalSteps: 5)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.top, AppSpacing.sm)
+                Spacer().frame(height: 20)
+                    .allowsHitTesting(false)
 
-                Spacer().frame(height: 48)
+                Text("What should we call you?")
+                    .font(.obQuestion)
+                    .foregroundColor(.white)
+                    .allowsHitTesting(false)
 
-                // Title
-                Text("What should we call\nyou?")
-                    .font(.h1)
-                    .foregroundColor(AppColors.textPrimary)
-                    .padding(.horizontal, AppSpacing.lg)
+                Spacer().frame(height: 10)
+                    .allowsHitTesting(false)
 
-                Spacer().frame(height: 40)
+                Text("Your plan will be personalized just for you.")
+                    .font(.bodySmall)
+                    .foregroundColor(AppColors.textSecondary)
+                    .allowsHitTesting(false)
 
-                // Name input with underline
-                VStack(spacing: 0) {
-                    TextField("", text: $name, prompt: Text("Your name")
-                        .foregroundColor(AppColors.textTertiary))
-                        .font(.system(size: 24, weight: .regular))
-                        .foregroundColor(AppColors.textPrimary)
-                        .focused($isFocused)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.words)
+                Spacer().frame(height: AppSpacing.xl)
+                    .allowsHitTesting(false)
 
-                    Rectangle()
-                        .fill(Color.white)
-                        .frame(height: 1)
-                        .padding(.top, 12)
-                }
-                .padding(.horizontal, AppSpacing.lg)
+                TextField("", text: $data.userName,
+                          prompt: Text("Your name").foregroundColor(AppColors.textTertiary))
+                    .font(.bodyRegular)
+                    .foregroundColor(.white)
+                    .textContentType(.givenName)
+                    .focused($isFocused)
+                    .padding(.horizontal, 20)
+                    .frame(height: 56)
+                    .background(AppColors.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppRadius.lg)
+                            .stroke(
+                                isFocused ? Color.white.opacity(0.3) : AppColors.borderDefault,
+                                lineWidth: 1
+                            )
+                    )
 
                 Spacer()
-
-                // CTA
-                OB_PrimaryButton(
-                    title: "Continue",
-                    disabled: name.trimmingCharacters(in: .whitespaces).isEmpty
-                ) {
-                    data.userName = name.trimmingCharacters(in: .whitespaces)
-                    onNext()
-                }
-                .padding(.bottom, AppSpacing.lg)
+                    .allowsHitTesting(false)
             }
+            .padding(.horizontal, AppSpacing.screenPadding)
+
+            // CTA
+            Button(action: {
+                isFocused = false
+                onNext()
+            }) {
+                Text("Continue")
+                    .font(.bodyRegular)
+                    .fontWeight(.semibold)
+                    .foregroundColor(isValid ? .black : AppColors.textTertiary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(isValid ? Color.white : AppColors.backgroundCard)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+            }
+            .disabled(!isValid)
+            .padding(.horizontal, AppSpacing.screenPadding)
+            .padding(.bottom, AppSpacing.xxl)
         }
-        .onTapGesture { isFocused = false }
-        .onAppear { isFocused = true }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .onAppear { isFocused = false }
+        .ignoresSafeArea(.keyboard, edges: .all)
+    }
+
+    private var isValid: Bool {
+        data.userName.trimmingCharacters(in: .whitespaces).count >= 1
     }
 }
 
 #Preview {
-    OB_NameView(data: OnboardingData(), onNext: {}, onBack: {})
-        .background(AppBackgroundView())
+    ZStack {
+        Color.black.ignoresSafeArea()
+        OB_NameView(data: OnboardingData(), onNext: {}, onBack: {})
+    }
 }

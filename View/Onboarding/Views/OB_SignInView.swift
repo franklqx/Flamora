@@ -49,8 +49,8 @@ struct OB_SignInView: View {
                 Spacer().frame(height: 40)
 
                 // MARK: - Title
-                Text("Join the journey to\nfreedom")
-                    .font(.h1)
+                Text("Join The Journey\nTo Freedom")
+                    .font(Font(UIFont(name: "PlayfairDisplayRoman-SemiBold", size: AppTypography.h1) ?? UIFont.systemFont(ofSize: AppTypography.h1)))
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, AppSpacing.lg)
@@ -115,7 +115,9 @@ struct OB_SignInView: View {
 
                 // MARK: - Email & Password
                 VStack(spacing: 12) {
-                    TextField("Email address", text: $email)
+                    TextField("",
+                        text: $email,
+                        prompt: Text("Email address").foregroundColor(AppColors.textTertiary))
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .autocorrectionDisabled()
@@ -126,8 +128,10 @@ struct OB_SignInView: View {
                         .cornerRadius(AppRadius.md)
                         .foregroundColor(AppColors.textPrimary)
 
-                    SecureField("Password", text: $password)
-                        .textContentType(.oneTimeCode)  // 阻止系统强密码建议覆盖层
+                    SecureField("",
+                        text: $password,
+                        prompt: Text("Password (min. 6 chars)").foregroundColor(AppColors.textTertiary))
+                        .textContentType(.oneTimeCode)
                         .focused($focusedField, equals: .password)
                         .padding()
                         .background(AppColors.backgroundCard)

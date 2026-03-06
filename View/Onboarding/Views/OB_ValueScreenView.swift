@@ -79,7 +79,7 @@ private struct ValueMoneyTrackingContent: View {
             Spacer().frame(height: 32)
 
             Text("We automatically sort\nevery dollar for you")
-                .font(.h1)
+                .font(.obQuestion)
                 .foregroundColor(AppColors.textPrimary)
 
             // Animated card area
@@ -124,12 +124,12 @@ private struct ValueMoneyTrackingContent: View {
                 // Phase 2 & 3: Donut chart + categories
                 if phase >= 2 {
                     VStack(spacing: 20) {
-                        // Donut chart
+                        // Donut chart (Needs 62% / Wants 38%)
                         ZStack {
                             Circle()
                                 .trim(from: 0, to: 0.62)
                                 .stroke(
-                                    AppColors.gradientEnd,
+                                    AppColors.accentPurple,
                                     style: StrokeStyle(lineWidth: 16, lineCap: .round)
                                 )
                                 .rotationEffect(.degrees(-90))
@@ -137,7 +137,7 @@ private struct ValueMoneyTrackingContent: View {
                             Circle()
                                 .trim(from: 0.63, to: 1.0)
                                 .stroke(
-                                    AppColors.gradientStart,
+                                    AppColors.accentBlue,
                                     style: StrokeStyle(lineWidth: 16, lineCap: .round)
                                 )
                                 .rotationEffect(.degrees(-90))
@@ -162,7 +162,7 @@ private struct ValueMoneyTrackingContent: View {
                             VStack(spacing: 10) {
                                 // Needs card
                                 categoryCard(
-                                    color: AppColors.gradientEnd,
+                                    color: AppColors.accentPurple,
                                     title: "Needs",
                                     total: "$1,984",
                                     isExpanded: needsExpanded,
@@ -179,7 +179,7 @@ private struct ValueMoneyTrackingContent: View {
 
                                 // Wants card
                                 categoryCard(
-                                    color: AppColors.gradientStart,
+                                    color: AppColors.accentBlue,
                                     title: "Wants",
                                     total: "$1,216",
                                     isExpanded: wantsExpanded,
@@ -306,6 +306,15 @@ private struct ValueMoneyTrackingContent: View {
     }
 }
 
+#Preview("Money Tracking") {
+    ScrollView {
+        ValueMoneyTrackingContent()
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.bottom, AppSpacing.lg)
+    }
+    .background(AppColors.backgroundPrimary)
+}
+
 // MARK: - pain_saving
 
 private struct ValueSavingContent: View {
@@ -319,9 +328,11 @@ private struct ValueSavingContent: View {
         VStack(alignment: .leading, spacing: 24) {
             Spacer().frame(height: 32)
 
-            Text("Small wins build\nbig momentum.")
-                .font(.h1)
+            Text("Small wins build big momentum")
+                .font(.obQuestion)
                 .foregroundColor(AppColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
 
             // Preview card
             VStack(spacing: 16) {
@@ -442,6 +453,15 @@ private struct ValueSavingContent: View {
     }
 }
 
+#Preview("Saving") {
+    ScrollView {
+        ValueSavingContent()
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.bottom, AppSpacing.lg)
+    }
+    .background(AppColors.backgroundPrimary)
+}
+
 // MARK: - pain_investing
 
 private struct ValueInvestingContent: View {
@@ -452,8 +472,8 @@ private struct ValueInvestingContent: View {
         VStack(alignment: .leading, spacing: 24) {
             Spacer().frame(height: 32)
 
-            Text("It's not about how much.\nIt's about how early.")
-                .font(.h1)
+            Text("It's not about how much\nIt's about how early")
+                .font(.obQuestion)
                 .foregroundColor(AppColors.textPrimary)
 
             // Preview card
@@ -676,6 +696,15 @@ private struct CompoundGrowthChart: View {
     }
 }
 
+#Preview("Investing") {
+    ScrollView {
+        ValueInvestingContent()
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.bottom, AppSpacing.lg)
+    }
+    .background(AppColors.backgroundPrimary)
+}
+
 // MARK: - pain_fire
 
 private struct ValueFireContent: View {
@@ -693,9 +722,11 @@ private struct ValueFireContent: View {
         VStack(alignment: .leading, spacing: 24) {
             Spacer().frame(height: 32)
 
-            Text("We'll guide you every\nstep of the way")
-                .font(.h1)
+            Text("We'll guide you every step of the way")
+                .font(.obQuestion)
                 .foregroundColor(AppColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
 
             Spacer().frame(height: 8)
 
@@ -766,7 +797,16 @@ private struct ValueFireContent: View {
     }
 }
 
-#Preview {
+#Preview("FIRE") {
+    ScrollView {
+        ValueFireContent()
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.bottom, AppSpacing.lg)
+    }
+    .background(AppColors.backgroundPrimary)
+}
+
+#Preview("Value Screen (full)") {
     OB_ValueScreenView(data: OnboardingData(), onNext: {}, onBack: {})
         .background(AppBackgroundView())
 }

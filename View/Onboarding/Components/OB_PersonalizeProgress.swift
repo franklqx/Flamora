@@ -15,13 +15,21 @@ struct OB_PersonalizeProgress: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("STEP \(currentStep) OF \(totalSteps)")
                 .font(.label)
-                .foregroundColor(AppColors.textTertiary)
+                .foregroundColor(AppColors.textSecondary)
                 .tracking(1)
 
             HStack(spacing: 4) {
                 ForEach(0..<totalSteps, id: \.self) { i in
                     Capsule()
-                        .fill(i < currentStep ? Color.white : Color(hex: "#333333"))
+                        .fill(
+                            i < currentStep
+                                ? AnyShapeStyle(LinearGradient(
+                                    colors: [AppColors.gradientStart, AppColors.gradientEnd],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ))
+                                : AnyShapeStyle(AppColors.surfaceInput)
+                        )
                         .frame(height: 3)
                 }
             }

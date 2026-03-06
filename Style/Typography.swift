@@ -7,6 +7,7 @@
 
 
 import SwiftUI
+import UIKit
 
 struct AppTypography {
     // Font Sizes - 字号层级
@@ -69,5 +70,10 @@ extension Font {
 
     static var obSlideTitle: Font {
         .system(size: 28, weight: .light, design: .serif)
+    }
+
+    /// Onboarding question/title style
+    static var obQuestion: Font {
+        Font(UIFont(name: "PlayfairDisplayRoman-SemiBold", size: 24) ?? UIFont.systemFont(ofSize: 24, weight: .semibold))
     }
 }

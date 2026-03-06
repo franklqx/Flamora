@@ -11,68 +11,139 @@ struct OB_IntroView: View {
     let onNext: () -> Void
 
     var body: some View {
-        ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+        ZStack(alignment: .bottom) {
+            Color.black.ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: 0) {
-                // Progress
-                OB_PersonalizeProgress(currentStep: 1, totalSteps: 5)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.top, AppSpacing.md)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    // Progress
+                    OB_PersonalizeProgress(currentStep: 1, totalSteps: 5)
+                        .padding(.horizontal, AppSpacing.screenPadding)
+                        .padding(.top, AppSpacing.md)
 
-                Spacer().frame(height: 48)
+                    Spacer().frame(height: 48)
 
-                // Title
-                Text("Let's build your\nfreedom plan")
-                    .font(.h1)
-                    .foregroundColor(AppColors.textPrimary)
-                    .padding(.horizontal, AppSpacing.lg)
+                    HStack(alignment: .center, spacing: 16) {
+                        // 小图标卡片
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(AppColors.surfaceElevated)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(AppColors.borderDefault, lineWidth: 1)
+                            )
+                            .frame(width: 44, height: 44)
+                            .overlay(
+                                Image(systemName: "chart.line.uptrend.xyaxis")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(.white)
+                            )
 
-                Spacer().frame(height: 12)
+                        Spacer()
+                    }
 
-                // Subtitle
-                Text("Answer a few questions and we'll create your personalized path to financial freedom.")
-                    .font(.bodyRegular)
-                    .foregroundColor(AppColors.textSecondary)
-                    .lineSpacing(4)
-                    .padding(.horizontal, AppSpacing.lg)
+                    Spacer().frame(height: 20)
 
-                Spacer().frame(height: 32)
+                    // 标题
+                    Text("Let's build your freedom plan")
+                        .font(.obQuestion)
+                        .foregroundColor(.white)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                // Info cards
-                VStack(spacing: 12) {
-                    infoCard(emoji: "⚡", text: "Takes less than 3 minutes")
-                    infoCard(emoji: "🔒", text: "Your data stays private")
+                    Spacer().frame(height: 12)
+
+                    // 副标题
+                    Text("Answer a few questions and we'll create your personalized path to financial freedom.")
+                        .font(.bodySmall)
+                        .foregroundColor(AppColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Spacer().frame(height: AppSpacing.xl)
+
+                    VStack(spacing: 10) {
+                        OBInfoPill(
+                            systemIcon: "bolt",
+                            title: "Takes less than 3 minutes"
+                        )
+
+                        OBInfoPill(
+                            systemIcon: "lock",
+                            title: "Your data stays private"
+                        )
+                    }
+
+                    Spacer().frame(height: 140)
                 }
-                .padding(.horizontal, AppSpacing.lg)
+                .padding(.horizontal, AppSpacing.screenPadding)
+            }
 
-                Spacer()
+            // CTA
+            VStack(spacing: 0) {
+                LinearGradient(
+                    colors: [Color.black.opacity(0), Color.black],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 32)
 
-                // CTA
-                OB_PrimaryButton(title: "Let's Do This", action: onNext)
-                    .padding(.bottom, AppSpacing.lg)
+                Button(action: onNext) {
+                    Text("Let's Do This")
+                        .font(.bodyRegular)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+                }
+                .padding(.horizontal, AppSpacing.screenPadding)
+                .padding(.bottom, AppSpacing.xxl)
+                .background(Color.black)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
+}
 
-    @ViewBuilder
-    private func infoCard(emoji: String, text: String) -> some View {
-        HStack(spacing: AppSpacing.md) {
-            Text(emoji)
-                .font(.system(size: 20))
+// MARK: - Info Pill
 
-            Text(text)
+private struct OBInfoPill: View {
+    let systemIcon: String
+    let title: String
+
+    @State private var isPressed = false
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: systemIcon)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 24, height: 24)
+
+            Text(title)
                 .font(.bodySmall)
-                .foregroundColor(AppColors.textSecondary)
+                .foregroundColor(.white)
+
+            Spacer()
         }
-        .padding(AppSpacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.backgroundCard)
-        .cornerRadius(AppRadius.md)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(AppColors.surfaceElevated)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(AppColors.borderDefault, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .scaleEffect(isPressed ? 0.97 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
+        .onLongPressGesture(minimumDuration: 0.01, pressing: { pressing in
+            isPressed = pressing
+        }, perform: {})
     }
 }
 
 #Preview {
-    OB_IntroView(onNext: {})
-        .background(AppBackgroundView())
+    ZStack {
+        Color.black.ignoresSafeArea()
+        OB_IntroView(onNext: {})
+    }
 }
