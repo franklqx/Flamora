@@ -2,473 +2,431 @@
 //  OB_RoadmapView.swift
 //  Flamora app
 //
-//  Onboarding - Step 15: FIRE Roadmap (Core Conversion Page)
+//  Onboarding - Step 15: Before/After Roadmap (merged)
+//  V3 — matches HTML prototype (roadmap-v3-prototype.html)
 //
 
 import SwiftUI
+import UIKit
 
 struct OB_RoadmapView: View {
     let data: OnboardingData
     let onNext: () -> Void
     let onBack: () -> Void
 
-    // Animation states
+    // Core state
+    @State private var isRevealed = false
+
+    // Before reveal animations
     @State private var showTitle = false
-    @State private var showCards = false
-    @State private var timelineProgress: CGFloat = 0
-    @State private var showOptimization = false
-    @State private var showUrgency = false
-    @State private var showInsight: [Bool] = [false, false, false]
+    @State private var showCurrentBars = false
+    @State private var showDataCards = false
+    @State private var showCTA = false
+
+    // After reveal animations
+    @State private var showRevealedTitle = false
+    @State private var hideDataCards = false
+    @State private var showAfterDataCards = false
+    @State private var showRevealedCTA = false
+
+    // After card stagger + counting
+    @State private var afterCard1Visible = false
+    @State private var afterCard2Visible = false
+    @State private var afterCard3Visible = false
+    @State private var afterCard4Visible = false
+    @State private var counterProgress: Double = 0
+    @State private var showYearsSavedBadge = false
+
+    // Info sheet
+    @State private var showInfoSheet = false
+
+    // Scroll
+    @State private var scrollProxy: ScrollViewProxy?
+
+    // Gradients
+    private let brandGradient = LinearGradient(
+        colors: [Color(hex: "FCD34D"), Color(hex: "FCA5A5"), Color(hex: "A78BFA")],
+        startPoint: .leading,
+        endPoint: .trailing
+    )
+
+    // Bar count for timing calc (based on optimized range — chart shrinks to this on reveal)
+    private var revealBarCount: Int {
+        let totalYears = max(1, data.optimizedFreedomAge - Int(data.age))
+        if totalYears > 30 {
+            return (0..<totalYears).filter { $0 % 2 == 0 }.count
+        }
+        return totalYears
+    }
+
+    private var totalStagger: Double {
+        Double(revealBarCount) * 0.045
+    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
             Color.black.ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 28) {
-                    Spacer().frame(height: 40)
-                    dynamicTitleSection
-                    dataCardsSection
-                    milestoneTimelineSection
-                    optimizationSection
-                    urgencyCardSection
-                    lockedInsightsSection
-                    Spacer().frame(height: 120)
+            ScrollViewReader { proxy in
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        // Anchor for scroll-to-top
+                        Color.clear.frame(height: 0).id("top")
+
+                        Spacer().frame(height: 56)
+
+                        // 1. Back button + PREDICT + Title
+                        headerSection
+                            .padding(.horizontal, 26)
+                            .padding(.bottom, 20)
+
+                        // 3. Legend row
+                        legendSection
+                            .padding(.horizontal, 26)
+                            .padding(.bottom, 12)
+
+                        // 4. Chart (full bleed with 12pt padding)
+                        chartSection
+
+                        // 5. Bottom section
+                        bottomSection
+                            .padding(.horizontal, 26)
+                            .padding(.top, 4)
+
+                        Spacer().frame(height: 140)
+                    }
                 }
-                .padding(.horizontal, AppSpacing.screenPadding)
-                .padding(.top, AppSpacing.md)
+                .onAppear {
+                    scrollProxy = proxy
+                    startBeforeAnimations()
+                }
             }
 
-            // MARK: - Sticky Bottom CTA
+            // Sticky CTA
             stickyBottomCTA
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .onAppear { startAnimations() }
+        .sheet(isPresented: $showInfoSheet) { infoSheet }
     }
 
-    // MARK: - Section 1: Dynamic Title
+    // MARK: - 1. Header (back button + PREDICT + title)
 
-    @ViewBuilder
-    private var dynamicTitleSection: some View {
+    private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if data.savingsRate <= 0 {
-                // cannotSave
-                Text("Let's find your starting point")
-                    .font(.obQuestion)
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                Text("Most people have hidden savings in their spending.")
-                    .font(.bodyRegular)
-                    .foregroundColor(AppColors.textSecondary)
-            } else if data.freedomAge <= Int(data.age) + 5 {
-                // almostFree
-                Text("You can reach freedom at age \(data.freedomAge)")
-                    .font(.obQuestion)
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                Text("You're ahead of 95% of people your age.")
-                    .font(.bodyRegular)
-                    .foregroundColor(AppColors.success)
-                Text("You're almost there.")
-                    .font(.bodyRegular)
-                    .foregroundColor(AppColors.textSecondary)
-            } else if (Double(data.currentNetWorth) ?? 0) == 0 && data.savingsRate > 0 {
-                // notInvesting
-                Text("You can reach freedom at age \(data.freedomAge)")
-                    .font(.obQuestion)
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                Text("\(data.yearsToFire) years from now")
-                    .font(.bodyRegular)
-                    .foregroundColor(AppColors.textSecondary)
-            } else if data.freedomAge > 65 {
-                // veryFar
-                Text("Your journey starts today")
-                    .font(.obQuestion)
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                Text("Small changes compound into big results.")
-                    .font(.bodyRegular)
-                    .foregroundColor(AppColors.textSecondary)
-            } else {
-                // normal
-                Text("You can reach freedom at age \(data.freedomAge)")
-                    .font(.obQuestion)
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                Text("\(data.yearsToFire) years from now")
-                    .font(.bodyRegular)
-                    .foregroundColor(AppColors.textSecondary)
+            // Back button (only when revealed)
+            if isRevealed {
+                Button(action: reverseReveal) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundColor(.white)
+                        .contentShape(Rectangle())
+                }
+                .transition(.opacity)
+                .animation(.easeOut(duration: 0.3), value: isRevealed)
+            }
+
+            // PREDICT eyebrow
+            Text("PREDICT")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(Color.white.opacity(0.5))
+                .tracking(4)
+
+            // Title (crossfade)
+            ZStack(alignment: .leading) {
+                beforeTitle
+                    .opacity(isRevealed ? 0 : (showTitle ? 1 : 0))
+                    .animation(.easeOut(duration: 0.5), value: isRevealed)
+
+                afterTitle
+                    .opacity(showRevealedTitle ? 1 : 0)
+                    .animation(.easeOut(duration: 0.5), value: showRevealedTitle)
             }
         }
-        .opacity(showTitle ? 1 : 0)
     }
 
-    // MARK: - Section 2: Data Cards
-
-    @ViewBuilder
-    private var dataCardsSection: some View {
-        HStack(spacing: 12) {
-            dataCard(
-                label: "SAVINGS RATE",
-                value: "\(Int(data.savingsRate))%",
-                footer: "Current"
+    private var beforeTitle: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            (
+                Text("You will reach financial independence at age ")
+                    .foregroundColor(.white) +
+                Text("\(data.freedomAge)")
+                    .foregroundStyle(brandGradient) +
+                Text(".")
+                    .foregroundColor(.white)
             )
-            dataCard(
-                label: "TARGET",
-                value: formatFireNumber(data.fireNumber),
-                footer: "Freedom number"
+            .font(.system(size: 22, weight: .bold))
+            .lineSpacing(3)
+
+            Text("Based on your current savings — no optimization.")
+                .font(.system(size: 13))
+                .foregroundColor(Color.white.opacity(0.45))
+        }
+    }
+
+    private var afterTitle: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            let yearText = data.yearsSaved == 1 ? "1 year earlier" : "\(data.yearsSaved) years earlier"
+
+            (
+                Text("With Flamora, you'll be free ")
+                    .foregroundColor(.white) +
+                Text(yearText)
+                    .foregroundStyle(brandGradient) +
+                Text(" — at age ")
+                    .foregroundColor(.white) +
+                Text("\(data.optimizedFreedomAge)")
+                    .foregroundStyle(brandGradient) +
+                Text(".")
+                    .foregroundColor(.white)
             )
+            .font(.system(size: 22, weight: .bold))
+            .lineSpacing(3)
+
+            Text("Your current path has you working until \(data.freedomAge).")
+                .font(.system(size: 13))
+                .foregroundColor(Color.white.opacity(0.45))
         }
-        .opacity(showCards ? 1 : 0)
-        .offset(y: showCards ? 0 : 20)
     }
 
-    @ViewBuilder
-    private func dataCard(label: String, value: String, footer: String) -> some View {
-        VStack(spacing: 8) {
-            Text(label)
-                .font(.obStepLabel)
-                .foregroundColor(AppColors.textTertiary)
-                .tracking(1)
+    // MARK: - 3. Legend
 
-            Text(value)
-                .font(.system(size: 32, weight: .bold))
-                .foregroundColor(.white)
-                .minimumScaleFactor(0.5)
-                .lineLimit(1)
+    private var legendSection: some View {
+        HStack(spacing: 8) {
+            Spacer()
 
-            Text(footer)
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
-        .background(AppColors.surface.opacity(0.6))
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.xl)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
-    }
-
-    // MARK: - Section 3: Milestone Timeline
-
-    @ViewBuilder
-    private var milestoneTimelineSection: some View {
-        let progress = min(1, max(0, data.fireProgress / 100))
-
-        VStack(spacing: 0) {
-            // "You are here" label
-            GeometryReader { geo in
-                let xPos = max(40, min(geo.size.width - 40, geo.size.width * CGFloat(progress)))
-                Text("You are here · \(Int(data.fireProgress))%")
-                    .font(.system(size: 11))
-                    .foregroundColor(AppColors.textTertiary)
-                    .fixedSize()
-                    .position(x: xPos, y: 8)
-            }
-            .frame(height: 20)
-
-            // Progress bar + dot
-            GeometryReader { geo in
-                let w = geo.size.width
-                let dotX = max(6, min(w - 6, w * CGFloat(progress)))
-
-                ZStack(alignment: .leading) {
-                    // Track
-                    Capsule()
-                        .fill(Color.white.opacity(0.15))
-                        .frame(height: 4)
-
-                    // Filled
-                    Capsule()
+            // Flamora legend (after reveal)
+            if isRevealed {
+                HStack(spacing: 5) {
+                    Circle()
                         .fill(
                             LinearGradient(
-                                colors: [AppColors.accentBlue, AppColors.accentPurple],
+                                colors: [Color(hex: "FCD34D"), Color(hex: "FCA5A5")],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
                         )
-                        .frame(width: max(0, w * CGFloat(progress) * timelineProgress), height: 4)
+                        .frame(width: 7, height: 7)
+                    Text("Flamora")
+                        .font(.system(size: 10))
+                        .foregroundColor(Color.white.opacity(0.4))
+                }
+                .transition(.opacity)
+            }
 
-                    // Milestone dots (last one is flame)
-                    ForEach([0.25, 0.5, 0.75], id: \.self) { pos in
+            // Current legend (always)
+            HStack(spacing: 5) {
+                Circle()
+                    .fill(Color.white.opacity(0.3))
+                    .frame(width: 7, height: 7)
+                Text("Current")
+                    .font(.system(size: 10))
+                    .foregroundColor(Color.white.opacity(0.4))
+            }
+
+            // Info button (after reveal)
+            if isRevealed {
+                Button(action: { showInfoSheet = true }) {
+                    ZStack {
                         Circle()
-                            .fill(pos <= progress ? AppColors.accentPurple : Color.white.opacity(0.2))
-                            .frame(width: 6, height: 6)
-                            .position(x: w * CGFloat(pos), y: 2)
+                            .fill(Color.white.opacity(0.07))
+                            .frame(width: 18, height: 18)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                            )
+                        Text("i")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(Color.white.opacity(0.4))
                     }
-                    // Last milestone: flame
-                    Image(systemName: "flame")
-                        .font(.system(size: 14))
-                        .foregroundColor(progress >= 1.0 ? AppColors.accentPurple : Color.white.opacity(0.2))
-                        .position(x: max(14, w - 7), y: 2)
-
-                    // "You are here" dot
-                    Circle()
-                        .fill(Color.white)
-                        .frame(width: 12, height: 12)
-                        .shadow(color: .white.opacity(0.5), radius: 8)
-                        .position(x: dotX, y: 2)
                 }
+                .transition(.opacity)
             }
-            .frame(height: 12)
-
-            Spacer().frame(height: 10)
-
-            // Milestone labels
-            milestoneLabels
         }
+        .animation(.easeOut(duration: 0.4), value: isRevealed)
     }
 
-    @ViewBuilder
-    private var milestoneLabels: some View {
-        HStack(alignment: .top, spacing: 0) {
-            Spacer()
-            milestoneLabel("Investment\ncovers your\nrent")
-            Spacer()
-            Spacer()
-            milestoneLabel("Half your life\nis funded")
-            Spacer()
-            Spacer()
-            milestoneLabel("Freedom\nwithin reach")
-            Spacer()
-            Spacer()
-            milestoneLabel("You're\nFIRE")
-        }
-    }
+    // MARK: - 4. Chart
 
-    @ViewBuilder
-    private func milestoneLabel(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 10))
-            .foregroundColor(AppColors.textTertiary)
-            .multilineTextAlignment(.center)
-            .frame(width: 70)
-    }
-
-    // MARK: - Section: Optimization Suggestion
-
-    @ViewBuilder
-    private var optimizationSection: some View {
-        let isAlmostFree = data.freedomAge <= Int(data.age) + 5 && data.savingsRate > 0
-        let isCannotSave = data.savingsRate <= 0
-        let isVeryFar = data.freedomAge > 65
-
-        if !isAlmostFree {
-            VStack(alignment: .leading, spacing: 8) {
-                if isCannotSave {
-                    Text("On average, users discover $200–400/month in potential savings within the first week.")
-                        .font(.system(size: 15))
-                        .foregroundColor(AppColors.textSecondary)
-                } else if isVeryFar {
-                    let tenYearValue = data.suggestedExtraInvestment * 12 * ((pow(1.07, 10) - 1) / 0.07)
-                    Text("By investing just \(formatAmount(data.suggestedExtraInvestment)) more per month, you could build \(formatAmount(tenYearValue)) in 10 years.")
-                        .font(.system(size: 15))
-                        .foregroundColor(AppColors.textSecondary)
-                } else {
-                    // normal or notInvesting
-                    Text("Invest just \(formatAmount(data.suggestedExtraInvestment)) more per month — free by \(data.optimizedFreedomAge)")
-                        .font(.system(size: 15))
-                        .foregroundColor(AppColors.textSecondary)
-
-                    Text("That's \(data.yearsSaved) years earlier.")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(AppColors.success)
-                }
-            }
-            .opacity(showOptimization ? 1 : 0)
-        }
-    }
-
-    // MARK: - Section 4: Urgency Card
-
-    @ViewBuilder
-    private var urgencyCardSection: some View {
-        HStack(spacing: 0) {
-            // Left accent
-            RoundedRectangle(cornerRadius: 2)
-                .fill(
-                    LinearGradient(
-                        colors: [AppColors.accentBlue, AppColors.accentPurple],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(width: 3)
-
-            VStack(alignment: .leading, spacing: 8) {
-                if data.savingsRate <= 0 {
-                    // cannotSave
-                    HStack(spacing: 6) {
-                        Image(systemName: "bolt")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(.white)
-                        Text("The cost of not knowing")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
-                    Text("Without tracking, the average person overspends $300–500/month without realizing it.")
-                        .font(.system(size: 15))
-                        .foregroundColor(AppColors.textSecondary)
-                        .lineSpacing(3)
-                } else if data.freedomAge <= Int(data.age) + 5 {
-                    // almostFree
-                    HStack(spacing: 6) {
-                        Image(systemName: "bolt")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(.white)
-                        Text("Don't lose momentum")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
-                    Text("You're this close. A small slip in spending could push your freedom date back by months.")
-                        .font(.system(size: 15))
-                        .foregroundColor(AppColors.textSecondary)
-                        .lineSpacing(3)
-                } else if data.freedomAge > 65 {
-                    // veryFar
-                    HStack(spacing: 6) {
-                        Image(systemName: "bolt")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(.white)
-                        Text("Time is your biggest asset")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
-                    Text("The earlier you start, the more compound interest works for you. Even 1 year makes a difference.")
-                        .font(.system(size: 15))
-                        .foregroundColor(AppColors.textSecondary)
-                        .lineSpacing(3)
-                } else {
-                    // normal or notInvesting
-                    HStack(spacing: 6) {
-                        Image(systemName: "bolt")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(.white)
-                        Text("Every month you wait costs you")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
-                    Text("If you delay your plan by just 1 year, your freedom age moves from \(data.freedomAge) to \(data.freedomAge + data.delayPenalty). That's \(data.delayPenalty) extra years of working.")
-                        .font(.system(size: 15))
-                        .foregroundColor(AppColors.textSecondary)
-                        .lineSpacing(3)
-                }
-            }
-            .padding(16)
-        }
-        .background(AppColors.surface.opacity(0.6))
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+    private var chartSection: some View {
+        OB_BarChartView(
+            startAge: Int(data.age),
+            currentEndAge: data.freedomAge,
+            optimizedEndAge: data.optimizedFreedomAge,
+            startingNetWorth: Double(data.currentNetWorth) ?? 0,
+            monthlySavings: data.monthlySavings,
+            optimizedMonthlySavings: data.optimizedMonthlySavings,
+            currencySymbol: data.currencySymbol,
+            showCurrentBars: showCurrentBars,
+            showOptimizedBars: isRevealed
         )
-        .opacity(showUrgency ? 1 : 0)
+        .frame(height: 236) // 200 chart + 36 x-axis
+        .padding(.horizontal, 12)
     }
 
-    // MARK: - Section 5: Locked Insights
+    // MARK: - 5. Bottom section
 
-    @ViewBuilder
-    private var lockedInsightsSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 8) {
-                Text("Personalized Insights")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.white)
-                Image(systemName: "lock")
-                    .font(.system(size: 14))
-                    .foregroundColor(.white)
+    private var bottomSection: some View {
+        VStack(spacing: 12) {
+            // Before: 2x2 data cards (collapse when hidden)
+            if !hideDataCards {
+                beforeDataCards
+                    .opacity(showDataCards ? 1 : 0)
+                    .offset(y: showDataCards ? 0 : 20)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
 
-            let titles = insightTitles
-            ForEach(0..<3, id: \.self) { index in
-                lockedCard(title: titles[index])
-                    .opacity(showInsight[index] ? 1 : 0)
-                    .offset(y: showInsight[index] ? 0 : 20)
+            // After: 2x2 data cards
+            if showAfterDataCards {
+                afterDataCards
+                    .transition(.opacity.combined(with: .offset(y: 8)))
             }
         }
+        .animation(.easeOut(duration: 0.5), value: hideDataCards)
+        .animation(.easeOut(duration: 0.5), value: showAfterDataCards)
     }
 
-    private var insightTitles: [String] {
-        if data.savingsRate <= 0 {
-            // cannotSave
-            return [
-                "Find hidden savings in your spending",
-                "Your personalized budget plan",
-                "First steps to start investing",
-            ]
-        } else if data.freedomAge <= Int(data.age) + 5 {
-            // almostFree
-            return [
-                "How to protect your progress",
-                "Optimize your asset allocation",
-                "Tax-efficient withdrawal strategies",
-            ]
-        } else {
-            return [
-                "3 ways to reach freedom faster",
-                "Your monthly saving plan",
-                "Spending areas to optimize",
-            ]
+    // MARK: - Before Data Cards (2x2)
+
+    private var beforeDataCards: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            dataCard(label: "MONTHLY INCOME", value: formatCurrency(Double(data.monthlyIncome) ?? 0))
+            dataCard(label: "CURRENT INVESTMENT", value: formatCurrency(Double(data.currentNetWorth) ?? 0))
+            dataCard(label: "SAVINGS RATE", value: "\(Int(data.savingsRate))%")
+            dataCard(label: "LIFESTYLE SPENDING", value: formatCurrency(lifestyleSpending))
         }
     }
 
     @ViewBuilder
-    private func lockedCard(title: String) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(title)
-                .font(.system(size: 16, weight: .semibold))
+    private func dataCard(label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(label)
+                .font(.system(size: 9))
+                .foregroundColor(Color.white.opacity(0.3))
+                .tracking(1)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            Text(value)
+                .font(.system(size: 22, weight: .bold))
                 .foregroundColor(.white)
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-                .padding(.bottom, 8)
-
-            ZStack {
-                // Fake blurred UI elements
-                VStack(alignment: .leading, spacing: 10) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.white.opacity(0.1))
-                        .frame(width: 180, height: 10)
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.white.opacity(0.1))
-                        .frame(width: 130, height: 10)
-                    HStack(spacing: 12) {
-                        Circle().fill(Color.white.opacity(0.1)).frame(width: 32, height: 32)
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.white.opacity(0.1))
-                            .frame(width: 100, height: 10)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .frame(height: 80)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .blur(radius: 10)
-
-                // Lock icon
-                Image(systemName: "lock")
-                    .font(.system(size: 24))
-                    .foregroundColor(.white.opacity(0.3))
-            }
-            .padding(.bottom, 12)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
         }
-        .background(AppColors.surface.opacity(0.6))
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
         .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.white.opacity(0.07), lineWidth: 1)
         )
     }
 
-    // MARK: - Sticky Bottom CTA
+    // MARK: - After Data Cards (2x2) with stagger + counting
+
+    private var afterDataCards: some View {
+        let rateIncrease = data.optimizedSavingsRate - data.savingsRate
+
+        let extraDisplay = data.extraPortfolioValue * counterProgress
+        let rateDisplay = data.optimizedSavingsRate * counterProgress
+        let fireDisplay = data.fireNumber * counterProgress
+
+        return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            // Card 1: EXTRA PORTFOLIO VALUE — gold gradient, counting
+            afterCard(label: "EXTRA PORTFOLIO VALUE") {
+                Text("+\(formatCompact(extraDisplay))")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color(hex: "FCD34D"), Color(hex: "FCA5A5")],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
+            }
+            .opacity(afterCard1Visible ? 1 : 0)
+            .offset(y: afterCard1Visible ? 0 : 10)
+            .animation(.easeOut(duration: 0.5), value: afterCard1Visible)
+
+            // Card 2: FREEDOM AGE — optimized age + delayed ↓ badge
+            afterCard(label: "FREEDOM AGE") {
+                HStack(spacing: 0) {
+                    Text("\(data.optimizedFreedomAge)")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(Color(hex: "FCD34D"))
+
+                    if showYearsSavedBadge {
+                        Text(" \u{2193}\(data.yearsSaved) yrs")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white)
+                            .transition(.opacity)
+                            .padding(.leading, 8)
+                    }
+                }
+                .animation(.easeOut(duration: 0.4), value: showYearsSavedBadge)
+            }
+            .opacity(afterCard2Visible ? 1 : 0)
+            .offset(y: afterCard2Visible ? 0 : 10)
+            .animation(.easeOut(duration: 0.5), value: afterCard2Visible)
+
+            // Card 3: SAVINGS RATE — optimized rate + ↑ delta
+            afterCard(label: "SAVINGS RATE") {
+                HStack(spacing: 0) {
+                    Text("\(Int(rateDisplay))%")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(Color(hex: "FCD34D"))
+                    if rateIncrease > 0 {
+                        Text(" \u{2191}\(Int(rateIncrease))%")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.leading, 8)
+                    }
+                }
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+            }
+            .opacity(afterCard3Visible ? 1 : 0)
+            .offset(y: afterCard3Visible ? 0 : 10)
+            .animation(.easeOut(duration: 0.5), value: afterCard3Visible)
+
+            // Card 4: FREEDOM # — pink, counting
+            afterCard(label: "FREEDOM #") {
+                Text(formatCompact(fireDisplay))
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(Color(hex: "FCA5A5"))
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
+            }
+            .opacity(afterCard4Visible ? 1 : 0)
+            .offset(y: afterCard4Visible ? 0 : 10)
+            .animation(.easeOut(duration: 0.5), value: afterCard4Visible)
+        }
+    }
 
     @ViewBuilder
+    private func afterCard(label: String, @ViewBuilder value: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(label)
+                .font(.system(size: 9))
+                .foregroundColor(Color.white.opacity(0.3))
+                .tracking(1)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            value()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.white.opacity(0.07), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Sticky CTA
+
     private var stickyBottomCTA: some View {
         VStack(spacing: 0) {
             LinearGradient(
@@ -479,11 +437,45 @@ struct OB_RoadmapView: View {
             .frame(height: 28)
 
             VStack(spacing: 8) {
-                OB_PrimaryButton(title: "Unlock My Full Plan", includeContainerPadding: false, action: onNext)
+                ZStack {
+                    // Before CTA (white)
+                    OB_PrimaryButton(
+                        title: "See My Flamora Plan",
+                        includeContainerPadding: false,
+                        action: {
+                            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+                            triggerReveal()
+                        }
+                    )
+                    .opacity(showRevealedCTA ? 0 : (showCTA ? 1 : 0))
 
-                Text("Your complete roadmap with real data insights")
-                    .font(.caption)
-                    .foregroundColor(AppColors.textTertiary)
+                    // After CTA (gradient)
+                    Button {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        onNext()
+                    } label: {
+                        Text("Get My Real Numbers \u{2192}")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(
+                                LinearGradient(
+                                    colors: [Color(hex: "FCD34D"), Color(hex: "FCA5A5"), Color(hex: "A78BFA")],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 100))
+                            .shadow(color: Color(hex: "FCA5A5").opacity(0.25), radius: 16, y: 8)
+                    }
+                    .opacity(showRevealedCTA ? 1 : 0)
+                }
+
+                Text(showRevealedCTA ? "Connect accounts for live tracking" : "Unlock your optimized roadmap")
+                    .font(.system(size: 11))
+                    .foregroundColor(Color.white.opacity(0.3))
+                    .animation(.easeOut(duration: 0.5), value: showRevealedCTA)
             }
             .padding(.horizontal, AppSpacing.screenPadding)
             .padding(.bottom, AppSpacing.xxl)
@@ -491,46 +483,196 @@ struct OB_RoadmapView: View {
         }
     }
 
+    // MARK: - Info Sheet
+
+    private var infoSheet: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("How this is calculated")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundColor(.white)
+                .padding(.bottom, 4)
+
+            infoRow(label: "Annual return", value: "9%")
+            infoRow(label: "Monthly savings", value: formatCurrency(data.monthlySavings))
+            infoRow(label: "Flamora optimized", value: formatCurrency(data.optimizedMonthlySavings))
+            infoRow(label: "Your FIRE number", value: formatCompact(data.fireNumber))
+
+            Divider().background(Color.white.opacity(0.06))
+
+            Text("Based on the historical nominal return of the S&P 500 (~10% annually since 1957), adjusted for estimated fees. Projections assume consistent contributions. Actual results vary with market conditions. Past performance does not guarantee future results.")
+                .font(.system(size: 11))
+                .foregroundColor(Color.white.opacity(0.3))
+                .lineSpacing(3)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .presentationDetents([.medium])
+        .presentationBackground(Color(white: 0.12))
+    }
+
+    @ViewBuilder
+    private func infoRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 14))
+                .foregroundColor(Color.white.opacity(0.5))
+            Spacer()
+            Text(value)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(.white)
+        }
+    }
+
     // MARK: - Helpers
 
-    private func formatFireNumber(_ value: Double) -> String {
-        if value >= 1_000_000 {
-            return "\(data.currencySymbol)\(String(format: "%.1f", value / 1_000_000))M"
+    private var lifestyleSpending: Double {
+        if data.targetMonthlySpend > 0 { return data.targetMonthlySpend }
+        let expenses = Double(data.monthlyExpenses) ?? 0
+        let multiplier: Double
+        switch data.fireType {
+        case "minimalist": multiplier = 0.8
+        case "upgrade": multiplier = 1.5
+        default: multiplier = 1.0
         }
+        return expenses * multiplier
+    }
+
+    private func formatCurrency(_ value: Double) -> String {
         let f = NumberFormatter()
         f.numberStyle = .decimal
         f.maximumFractionDigits = 0
         return "\(data.currencySymbol)\(f.string(from: NSNumber(value: value)) ?? "\(Int(value))")"
     }
 
-    private func formatAmount(_ value: Double) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.maximumFractionDigits = 0
-        return "\(data.currencySymbol)\(f.string(from: NSNumber(value: value)) ?? "\(Int(value))")"
+    private func formatCompact(_ value: Double) -> String {
+        if value >= 1_000_000 {
+            return "\(data.currencySymbol)\(String(format: "%.1f", value / 1_000_000))M"
+        } else if value >= 1_000 {
+            return "\(data.currencySymbol)\(Int(value / 1_000))K"
+        }
+        return formatCurrency(value)
     }
 
     // MARK: - Animations
 
-    private func startAnimations() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.0) {
-            withAnimation(.easeOut(duration: 0.4)) { showTitle = true }
-        }
+    private func startBeforeAnimations() {
+        withAnimation(.easeOut(duration: 0.6)) { showTitle = true }
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            withAnimation(.easeOut(duration: 0.5)) { showCards = true }
+            showCurrentBars = true
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            withAnimation(.easeInOut(duration: 1.5)) { timelineProgress = 1.0 }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+            withAnimation(.easeOut(duration: 0.4)) { showDataCards = true }
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.1) {
-            withAnimation(.easeOut(duration: 0.4)) { showOptimization = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+            withAnimation(.easeOut(duration: 0.3)) { showCTA = true }
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.4) {
-            withAnimation(.easeOut(duration: 0.4)) { showUrgency = true }
+    }
+
+    private func triggerReveal() {
+        isRevealed = true
+
+        // Scroll to top
+        withAnimation(.easeOut(duration: 0.4)) {
+            scrollProxy?.scrollTo("top", anchor: .top)
         }
-        for i in 0..<3 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.7 + Double(i) * 0.2) {
-                withAnimation(.easeOut(duration: 0.4)) { showInsight[i] = true }
+
+        // TOTAL = revealBarCount * 45ms (gradient bar stagger duration)
+        let total = totalStagger
+        let afterCardsStart = total + 0.3
+
+        // TOTAL + 150ms — title crossfade
+        DispatchQueue.main.asyncAfter(deadline: .now() + total + 0.15) {
+            withAnimation(.easeOut(duration: 0.5)) { showRevealedTitle = true }
+        }
+
+        // TOTAL + 300ms — hide before cards, show after cards container
+        DispatchQueue.main.asyncAfter(deadline: .now() + afterCardsStart) {
+            withAnimation(.easeOut(duration: 0.5)) {
+                hideDataCards = true
+                showAfterDataCards = true
+            }
+
+            // Start counting animation
+            startCountingAnimation()
+        }
+
+        // Stagger individual card fade-ins (200ms interval)
+        let cardStates = [
+            { withAnimation(.easeOut(duration: 0.5)) { afterCard1Visible = true } },
+            { withAnimation(.easeOut(duration: 0.5)) { afterCard2Visible = true } },
+            { withAnimation(.easeOut(duration: 0.5)) { afterCard3Visible = true } },
+            { withAnimation(.easeOut(duration: 0.5)) { afterCard4Visible = true } }
+        ]
+        for (i, setVisible) in cardStates.enumerated() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + afterCardsStart + Double(i) * 0.2) {
+                setVisible()
+            }
+        }
+
+        // Show years saved badge: after card 2 appears + 0.5s
+        DispatchQueue.main.asyncAfter(deadline: .now() + afterCardsStart + 0.2 + 0.5) {
+            withAnimation(.easeOut(duration: 0.4)) {
+                showYearsSavedBadge = true
+            }
+        }
+
+        // CTA transition: after last card appears + 200ms
+        DispatchQueue.main.asyncAfter(deadline: .now() + afterCardsStart + 0.8) {
+            withAnimation(.easeOut(duration: 0.5)) { showRevealedCTA = true }
+        }
+    }
+
+    private func reverseReveal() {
+        // Step 1: Trigger gradient bar reverse stagger (right-to-left)
+        // Setting isRevealed = false triggers bar chart's reverseOptimizedBars()
+        withAnimation(.easeOut(duration: 0.3)) {
+            isRevealed = false
+        }
+
+        // Step 2: Fade out After UI elements
+        withAnimation(.easeOut(duration: 0.3)) {
+            showRevealedCTA = false
+            afterCard1Visible = false
+            afterCard2Visible = false
+            afterCard3Visible = false
+            afterCard4Visible = false
+            showYearsSavedBadge = false
+        }
+        counterProgress = 0
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.easeOut(duration: 0.3)) {
+                showAfterDataCards = false
+            }
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            withAnimation(.easeOut(duration: 0.4)) {
+                showRevealedTitle = false
+            }
+        }
+
+        // Step 3: After bar stagger + dual layout collapse + range expand, restore Before UI
+        // Bar chart: stagger (count*0.045) + last bar anim (0.3) + dual collapse (0.3) + range expand
+        let barReverseDuration = totalStagger + 0.6
+        DispatchQueue.main.asyncAfter(deadline: .now() + barReverseDuration) {
+            withAnimation(.easeOut(duration: 0.3)) {
+                hideDataCards = false
+            }
+        }
+    }
+
+    private func startCountingAnimation(duration: Double = 1.5) {
+        let startTime = Date()
+        Timer.scheduledTimer(withTimeInterval: 1.0 / 30, repeats: true) { timer in
+            let elapsed = Date().timeIntervalSince(startTime)
+            let t = min(1.0, elapsed / duration)
+            // easeOut cubic
+            counterProgress = 1.0 - pow(1.0 - t, 3)
+            if t >= 1.0 {
+                timer.invalidate()
+                counterProgress = 1.0
             }
         }
     }

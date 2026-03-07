@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct OB_PrimaryButton: View {
     var title: String = "Continue"
@@ -15,7 +16,10 @@ struct OB_PrimaryButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            action()
+        } label: {
             Text(title)
                 .font(.bodyRegular)
                 .fontWeight(.semibold)

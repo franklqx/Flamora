@@ -19,7 +19,7 @@ struct OB_ContainerView: View {
     private let supabase = SupabaseManager.shared
 
     private var canGoBack: Bool {
-        [2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17].contains(currentStep)
+        [2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 17].contains(currentStep)
     }
 
     var body: some View {
@@ -69,7 +69,6 @@ struct OB_ContainerView: View {
         case 13: OB_LifestyleView(data: data, onNext: next, onBack: back)
         case 14: OB_LoadingView(onNext: next)
         case 15: OB_RoadmapView(data: data, onNext: next, onBack: back)
-        case 16: OB_AhaMomentView(data: data, onNext: next, onBack: back)
         default: OB_PaywallView(data: data, onBack: back, onComplete: completeOnboarding)
         }
     }
@@ -78,13 +77,17 @@ struct OB_ContainerView: View {
 
     private func next() {
         withAnimation(.easeInOut(duration: 0.3)) {
-            currentStep = min(currentStep + 1, 17)
+            var nextStep = currentStep + 1
+            if nextStep == 16 { nextStep = 17 } // Skip step 16 (merged into Roadmap)
+            currentStep = min(nextStep, 17)
         }
     }
 
     private func back() {
         withAnimation(.easeInOut(duration: 0.3)) {
-            currentStep = max(currentStep - 1, 0)
+            var prevStep = currentStep - 1
+            if prevStep == 16 { prevStep = 15 } // Skip step 16 (merged into Roadmap)
+            currentStep = max(prevStep, 0)
         }
     }
 

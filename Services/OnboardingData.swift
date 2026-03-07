@@ -56,11 +56,11 @@ class OnboardingData {
         let netWorth = Double(currentNetWorth) ?? 0
         let target = fireNumber
         let annualSavings = savings * 12
-        // Simple calculation with 7% return
+        // Simple calculation with 9% return
         var years = 0
         var accumulated = netWorth
         while accumulated < target && years < 99 {
-            accumulated = accumulated * 1.07 + annualSavings
+            accumulated = accumulated * 1.09 + annualSavings
             years += 1
         }
         return years
@@ -72,14 +72,10 @@ class OnboardingData {
 
     // MARK: - V2 Computed Properties
 
-    /// 额外投入建议金额（基于收入）
+    /// 额外投入建议金额（基于收入 8%）
     var suggestedExtraInvestment: Double {
         let income = Double(monthlyIncome) ?? 0
-        if income < 3000 { return 100 }
-        if income < 6000 { return 200 }
-        if income < 10000 { return 300 }
-        if income < 20000 { return 500 }
-        return 1000
+        return income * 0.08
     }
 
     /// 优化后的 Freedom Age（额外投入后）
@@ -91,10 +87,45 @@ class OnboardingData {
         let target = fireNumber
         guard target > 0 else { return Int(age) }
         while accumulated < target && years < 100 {
-            accumulated = accumulated * 1.07 + optimizedMonthlySavings * 12
+            accumulated = accumulated * 1.09 + optimizedMonthlySavings * 12
             years += 1
         }
         return Int(age) + years
+    }
+
+    /// 优化后的月投资额
+    var optimizedMonthlySavings: Double {
+        return monthlySavings + suggestedExtraInvestment
+    }
+
+    /// 优化后的 savings rate
+    var optimizedSavingsRate: Double {
+        let income = Double(monthlyIncome) ?? 0
+        guard income > 0 else { return 0 }
+        return (optimizedMonthlySavings / income) * 100
+    }
+
+    /// 优化路径在 optimizedFreedomAge 时比当前路径多出的组合价值
+    var extraPortfolioValue: Double {
+        let netWorth = Double(currentNetWorth) ?? 0
+        let currentMonthlySavings = monthlySavings
+        let optimizedMonthlySavings = monthlySavings + suggestedExtraInvestment
+        let years = optimizedFreedomAge - Int(age)
+        guard years > 0 else { return 0 }
+
+        // 当前路径在 optimizedFreedomAge 时的累积值
+        var currentAccumulated = netWorth
+        for _ in 0..<years {
+            currentAccumulated = currentAccumulated * 1.09 + currentMonthlySavings * 12
+        }
+
+        // 优化路径在 optimizedFreedomAge 时的累积值
+        var optimizedAccumulated = netWorth
+        for _ in 0..<years {
+            optimizedAccumulated = optimizedAccumulated * 1.09 + optimizedMonthlySavings * 12
+        }
+
+        return max(0, optimizedAccumulated - currentAccumulated)
     }
 
     /// 提前年数
@@ -111,9 +142,9 @@ class OnboardingData {
         let target = fireNumber
         guard target > 0 else { return 0 }
         // 第一年不投入，只有复利
-        accumulated = accumulated * 1.07
+        accumulated = accumulated * 1.09
         while accumulated < target && years < 100 {
-            accumulated = accumulated * 1.07 + currentSavings * 12
+            accumulated = accumulated * 1.09 + currentSavings * 12
             years += 1
         }
         let delayedAge = Int(age) + 1 + years
