@@ -8,13 +8,13 @@
 import SwiftUI
 
 struct OB_LifestyleView: View {
-    let data: OnboardingData
+    @Bindable var data: OnboardingData
     let onNext: () -> Void
     let onBack: () -> Void
 
     @State private var selectedType = "maintain"
-    @State private var showCustomInput = false
     @State private var customAmountText = ""
+    @FocusState private var isCustomInputFocused: Bool
 
     private var expenses: Double {
         Double(data.monthlyExpenses) ?? 0
@@ -27,61 +27,110 @@ struct OB_LifestyleView: View {
     ]
 
     var body: some View {
-        ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+        VStack(spacing: 0) {
+            ScrollViewReader { proxy in
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        OB_SnapshotProgress(current: 5, total: 5)
+                            .padding(.horizontal, AppSpacing.screenPadding)
+                            .padding(.top, AppSpacing.md)
 
-            VStack(alignment: .leading, spacing: 0) {
-                // Header
-                HStack {
-                    OB_BackButton(action: onBack)
-                    Spacer()
-                }
-                .padding(.horizontal, AppSpacing.md)
+                        Spacer().frame(height: 40)
 
-                OB_SnapshotProgress(current: 5)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.top, AppSpacing.sm)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("What kind of retirement life do you want?")
+                                .font(.obQuestion)
+                                .foregroundColor(.white)
+                            Text("Choose your target lifestyle in retirement")
+                                .font(.bodySmall)
+                                .foregroundColor(AppColors.textSecondary)
+                        }
 
-                Spacer().frame(height: 32)
+                        Spacer().frame(height: AppSpacing.xl)
 
-                Text("What kind of\nretirement life do\nyou want?")
-                    .font(.h1)
-                    .foregroundColor(AppColors.textPrimary)
-                    .padding(.horizontal, AppSpacing.lg)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("RETIREMENT LIFESTYLE")
+                                .font(.obStepLabel)
+                                .foregroundColor(AppColors.textTertiary)
+                                .tracking(0.8)
 
-                Spacer().frame(height: 28)
+                            VStack(spacing: 12) {
+                                ForEach(options, id: \.key) { option in
+                                    lifestyleCard(option: option)
+                                }
+                            }
+                        }
 
-                // Lifestyle cards
-                VStack(spacing: 12) {
-                    ForEach(options, id: \.key) { option in
-                        lifestyleCard(option: option)
+                        Spacer().frame(height: 16)
+
+                        if selectedType != "custom" {
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    selectedType = "custom"
+                                }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundColor(AppColors.textSecondary)
+                                    Text("Set my own target")
+                                        .font(.bodySmall)
+                                        .foregroundColor(AppColors.textSecondary)
+                                }
+                                .padding(.top, 4)
+                            }
+                            .buttonStyle(.plain)
+                        }
+
+                        if selectedType == "custom" {
+                            HStack(spacing: 8) {
+                                Text(data.currencySymbol)
+                                    .font(.h4)
+                                    .foregroundColor(AppColors.textTertiary)
+                                TextField("Monthly amount", text: $customAmountText)
+                                    .font(.h4)
+                                    .foregroundColor(.white)
+                                    .keyboardType(.numberPad)
+                                    .focused($isCustomInputFocused)
+                                Text("/mo")
+                                    .font(.bodySmall)
+                                    .foregroundColor(AppColors.textTertiary)
+                            }
+                            .padding(.horizontal, 20)
+                            .frame(height: 56)
+                            .background(AppColors.surface)
+                            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: AppRadius.lg)
+                                    .stroke(LinearGradient(colors: [AppColors.accentBlue, AppColors.accentPurple], startPoint: .leading, endPoint: .trailing), lineWidth: 1.5)
+                            )
+                            .id("customInput")
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                            .onAppear {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                    withAnimation(.easeOut(duration: 0.3)) {
+                                        proxy.scrollTo("customInput", anchor: .center)
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer().frame(height: 32)
                     }
-
-                    // Custom card (shown if selected)
-                    if selectedType == "custom" {
-                        customCard
-                    }
+                    .padding(.horizontal, AppSpacing.screenPadding)
                 }
-                .padding(.horizontal, AppSpacing.lg)
+                .scrollDismissesKeyboard(.interactively)
+            }
 
-                Spacer().frame(height: 16)
+            // 底部 CTA — 和 ScrollView 同级，键盘弹出时自动上移
+            VStack(spacing: 0) {
+                LinearGradient(
+                    colors: [Color.black.opacity(0), Color.black],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .frame(height: 28)
 
-                // Custom target link
-                if selectedType != "custom" {
-                    Button {
-                        showCustomInput = true
-                    } label: {
-                        Text("+ Set my own target")
-                            .font(.bodySmall)
-                            .foregroundColor(AppColors.textTertiary)
-                    }
-                    .padding(.horizontal, AppSpacing.lg)
-                }
-
-                Spacer()
-
-                // CTA
-                OB_PrimaryButton(title: "Build My Roadmap") {
+                OB_PrimaryButton(title: "Build My Roadmap", action: {
                     data.fireType = selectedType
                     if selectedType == "custom" {
                         data.targetMonthlySpend = Double(customAmountText) ?? expenses
@@ -89,26 +138,25 @@ struct OB_LifestyleView: View {
                         data.targetMonthlySpend = expenses * option.multiplier
                     }
                     onNext()
+                })
+            }
+            .background(Color.black)
+        }
+        .background(Color.black.ignoresSafeArea())
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    isCustomInputFocused = false
                 }
-                .padding(.bottom, AppSpacing.lg)
+                .font(.bodyRegular)
+                .foregroundStyle(LinearGradient(colors: [AppColors.accentBlue, AppColors.accentPurple], startPoint: .leading, endPoint: .trailing))
             }
         }
         .onAppear {
             if !data.fireType.isEmpty {
                 selectedType = data.fireType
             }
-        }
-        .alert("Set Custom Monthly Target", isPresented: $showCustomInput) {
-            TextField("Amount", text: $customAmountText)
-                .keyboardType(.numberPad)
-            Button("Cancel", role: .cancel) {}
-            Button("Set") {
-                if let amount = Double(customAmountText), amount > 0 {
-                    selectedType = "custom"
-                }
-            }
-        } message: {
-            Text("Enter your desired monthly spending in retirement (\(data.currencySymbol))")
         }
     }
 
@@ -128,7 +176,7 @@ struct OB_LifestyleView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(option.title)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(AppColors.textPrimary)
+                        .foregroundColor(.white)
 
                     HStack(spacing: 0) {
                         Text(option.subtitle)
@@ -142,52 +190,24 @@ struct OB_LifestyleView: View {
                 Spacer()
 
                 if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
+                    Image(systemName: "checkmark.circle")
                         .font(.system(size: 22))
-                        .foregroundColor(.white)
+                        .foregroundStyle(LinearGradient(
+                            colors: [AppColors.accentBlue, AppColors.accentPurple],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ))
                 }
             }
             .padding(AppSpacing.md)
-            .background(AppColors.backgroundCard)
-            .cornerRadius(AppRadius.md)
+            .background(AppColors.surface.opacity(0.6))
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.md)
-                    .stroke(isSelected ? Color.white : Color.clear, lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: AppRadius.lg)
+                    .stroke(isSelected ? LinearGradient(colors: [AppColors.accentBlue, AppColors.accentPurple], startPoint: .leading, endPoint: .trailing) : LinearGradient(colors: [Color.white.opacity(0.08)], startPoint: .leading, endPoint: .trailing), lineWidth: isSelected ? 1.5 : 1)
             )
         }
         .buttonStyle(.plain)
-    }
-
-    // MARK: - Custom Card
-
-    @ViewBuilder
-    private var customCard: some View {
-        let amount = Double(customAmountText) ?? 0
-
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Custom Target")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(AppColors.textPrimary)
-
-                Text("\(formatAmount(amount))/mo")
-                    .font(.bodySmall)
-                    .foregroundColor(AppColors.textSecondary)
-            }
-
-            Spacer()
-
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 22))
-                .foregroundColor(.white)
-        }
-        .padding(AppSpacing.md)
-        .background(AppColors.backgroundCard)
-        .cornerRadius(AppRadius.md)
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(Color.white, lineWidth: 1.5)
-        )
     }
 
     // MARK: - Helpers
@@ -201,6 +221,8 @@ struct OB_LifestyleView: View {
 }
 
 #Preview {
-    OB_LifestyleView(data: OnboardingData(), onNext: {}, onBack: {})
-        .background(AppBackgroundView())
+    ZStack {
+        Color.black.ignoresSafeArea()
+        OB_LifestyleView(data: OnboardingData(), onNext: {}, onBack: {})
+    }
 }

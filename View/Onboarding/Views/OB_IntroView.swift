@@ -85,18 +85,7 @@ struct OB_IntroView: View {
                 )
                 .frame(height: 32)
 
-                Button(action: onNext) {
-                    Text("Let's Do This")
-                        .font(.bodyRegular)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
-                }
-                .padding(.horizontal, AppSpacing.screenPadding)
-                .padding(.bottom, AppSpacing.xxl)
+                OB_PrimaryButton(title: "Let's Do This", action: onNext)
                 .background(Color.black)
             }
         }

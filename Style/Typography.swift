@@ -76,4 +76,9 @@ extension Font {
     static var obQuestion: Font {
         Font(UIFont(name: "PlayfairDisplayRoman-SemiBold", size: 24) ?? UIFont.systemFont(ofSize: 24, weight: .semibold))
     }
+
+    /// Onboarding step label (YOUR AGE, PRIMARY CURRENCY, etc.)
+    static var obStepLabel: Font {
+        .system(size: 11, weight: .medium)
+    }
 }

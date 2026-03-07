@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct OB_MicroInsightCard: View {
-    let emoji: String
+    var emoji: String = ""
+    var systemImage: String? = nil
     let text: String
     var highlightText: String = ""
 
@@ -16,8 +17,20 @@ struct OB_MicroInsightCard: View {
 
     var body: some View {
         HStack(spacing: AppSpacing.md) {
-            Text(emoji)
-                .font(.system(size: 24))
+            Group {
+                if let sys = systemImage {
+                    Image(systemName: sys)
+                        .font(.system(size: 20))
+                        .foregroundStyle(LinearGradient(
+                            colors: [AppColors.accentBlue, AppColors.accentPurple],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ))
+                } else {
+                    Text(emoji)
+                        .font(.system(size: 24))
+                }
+            }
 
             if highlightText.isEmpty || !text.contains(highlightText) {
                 Text(text)
@@ -50,6 +63,6 @@ struct OB_MicroInsightCard: View {
 }
 
 #Preview {
-    OB_MicroInsightCard(emoji: "💡", text: "Your savings rate is above average.", highlightText: "above average")
+    OB_MicroInsightCard(systemImage: "lightbulb", text: "Your savings rate is above average.", highlightText: "above average")
         .background(AppBackgroundView())
 }

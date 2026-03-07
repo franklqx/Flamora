@@ -8,94 +8,191 @@
 import SwiftUI
 
 struct OB_IncomeView: View {
-    let data: OnboardingData
+    @Bindable var data: OnboardingData
     let onNext: () -> Void
     let onBack: () -> Void
 
     @State private var incomeValue: Double = 0
     @State private var showInsight = false
     @State private var insightWorkItem: DispatchWorkItem?
+    private let incomeRange: ClosedRange<Double> = 0...20000
 
     var body: some View {
-        ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+        ZStack(alignment: .bottom) {
+            Color.black.ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: 0) {
-                // Header
-                HStack {
-                    OB_BackButton(action: onBack)
-                    Spacer()
-                }
-                .padding(.horizontal, AppSpacing.md)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    OB_SnapshotProgress(current: 2, total: 5)
+                        .padding(.horizontal, AppSpacing.screenPadding)
+                        .padding(.top, AppSpacing.md)
 
-                OB_SnapshotProgress(current: 2)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.top, AppSpacing.sm)
+                    Spacer().frame(height: 40)
 
-                Spacer().frame(height: 32)
-
-                // Title
-                Text("What's your monthly\nincome?")
-                    .font(.h1)
-                    .foregroundColor(AppColors.textPrimary)
-                    .padding(.horizontal, AppSpacing.lg)
-
-                Spacer().frame(height: 8)
-
-                Text("A rough estimate is fine")
-                    .font(.bodySmall)
-                    .foregroundColor(AppColors.textSecondary)
-                    .padding(.horizontal, AppSpacing.lg)
-
-                Spacer().frame(height: 48)
-
-                // Slider
-                OB_IncomeSlider(
-                    value: $incomeValue,
-                    range: 0...20000,
-                    step: 100,
-                    currencySymbol: data.currencySymbol,
-                    suffix: "/mo",
-                    onEditingChanged: { editing in
-                        if editing {
-                            showInsight = false
-                            insightWorkItem?.cancel()
-                        } else {
-                            scheduleInsight()
-                        }
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("What's your monthly income?")
+                            .font(.obQuestion)
+                            .foregroundColor(.white)
+                        Text("A rough estimate is fine")
+                            .font(.bodySmall)
+                            .foregroundColor(AppColors.textSecondary)
                     }
-                )
-                .padding(.horizontal, AppSpacing.lg)
 
-                Spacer().frame(height: 32)
+                    Spacer().frame(height: AppSpacing.xl)
 
-                // Micro insight
-                if showInsight && incomeValue > 0 {
-                    let percentile = incomePercentile(age: Int(data.age), income: incomeValue)
-                    OB_MicroInsightCard(
-                        emoji: "💪",
-                        text: "Your income is higher than \(percentile)% of people in your age group.",
-                        highlightText: "\(percentile)%"
-                    )
-                    .padding(.horizontal, AppSpacing.lg)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("MONTHLY INCOME")
+                            .font(.obStepLabel)
+                            .foregroundColor(AppColors.textTertiary)
+                            .tracking(0.8)
+
+                        incomeCard
+                    }
+
+                    Spacer().frame(height: AppSpacing.lg)
+
+                    if showInsight && incomeValue > 0 {
+                        let percentile = incomePercentile(age: Int(data.age), income: incomeValue)
+                        OB_MicroInsightCard(
+                            systemImage: "chart.line.uptrend.xyaxis",
+                            text: "Your income is higher than \(percentile)% of people in your age group.",
+                            highlightText: "\(percentile)%"
+                        )
+                    }
+
+                    Spacer().frame(height: 120)
                 }
+                .padding(.horizontal, AppSpacing.screenPadding)
+            }
 
-                Spacer()
+            // Sticky CTA（与 AgeView 一致）
+            VStack(spacing: 0) {
+                LinearGradient(
+                    colors: [Color.black.opacity(0), Color.black],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .frame(height: 28)
 
-                // CTA
-                OB_PrimaryButton(title: "Next") {
+                OB_PrimaryButton(title: "Next", action: {
                     data.monthlyIncome = "\(Int(incomeValue))"
                     onNext()
-                }
-                .padding(.bottom, AppSpacing.lg)
+                })
+                .background(Color.black)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {
+            _ = Self._sliderSetup
             if let saved = Double(data.monthlyIncome), saved > 0 {
                 incomeValue = saved
                 showInsight = true
             }
         }
+    }
+
+    // MARK: - 收入玻璃卡片（与 AgeView 滑块样式一致）
+
+    private var incomeCard: some View {
+        VStack(spacing: 16) {
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Spacer()
+                Text(data.currencySymbol)
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundColor(.white)
+                Text(formattedIncome)
+                    .font(.system(size: 48, weight: .bold).monospacedDigit())
+                    .foregroundStyle(accentGradient)
+                    .contentTransition(.numericText())
+                Text("/mo")
+                    .font(.system(size: 20, weight: .regular))
+                    .foregroundColor(AppColors.textTertiary)
+                Spacer()
+            }
+            .frame(height: 80)
+
+            VStack(spacing: 8) {
+                ZStack(alignment: .leading) {
+                    GeometryReader { geo in
+                        let progress = CGFloat((incomeValue - incomeRange.lowerBound) / (incomeRange.upperBound - incomeRange.lowerBound))
+                        let thumbOffset: CGFloat = 14
+                        let trackWidth = geo.size.width - thumbOffset * 2
+
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(Color.white.opacity(0.15))
+                                .frame(width: trackWidth, height: 4)
+                            Capsule()
+                                .fill(accentGradient)
+                                .frame(width: trackWidth * progress, height: 4)
+                        }
+                        .offset(x: thumbOffset)
+                        .frame(maxHeight: .infinity, alignment: .center)
+                    }
+                    .frame(height: 28)
+                    .allowsHitTesting(false)
+
+                    Slider(value: $incomeValue, in: incomeRange, step: 100)
+                        .frame(height: 28)
+                        .onChange(of: incomeValue) { _, newVal in
+                            if newVal > 0 {
+                                scheduleInsight()
+                            } else {
+                                showInsight = false
+                            }
+                        }
+                }
+                .frame(height: 28)
+
+                HStack {
+                    Text("\(data.currencySymbol)0")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                    Spacer()
+                    Text("\(data.currencySymbol)20K")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .frame(height: 18)
+            }
+            .frame(height: 62)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 20)
+        .frame(minHeight: 200)
+        .background(AppColors.surface.opacity(0.6))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.xl)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+
+    private var accentGradient: LinearGradient {
+        LinearGradient(
+            colors: [AppColors.accentBlue, AppColors.accentPurple],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+
+    private static let _sliderSetup: Void = {
+        UISlider.appearance().thumbTintColor = .white
+        UISlider.appearance().minimumTrackTintColor = .clear
+        UISlider.appearance().maximumTrackTintColor = .clear
+    }()
+
+    private var formattedIncome: String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        return formatter.string(from: NSNumber(value: incomeValue)) ?? "\(Int(incomeValue))"
+    }
+
+    private func formatNum(_ val: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        return formatter.string(from: NSNumber(value: val)) ?? "\(Int(val))"
     }
 
     // MARK: - Helpers
@@ -124,6 +221,8 @@ struct OB_IncomeView: View {
 }
 
 #Preview {
-    OB_IncomeView(data: OnboardingData(), onNext: {}, onBack: {})
-        .background(AppBackgroundView())
+    ZStack {
+        Color.black.ignoresSafeArea()
+        OB_IncomeView(data: OnboardingData(), onNext: {}, onBack: {})
+    }
 }

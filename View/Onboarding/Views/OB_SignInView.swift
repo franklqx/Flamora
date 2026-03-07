@@ -30,12 +30,6 @@ struct OB_SignInView: View {
             VStack(spacing: 0) {
                 // MARK: - Top Bar
                 HStack {
-                    Button(action: onBack) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(AppColors.textPrimary)
-                            .frame(width: 44, height: 44)
-                    }
                     Spacer()
                 }
                 .overlay {
@@ -167,10 +161,9 @@ struct OB_SignInView: View {
                 // MARK: - Continue
                 OB_PrimaryButton(
                     title: isLoading ? "Loading..." : "Continue",
-                    disabled: email.isEmpty || password.isEmpty || isLoading,
+                    isValid: !email.isEmpty && !password.isEmpty && !isLoading,
                     action: handleAuth
                 )
-                .padding(.bottom, 16)
 
                 // MARK: - Terms
                 VStack(spacing: 2) {

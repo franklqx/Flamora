@@ -33,34 +33,41 @@ struct OB_PaywallView: View {
     ]
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                OB_BackButton(action: onBack)
-                Spacer()
-                // Skip button
-                Button {
-                    finishOnboarding()
-                } label: {
-                    Text("Skip")
-                        .font(.bodySmall)
-                        .foregroundColor(AppColors.textTertiary)
+        ZStack(alignment: .bottom) {
+            Color.black.ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Color.clear.frame(width: 44, height: 44)
+                    Spacer()
+                    Button {
+                        finishOnboarding()
+                    } label: {
+                        Text("Skip")
+                            .font(.bodySmall)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
                 }
-            }
-            .padding(.horizontal, AppSpacing.md)
+                .padding(.horizontal, AppSpacing.screenPadding)
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    Spacer().frame(height: 24)
+                    Spacer().frame(height: 40)
 
                     // MARK: - Header
                     VStack(spacing: AppSpacing.sm) {
-                        Text("🔥")
+                        Image(systemName: "flame")
                             .font(.system(size: 32))
+                            .foregroundStyle(LinearGradient(
+                                colors: AppColors.gradientFire,
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ))
 
                         Text("Flamora Pro")
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(.white)
 
                         Text("Your complete toolkit for Financial Independence")
                             .font(.bodyRegular)
@@ -81,26 +88,36 @@ struct OB_PaywallView: View {
                     VStack(spacing: 0) {
                         ForEach(Array(features.enumerated()), id: \.offset) { index, feature in
                             HStack(spacing: 14) {
-                                Image(systemName: "checkmark.circle.fill")
+                                Image(systemName: "checkmark.circle")
                                     .font(.system(size: 16))
-                                    .foregroundColor(AppColors.success)
+                                    .foregroundStyle(LinearGradient(
+                                        colors: [AppColors.accentBlue, AppColors.accentPurple],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    ))
 
                                 Text(feature)
                                     .font(.bodySmall)
-                                    .foregroundColor(AppColors.textPrimary)
+                                    .foregroundColor(.white)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
 
                                 Spacer()
                             }
                             .padding(.vertical, 8)
 
                             if index < features.count - 1 {
-                                Divider().overlay(AppColors.borderDefault)
+                                Divider().overlay(Color.white.opacity(0.08))
                             }
                         }
                     }
                     .padding(AppSpacing.cardPadding)
-                    .background(AppColors.backgroundCard)
-                    .cornerRadius(16)
+                    .background(AppColors.surface.opacity(0.6))
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppRadius.lg)
+                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    )
                     .opacity(appear ? 1 : 0)
                     .offset(y: appear ? 0 : 20)
                     .animation(.easeOut(duration: 0.5).delay(0.3), value: appear)
@@ -112,7 +129,7 @@ struct OB_PaywallView: View {
                         // Already selected — noop
                     } label: {
                         HStack(spacing: 14) {
-                            Image(systemName: "checkmark.circle.fill")
+                            Image(systemName: "checkmark.circle")
                                 .font(.system(size: 22))
                                 .foregroundStyle(
                                     LinearGradient(
@@ -125,7 +142,7 @@ struct OB_PaywallView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Yearly")
                                     .font(.h4)
-                                    .foregroundColor(AppColors.textPrimary)
+                                    .foregroundColor(.white)
 
                                 Text("$6.67/mo")
                                     .font(.caption)
@@ -137,7 +154,7 @@ struct OB_PaywallView: View {
                             HStack(alignment: .firstTextBaseline, spacing: 2) {
                                 Text("$79.99")
                                     .font(.h3)
-                                    .foregroundColor(AppColors.textPrimary)
+                                    .foregroundColor(.white)
                                 Text("/year")
                                     .font(.caption)
                                     .foregroundColor(AppColors.textSecondary)
@@ -159,10 +176,10 @@ struct OB_PaywallView: View {
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical, 16)
-                        .background(AppColors.backgroundCard)
-                        .cornerRadius(AppRadius.md)
+                        .background(AppColors.surface.opacity(0.6))
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
                         .overlay(
-                            RoundedRectangle(cornerRadius: AppRadius.md)
+                            RoundedRectangle(cornerRadius: AppRadius.lg)
                                 .stroke(
                                     LinearGradient(
                                         colors: AppColors.gradientFire,
@@ -178,41 +195,55 @@ struct OB_PaywallView: View {
                     .offset(y: appear ? 0 : 20)
                     .animation(.easeOut(duration: 0.5).delay(0.5), value: appear)
 
-                    Spacer().frame(height: AppSpacing.xl)
+                    Spacer().frame(height: 200)
                 }
                 .padding(.horizontal, AppSpacing.screenPadding)
             }
+            }
 
-            // MARK: - Bottom CTA
-            VStack(spacing: AppSpacing.md) {
-                OB_PrimaryButton(
-                    title: isPurchasing ? "Processing..." : "Start My Free Trial",
-                    disabled: isPurchasing
-                ) {
-                    data.selectedPlan = "yearly"
-                    Task { await purchase() }
-                }
+            // Sticky CTA（与 AgeView 一致）
+            VStack(spacing: 0) {
+                LinearGradient(
+                    colors: [Color.black.opacity(0), Color.black],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .frame(height: 28)
 
-                Button {
-                    Task {
-                        isPurchasing = true
-                        _ = await subscriptionManager.restorePurchases()
-                        isPurchasing = false
-                        if subscriptionManager.isPremium {
-                            finishOnboarding()
+                VStack(spacing: AppSpacing.md) {
+                    OB_PrimaryButton(
+                        title: isPurchasing ? "Processing..." : "Start My Free Trial",
+                        isValid: !isPurchasing,
+                        includeContainerPadding: false,
+                        action: {
+                            data.selectedPlan = "yearly"
+                            Task { await purchase() }
                         }
+                    )
+
+                    Button {
+                        Task {
+                            isPurchasing = true
+                            _ = await subscriptionManager.restorePurchases()
+                            isPurchasing = false
+                            if subscriptionManager.isPremium {
+                                finishOnboarding()
+                            }
+                        }
+                    } label: {
+                        Text("Already a Pro? Restore")
+                            .font(.bodySmall)
+                            .foregroundColor(AppColors.textSecondary)
                     }
-                } label: {
-                    Text("Already a Pro? Restore")
-                        .font(.bodySmall)
-                        .foregroundColor(AppColors.textSecondary)
+                    .disabled(isPurchasing)
                 }
-                .disabled(isPurchasing)
+                .padding(.horizontal, AppSpacing.screenPadding)
+                .padding(.bottom, AppSpacing.xxl)
+                .background(Color.black)
             }
             .opacity(appear ? 1 : 0)
             .animation(.easeOut(duration: 0.5).delay(0.7), value: appear)
-            .padding(.bottom, AppSpacing.lg)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {
             withAnimation(.spring(response: 0.8, dampingFraction: 0.7).delay(0.1)) {
                 appear = true
@@ -272,7 +303,9 @@ struct OB_PaywallView: View {
 }
 
 #Preview {
-    OB_PaywallView(data: OnboardingData(), onBack: {}, onComplete: {})
-        .environment(SubscriptionManager.shared)
-        .background(AppBackgroundView())
+    ZStack {
+        Color.black.ignoresSafeArea()
+        OB_PaywallView(data: OnboardingData(), onBack: {}, onComplete: {})
+            .environment(SubscriptionManager.shared)
+    }
 }

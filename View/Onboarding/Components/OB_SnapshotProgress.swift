@@ -12,17 +12,28 @@ struct OB_SnapshotProgress: View {
     var total: Int = 5
 
     var body: some View {
-        HStack {
-            Text("FINANCIAL SNAPSHOT")
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text("Financial Snapshot \(current)/\(total)")
                 .font(.label)
                 .foregroundColor(.white)
-                .tracking(1)
+                .tracking(0.8)
 
-            Spacer()
-
-            Text("\(current)/\(total)")
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary)
+            HStack(spacing: 4) {
+                ForEach(0..<total, id: \.self) { i in
+                    Capsule()
+                        .fill(
+                            i < current
+                                ? AnyShapeStyle(LinearGradient(
+                                    colors: [AppColors.accentBlue, AppColors.accentPurple],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ))
+                                : AnyShapeStyle(AppColors.surfaceInput)
+                        )
+                        .frame(height: 3)
+                }
+            }
+            .animation(.easeInOut(duration: 0.3), value: current)
         }
     }
 }

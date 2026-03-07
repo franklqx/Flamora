@@ -22,99 +22,118 @@ struct OB_AhaMomentView: View {
     }
 
     var body: some View {
-        ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+        ZStack(alignment: .bottom) {
+            Color.black.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    OB_BackButton(action: onBack)
-                    Spacer()
-                }
-                .padding(.horizontal, AppSpacing.md)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Spacer().frame(height: 40)
 
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        Spacer().frame(height: 24)
-
-                        // Title
-                        Group {
-                            if isHardCase {
-                                Text("\(data.userName), your journey\nto freedom starts now.")
-                            } else {
-                                Text("\(data.userName), your estimated\nfreedom age is \(data.freedomAge).")
-                            }
-                        }
-                        .font(.h1)
-                        .foregroundColor(AppColors.textPrimary)
+                    // Line 1: 名字
+                    Text(data.userName.isEmpty ? "Friend" : data.userName)
+                        .font(.obQuestion)
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                         .opacity(showTitle ? 1 : 0)
 
-                        Spacer().frame(height: 12)
+                    Spacer().frame(height: 8)
 
-                        // Subtitle
-                        Text("But this is based on your rough estimates.\nHere's what you might be missing.")
-                            .font(.bodyRegular)
-                            .foregroundColor(AppColors.textSecondary)
-                            .lineSpacing(4)
-                            .opacity(showSubtitle ? 1 : 0)
-
-                        Spacer().frame(height: 28)
-
-                        // Blind spot cards
-                        VStack(spacing: 12) {
-                            blindSpotCard(
-                                emoji: "💰",
-                                title: "Your real spending might be higher",
-                                body: "Most people underestimate their expenses by 20–30%. Your freedom age could shift by years.",
-                                index: 0
-                            )
-                            blindSpotCard(
-                                emoji: "🔍",
-                                title: "You may have hidden savings potential",
-                                body: "Unused subscriptions, duplicate charges, overspending patterns — only visible with real data.",
-                                index: 1
-                            )
-                            blindSpotCard(
-                                emoji: "📈",
-                                title: "Your investments change daily",
-                                body: "A static number can't capture market movement. Your FIRE progress needs live tracking.",
-                                index: 2
-                            )
+                    // Line 2: 句子
+                    Group {
+                        if isHardCase {
+                            Text("Your Journey To Freedom Starts Now")
+                        } else {
+                            Text("Your estimated Freedom age is \(data.freedomAge)")
                         }
-
-                        Spacer().frame(height: 28)
-
-                        // Footer
-                        Text("Flamora connects to your real accounts to give you the precise picture — and keeps it updated automatically.")
-                            .font(.bodySmall)
-                            .foregroundColor(AppColors.textSecondary)
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity)
-                            .opacity(showFooter ? 1 : 0)
-
-                        Spacer().frame(height: 24)
                     }
-                    .padding(.horizontal, AppSpacing.lg)
-                }
+                    .font(.obQuestion)
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .opacity(showTitle ? 1 : 0)
 
-                // CTA
+                    Spacer().frame(height: 12)
+
+                    // Subtitle
+                    Text("But this is based on your rough estimates.\nHere's what you might be missing.")
+                        .font(.bodyRegular)
+                        .foregroundColor(AppColors.textSecondary)
+                        .lineSpacing(4)
+                        .opacity(showSubtitle ? 1 : 0)
+
+                    Spacer().frame(height: 28)
+
+                    // Blind spot cards
+                    VStack(spacing: 12) {
+                        blindSpotCard(
+                            systemImage: "banknote",
+                            title: "Your real spending might be higher",
+                            body: "Most people underestimate their expenses by 20–30%. Your freedom age could shift by years.",
+                            index: 0
+                        )
+                        blindSpotCard(
+                            systemImage: "magnifyingglass",
+                            title: "You may have hidden savings potential",
+                            body: "Unused subscriptions, duplicate charges, overspending patterns — only visible with real data.",
+                            index: 1
+                        )
+                        blindSpotCard(
+                            systemImage: "chart.line.uptrend.xyaxis",
+                            title: "Your investments change daily",
+                            body: "A static number can't capture market movement. Your FIRE progress needs live tracking.",
+                            index: 2
+                        )
+                    }
+
+                    Spacer().frame(height: 28)
+
+                    // Footer
+                    Text("Flamora connects to your real accounts to give you the precise picture — and keeps it updated automatically.")
+                        .font(.bodySmall)
+                        .foregroundColor(AppColors.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .opacity(showFooter ? 1 : 0)
+
+                    Spacer().frame(height: 120)
+                }
+                .padding(.horizontal, AppSpacing.screenPadding)
+            }
+
+            // Sticky CTA（与 AgeView 一致）
+            VStack(spacing: 0) {
+                LinearGradient(
+                    colors: [Color.black.opacity(0), Color.black],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .frame(height: 28)
+
                 OB_PrimaryButton(title: "Get My Real Numbers", action: onNext)
-                    .padding(.bottom, AppSpacing.lg)
+                .background(Color.black)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear { startAnimations() }
     }
 
     @ViewBuilder
-    private func blindSpotCard(emoji: String, title: String, body: String, index: Int) -> some View {
-        HStack(alignment: .top, spacing: 14) {
-            Text(emoji)
-                .font(.system(size: 24))
+    private func blindSpotCard(systemImage: String, title: String, body: String, index: Int) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18))
+                .foregroundStyle(LinearGradient(
+                    colors: [AppColors.accentBlue, AppColors.accentPurple],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                ))
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(AppColors.textPrimary)
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
 
                 Text(body)
                     .font(.system(size: 15))
@@ -124,8 +143,12 @@ struct OB_AhaMomentView: View {
         }
         .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.backgroundCard)
-        .cornerRadius(AppRadius.md)
+        .background(AppColors.surface.opacity(0.6))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
         .opacity(showCards[index] ? 1 : 0)
         .offset(y: showCards[index] ? 0 : 20)
     }
@@ -153,6 +176,8 @@ struct OB_AhaMomentView: View {
 }
 
 #Preview {
-    OB_AhaMomentView(data: OnboardingData(), onNext: {}, onBack: {})
-        .background(AppBackgroundView())
+    ZStack {
+        Color.black.ignoresSafeArea()
+        OB_AhaMomentView(data: OnboardingData(), onNext: {}, onBack: {})
+    }
 }

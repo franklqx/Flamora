@@ -32,12 +32,24 @@ struct OB_LoadingView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                // Sparkle icon
-                Image(systemName: "sparkle")
-                    .font(.system(size: 32, weight: .light))
-                    .foregroundColor(AppColors.textPrimary)
-                    .rotationEffect(.degrees(rotation))
-                    .opacity(showIcon ? 1 : 0)
+                // Sparkle icon with glow
+                ZStack {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [AppColors.gradientStart.opacity(0.15), Color.clear],
+                                center: .center, startRadius: 0, endRadius: 80
+                            )
+                        )
+                        .frame(width: 140, height: 140)
+                        .opacity(showIcon ? 1 : 0)
+
+                    Image(systemName: "sparkle")
+                        .font(.system(size: 32, weight: .light))
+                        .foregroundColor(AppColors.textPrimary)
+                        .rotationEffect(.degrees(rotation))
+                        .opacity(showIcon ? 1 : 0)
+                }
 
                 Spacer().frame(height: 48)
 

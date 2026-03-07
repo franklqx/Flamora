@@ -14,14 +14,24 @@ struct OB_ContainerView: View {
 
     @State private var currentStep = 0
     @State private var data = OnboardingData()
+    @State private var dragOffset: CGFloat = 0
 
     private let supabase = SupabaseManager.shared
+
+    private var canGoBack: Bool {
+        [2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17].contains(currentStep)
+    }
 
     var body: some View {
         ZStack {
             AppColors.backgroundPrimary.ignoresSafeArea()
 
             currentStepView
+                .modifier(OB_DragBackModifier(
+                    isEnabled: canGoBack,
+                    dragOffset: $dragOffset,
+                    onBack: back
+                ))
                 .transition(.asymmetric(
                     insertion: .move(edge: .trailing).combined(with: .opacity),
                     removal: .move(edge: .leading).combined(with: .opacity)
@@ -84,6 +94,44 @@ struct OB_ContainerView: View {
         hasCompletedOnboarding = true
         withAnimation(.easeInOut(duration: 0.5)) {
             isOnboardingComplete = true
+        }
+    }
+}
+
+// MARK: - Drag Back Modifier
+
+private struct OB_DragBackModifier: ViewModifier {
+    let isEnabled: Bool
+    @Binding var dragOffset: CGFloat
+    let onBack: () -> Void
+
+    func body(content: Content) -> some View {
+        GeometryReader { geo in
+            content
+                .offset(x: isEnabled ? dragOffset : 0)
+                .gesture(
+                    DragGesture(minimumDistance: isEnabled ? 10 : .infinity)
+                        .onChanged { value in
+                            guard isEnabled, value.translation.width > 0 else { return }
+                            dragOffset = value.translation.width
+                        }
+                        .onEnded { value in
+                            guard isEnabled else { return }
+                            if value.translation.width > 100 {
+                                withAnimation(.easeOut(duration: 0.25)) {
+                                    dragOffset = geo.size.width
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                    onBack()
+                                    dragOffset = 0
+                                }
+                            } else {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    dragOffset = 0
+                                }
+                            }
+                        }
+                )
         }
     }
 }

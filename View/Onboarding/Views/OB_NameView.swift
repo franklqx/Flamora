@@ -17,20 +17,7 @@ struct OB_NameView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             Color.black.ignoresSafeArea()
-
-            // 左半屏点击返回区域（在底层，按钮和输入框优先接收点击）
-            GeometryReader { geo in
-                HStack(spacing: 0) {
-                    Color.clear
-                        .frame(width: geo.size.width / 2)
-                        .contentShape(Rectangle())
-                        .onTapGesture { onBack() }
-                    Color.clear
-                        .frame(maxWidth: .infinity)
-                        .contentShape(Rectangle())
-                        .onTapGesture { isFocused = false }
-                }
-            }
+                .onTapGesture { isFocused = false }
 
             VStack(alignment: .leading, spacing: 0) {
                 OB_PersonalizeProgress(currentStep: 2, totalSteps: 5)
@@ -101,22 +88,10 @@ struct OB_NameView: View {
             .padding(.horizontal, AppSpacing.screenPadding)
 
             // CTA
-            Button(action: {
+            OB_PrimaryButton(isValid: isValid, action: {
                 isFocused = false
                 onNext()
-            }) {
-                Text("Continue")
-                    .font(.bodyRegular)
-                    .fontWeight(.semibold)
-                    .foregroundColor(isValid ? .black : AppColors.textTertiary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(isValid ? Color.white : AppColors.backgroundCard)
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
-            }
-            .disabled(!isValid)
-            .padding(.horizontal, AppSpacing.screenPadding)
-            .padding(.bottom, AppSpacing.xxl)
+            })
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear { isFocused = false }

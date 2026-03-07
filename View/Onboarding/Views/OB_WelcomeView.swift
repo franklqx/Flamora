@@ -99,17 +99,7 @@ struct OB_WelcomeView: View {
                 .padding(.bottom, 20)
 
                 // Get Started CTA
-                Button(action: onNext) {
-                    Text("Get Started")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 58)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 32))
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 40)
+                OB_PrimaryButton(title: "Get Started", action: onNext)
             }
 
             // ── Left / right tap overlay (do not cover CTA) ─────────
@@ -134,7 +124,7 @@ struct OB_WelcomeView: View {
                         .frame(width: geo.size.width / 2)
                 }
             }
-            .padding(.bottom, 58 + 40 + 26 + 38)
+            .padding(.bottom, 56 + 48 + 26 + 38)  // 56 按钮高度 + xxl 底部 + 其他
         }
     }
 }

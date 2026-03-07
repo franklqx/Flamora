@@ -2,128 +2,239 @@
 //  OB_AgeView.swift
 //  Flamora app
 //
-//  Onboarding - Step 9: Age & Currency (Snapshot 1/5)
+//  Onboarding - 年龄 & 货币（Financial Snapshot 1/5）
+//  玻璃风格年龄滑块保留并升级
 //
 
 import SwiftUI
 
 struct OB_AgeView: View {
-    let data: OnboardingData
-    let onNext: () -> Void
-    let onBack: () -> Void
-
-    @State private var ageText = ""
+    @Bindable var data: OnboardingData
+    var onNext: () -> Void
+    var onBack: () -> Void
     @State private var showCurrencyPicker = false
+    @State private var hasInitialized = false
+    private let ageRange: ClosedRange<Double> = 18...65
 
     var body: some View {
-        ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+        ZStack(alignment: .bottom) {
+            Color.black.ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: 0) {
-                // Header
-                HStack {
-                    OB_BackButton(action: onBack)
-                    Spacer()
-                }
-                .padding(.horizontal, AppSpacing.md)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    OB_SnapshotProgress(current: 1, total: 5)
+                        .padding(.horizontal, AppSpacing.screenPadding)
+                        .padding(.top, AppSpacing.md)
 
-                OB_SnapshotProgress(current: 1)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.top, AppSpacing.sm)
+                    Spacer().frame(height: 40)
 
-                Spacer().frame(height: 32)
-
-                // Title
-                Text("Great, \(data.userName)!\nLet's crunch your numbers.")
-                    .font(.h1)
-                    .foregroundColor(AppColors.textPrimary)
-                    .padding(.horizontal, AppSpacing.lg)
-
-                Spacer().frame(height: 40)
-
-                // YOUR AGE
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("YOUR AGE")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(AppColors.textTertiary)
-                        .tracking(1)
-
-                    TextField("", text: $ageText, prompt: Text("28")
-                        .foregroundColor(AppColors.textTertiary))
-                        .font(.system(size: 18, weight: .regular))
-                        .foregroundColor(AppColors.textPrimary)
-                        .keyboardType(.numberPad)
-                        .padding()
-                        .background(AppColors.backgroundCard)
-                        .cornerRadius(AppRadius.md)
-                }
-                .padding(.horizontal, AppSpacing.lg)
-
-                Spacer().frame(height: 24)
-
-                // PRIMARY CURRENCY
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("PRIMARY CURRENCY")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(AppColors.textTertiary)
-                        .tracking(1)
-
-                    Button {
-                        showCurrencyPicker = true
-                    } label: {
-                        HStack {
-                            Text("\(data.currencySymbol)  \(data.currencyCode)")
-                                .font(.system(size: 18, weight: .regular))
-                                .foregroundColor(AppColors.textPrimary)
-                            Spacer()
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 14))
-                                .foregroundColor(AppColors.textTertiary)
-                        }
-                        .padding()
-                        .background(AppColors.backgroundCard)
-                        .cornerRadius(AppRadius.md)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Great, \(data.userName.isEmpty ? "Friend" : data.userName)!")
+                            .font(.obQuestion)
+                            .foregroundColor(.white)
+                        Text("Let's crunch your numbers")
+                            .font(.obQuestion)
+                            .foregroundColor(.white)
                     }
-                }
-                .padding(.horizontal, AppSpacing.lg)
 
-                Spacer()
+                    Spacer().frame(height: AppSpacing.xl)
 
-                // CTA
-                OB_PrimaryButton(
-                    title: "Next",
-                    disabled: ageText.trimmingCharacters(in: .whitespaces).isEmpty
-                ) {
-                    data.age = Double(ageText) ?? 28
-                    onNext()
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("YOUR AGE")
+                            .font(.obStepLabel)
+                            .foregroundColor(AppColors.textTertiary)
+                            .tracking(0.8)
+
+                        ageGlassCard
+                    }
+
+                    Spacer().frame(height: AppSpacing.lg)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("PRIMARY CURRENCY")
+                            .font(.obStepLabel)
+                            .foregroundColor(AppColors.textTertiary)
+                            .tracking(0.8)
+
+                        currencyButton
+                    }
+
+                    Spacer().frame(height: 120)
                 }
-                .padding(.bottom, AppSpacing.lg)
+                .padding(.horizontal, AppSpacing.screenPadding)
+            }
+
+            // Sticky CTA
+            VStack(spacing: 0) {
+                LinearGradient(
+                    colors: [Color.black.opacity(0), Color.black],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .frame(height: 28)
+
+                OB_PrimaryButton(title: "Next", action: onNext)
+                .background(Color.black)
             }
         }
-        .onTapGesture { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {
-            ageText = "\(Int(data.age))"
-            // Auto-detect currency from device locale on first visit
-            if data.age == 28 {
-                if let code = Locale.current.currency?.identifier,
-                   let match = currencyOptions.first(where: { $0.code == code }) {
-                    data.currencyCode = match.code
-                    data.currencySymbol = match.symbol
-                    data.country = match.country
-                }
+            _ = Self._sliderSetup
+            guard !hasInitialized else { return }
+            hasInitialized = true
+            if let code = Locale.current.currency?.identifier,
+               let match = currencyOptions.first(where: { $0.code == code }) {
+                data.currencyCode = match.code
+                data.currencySymbol = match.symbol
+                data.country = match.country
             }
         }
         .sheet(isPresented: $showCurrencyPicker) {
-            OB_CurrencyPickerSheet(
-                selectedCode: data.currencyCode,
-                onSelect: { option in
-                    data.currencyCode = option.code
-                    data.currencySymbol = option.symbol
-                    data.country = option.country
-                    showCurrencyPicker = false
+            OB_CurrencyPickerSheet(data: data, isPresented: $showCurrencyPicker)
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+        }
+    }
+
+    // MARK: - 年龄玻璃卡片
+
+    private var ageGlassCard: some View {
+        VStack(spacing: 16) {
+            HStack(alignment: .firstTextBaseline, spacing: 0) {
+                Spacer()
+                Text("\(Int(data.age))")
+                    .font(.system(size: 64, weight: .bold).monospacedDigit())
+                    .foregroundStyle(accentGradient)
+                    .contentTransition(.numericText())
+                    .fixedSize(horizontal: true, vertical: true)
+                    .frame(minWidth: 80, alignment: .center)
+                Spacer()
+            }
+            .frame(height: 80)
+
+            VStack(spacing: 8) {
+                ZStack(alignment: .leading) {
+                    // 渐变轨道在最底层
+                    GeometryReader { geo in
+                        let progress = CGFloat((data.age - ageRange.lowerBound) / (ageRange.upperBound - ageRange.lowerBound))
+                        let thumbOffset: CGFloat = 14 // thumb 半径，避免渐变条超出
+                        let trackWidth = geo.size.width - thumbOffset * 2
+
+                        ZStack(alignment: .leading) {
+                            // 底色轨道
+                            Capsule()
+                                .fill(Color.white.opacity(0.15))
+                                .frame(width: trackWidth, height: 4)
+
+                            // 渐变进度
+                            Capsule()
+                                .fill(accentGradient)
+                                .frame(width: trackWidth * progress, height: 4)
+                        }
+                        .offset(x: thumbOffset)
+                        .frame(maxHeight: .infinity, alignment: .center)
+                    }
+                    .frame(height: 28)
+                    .allowsHitTesting(false)
+
+                    // Slider 在上层，thumb 覆盖在进度条上面
+                    Slider(value: $data.age, in: ageRange, step: 1)
+                        .frame(height: 28)
                 }
+                .frame(height: 28)
+
+                HStack {
+                    Text("\(Int(ageRange.lowerBound))")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                    Spacer()
+                    Text("\(Int(ageRange.upperBound))")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .frame(height: 18)
+            }
+            .frame(height: 62)
+
+            HStack(alignment: .top, spacing: 6) {
+                Image(systemName: "sparkle")
+                    .font(.caption)
+                    .foregroundStyle(accentGradient)
+                Text(ageMicrocopy)
+                    .font(.caption)
+                    .foregroundColor(AppColors.textSecondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 20)
+        .frame(minHeight: 238)
+        .background(AppColors.surface.opacity(0.6))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.xl)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+
+    // MARK: - 货币选择按钮
+
+    private var currencyButton: some View {
+        Button {
+            showCurrencyPicker = true
+        } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(data.country)
+                        .font(.bodyRegular)
+                        .foregroundColor(.white)
+                    Text("\(data.currencyCode) \(data.currencySymbol)")
+                        .font(.bodySmall)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(AppColors.textTertiary)
+            }
+            .padding(.horizontal, 20)
+            .frame(height: 64)
+            .background(AppColors.surface.opacity(0.6))
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.lg)
+                    .stroke(AppColors.borderDefault, lineWidth: 1)
             )
-            .presentationDetents([.medium])
+        }
+    }
+
+    // MARK: - Age Microcopy
+
+    private var accentGradient: LinearGradient {
+        LinearGradient(
+            colors: [AppColors.accentBlue, AppColors.accentPurple],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+
+    private static let _sliderSetup: Void = {
+        UISlider.appearance().thumbTintColor = .white
+        UISlider.appearance().minimumTrackTintColor = .clear
+        UISlider.appearance().maximumTrackTintColor = .clear
+    }()
+
+    private var ageMicrocopy: String {
+        let age = Int(data.age)
+        if age < 30 {
+            return "Time on your side. Small savings snowball fast."
+        } else if age <= 45 {
+            return "Earning power at its peak. Let's use it."
+        } else {
+            return "Start earlier than you think. Let's prove it."
         }
     }
 }
@@ -131,32 +242,30 @@ struct OB_AgeView: View {
 // MARK: - Currency Picker Sheet
 
 private struct OB_CurrencyPickerSheet: View {
-    let selectedCode: String
-    let onSelect: (CurrencyOption) -> Void
+    @Bindable var data: OnboardingData
+    @Binding var isPresented: Bool
 
     var body: some View {
         NavigationStack {
             List(currencyOptions) { option in
                 Button {
-                    onSelect(option)
+                    data.country = option.country
+                    data.currencyCode = option.code
+                    data.currencySymbol = option.symbol
+                    isPresented = false
                 } label: {
                     HStack {
-                        Text(option.symbol)
-                            .font(.system(size: 18, weight: .medium))
-                            .frame(width: 40, alignment: .leading)
-                        Text(option.code)
-                            .font(.system(size: 16, weight: .medium))
-                        Text("— \(option.country)")
-                            .font(.system(size: 14))
-                            .foregroundColor(.secondary)
+                        Text(option.country)
+                            .foregroundColor(.primary)
                         Spacer()
-                        if option.code == selectedCode {
+                        Text("\(option.code) (\(option.symbol))")
+                            .foregroundColor(.secondary)
+                        if data.currencyCode == option.code {
                             Image(systemName: "checkmark")
-                                .foregroundColor(AppColors.brandPrimary)
+                                .foregroundColor(AppColors.accentBlue)
                         }
                     }
                 }
-                .foregroundColor(.primary)
             }
             .navigationTitle("Select Currency")
             .navigationBarTitleDisplayMode(.inline)
@@ -165,6 +274,8 @@ private struct OB_CurrencyPickerSheet: View {
 }
 
 #Preview {
-    OB_AgeView(data: OnboardingData(), onNext: {}, onBack: {})
-        .background(AppBackgroundView())
+    ZStack {
+        Color.black.ignoresSafeArea()
+        OB_AgeView(data: OnboardingData(), onNext: {}, onBack: {})
+    }
 }

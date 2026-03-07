@@ -67,19 +67,7 @@ struct OB_PainPointsView: View {
                 )
                 .frame(height: 32)
 
-                Button(action: onNext) {
-                    Text("Continue")
-                        .font(.bodyRegular)
-                        .fontWeight(.semibold)
-                        .foregroundColor(isValid ? .black : AppColors.textTertiary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(isValid ? Color.white : AppColors.backgroundCard)
-                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
-                }
-                .disabled(!isValid)
-                .padding(.horizontal, AppSpacing.screenPadding)
-                .padding(.bottom, AppSpacing.xxl)
+                OB_PrimaryButton(isValid: isValid, action: onNext)
                 .background(Color.black)
             }
         }

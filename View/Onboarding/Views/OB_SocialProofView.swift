@@ -20,19 +20,6 @@ struct OB_SocialProofView: View {
         ZStack {
             AppColors.backgroundPrimary.ignoresSafeArea()
 
-            // 左半屏点击返回区域（在底层，按钮优先接收点击）
-            GeometryReader { geo in
-                HStack(spacing: 0) {
-                    Color.clear
-                        .frame(width: geo.size.width / 2)
-                        .contentShape(Rectangle())
-                        .onTapGesture { onBack() }
-                    Color.clear
-                        .frame(maxWidth: .infinity)
-                        .contentShape(Rectangle())
-                }
-            }
-
             VStack(spacing: 0) {
                 Spacer()
                     .allowsHitTesting(false)
@@ -110,7 +97,6 @@ struct OB_SocialProofView: View {
 
                 // CTA
                 OB_PrimaryButton(title: "Continue", action: onNext)
-                    .padding(.bottom, AppSpacing.lg)
             }
         }
         .onAppear {

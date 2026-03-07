@@ -2,29 +2,44 @@
 //  OB_PrimaryButton.swift
 //  Flamora app
 //
-//  Onboarding - Primary CTA Button
+//  Onboarding - Primary CTA Button (统一样式)
 //
 
 import SwiftUI
 
 struct OB_PrimaryButton: View {
-    let title: String
-    var disabled: Bool = false
+    var title: String = "Continue"
+    var isValid: Bool = true
+    /// 为 false 时不含外层 padding，适用于自定义布局（如按钮下方有副标题）
+    var includeContainerPadding: Bool = true
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: AppTypography.body, weight: .semibold))
-                .foregroundColor(AppColors.textInverse)
+                .font(.bodyRegular)
+                .fontWeight(.semibold)
+                .foregroundColor(isValid ? .black : AppColors.textTertiary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
-                .background(Color.white)
-                .cornerRadius(14)
+                .background(isValid ? Color.white : AppColors.backgroundCard)
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
         }
-        .disabled(disabled)
-        .opacity(disabled ? 0.3 : 1.0)
-        .padding(.horizontal, 24)
+        .disabled(!isValid)
+        .modifier(ContainerPaddingModifier(include: includeContainerPadding))
+    }
+}
+
+private struct ContainerPaddingModifier: ViewModifier {
+    let include: Bool
+    func body(content: Content) -> some View {
+        if include {
+            content
+                .padding(.horizontal, AppSpacing.screenPadding)
+                .padding(.bottom, AppSpacing.xxl)
+        } else {
+            content
+        }
     }
 }
 

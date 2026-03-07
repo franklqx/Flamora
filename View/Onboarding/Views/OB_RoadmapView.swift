@@ -22,41 +22,27 @@ struct OB_RoadmapView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            Color.black.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                // MARK: - Header
-                HStack {
-                    OB_BackButton(action: onBack)
-                    Spacer()
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 28) {
+                    Spacer().frame(height: 40)
+                    dynamicTitleSection
+                    dataCardsSection
+                    milestoneTimelineSection
+                    optimizationSection
+                    urgencyCardSection
+                    lockedInsightsSection
+                    Spacer().frame(height: 120)
                 }
-                .overlay {
-                    Text("Flamora Roadmap")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(AppColors.textTertiary)
-                        .tracking(1)
-                }
-                .padding(.horizontal, AppSpacing.md)
-
-                // MARK: - Scrollable Content
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 28) {
-                        dynamicTitleSection
-                        dataCardsSection
-                        milestoneTimelineSection
-                        optimizationSection
-                        urgencyCardSection
-                        lockedInsightsSection
-                        Spacer().frame(height: 120)
-                    }
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.top, 16)
-                }
+                .padding(.horizontal, AppSpacing.screenPadding)
+                .padding(.top, AppSpacing.md)
             }
 
             // MARK: - Sticky Bottom CTA
             stickyBottomCTA
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear { startAnimations() }
     }
 
@@ -67,17 +53,21 @@ struct OB_RoadmapView: View {
         VStack(alignment: .leading, spacing: 8) {
             if data.savingsRate <= 0 {
                 // cannotSave
-                Text("Let's find your\nstarting point")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(AppColors.textPrimary)
+                Text("Let's find your starting point")
+                    .font(.obQuestion)
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                 Text("Most people have hidden savings in their spending.")
                     .font(.bodyRegular)
                     .foregroundColor(AppColors.textSecondary)
             } else if data.freedomAge <= Int(data.age) + 5 {
                 // almostFree
-                Text("You can reach freedom\nat age \(data.freedomAge)")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(AppColors.textPrimary)
+                Text("You can reach freedom at age \(data.freedomAge)")
+                    .font(.obQuestion)
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                 Text("You're ahead of 95% of people your age.")
                     .font(.bodyRegular)
                     .foregroundColor(AppColors.success)
@@ -86,25 +76,31 @@ struct OB_RoadmapView: View {
                     .foregroundColor(AppColors.textSecondary)
             } else if (Double(data.currentNetWorth) ?? 0) == 0 && data.savingsRate > 0 {
                 // notInvesting
-                Text("You can reach freedom\nat age \(data.freedomAge)")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(AppColors.textPrimary)
+                Text("You can reach freedom at age \(data.freedomAge)")
+                    .font(.obQuestion)
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                 Text("\(data.yearsToFire) years from now")
                     .font(.bodyRegular)
                     .foregroundColor(AppColors.textSecondary)
             } else if data.freedomAge > 65 {
                 // veryFar
-                Text("Your journey starts\ntoday")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(AppColors.textPrimary)
+                Text("Your journey starts today")
+                    .font(.obQuestion)
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                 Text("Small changes compound into big results.")
                     .font(.bodyRegular)
                     .foregroundColor(AppColors.textSecondary)
             } else {
                 // normal
-                Text("You can reach freedom\nat age \(data.freedomAge)")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(AppColors.textPrimary)
+                Text("You can reach freedom at age \(data.freedomAge)")
+                    .font(.obQuestion)
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                 Text("\(data.yearsToFire) years from now")
                     .font(.bodyRegular)
                     .foregroundColor(AppColors.textSecondary)
@@ -137,24 +133,28 @@ struct OB_RoadmapView: View {
     private func dataCard(label: String, value: String, footer: String) -> some View {
         VStack(spacing: 8) {
             Text(label)
-                .font(.system(size: 12, weight: .medium))
+                .font(.obStepLabel)
                 .foregroundColor(AppColors.textTertiary)
                 .tracking(1)
 
             Text(value)
                 .font(.system(size: 32, weight: .bold))
-                .foregroundColor(AppColors.textPrimary)
+                .foregroundColor(.white)
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
 
             Text(footer)
-                .font(.system(size: 12))
+                .font(.caption)
                 .foregroundColor(AppColors.textTertiary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
-        .background(AppColors.backgroundCard)
-        .cornerRadius(16)
+        .background(AppColors.surface.opacity(0.6))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.xl)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 
     // MARK: - Section 3: Milestone Timeline
@@ -183,27 +183,32 @@ struct OB_RoadmapView: View {
                 ZStack(alignment: .leading) {
                     // Track
                     Capsule()
-                        .fill(Color(hex: "#333333"))
+                        .fill(Color.white.opacity(0.15))
                         .frame(height: 4)
 
                     // Filled
                     Capsule()
                         .fill(
                             LinearGradient(
-                                colors: [AppColors.gradientStart, AppColors.gradientEnd],
+                                colors: [AppColors.accentBlue, AppColors.accentPurple],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
                         )
                         .frame(width: max(0, w * CGFloat(progress) * timelineProgress), height: 4)
 
-                    // Milestone dots
-                    ForEach([0.25, 0.5, 0.75, 1.0], id: \.self) { pos in
+                    // Milestone dots (last one is flame)
+                    ForEach([0.25, 0.5, 0.75], id: \.self) { pos in
                         Circle()
-                            .fill(pos <= progress ? AppColors.gradientEnd : Color(hex: "#555555"))
+                            .fill(pos <= progress ? AppColors.accentPurple : Color.white.opacity(0.2))
                             .frame(width: 6, height: 6)
                             .position(x: w * CGFloat(pos), y: 2)
                     }
+                    // Last milestone: flame
+                    Image(systemName: "flame")
+                        .font(.system(size: 14))
+                        .foregroundColor(progress >= 1.0 ? AppColors.accentPurple : Color.white.opacity(0.2))
+                        .position(x: max(14, w - 7), y: 2)
 
                     // "You are here" dot
                     Circle()
@@ -235,7 +240,7 @@ struct OB_RoadmapView: View {
             milestoneLabel("Freedom\nwithin reach")
             Spacer()
             Spacer()
-            milestoneLabel("You're\nfree 🔥")
+            milestoneLabel("You're\nFIRE")
         }
     }
 
@@ -287,44 +292,70 @@ struct OB_RoadmapView: View {
     @ViewBuilder
     private var urgencyCardSection: some View {
         HStack(spacing: 0) {
-            // Left orange accent
+            // Left accent
             RoundedRectangle(cornerRadius: 2)
-                .fill(AppColors.warning)
+                .fill(
+                    LinearGradient(
+                        colors: [AppColors.accentBlue, AppColors.accentPurple],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
                 .frame(width: 3)
 
             VStack(alignment: .leading, spacing: 8) {
                 if data.savingsRate <= 0 {
                     // cannotSave
-                    Text("⚡ The cost of not knowing")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(AppColors.textPrimary)
+                    HStack(spacing: 6) {
+                        Image(systemName: "bolt")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.white)
+                        Text("The cost of not knowing")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
                     Text("Without tracking, the average person overspends $300–500/month without realizing it.")
                         .font(.system(size: 15))
                         .foregroundColor(AppColors.textSecondary)
                         .lineSpacing(3)
                 } else if data.freedomAge <= Int(data.age) + 5 {
                     // almostFree
-                    Text("⚡ Don't lose momentum")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(AppColors.textPrimary)
+                    HStack(spacing: 6) {
+                        Image(systemName: "bolt")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.white)
+                        Text("Don't lose momentum")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
                     Text("You're this close. A small slip in spending could push your freedom date back by months.")
                         .font(.system(size: 15))
                         .foregroundColor(AppColors.textSecondary)
                         .lineSpacing(3)
                 } else if data.freedomAge > 65 {
                     // veryFar
-                    Text("⚡ Time is your biggest asset")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(AppColors.textPrimary)
+                    HStack(spacing: 6) {
+                        Image(systemName: "bolt")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.white)
+                        Text("Time is your biggest asset")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
                     Text("The earlier you start, the more compound interest works for you. Even 1 year makes a difference.")
                         .font(.system(size: 15))
                         .foregroundColor(AppColors.textSecondary)
                         .lineSpacing(3)
                 } else {
                     // normal or notInvesting
-                    Text("⚡ Every month you wait costs you")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(AppColors.textPrimary)
+                    HStack(spacing: 6) {
+                        Image(systemName: "bolt")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.white)
+                        Text("Every month you wait costs you")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
                     Text("If you delay your plan by just 1 year, your freedom age moves from \(data.freedomAge) to \(data.freedomAge + data.delayPenalty). That's \(data.delayPenalty) extra years of working.")
                         .font(.system(size: 15))
                         .foregroundColor(AppColors.textSecondary)
@@ -333,8 +364,12 @@ struct OB_RoadmapView: View {
             }
             .padding(16)
         }
-        .background(AppColors.backgroundCard)
-        .cornerRadius(AppRadius.md)
+        .background(AppColors.surface.opacity(0.6))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
         .opacity(showUrgency ? 1 : 0)
     }
 
@@ -346,10 +381,10 @@ struct OB_RoadmapView: View {
             HStack(spacing: 8) {
                 Text("Personalized Insights")
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(AppColors.textPrimary)
-                Image(systemName: "lock.fill")
+                    .foregroundColor(.white)
+                Image(systemName: "lock")
                     .font(.system(size: 14))
-                    .foregroundColor(AppColors.textPrimary)
+                    .foregroundColor(.white)
             }
 
             let titles = insightTitles
@@ -390,7 +425,7 @@ struct OB_RoadmapView: View {
         VStack(alignment: .leading, spacing: 0) {
             Text(title)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(AppColors.textPrimary)
+                .foregroundColor(.white)
                 .padding(.horizontal, 16)
                 .padding(.top, 16)
                 .padding(.bottom, 8)
@@ -399,15 +434,15 @@ struct OB_RoadmapView: View {
                 // Fake blurred UI elements
                 VStack(alignment: .leading, spacing: 10) {
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(AppColors.borderDefault)
+                        .fill(Color.white.opacity(0.1))
                         .frame(width: 180, height: 10)
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(AppColors.borderDefault)
+                        .fill(Color.white.opacity(0.1))
                         .frame(width: 130, height: 10)
                     HStack(spacing: 12) {
-                        Circle().fill(AppColors.borderDefault).frame(width: 32, height: 32)
+                        Circle().fill(Color.white.opacity(0.1)).frame(width: 32, height: 32)
                         RoundedRectangle(cornerRadius: 4)
-                            .fill(AppColors.borderDefault)
+                            .fill(Color.white.opacity(0.1))
                             .frame(width: 100, height: 10)
                     }
                 }
@@ -417,14 +452,18 @@ struct OB_RoadmapView: View {
                 .blur(radius: 10)
 
                 // Lock icon
-                Image(systemName: "lock.fill")
+                Image(systemName: "lock")
                     .font(.system(size: 24))
                     .foregroundColor(.white.opacity(0.3))
             }
             .padding(.bottom, 12)
         }
-        .background(AppColors.backgroundCard)
-        .cornerRadius(AppRadius.md)
+        .background(AppColors.surface.opacity(0.6))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 
     // MARK: - Sticky Bottom CTA
@@ -432,23 +471,23 @@ struct OB_RoadmapView: View {
     @ViewBuilder
     private var stickyBottomCTA: some View {
         VStack(spacing: 0) {
-            // Gradient fade
             LinearGradient(
-                colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary],
+                colors: [Color.black.opacity(0), Color.black],
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .frame(height: 40)
+            .frame(height: 28)
 
             VStack(spacing: 8) {
-                OB_PrimaryButton(title: "Unlock My Full Plan", action: onNext)
+                OB_PrimaryButton(title: "Unlock My Full Plan", includeContainerPadding: false, action: onNext)
 
                 Text("Your complete roadmap with real data insights")
                     .font(.caption)
                     .foregroundColor(AppColors.textTertiary)
             }
-            .padding(.bottom, AppSpacing.lg)
-            .background(AppColors.backgroundPrimary)
+            .padding(.horizontal, AppSpacing.screenPadding)
+            .padding(.bottom, AppSpacing.xxl)
+            .background(Color.black)
         }
     }
 
@@ -498,6 +537,8 @@ struct OB_RoadmapView: View {
 }
 
 #Preview {
-    OB_RoadmapView(data: OnboardingData(), onNext: {}, onBack: {})
-        .background(AppBackgroundView())
+    ZStack {
+        Color.black.ignoresSafeArea()
+        OB_RoadmapView(data: OnboardingData(), onNext: {}, onBack: {})
+    }
 }

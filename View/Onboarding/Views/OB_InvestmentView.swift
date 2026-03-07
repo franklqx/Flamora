@@ -8,87 +8,80 @@
 import SwiftUI
 
 struct OB_InvestmentView: View {
-    let data: OnboardingData
+    @Bindable var data: OnboardingData
     let onNext: () -> Void
     let onBack: () -> Void
 
     @State private var investmentValue: Double = 0
     @State private var showInsight = false
     @State private var insightWorkItem: DispatchWorkItem?
+    private let investmentRange: ClosedRange<Double> = 0...2_000_000
 
     private var monthlyPassiveIncome: Int {
         Int((investmentValue * 0.04) / 12)
     }
 
     var body: some View {
-        ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+        ZStack(alignment: .bottom) {
+            Color.black.ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: 0) {
-                // Header
-                HStack {
-                    OB_BackButton(action: onBack)
-                    Spacer()
-                }
-                .padding(.horizontal, AppSpacing.md)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    OB_SnapshotProgress(current: 4, total: 5)
+                        .padding(.horizontal, AppSpacing.screenPadding)
+                        .padding(.top, AppSpacing.md)
 
-                OB_SnapshotProgress(current: 4)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.top, AppSpacing.sm)
+                    Spacer().frame(height: 40)
 
-                Spacer().frame(height: 32)
-
-                Text("What's your total\ninvestment portfolio\nvalue?")
-                    .font(.h1)
-                    .foregroundColor(AppColors.textPrimary)
-                    .padding(.horizontal, AppSpacing.lg)
-
-                Spacer().frame(height: 8)
-
-                Text("Including stocks, bonds, retirement (401k, IRA), crypto, etc.")
-                    .font(.bodySmall)
-                    .foregroundColor(AppColors.textSecondary)
-                    .padding(.horizontal, AppSpacing.lg)
-
-                Spacer().frame(height: 48)
-
-                // Slider
-                OB_IncomeSlider(
-                    value: $investmentValue,
-                    range: 0...2_000_000,
-                    step: 1000,
-                    currencySymbol: data.currencySymbol,
-                    suffix: "",
-                    onEditingChanged: { editing in
-                        if editing {
-                            showInsight = false
-                            insightWorkItem?.cancel()
-                        } else {
-                            scheduleInsight()
-                        }
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("What's your total investment portfolio value?")
+                            .font(.obQuestion)
+                            .foregroundColor(.white)
+                        Text("Including stocks, bonds, retirement (401k, IRA), crypto, etc.")
+                            .font(.bodySmall)
+                            .foregroundColor(AppColors.textSecondary)
                     }
-                )
-                .padding(.horizontal, AppSpacing.lg)
 
-                Spacer().frame(height: 32)
+                    Spacer().frame(height: AppSpacing.xl)
 
-                // Micro insight
-                if showInsight {
-                    insightCard
-                        .padding(.horizontal, AppSpacing.lg)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("INVESTMENT PORTFOLIO")
+                            .font(.obStepLabel)
+                            .foregroundColor(AppColors.textTertiary)
+                            .tracking(0.8)
+
+                        investmentCard
+                    }
+
+                    Spacer().frame(height: AppSpacing.lg)
+
+                    if showInsight {
+                        insightCard
+                    }
+
+                    Spacer().frame(height: 120)
                 }
+                .padding(.horizontal, AppSpacing.screenPadding)
+            }
 
-                Spacer()
+            // Sticky CTA（与 AgeView 一致）
+            VStack(spacing: 0) {
+                LinearGradient(
+                    colors: [Color.black.opacity(0), Color.black],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .frame(height: 28)
 
-                // CTA
-                OB_PrimaryButton(title: "Next") {
+                OB_PrimaryButton(title: "Next", action: {
                     data.currentNetWorth = "\(Int(investmentValue))"
                     onNext()
-                }
-                .padding(.bottom, AppSpacing.lg)
+                })
+                .background(Color.black)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {
+            _ = Self._sliderSetup
             if let saved = Double(data.currentNetWorth), saved > 0 {
                 investmentValue = saved
                 showInsight = true
@@ -96,32 +89,121 @@ struct OB_InvestmentView: View {
         }
     }
 
-    // MARK: - Dynamic Insight
+    // MARK: - 投资玻璃卡片（与 AgeView 滑块样式一致）
+
+    private var investmentCard: some View {
+        VStack(spacing: 16) {
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Spacer()
+                Text(data.currencySymbol)
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundColor(.white)
+                Text(formattedInvestment)
+                    .font(.system(size: 48, weight: .bold).monospacedDigit())
+                    .foregroundStyle(accentGradient)
+                    .contentTransition(.numericText())
+                Spacer()
+            }
+            .frame(height: 80)
+
+            VStack(spacing: 8) {
+                ZStack(alignment: .leading) {
+                    GeometryReader { geo in
+                        let progress = CGFloat((investmentValue - investmentRange.lowerBound) / (investmentRange.upperBound - investmentRange.lowerBound))
+                        let thumbOffset: CGFloat = 14
+                        let trackWidth = geo.size.width - thumbOffset * 2
+
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(Color.white.opacity(0.15))
+                                .frame(width: trackWidth, height: 4)
+                            Capsule()
+                                .fill(accentGradient)
+                                .frame(width: trackWidth * progress, height: 4)
+                        }
+                        .offset(x: thumbOffset)
+                        .frame(maxHeight: .infinity, alignment: .center)
+                    }
+                    .frame(height: 28)
+                    .allowsHitTesting(false)
+
+                    Slider(value: $investmentValue, in: investmentRange, step: 1000)
+                        .frame(height: 28)
+                        .onChange(of: investmentValue) { _, _ in
+                            scheduleInsight()
+                        }
+                }
+                .frame(height: 28)
+
+                HStack {
+                    Text("\(data.currencySymbol)0")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                    Spacer()
+                    Text("\(data.currencySymbol)2M")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .frame(height: 18)
+            }
+            .frame(height: 62)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 20)
+        .frame(minHeight: 200)
+        .background(AppColors.surface.opacity(0.6))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.xl)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+
+    private var accentGradient: LinearGradient {
+        LinearGradient(
+            colors: [AppColors.accentBlue, AppColors.accentPurple],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+
+    private static let _sliderSetup: Void = {
+        UISlider.appearance().thumbTintColor = .white
+        UISlider.appearance().minimumTrackTintColor = .clear
+        UISlider.appearance().maximumTrackTintColor = .clear
+    }()
+
+    private var formattedInvestment: String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        return formatter.string(from: NSNumber(value: investmentValue)) ?? "\(Int(investmentValue))"
+    }
+
+    // MARK: - Dynamic Insight Card
 
     @ViewBuilder
     private var insightCard: some View {
         let passiveStr = formatCurrency(Double(monthlyPassiveIncome))
         if investmentValue == 0 {
             OB_MicroInsightCard(
-                emoji: "🌱",
+                systemImage: "chart.line.uptrend.xyaxis",
                 text: "Everyone starts at zero. Let's build your plan."
             )
         } else if investmentValue <= 50000 {
             OB_MicroInsightCard(
-                emoji: "📈",
+                systemImage: "chart.line.uptrend.xyaxis",
                 text: "Your investments currently generate ~\(passiveStr)/mo in sustainable passive income (based on the 4% rule) — let's grow it.",
                 highlightText: "~\(passiveStr)/mo"
             )
         } else {
             OB_MicroInsightCard(
-                emoji: "🔥",
+                systemImage: "chart.line.uptrend.xyaxis",
                 text: "Your investments currently generate ~\(passiveStr)/mo in sustainable passive income (based on the 4% rule) — you're on your way!",
                 highlightText: "~\(passiveStr)/mo"
             )
         }
     }
-
-    // MARK: - Helpers
 
     private func formatCurrency(_ value: Double) -> String {
         let formatter = NumberFormatter()
@@ -143,6 +225,8 @@ struct OB_InvestmentView: View {
 }
 
 #Preview {
-    OB_InvestmentView(data: OnboardingData(), onNext: {}, onBack: {})
-        .background(AppBackgroundView())
+    ZStack {
+        Color.black.ignoresSafeArea()
+        OB_InvestmentView(data: OnboardingData(), onNext: {}, onBack: {})
+    }
 }

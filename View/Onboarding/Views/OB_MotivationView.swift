@@ -80,19 +80,7 @@ struct OB_MotivationView: View {
                 )
                 .frame(height: 32)
 
-                Button(action: onNext) {
-                    Text("Continue")
-                        .font(.bodyRegular)
-                        .fontWeight(.semibold)
-                        .foregroundColor(isValid ? .black : AppColors.textTertiary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(isValid ? Color.white : AppColors.backgroundCard)
-                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
-                }
-                .disabled(!isValid)
-                .padding(.horizontal, AppSpacing.screenPadding)
-                .padding(.bottom, AppSpacing.xxl)
+                OB_PrimaryButton(isValid: isValid, action: onNext)
                 .background(Color.black)
             }
         }
@@ -152,7 +140,7 @@ struct MotivationCard: View {
                 // 始终预留勾选位宽度，选中与否文字区域不变，避免换行
                 Group {
                     if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
+                        Image(systemName: "checkmark.circle")
                             .foregroundStyle(
                                 LinearGradient(
                                     colors: AppColors.gradientFire,

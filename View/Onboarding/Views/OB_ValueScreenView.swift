@@ -17,16 +17,9 @@ struct OB_ValueScreenView: View {
             AppColors.backgroundPrimary.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Header
-                HStack {
-                    OB_BackButton(action: onBack)
-                    Spacer()
-                }
-                .padding(.horizontal, AppSpacing.md)
-
                 OB_PersonalizeProgress(currentStep: 5, totalSteps: 5)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.top, AppSpacing.sm)
+                    .padding(.horizontal, AppSpacing.screenPadding)
+                    .padding(.top, AppSpacing.md)
 
                 // Content
                 ScrollView(showsIndicators: false) {
@@ -48,7 +41,6 @@ struct OB_ValueScreenView: View {
 
                 // CTA
                 OB_PrimaryButton(title: "Continue", action: onNext)
-                    .padding(.bottom, AppSpacing.lg)
             }
         }
     }
@@ -272,7 +264,7 @@ private struct ValueMoneyTrackingContent: View {
                         }
                     }
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .transition(.opacity)
             }
         }
         .background(AppColors.backgroundCardHover)
