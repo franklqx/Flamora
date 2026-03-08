@@ -27,7 +27,7 @@ struct PortfolioCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(formatCurrency(portfolio.totalBalance))
                     .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 HStack(spacing: 4) {
                     Image(systemName: "arrow.up.right")

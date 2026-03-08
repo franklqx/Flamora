@@ -112,14 +112,14 @@ private extension IncomeDetailView {
             HStack(alignment: .firstTextBaseline) {
                 Text(data.title)
                     .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 Spacer()
 
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .padding(.top, 2)
                 }
                 .buttonStyle(.plain)
@@ -128,7 +128,7 @@ private extension IncomeDetailView {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(formatCurrency(selectedTotal))
                     .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 Text("earned in \(selectedMonthLabel)")
                     .font(.system(size: 16, weight: .medium))
@@ -246,7 +246,7 @@ private extension IncomeDetailView {
         VStack(alignment: .leading, spacing: 16) {
             Text("Sources")
                 .font(.system(size: 22, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
 
             VStack(spacing: 12) {
                 ForEach(selectedSources) { source in
@@ -279,7 +279,7 @@ private extension IncomeDetailView {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(source.name)
                             .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
 
                         Text("\(source.account) · \(source.type.displayName)")
                             .font(.system(size: 13, weight: .medium))
@@ -291,7 +291,7 @@ private extension IncomeDetailView {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(formatCurrency(source.amount))
                             .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
 
                         Text("\(Int(source.percentage.rounded()))%")
                             .font(.system(size: 13, weight: .medium))
@@ -413,7 +413,7 @@ private struct IncomeSourceEditorSheet: View {
                     HStack {
                         Text("Edit Source")
                             .font(.system(size: 33, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
 
                         Spacer()
 
@@ -429,13 +429,13 @@ private struct IncomeSourceEditorSheet: View {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Source Name")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
 
                         TextField("Rental Property", text: $sourceName)
                             .textInputAutocapitalization(.words)
                             .disableAutocorrection(true)
                             .font(.system(size: 17, weight: .medium))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .padding(.horizontal, 14)
                             .frame(height: 48)
                             .background(
@@ -447,7 +447,7 @@ private struct IncomeSourceEditorSheet: View {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Income Type")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
 
                         HStack(spacing: 6) {
                             ForEach(IncomeSourceType.allCases, id: \.self) { type in
@@ -497,7 +497,7 @@ private struct IncomeSourceEditorSheet: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Smart Rules")
                                 .font(.system(size: 17, weight: .semibold))
-                                .foregroundColor(.white)
+                                .foregroundStyle(.white)
 
                             Text("Apply to all history & future records")
                                 .font(.system(size: 14, weight: .medium))
@@ -522,7 +522,7 @@ private struct IncomeSourceEditorSheet: View {
                 Button(action: onSave) {
                     Text("Save Changes")
                         .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
                         .background(
@@ -638,14 +638,14 @@ private extension SpendingAnalysisDetailView {
             HStack(alignment: .firstTextBaseline) {
                 Text(data.title)
                     .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 Spacer()
 
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .padding(.top, 2)
                 }
                 .buttonStyle(.plain)
@@ -654,7 +654,7 @@ private extension SpendingAnalysisDetailView {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(formatCurrencyNoCents(selectedTotal))
                     .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 Text("spend in \(selectedMonthLabel)")
                     .font(.system(size: 16, weight: .medium))
@@ -720,7 +720,7 @@ private extension SpendingAnalysisDetailView {
         VStack(alignment: .leading, spacing: 16) {
             Text("Categories")
                 .font(.system(size: 22, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
 
             VStack(spacing: 12) {
                 ForEach(selectedCategories) { category in
@@ -753,12 +753,12 @@ private extension SpendingAnalysisDetailView {
                     HStack(spacing: 10) {
                         Image(systemName: category.icon)
                             .font(.system(size: 21, weight: .semibold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .frame(width: 24)
 
                         Text(category.name)
                             .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                     }
 
                     Spacer()
@@ -766,7 +766,7 @@ private extension SpendingAnalysisDetailView {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(formatCurrency(category.amount))
                             .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
 
                         Text("\(Int(category.percentage.rounded()))%")
                             .font(.system(size: 13, weight: .medium))
@@ -979,7 +979,7 @@ private extension SpendingCategoryTransactionsDetailView {
         Button(action: { dismiss() }) {
             Image(systemName: "chevron.left")
                 .font(.system(size: 26, weight: .semibold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
                 .padding(.vertical, 8)
         }
         .buttonStyle(.plain)
@@ -989,11 +989,11 @@ private extension SpendingCategoryTransactionsDetailView {
         VStack(alignment: .leading, spacing: 8) {
             Text(category.name)
                 .font(.system(size: 28, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
 
             Text(formatCurrency(category.amount))
                 .font(.system(size: 48, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
 
             Text("Total spend in \(monthLabel)")
                 .font(.system(size: 16, weight: .medium))
@@ -1030,7 +1030,7 @@ private extension SpendingCategoryTransactionsDetailView {
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.merchant)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 Text(item.subtitle)
                     .font(.system(size: 13, weight: .medium))
@@ -1041,7 +1041,7 @@ private extension SpendingCategoryTransactionsDetailView {
 
             Text(formatCurrency(item.amount))
                 .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
                 .padding(.top, 2)
         }
         .padding(.vertical, 14)
@@ -1142,14 +1142,14 @@ private extension TotalSpendingAnalysisDetailView {
             HStack(alignment: .firstTextBaseline) {
                 Text(data.title)
                     .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 Spacer()
 
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .padding(.top, 2)
                 }
                 .buttonStyle(.plain)
@@ -1158,7 +1158,7 @@ private extension TotalSpendingAnalysisDetailView {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(formatCurrencyNoCents(selectedTotal))
                     .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 Text("spend in \(selectedMonthLabel)")
                     .font(.system(size: 16, weight: .medium))
@@ -1237,7 +1237,7 @@ private extension TotalSpendingAnalysisDetailView {
         VStack(alignment: .leading, spacing: 16) {
             Text("Sources")
                 .font(.system(size: 22, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
 
             if let monthData = selectedMonthData {
                 VStack(spacing: 12) {
@@ -1268,7 +1268,7 @@ private extension TotalSpendingAnalysisDetailView {
             VStack(alignment: .leading, spacing: 4) {
                 Text(name)
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 Text("\(selectedMonthLabel) 2026")
                     .font(.system(size: 13, weight: .medium))
@@ -1280,7 +1280,7 @@ private extension TotalSpendingAnalysisDetailView {
             VStack(alignment: .trailing, spacing: 4) {
                 Text(formatCurrency(amount))
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 Text("\(Int(percentage.rounded()))%")
                     .font(.system(size: 13, weight: .medium))

@@ -448,7 +448,7 @@ struct OB_BarChartView: View {
                 } else {
                     Text(formatCompactValue(currentVal))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                 }
             }
             .padding(.horizontal, 12)

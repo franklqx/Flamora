@@ -46,7 +46,7 @@ struct SavingsTargetCard: View {
                         HStack(alignment: .firstTextBaseline, spacing: 6) {
                             Text(formatCurrency(currentAmount))
                                 .font(.system(size: 28, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundStyle(.white)
                             Text("/ \(formatCurrency(targetAmount))")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(AppColors.textTertiary)
@@ -55,7 +55,7 @@ struct SavingsTargetCard: View {
                     } else {
                         Text(formatCurrency(targetAmount))
                             .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .padding(.top, AppSpacing.md)
                     }
 
@@ -69,7 +69,7 @@ struct SavingsTargetCard: View {
                                 Spacer()
                                 Text("\(Int(progress * 100))% ACHIEVED")
                                     .font(.system(size: 11, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(.white)
                                     .tracking(0.4)
                             }
                             .padding(.top, 14)
@@ -100,7 +100,7 @@ struct SavingsTargetCard: View {
                             .frame(width: 40, height: 40)
                         Image(systemName: "plus")
                             .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                     }
                 }
                 .buttonStyle(.plain)

@@ -13,9 +13,10 @@ struct OB_InvestmentView: View {
     let onBack: () -> Void
 
     @State private var investmentValue: Double = 0
+    @FocusState private var isAmountFocused: Bool
     @State private var showInsight = false
     @State private var insightWorkItem: DispatchWorkItem?
-    private let investmentRange: ClosedRange<Double> = 0...2_000_000
+    private let investmentRange: ClosedRange<Double> = 0...20_000_000
 
     private var monthlyPassiveIncome: Int {
         Int((investmentValue * 0.04) / 12)
@@ -27,16 +28,14 @@ struct OB_InvestmentView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    OB_SnapshotProgress(current: 4, total: 5)
-                        .padding(.horizontal, AppSpacing.screenPadding)
-                        .padding(.top, AppSpacing.md)
+                    Spacer().frame(height: OB_OnboardingHeader.height)
 
-                    Spacer().frame(height: 40)
+                    Spacer().frame(height: AppSpacing.sm)
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("What's your total investment portfolio value?")
                             .font(.obQuestion)
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                         Text("Including stocks, bonds, retirement (401k, IRA), crypto, etc.")
                             .font(.bodySmall)
                             .foregroundColor(AppColors.textSecondary)
@@ -63,6 +62,7 @@ struct OB_InvestmentView: View {
                 }
                 .padding(.horizontal, AppSpacing.screenPadding)
             }
+            .scrollDismissesKeyboard(.interactively)
 
             // Sticky CTA（与 AgeView 一致）
             VStack(spacing: 0) {
@@ -77,9 +77,16 @@ struct OB_InvestmentView: View {
                     onNext()
                 })
                 .background(Color.black)
+                .ignoresSafeArea(edges: .bottom)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { isAmountFocused = false }
+            }
+        }
         .onAppear {
             _ = Self._sliderSetup
             if let saved = Double(data.currentNetWorth), saved > 0 {
@@ -93,18 +100,14 @@ struct OB_InvestmentView: View {
 
     private var investmentCard: some View {
         VStack(spacing: 16) {
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Spacer()
-                Text(data.currencySymbol)
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.white)
-                Text(formattedInvestment)
-                    .font(.system(size: 48, weight: .bold).monospacedDigit())
-                    .foregroundStyle(accentGradient)
-                    .contentTransition(.numericText())
-                Spacer()
-            }
-            .frame(height: 80)
+            OB_EditableAmountDisplay(
+                value: $investmentValue,
+                isFocused: $isAmountFocused,
+                range: investmentRange,
+                currencySymbol: data.currencySymbol,
+                suffix: "",
+                accentGradient: accentGradient
+            )
 
             VStack(spacing: 8) {
                 ZStack(alignment: .leading) {
@@ -140,7 +143,7 @@ struct OB_InvestmentView: View {
                         .font(.caption)
                         .foregroundColor(AppColors.textTertiary)
                     Spacer()
-                    Text("\(data.currencySymbol)2M")
+                    Text("\(data.currencySymbol)2M+")
                         .font(.caption)
                         .foregroundColor(AppColors.textTertiary)
                 }
@@ -161,7 +164,7 @@ struct OB_InvestmentView: View {
 
     private var accentGradient: LinearGradient {
         LinearGradient(
-            colors: [AppColors.accentBlue, AppColors.accentPurple],
+            colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd],
             startPoint: .leading,
             endPoint: .trailing
         )
@@ -172,13 +175,6 @@ struct OB_InvestmentView: View {
         UISlider.appearance().minimumTrackTintColor = .clear
         UISlider.appearance().maximumTrackTintColor = .clear
     }()
-
-    private var formattedInvestment: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: investmentValue)) ?? "\(Int(investmentValue))"
-    }
 
     // MARK: - Dynamic Insight Card
 

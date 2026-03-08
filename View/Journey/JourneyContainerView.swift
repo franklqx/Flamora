@@ -120,7 +120,7 @@ private struct JourneyCTAView: View {
                     VStack(spacing: AppSpacing.sm) {
                         Text("Build Your\nFIRE Plan")
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .multilineTextAlignment(.center)
 
                         Text("Connect your accounts to see your real\nFIRE progress and net worth.")
@@ -147,7 +147,7 @@ private struct JourneyCTAView: View {
 
                                 Text(text)
                                     .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(.white)
 
                                 Spacer()
                             }
@@ -239,13 +239,13 @@ struct AnalysisCard: View {
 
             Text(title)
                 .font(.system(size: 15))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
 
             Spacer()
 
             Text(value)
                 .font(.system(size: 18, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
         }
         .padding(18)
         .background(AppColors.surface)

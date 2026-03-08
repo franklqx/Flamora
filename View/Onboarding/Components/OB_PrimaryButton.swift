@@ -40,7 +40,7 @@ private struct ContainerPaddingModifier: ViewModifier {
         if include {
             content
                 .padding(.horizontal, AppSpacing.screenPadding)
-                .padding(.bottom, AppSpacing.xxl)
+                .padding(.bottom, 0)
         } else {
             content
         }

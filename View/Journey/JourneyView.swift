@@ -50,7 +50,7 @@ struct JourneyView: View {
                         VStack(alignment: .leading, spacing: AppSpacing.md) {
                             Text("Plan")
                                 .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundStyle(.white)
                                 .padding(.horizontal, AppSpacing.screenPadding)
 
                             VStack(spacing: AppSpacing.cardGap) {
@@ -84,7 +84,7 @@ private extension JourneyView {
 
                 Text(dailyQuotes[quoteIndex])
                     .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .lineSpacing(4)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -150,7 +150,7 @@ private extension JourneyView {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(formatCurrency(totalSpent))
                         .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                     Text("of \(formatCurrency(totalBudget))")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(AppColors.textTertiary)
@@ -192,7 +192,7 @@ private extension JourneyView {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(formatCurrency(income.projected))
                         .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                     Text("of \(formatCurrency(income.target))")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(AppColors.textTertiary)
@@ -233,7 +233,7 @@ private extension JourneyView {
                     if hasSavingsData {
                         Text(formatCurrency(savings.savedThisMonth))
                             .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                         Text("Saved This Month")
                             .font(.system(size: 13, weight: .medium))
                             .foregroundColor(AppColors.textSecondary)

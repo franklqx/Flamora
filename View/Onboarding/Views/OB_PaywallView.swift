@@ -67,7 +67,7 @@ struct OB_PaywallView: View {
 
                         Text("Flamora Pro")
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
 
                         Text("Your complete toolkit for Financial Independence")
                             .font(.bodyRegular)
@@ -98,7 +98,7 @@ struct OB_PaywallView: View {
 
                                 Text(feature)
                                     .font(.bodySmall)
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(.white)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.8)
 
@@ -142,7 +142,7 @@ struct OB_PaywallView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Yearly")
                                     .font(.h4)
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(.white)
 
                                 Text("$6.67/mo")
                                     .font(.caption)
@@ -154,7 +154,7 @@ struct OB_PaywallView: View {
                             HStack(alignment: .firstTextBaseline, spacing: 2) {
                                 Text("$79.99")
                                     .font(.h3)
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(.white)
                                 Text("/year")
                                     .font(.caption)
                                     .foregroundColor(AppColors.textSecondary)
@@ -162,7 +162,7 @@ struct OB_PaywallView: View {
 
                             Text("BEST VALUE")
                                 .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundStyle(.white)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
                                 .background(
@@ -237,8 +237,9 @@ struct OB_PaywallView: View {
                     .disabled(isPurchasing)
                 }
                 .padding(.horizontal, AppSpacing.screenPadding)
-                .padding(.bottom, AppSpacing.xxl)
+                .padding(.bottom, 0)
                 .background(Color.black)
+                .ignoresSafeArea(edges: .bottom)
             }
             .opacity(appear ? 1 : 0)
             .animation(.easeOut(duration: 0.5).delay(0.7), value: appear)

@@ -97,7 +97,7 @@ private struct InvestmentCTAView: View {
                     VStack(spacing: AppSpacing.sm) {
                         Text("Track Your\nInvestments")
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .multilineTextAlignment(.center)
 
                         Text("Connect your brokerage and bank accounts\nto see your full portfolio in one place.")
@@ -116,7 +116,7 @@ private struct InvestmentCTAView: View {
                                     .frame(width: 24)
                                 Text(text)
                                     .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(.white)
                                 Spacer()
                             }
                             .padding(.horizontal, 20)
@@ -272,14 +272,14 @@ private struct InvestmentAccountsBreakdownDetailView: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(data.title)
                     .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 Spacer()
 
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .padding(.top, 2)
                 }
                 .buttonStyle(.plain)
@@ -288,7 +288,7 @@ private struct InvestmentAccountsBreakdownDetailView: View {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(formatCurrency(data.totalAmount, minFractionDigits: 2, maxFractionDigits: 2))
                     .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 Text("across connected accounts")
                     .font(.system(size: 16, weight: .medium))
@@ -301,7 +301,7 @@ private struct InvestmentAccountsBreakdownDetailView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Allocations")
                 .font(.system(size: 22, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
 
             VStack(spacing: 12) {
                 ForEach(data.positions) { position in
@@ -333,7 +333,7 @@ private struct InvestmentAccountPositionRow: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(position.symbol)
                     .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .minimumScaleFactor(0.8)
                     .lineLimit(1)
 
@@ -353,7 +353,7 @@ private struct InvestmentAccountPositionRow: View {
 
             Text(formatCurrency(position.amount))
                 .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }

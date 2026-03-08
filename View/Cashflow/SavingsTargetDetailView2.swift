@@ -38,14 +38,14 @@ struct SavingsTargetDetailView2: View {
                     HStack(alignment: .firstTextBaseline) {
                         Text("Saving overview")
                             .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
 
                         Spacer()
 
                         Button(action: { dismiss() }) {
                             Image(systemName: "xmark")
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white)
+                                .foregroundStyle(.white)
                                 .padding(.top, 2)
                         }
                         .buttonStyle(.plain)
@@ -56,7 +56,7 @@ struct SavingsTargetDetailView2: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(formatMoney(annualSaved))
                             .font(.system(size: 36, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
 
                         Text("Total saved this year")
                             .font(.system(size: 15))
@@ -77,7 +77,7 @@ struct SavingsTargetDetailView2: View {
 
                             Text("\(Int(MockData.apiMonthlyBudget.savingsRatio))%")
                                 .font(.system(size: 26, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundStyle(.white)
                         }
 
                         Divider()
@@ -91,7 +91,7 @@ struct SavingsTargetDetailView2: View {
 
                             Text(formatMoney(targetAmount))
                                 .font(.system(size: 26, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundStyle(.white)
                         }
 
                         Spacer()
@@ -217,7 +217,7 @@ struct SavingsTargetDetailView2: View {
 
                     Text(amount == nil ? "--" : formatMoney(amount ?? 0))
                         .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                 }
                 .padding(.vertical, 8)
                 .padding(.horizontal, 10)
@@ -292,7 +292,7 @@ struct SavingsTargetDetailView2: View {
             if let amount = amount {
                 Text("\(formatMoney(amount)) / \(formatMoney(targetAmount))")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
             } else {
                 Text("-- / \(formatMoney(targetAmount))")
                     .font(.system(size: 14, weight: .semibold))

@@ -12,7 +12,8 @@ import UIKit
 struct OB_RoadmapView: View {
     let data: OnboardingData
     let onNext: () -> Void
-    let onBack: () -> Void
+    let onBackToLifestyle: () -> Void
+    @Binding var backAction: (() -> Void)?
 
     // Core state
     @State private var isRevealed = false
@@ -45,7 +46,7 @@ struct OB_RoadmapView: View {
 
     // Gradients
     private let brandGradient = LinearGradient(
-        colors: [Color(hex: "FCD34D"), Color(hex: "FCA5A5"), Color(hex: "A78BFA")],
+        colors: [AppColors.gradientEnd, AppColors.gradientMiddle, AppColors.gradientStart],
         startPoint: .leading,
         endPoint: .trailing
     )
@@ -99,7 +100,9 @@ struct OB_RoadmapView: View {
                 .onAppear {
                     scrollProxy = proxy
                     startBeforeAnimations()
+                    updateBackAction()
                 }
+                .onChange(of: isRevealed) { _, _ in updateBackAction() }
             }
 
             // Sticky CTA
@@ -113,18 +116,6 @@ struct OB_RoadmapView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Back button (only when revealed)
-            if isRevealed {
-                Button(action: reverseReveal) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.white)
-                        .contentShape(Rectangle())
-                }
-                .transition(.opacity)
-                .animation(.easeOut(duration: 0.3), value: isRevealed)
-            }
-
             // PREDICT eyebrow
             Text("PREDICT")
                 .font(.system(size: 10, weight: .semibold))
@@ -146,14 +137,14 @@ struct OB_RoadmapView: View {
 
     private var beforeTitle: some View {
         VStack(alignment: .leading, spacing: 4) {
-            (
+            HStack(alignment: .firstTextBaseline, spacing: 0) {
                 Text("You will reach financial independence at age ")
-                    .foregroundColor(.white) +
+                    .foregroundStyle(.white)
                 Text("\(data.freedomAge)")
-                    .foregroundStyle(brandGradient) +
+                    .foregroundStyle(brandGradient)
                 Text(".")
-                    .foregroundColor(.white)
-            )
+                    .foregroundStyle(.white)
+            }
             .font(.system(size: 22, weight: .bold))
             .lineSpacing(3)
 
@@ -167,18 +158,18 @@ struct OB_RoadmapView: View {
         VStack(alignment: .leading, spacing: 4) {
             let yearText = data.yearsSaved == 1 ? "1 year earlier" : "\(data.yearsSaved) years earlier"
 
-            (
+            HStack(alignment: .firstTextBaseline, spacing: 0) {
                 Text("With Flamora, you'll be free ")
-                    .foregroundColor(.white) +
+                    .foregroundStyle(.white)
                 Text(yearText)
-                    .foregroundStyle(brandGradient) +
+                    .foregroundStyle(brandGradient)
                 Text(" — at age ")
-                    .foregroundColor(.white) +
+                    .foregroundStyle(.white)
                 Text("\(data.optimizedFreedomAge)")
-                    .foregroundStyle(brandGradient) +
+                    .foregroundStyle(brandGradient)
                 Text(".")
-                    .foregroundColor(.white)
-            )
+                    .foregroundStyle(.white)
+            }
             .font(.system(size: 22, weight: .bold))
             .lineSpacing(3)
 
@@ -200,7 +191,7 @@ struct OB_RoadmapView: View {
                     Circle()
                         .fill(
                             LinearGradient(
-                                colors: [Color(hex: "FCD34D"), Color(hex: "FCA5A5")],
+                                colors: [AppColors.gradientEnd, AppColors.gradientMiddle],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -307,7 +298,7 @@ struct OB_RoadmapView: View {
                 .minimumScaleFactor(0.8)
             Text(value)
                 .font(.system(size: 22, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
         }
@@ -337,7 +328,7 @@ struct OB_RoadmapView: View {
                     .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [Color(hex: "FCD34D"), Color(hex: "FCA5A5")],
+                            colors: [AppColors.gradientEnd, AppColors.gradientMiddle],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
@@ -354,12 +345,12 @@ struct OB_RoadmapView: View {
                 HStack(spacing: 0) {
                     Text("\(data.optimizedFreedomAge)")
                         .font(.system(size: 22, weight: .bold))
-                        .foregroundColor(Color(hex: "FCD34D"))
+                        .foregroundColor(AppColors.gradientEnd)
 
                     if showYearsSavedBadge {
                         Text(" \u{2193}\(data.yearsSaved) yrs")
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .transition(.opacity)
                             .padding(.leading, 8)
                     }
@@ -375,11 +366,11 @@ struct OB_RoadmapView: View {
                 HStack(spacing: 0) {
                     Text("\(Int(rateDisplay))%")
                         .font(.system(size: 22, weight: .bold))
-                        .foregroundColor(Color(hex: "FCD34D"))
+                        .foregroundColor(AppColors.gradientEnd)
                     if rateIncrease > 0 {
                         Text(" \u{2191}\(Int(rateIncrease))%")
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .padding(.leading, 8)
                     }
                 }
@@ -394,7 +385,7 @@ struct OB_RoadmapView: View {
             afterCard(label: "FREEDOM #") {
                 Text(formatCompact(fireDisplay))
                     .font(.system(size: 22, weight: .bold))
-                    .foregroundColor(Color(hex: "FCA5A5"))
+                    .foregroundColor(AppColors.gradientMiddle)
                     .minimumScaleFactor(0.6)
                     .lineLimit(1)
             }
@@ -456,18 +447,18 @@ struct OB_RoadmapView: View {
                     } label: {
                         Text("Get My Real Numbers \u{2192}")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 56)
                             .background(
                                 LinearGradient(
-                                    colors: [Color(hex: "FCD34D"), Color(hex: "FCA5A5"), Color(hex: "A78BFA")],
+                                    colors: [AppColors.gradientEnd, AppColors.gradientMiddle, AppColors.gradientStart],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
                             .clipShape(RoundedRectangle(cornerRadius: 100))
-                            .shadow(color: Color(hex: "FCA5A5").opacity(0.25), radius: 16, y: 8)
+                            .shadow(color: AppColors.gradientMiddle.opacity(0.25), radius: 16, y: 8)
                     }
                     .opacity(showRevealedCTA ? 1 : 0)
                 }
@@ -478,8 +469,9 @@ struct OB_RoadmapView: View {
                     .animation(.easeOut(duration: 0.5), value: showRevealedCTA)
             }
             .padding(.horizontal, AppSpacing.screenPadding)
-            .padding(.bottom, AppSpacing.xxl)
+            .padding(.bottom, 0)
             .background(Color.black)
+            .ignoresSafeArea(edges: .bottom)
         }
     }
 
@@ -489,7 +481,7 @@ struct OB_RoadmapView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("How this is calculated")
                 .font(.system(size: 18, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
                 .padding(.bottom, 4)
 
             infoRow(label: "Annual return", value: "9%")
@@ -519,7 +511,7 @@ struct OB_RoadmapView: View {
             Spacer()
             Text(value)
                 .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
         }
     }
 
@@ -554,6 +546,10 @@ struct OB_RoadmapView: View {
     }
 
     // MARK: - Animations
+
+    private func updateBackAction() {
+        backAction = isRevealed ? reverseReveal : onBackToLifestyle
+    }
 
     private func startBeforeAnimations() {
         withAnimation(.easeOut(duration: 0.6)) { showTitle = true }
@@ -681,6 +677,6 @@ struct OB_RoadmapView: View {
 #Preview {
     ZStack {
         Color.black.ignoresSafeArea()
-        OB_RoadmapView(data: OnboardingData(), onNext: {}, onBack: {})
+        OB_RoadmapView(data: OnboardingData(), onNext: {}, onBackToLifestyle: {}, backAction: .constant(nil))
     }
 }

@@ -48,7 +48,7 @@ struct AssetAllocationCard: View {
                             .tracking(0.5)
                         Text(formatCompact(totalAmount))
                             .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                     }
                 }
 
@@ -124,7 +124,7 @@ private struct AllocationRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                 Text("\(percent)% · \(formatCurrency(amount))")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(AppColors.textTertiary)

@@ -24,7 +24,7 @@ struct TopHeaderBar: View {
 
                 Text(pageTitle.uppercased())
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .tracking(0.6)
             }
 
@@ -73,7 +73,7 @@ private struct HeaderIconButton: View {
                 .overlay(
                     Image(systemName: icon)
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                 )
                 .overlay(
                     Circle()

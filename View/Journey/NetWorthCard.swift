@@ -38,7 +38,7 @@ struct NetWorthCard: View {
             HStack(alignment: .firstTextBaseline, spacing: 0) {
                 Text(formatCurrencyInteger(totalNetWorth))
                     .font(.system(size: 34, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 Text(formatCurrencyDecimal(totalNetWorth))
                     .font(.system(size: 18, weight: .semibold))

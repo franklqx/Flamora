@@ -13,7 +13,9 @@
       "Bash(npm --version:*)",
       "Bash(env)",
       "Bash(git restore --staged \"Flamora app.xcodeproj/project.pbxproj\" \"Flamora app.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved\")",
-      "Bash(git restore \"Flamora app.xcodeproj/project.pbxproj\" \"Flamora app.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved\")"
+      "Bash(git restore \"Flamora app.xcodeproj/project.pbxproj\" \"Flamora app.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved\")",
+      "Bash(sudo xcode-select -s /Applications/Xcode.app/Contents/Developer)",
+      "Bash(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer /usr/bin/xcodebuild -scheme \"Flamora app\" -project \"/Users/frankli/Desktop/关羽与吕布/Flamora app/Flamora app.xcodeproj\" -destination \"platform=iOS Simulator,name=iPhone 17 Pro\" build)"
     ]
   }
 }

@@ -13,36 +13,45 @@ struct OB_ValueScreenView: View {
     let onBack: () -> Void
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottom) {
             AppColors.backgroundPrimary.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                OB_PersonalizeProgress(currentStep: 5, totalSteps: 5)
-                    .padding(.horizontal, AppSpacing.screenPadding)
-                    .padding(.top, AppSpacing.md)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Spacer().frame(height: OB_OnboardingHeader.height)
+                    Spacer().frame(height: AppSpacing.sm)
 
-                // Content
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        switch data.painPoint {
-                        case "pain_saving":
-                            ValueSavingContent()
-                        case "pain_investing":
-                            ValueInvestingContent()
-                        case "pain_fire":
-                            ValueFireContent()
-                        default:
-                            ValueMoneyTrackingContent()
-                        }
+                    switch data.painPoint {
+                    case "pain_saving":
+                        ValueSavingContent()
+                    case "pain_investing":
+                        ValueInvestingContent()
+                    case "pain_fire":
+                        ValueFireContent()
+                    default:
+                        ValueMoneyTrackingContent()
                     }
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.bottom, AppSpacing.md)
                 }
+                .padding(.horizontal, AppSpacing.screenPadding)
+                .padding(.bottom, AppSpacing.md)
+                .padding(.bottom, 120) // 为底部固定按钮留出空间
+            }
 
-                // CTA
+            // 固定在屏幕最下方的 CTA
+            VStack(spacing: 0) {
+                LinearGradient(
+                    colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 28)
+
                 OB_PrimaryButton(title: "Continue", action: onNext)
             }
+            .background(AppColors.backgroundPrimary)
+            .ignoresSafeArea(edges: .bottom)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
@@ -67,9 +76,7 @@ private struct ValueMoneyTrackingContent: View {
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            Spacer().frame(height: 32)
-
+        VStack(alignment: .leading, spacing: AppSpacing.lg) {
             Text("We automatically sort\nevery dollar for you")
                 .font(.obQuestion)
                 .foregroundColor(AppColors.textPrimary)
@@ -244,7 +251,7 @@ private struct ValueMoneyTrackingContent: View {
                         HStack(spacing: 10) {
                             Image(systemName: items[i].icon)
                                 .font(.system(size: 16))
-                                .foregroundColor(.white)
+                                .foregroundStyle(.white)
                                 .frame(width: 20)
                             Text(items[i].category)
                                 .font(.system(size: 13, weight: .medium))
@@ -317,9 +324,7 @@ private struct ValueSavingContent: View {
     private let completedCount = 9 // JAN-SEP completed
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            Spacer().frame(height: 32)
-
+        VStack(alignment: .leading, spacing: AppSpacing.lg) {
             Text("Small wins build big momentum")
                 .font(.obQuestion)
                 .foregroundColor(AppColors.textPrimary)
@@ -461,9 +466,7 @@ private struct ValueInvestingContent: View {
     @State private var showCostBadge = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            Spacer().frame(height: 32)
-
+        VStack(alignment: .leading, spacing: AppSpacing.lg) {
             Text("It's not about how much\nIt's about how early")
                 .font(.obQuestion)
                 .foregroundColor(AppColors.textPrimary)
@@ -711,16 +714,14 @@ private struct ValueFireContent: View {
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            Spacer().frame(height: 32)
-
+        VStack(alignment: .leading, spacing: AppSpacing.lg) {
             Text("We'll guide you every step of the way")
                 .font(.obQuestion)
                 .foregroundColor(AppColors.textPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
 
-            Spacer().frame(height: 8)
+            Spacer().frame(height: AppSpacing.sm)
 
             // Timeline — all 4 steps visible from start, dim until lit
             VStack(spacing: 0) {
@@ -730,7 +731,7 @@ private struct ValueFireContent: View {
             }
             .animation(.easeInOut(duration: 0.4), value: litStep)
 
-            Spacer().frame(height: 16)
+            Spacer().frame(height: AppSpacing.md)
 
             Text("No spreadsheets. No guesswork. Just a system that keeps you on track — automatically.")
                 .font(.bodySmall)
@@ -792,13 +793,20 @@ private struct ValueFireContent: View {
 #Preview("FIRE") {
     ScrollView {
         ValueFireContent()
-            .padding(.horizontal, AppSpacing.lg)
-            .padding(.bottom, AppSpacing.lg)
+            .padding(.horizontal, AppSpacing.sm)
+            .padding(.bottom, AppSpacing.sm)
     }
     .background(AppColors.backgroundPrimary)
 }
 
 #Preview("Value Screen (full)") {
-    OB_ValueScreenView(data: OnboardingData(), onNext: {}, onBack: {})
-        .background(AppBackgroundView())
+    ZStack {
+        Color.black.ignoresSafeArea()
+        OB_ValueScreenView(data: OnboardingData(), onNext: {}, onBack: {})
+        VStack {
+            OB_OnboardingHeader(onBack: {}, current: 5, total: 10)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
 }

@@ -92,7 +92,7 @@ struct IncomeCard: View {
         return HStack(alignment: .firstTextBaseline, spacing: 0) {
             Text(parts.dollars)
                 .font(.system(size: 32, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
             Text(parts.cents)
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(AppColors.textTertiary)
@@ -164,7 +164,7 @@ struct IncomeCard: View {
                 Spacer()
                 Text(formatCurrencyWithCents(amount).full)
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
             }
         }
         .buttonStyle(.plain)

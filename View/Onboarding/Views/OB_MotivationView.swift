@@ -18,11 +18,9 @@ struct OB_MotivationView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    OB_PersonalizeProgress(currentStep: 3, totalSteps: 5)
-                        .padding(.horizontal, AppSpacing.screenPadding)
-                        .padding(.top, AppSpacing.md)
+                    Spacer().frame(height: OB_OnboardingHeader.height)
 
-                    Spacer().frame(height: 48)
+                    Spacer().frame(height: AppSpacing.sm)
 
                     if !data.userName.isEmpty {
                         HStack(spacing: 6) {
@@ -38,7 +36,7 @@ struct OB_MotivationView: View {
 
                     Text("What does financial freedom look like to you?")
                         .font(.obQuestion)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
 
                     Spacer().frame(height: 8)
 
@@ -82,6 +80,7 @@ struct OB_MotivationView: View {
 
                 OB_PrimaryButton(isValid: isValid, action: onNext)
                 .background(Color.black)
+                .ignoresSafeArea(edges: .bottom)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -125,7 +124,7 @@ struct MotivationCard: View {
                     Text(option.title)
                         .font(.bodyRegular)
                         .fontWeight(.semibold)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
 

@@ -86,14 +86,14 @@ private extension TotalIncomeDetailView {
             HStack(alignment: .firstTextBaseline) {
                 Text(data.title)
                     .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 Spacer()
 
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .padding(.top, 2)
                 }
                 .buttonStyle(.plain)
@@ -102,7 +102,7 @@ private extension TotalIncomeDetailView {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(formatCurrency(selectedTotal))
                     .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 Text("earned in \(selectedMonthLabel)")
                     .font(.system(size: 16, weight: .medium))
@@ -205,7 +205,7 @@ private extension TotalIncomeDetailView {
         VStack(alignment: .leading, spacing: 16) {
             Text("Sources")
                 .font(.system(size: 22, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
 
             if let monthData = selectedMonthData {
                 VStack(spacing: 12) {
@@ -237,7 +237,7 @@ private extension TotalIncomeDetailView {
             VStack(alignment: .leading, spacing: 4) {
                 Text(name)
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 Text("\(selectedMonthLabel) 2026")
                     .font(.system(size: 13, weight: .medium))
@@ -249,7 +249,7 @@ private extension TotalIncomeDetailView {
             VStack(alignment: .trailing, spacing: 4) {
                 Text(formatCurrency(amount))
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 Text("\(Int(percentage))%")
                     .font(.system(size: 13, weight: .medium))

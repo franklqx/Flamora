@@ -152,7 +152,7 @@ private extension SimulatorView {
         return HStack(spacing: 6) {
             Text("FIRE by age")
                 .font(.system(size: 28, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
 
             Text("\(fireAge)")
                 .font(.system(size: 28, weight: .bold))
@@ -209,7 +209,7 @@ private extension SimulatorView {
             VStack(spacing: 8) {
                 Text("Simulating your future…")
                     .font(.system(size: 22, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 Text("ANALYZING CONTRIBUTION PATTERNS…")
                     .font(.system(size: 13, weight: .semibold))
@@ -275,11 +275,11 @@ private extension SimulatorView {
         VStack(alignment: .leading, spacing: 8) {
             Text("You will reach financial")
                 .font(.system(size: 28, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
 
             Text("independence at age \(computedFireCalculation.fireAge)")
                 .font(.system(size: 28, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
 
             Text("Detailed FIRE progress analysis")
                 .font(.system(size: 15, weight: .medium))
@@ -339,7 +339,7 @@ private extension SimulatorView {
 
                 Text("Age \(computedFireCalculation.fireAge) (FIRE)")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 6)
                     .background(AppColors.surfaceElevated)
@@ -385,7 +385,7 @@ private extension SimulatorView {
 
             Text(value)
                 .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
 
             Text(subvalue)
                 .font(.system(size: 14, weight: .semibold))
@@ -470,7 +470,7 @@ private extension SimulatorEditProfileView {
     var titleSection: some View {
         Text("Edit your Profile")
             .font(.largeTitle.bold())
-            .foregroundColor(.white)
+            .foregroundStyle(.white)
             .padding(.top, 8)
     }
 
@@ -513,7 +513,7 @@ private extension SimulatorEditProfileView {
                 HStack {
                     Text("Advanced settings")
                         .font(.body.weight(.semibold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
 
                     Spacer()
 
@@ -587,7 +587,7 @@ private struct SettingRow: View {
                 HStack(spacing: 6) {
                     Text(value)
                         .font(.body.bold())
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
 
                     if !unit.isEmpty {
                         Text(unit)
@@ -675,7 +675,7 @@ private struct SettingEditorSheet: View {
             VStack(alignment: .leading, spacing: 16) {
                 Text(field.title)
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 HStack {
                     TextField("Enter value", text: $inputValue)
@@ -852,7 +852,7 @@ private struct CircularProgressView: View {
 
             Text(percentText)
                 .font(.system(size: 32, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
 
             Text("ACHIEVED")
                 .font(.system(size: 9, weight: .semibold))

@@ -13,9 +13,10 @@ struct OB_SpendingView: View {
     let onBack: () -> Void
 
     @State private var spendingValue: Double = 0
+    @FocusState private var isAmountFocused: Bool
     @State private var showInsight = false
     @State private var insightWorkItem: DispatchWorkItem?
-    private let spendingRange: ClosedRange<Double> = 0...20000
+    private let spendingRange: ClosedRange<Double> = 0...200_000
 
     private var income: Double {
         Double(data.monthlyIncome) ?? 0
@@ -32,16 +33,14 @@ struct OB_SpendingView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    OB_SnapshotProgress(current: 3, total: 5)
-                        .padding(.horizontal, AppSpacing.screenPadding)
-                        .padding(.top, AppSpacing.md)
+                    Spacer().frame(height: OB_OnboardingHeader.height)
 
-                    Spacer().frame(height: 40)
+                    Spacer().frame(height: AppSpacing.sm)
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("How much do you typically spend per month?")
                             .font(.obQuestion)
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                         Text("Include rent, groceries, entertainment, etc.")
                             .font(.bodySmall)
                             .foregroundColor(AppColors.textSecondary)
@@ -76,6 +75,7 @@ struct OB_SpendingView: View {
                 }
                 .padding(.horizontal, AppSpacing.screenPadding)
             }
+            .scrollDismissesKeyboard(.interactively)
 
             // Sticky CTA（与 AgeView 一致）
             VStack(spacing: 0) {
@@ -90,9 +90,16 @@ struct OB_SpendingView: View {
                     onNext()
                 })
                 .background(Color.black)
+                .ignoresSafeArea(edges: .bottom)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { isAmountFocused = false }
+            }
+        }
         .onAppear {
             _ = Self._sliderSetup
             if let saved = Double(data.monthlyExpenses), saved > 0 {
@@ -106,21 +113,14 @@ struct OB_SpendingView: View {
 
     private var spendingCard: some View {
         VStack(spacing: 16) {
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Spacer()
-                Text(data.currencySymbol)
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.white)
-                Text(formattedSpending)
-                    .font(.system(size: 48, weight: .bold).monospacedDigit())
-                    .foregroundStyle(accentGradient)
-                    .contentTransition(.numericText())
-                Text("/mo")
-                    .font(.system(size: 20, weight: .regular))
-                    .foregroundColor(AppColors.textTertiary)
-                Spacer()
-            }
-            .frame(height: 80)
+            OB_EditableAmountDisplay(
+                value: $spendingValue,
+                isFocused: $isAmountFocused,
+                range: spendingRange,
+                currencySymbol: data.currencySymbol,
+                suffix: "/mo",
+                accentGradient: accentGradient
+            )
 
             VStack(spacing: 8) {
                 ZStack(alignment: .leading) {
@@ -160,7 +160,7 @@ struct OB_SpendingView: View {
                         .font(.caption)
                         .foregroundColor(AppColors.textTertiary)
                     Spacer()
-                    Text("\(data.currencySymbol)20K")
+                    Text("\(data.currencySymbol)20K+")
                         .font(.caption)
                         .foregroundColor(AppColors.textTertiary)
                 }
@@ -181,7 +181,7 @@ struct OB_SpendingView: View {
 
     private var accentGradient: LinearGradient {
         LinearGradient(
-            colors: [AppColors.accentBlue, AppColors.accentPurple],
+            colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd],
             startPoint: .leading,
             endPoint: .trailing
         )
@@ -192,13 +192,6 @@ struct OB_SpendingView: View {
         UISlider.appearance().minimumTrackTintColor = .clear
         UISlider.appearance().maximumTrackTintColor = .clear
     }()
-
-    private var formattedSpending: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: spendingValue)) ?? "\(Int(spendingValue))"
-    }
 
     // MARK: - Savings Rate Card
 
@@ -217,7 +210,7 @@ struct OB_SpendingView: View {
                     .animation(.spring(response: 0.3), value: rate)
                 Text("%")
                     .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                 Spacer()
             }
 
@@ -235,7 +228,7 @@ struct OB_SpendingView: View {
                     Text("\(data.currencySymbol)\(formattedAmount(income))")
                         .font(.bodySmall)
                         .fontWeight(.medium)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                 }
                 Spacer()
                 Text("−")
@@ -249,7 +242,7 @@ struct OB_SpendingView: View {
                     Text("\(data.currencySymbol)\(formattedAmount(spendingValue))")
                         .font(.bodySmall)
                         .fontWeight(.medium)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                 }
                 Spacer()
                 Text("=")

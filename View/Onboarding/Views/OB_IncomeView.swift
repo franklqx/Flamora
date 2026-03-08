@@ -13,9 +13,10 @@ struct OB_IncomeView: View {
     let onBack: () -> Void
 
     @State private var incomeValue: Double = 0
+    @FocusState private var isAmountFocused: Bool
     @State private var showInsight = false
     @State private var insightWorkItem: DispatchWorkItem?
-    private let incomeRange: ClosedRange<Double> = 0...20000
+    private let incomeRange: ClosedRange<Double> = 0...200_000
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -23,16 +24,14 @@ struct OB_IncomeView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    OB_SnapshotProgress(current: 2, total: 5)
-                        .padding(.horizontal, AppSpacing.screenPadding)
-                        .padding(.top, AppSpacing.md)
+                    Spacer().frame(height: OB_OnboardingHeader.height)
 
-                    Spacer().frame(height: 40)
+                    Spacer().frame(height: AppSpacing.sm)
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("What's your monthly income?")
                             .font(.obQuestion)
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                         Text("A rough estimate is fine")
                             .font(.bodySmall)
                             .foregroundColor(AppColors.textSecondary)
@@ -64,6 +63,7 @@ struct OB_IncomeView: View {
                 }
                 .padding(.horizontal, AppSpacing.screenPadding)
             }
+            .scrollDismissesKeyboard(.interactively)
 
             // Sticky CTA（与 AgeView 一致）
             VStack(spacing: 0) {
@@ -78,9 +78,16 @@ struct OB_IncomeView: View {
                     onNext()
                 })
                 .background(Color.black)
+                .ignoresSafeArea(edges: .bottom)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { isAmountFocused = false }
+            }
+        }
         .onAppear {
             _ = Self._sliderSetup
             if let saved = Double(data.monthlyIncome), saved > 0 {
@@ -94,21 +101,14 @@ struct OB_IncomeView: View {
 
     private var incomeCard: some View {
         VStack(spacing: 16) {
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Spacer()
-                Text(data.currencySymbol)
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.white)
-                Text(formattedIncome)
-                    .font(.system(size: 48, weight: .bold).monospacedDigit())
-                    .foregroundStyle(accentGradient)
-                    .contentTransition(.numericText())
-                Text("/mo")
-                    .font(.system(size: 20, weight: .regular))
-                    .foregroundColor(AppColors.textTertiary)
-                Spacer()
-            }
-            .frame(height: 80)
+            OB_EditableAmountDisplay(
+                value: $incomeValue,
+                isFocused: $isAmountFocused,
+                range: incomeRange,
+                currencySymbol: data.currencySymbol,
+                suffix: "/mo",
+                accentGradient: accentGradient
+            )
 
             VStack(spacing: 8) {
                 ZStack(alignment: .leading) {
@@ -148,7 +148,7 @@ struct OB_IncomeView: View {
                         .font(.caption)
                         .foregroundColor(AppColors.textTertiary)
                     Spacer()
-                    Text("\(data.currencySymbol)20K")
+                    Text("\(data.currencySymbol)20K+")
                         .font(.caption)
                         .foregroundColor(AppColors.textTertiary)
                 }
@@ -169,7 +169,7 @@ struct OB_IncomeView: View {
 
     private var accentGradient: LinearGradient {
         LinearGradient(
-            colors: [AppColors.accentBlue, AppColors.accentPurple],
+            colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd],
             startPoint: .leading,
             endPoint: .trailing
         )
@@ -180,20 +180,6 @@ struct OB_IncomeView: View {
         UISlider.appearance().minimumTrackTintColor = .clear
         UISlider.appearance().maximumTrackTintColor = .clear
     }()
-
-    private var formattedIncome: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: incomeValue)) ?? "\(Int(incomeValue))"
-    }
-
-    private func formatNum(_ val: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: val)) ?? "\(Int(val))"
-    }
 
     // MARK: - Helpers
 

@@ -70,7 +70,7 @@ private struct AccountRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(account.institution)
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                 Text(account.type)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(AppColors.textTertiary)
@@ -80,7 +80,7 @@ private struct AccountRow: View {
 
             Text(formatCurrency(account.balance))
                 .font(.system(size: 15, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, 14)

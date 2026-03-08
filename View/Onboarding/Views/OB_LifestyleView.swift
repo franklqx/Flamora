@@ -31,16 +31,14 @@ struct OB_LifestyleView: View {
             ScrollViewReader { proxy in
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 0) {
-                        OB_SnapshotProgress(current: 5, total: 5)
-                            .padding(.horizontal, AppSpacing.screenPadding)
-                            .padding(.top, AppSpacing.md)
+                        Spacer().frame(height: OB_OnboardingHeader.height)
 
-                        Spacer().frame(height: 40)
+                        Spacer().frame(height: AppSpacing.sm)
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text("What kind of retirement life do you want?")
                                 .font(.obQuestion)
-                                .foregroundColor(.white)
+                                .foregroundStyle(.white)
                             Text("Choose your target lifestyle in retirement")
                                 .font(.bodySmall)
                                 .foregroundColor(AppColors.textSecondary)
@@ -89,7 +87,7 @@ struct OB_LifestyleView: View {
                                     .foregroundColor(AppColors.textTertiary)
                                 TextField("Monthly amount", text: $customAmountText)
                                     .font(.h4)
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(.white)
                                     .keyboardType(.numberPad)
                                     .focused($isCustomInputFocused)
                                 Text("/mo")
@@ -102,7 +100,7 @@ struct OB_LifestyleView: View {
                             .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
                             .overlay(
                                 RoundedRectangle(cornerRadius: AppRadius.lg)
-                                    .stroke(LinearGradient(colors: [AppColors.accentBlue, AppColors.accentPurple], startPoint: .leading, endPoint: .trailing), lineWidth: 1.5)
+                                    .stroke(LinearGradient(colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd], startPoint: .leading, endPoint: .trailing), lineWidth: 1.5)
                             )
                             .id("customInput")
                             .transition(.move(edge: .top).combined(with: .opacity))
@@ -141,6 +139,7 @@ struct OB_LifestyleView: View {
                 })
             }
             .background(Color.black)
+            .ignoresSafeArea(edges: .bottom)
         }
         .background(Color.black.ignoresSafeArea())
         .toolbar {
@@ -149,8 +148,6 @@ struct OB_LifestyleView: View {
                 Button("Done") {
                     isCustomInputFocused = false
                 }
-                .font(.bodyRegular)
-                .foregroundStyle(LinearGradient(colors: [AppColors.accentBlue, AppColors.accentPurple], startPoint: .leading, endPoint: .trailing))
             }
         }
         .onAppear {
@@ -176,7 +173,7 @@ struct OB_LifestyleView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(option.title)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
 
                     HStack(spacing: 0) {
                         Text(option.subtitle)
@@ -193,7 +190,7 @@ struct OB_LifestyleView: View {
                     Image(systemName: "checkmark.circle")
                         .font(.system(size: 22))
                         .foregroundStyle(LinearGradient(
-                            colors: [AppColors.accentBlue, AppColors.accentPurple],
+                            colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd],
                             startPoint: .leading,
                             endPoint: .trailing
                         ))
@@ -204,7 +201,7 @@ struct OB_LifestyleView: View {
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.lg)
-                    .stroke(isSelected ? LinearGradient(colors: [AppColors.accentBlue, AppColors.accentPurple], startPoint: .leading, endPoint: .trailing) : LinearGradient(colors: [Color.white.opacity(0.08)], startPoint: .leading, endPoint: .trailing), lineWidth: isSelected ? 1.5 : 1)
+                    .stroke(isSelected ? LinearGradient(colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd], startPoint: .leading, endPoint: .trailing) : LinearGradient(colors: [Color.white.opacity(0.08)], startPoint: .leading, endPoint: .trailing), lineWidth: isSelected ? 1.5 : 1)
             )
         }
         .buttonStyle(.plain)

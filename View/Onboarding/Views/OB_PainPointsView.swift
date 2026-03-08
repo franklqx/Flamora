@@ -16,15 +16,13 @@ struct OB_PainPointsView: View {
         ZStack(alignment: .bottom) {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    OB_PersonalizeProgress(currentStep: 4, totalSteps: 5)
-                        .padding(.horizontal, AppSpacing.screenPadding)
-                        .padding(.top, AppSpacing.md)
+                    Spacer().frame(height: OB_OnboardingHeader.height)
 
-                    Spacer().frame(height: 48)
+                    Spacer().frame(height: AppSpacing.sm)
 
                     Text("What's your biggest financial challenge right now?")
                         .font(.obQuestion)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Spacer().frame(height: 8)
@@ -69,6 +67,7 @@ struct OB_PainPointsView: View {
 
                 OB_PrimaryButton(isValid: isValid, action: onNext)
                 .background(Color.black)
+                .ignoresSafeArea(edges: .bottom)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -113,7 +112,7 @@ private struct ChallengeCard: View {
                     Text(option.title)
                         .font(.bodyRegular)
                         .fontWeight(.semibold)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
 

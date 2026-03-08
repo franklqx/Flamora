@@ -9,6 +9,7 @@ import SwiftUI
 
 struct OB_IntroView: View {
     let onNext: () -> Void
+    let onBack: () -> Void
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -16,12 +17,9 @@ struct OB_IntroView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    // Progress
-                    OB_PersonalizeProgress(currentStep: 1, totalSteps: 5)
-                        .padding(.horizontal, AppSpacing.screenPadding)
-                        .padding(.top, AppSpacing.md)
+                    Spacer().frame(height: OB_OnboardingHeader.height)
 
-                    Spacer().frame(height: 48)
+                    Spacer().frame(height: AppSpacing.sm)
 
                     HStack(alignment: .center, spacing: 16) {
                         // 小图标卡片
@@ -35,7 +33,7 @@ struct OB_IntroView: View {
                             .overlay(
                                 Image(systemName: "chart.line.uptrend.xyaxis")
                                     .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(.white)
                             )
 
                         Spacer()
@@ -46,7 +44,7 @@ struct OB_IntroView: View {
                     // 标题
                     Text("Let's build your freedom plan")
                         .font(.obQuestion)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Spacer().frame(height: 12)
@@ -87,6 +85,7 @@ struct OB_IntroView: View {
 
                 OB_PrimaryButton(title: "Let's Do This", action: onNext)
                 .background(Color.black)
+                .ignoresSafeArea(edges: .bottom)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -105,12 +104,12 @@ private struct OBInfoPill: View {
         HStack(spacing: 10) {
             Image(systemName: systemIcon)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
                 .frame(width: 24, height: 24)
 
             Text(title)
                 .font(.bodySmall)
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
 
             Spacer()
         }
@@ -133,6 +132,6 @@ private struct OBInfoPill: View {
 #Preview {
     ZStack {
         Color.black.ignoresSafeArea()
-        OB_IntroView(onNext: {})
+        OB_IntroView(onNext: {}, onBack: {})
     }
 }

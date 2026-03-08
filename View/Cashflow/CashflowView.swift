@@ -190,7 +190,7 @@ private extension CashflowView {
             HStack {
                 Text("TO REVIEW")
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .tracking(0.6)
 
                 Spacer()
@@ -261,7 +261,7 @@ private struct TransactionCard: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(transaction.merchant)
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                 Text(formattedDate(transaction.date))
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(AppColors.textTertiary)
@@ -273,7 +273,7 @@ private struct TransactionCard: View {
             VStack(alignment: .trailing, spacing: 6) {
                 Text(formattedAmount(transaction.amount))
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
 
                 HStack(spacing: 8) {
                     categoryButton(title: "Needs", action: onNeeds)
@@ -360,7 +360,7 @@ private struct CashflowCTAView: View {
                     VStack(spacing: AppSpacing.sm) {
                         Text("Track Your\nCashflow")
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .multilineTextAlignment(.center)
 
                         Text("Connect your accounts to automatically\ntrack spending, savings, and budgets.")
@@ -379,7 +379,7 @@ private struct CashflowCTAView: View {
                                     .frame(width: 24)
                                 Text(text)
                                     .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(.white)
                                 Spacer()
                             }
                             .padding(.horizontal, 20)

@@ -40,7 +40,7 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .fontWeight(.semibold)
                 }
             }
@@ -286,7 +286,7 @@ private extension SettingsView {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .lineLimit(1)
 
                 if let subtitle {

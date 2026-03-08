@@ -50,7 +50,7 @@ struct ContentView: View {
             PaywallSheet()
                 .environment(subscriptionManager)
         }
-        // 检查现有 session（已登录 → 直接进主应用）
+        // 检查现有 session（已登录 → 直接进主应用）l
         .task { await checkExistingSession() }
         // 持续监听 auth 状态变化（退出登录时回到 onboarding）
         // 使用 .task 让 SwiftUI 自动管理 Task 生命周期

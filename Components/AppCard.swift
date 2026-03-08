@@ -46,13 +46,13 @@ struct AppCard<Content: View>: View {
         Color.black.ignoresSafeArea()
         VStack(spacing: 16) {
             Text("A sample card")
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
                 .appCard()
 
             AppCard {
                 VStack(alignment: .leading) {
                     Text("Another card")
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                     Text("With subtitle")
                         .foregroundColor(AppColors.textSecondary)
                 }

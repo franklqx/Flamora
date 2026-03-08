@@ -77,7 +77,7 @@ struct OB_LoadingView: View {
                 }
                 .frame(height: 3)
                 .padding(.horizontal, AppSpacing.lg)
-                .padding(.bottom, AppSpacing.xxl)
+                .padding(.bottom, 0)
             }
         }
         .onAppear { startSequence() }

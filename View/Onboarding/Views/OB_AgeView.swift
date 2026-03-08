@@ -22,19 +22,17 @@ struct OB_AgeView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    OB_SnapshotProgress(current: 1, total: 5)
-                        .padding(.horizontal, AppSpacing.screenPadding)
-                        .padding(.top, AppSpacing.md)
+                    Spacer().frame(height: OB_OnboardingHeader.height)
 
-                    Spacer().frame(height: 40)
+                    Spacer().frame(height: AppSpacing.sm)
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Great, \(data.userName.isEmpty ? "Friend" : data.userName)!")
                             .font(.obQuestion)
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                         Text("Let's crunch your numbers")
                             .font(.obQuestion)
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                     }
 
                     Spacer().frame(height: AppSpacing.xl)
@@ -74,6 +72,7 @@ struct OB_AgeView: View {
 
                 OB_PrimaryButton(title: "Next", action: onNext)
                 .background(Color.black)
+                .ignoresSafeArea(edges: .bottom)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -188,7 +187,7 @@ struct OB_AgeView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(data.country)
                         .font(.bodyRegular)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                     Text("\(data.currencyCode) \(data.currencySymbol)")
                         .font(.bodySmall)
                         .foregroundColor(AppColors.textSecondary)
@@ -215,7 +214,7 @@ struct OB_AgeView: View {
 
     private var accentGradient: LinearGradient {
         LinearGradient(
-            colors: [AppColors.accentBlue, AppColors.accentPurple],
+            colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd],
             startPoint: .leading,
             endPoint: .trailing
         )

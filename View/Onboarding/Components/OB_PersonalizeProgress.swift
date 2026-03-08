@@ -17,23 +17,30 @@ struct OB_PersonalizeProgress: View {
                 .font(.label)
                 .foregroundColor(AppColors.textSecondary)
                 .tracking(1)
+                .frame(maxWidth: .infinity, alignment: .trailing)
 
-            HStack(spacing: 4) {
-                ForEach(0..<totalSteps, id: \.self) { i in
+            GeometryReader { geo in
+                let segmentWidth = geo.size.width / CGFloat(totalSteps)
+                let fillWidth = segmentWidth * CGFloat(currentStep)
+
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(AppColors.surfaceInput)
+                        .frame(height: 4)
+
                     Capsule()
                         .fill(
-                            i < currentStep
-                                ? AnyShapeStyle(LinearGradient(
-                                    colors: [AppColors.gradientStart, AppColors.gradientEnd],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                ))
-                                : AnyShapeStyle(AppColors.surfaceInput)
+                            LinearGradient(
+                                colors: [AppColors.gradientEnd, AppColors.gradientMiddle, AppColors.gradientStart],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
                         )
-                        .frame(height: 3)
+                        .frame(width: max(0, fillWidth), height: 4)
+                        .animation(.easeInOut(duration: 0.3), value: currentStep)
                 }
             }
-            .animation(.easeInOut(duration: 0.3), value: currentStep)
+            .frame(height: 4)
         }
     }
 }

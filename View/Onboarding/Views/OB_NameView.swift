@@ -20,12 +20,10 @@ struct OB_NameView: View {
                 .onTapGesture { isFocused = false }
 
             VStack(alignment: .leading, spacing: 0) {
-                OB_PersonalizeProgress(currentStep: 2, totalSteps: 5)
-                    .padding(.horizontal, AppSpacing.screenPadding)
-                    .padding(.top, AppSpacing.md)
+                Spacer().frame(height: OB_OnboardingHeader.height)
                     .allowsHitTesting(false)
 
-                Spacer().frame(height: 64)
+                Spacer().frame(height: AppSpacing.sm)
                     .allowsHitTesting(false)
 
                 HStack(alignment: .center, spacing: 16) {
@@ -39,7 +37,7 @@ struct OB_NameView: View {
                         .overlay(
                             Image(systemName: "person.crop.circle")
                                 .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(.white)
+                                .foregroundStyle(.white)
                         )
                     Spacer()
                 }
@@ -50,7 +48,7 @@ struct OB_NameView: View {
 
                 Text("What should we call you?")
                     .font(.obQuestion)
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .allowsHitTesting(false)
 
                 Spacer().frame(height: 10)
@@ -67,7 +65,7 @@ struct OB_NameView: View {
                 TextField("", text: $data.userName,
                           prompt: Text("Your name").foregroundColor(AppColors.textTertiary))
                     .font(.bodyRegular)
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .textContentType(.givenName)
                     .focused($isFocused)
                     .padding(.horizontal, 20)

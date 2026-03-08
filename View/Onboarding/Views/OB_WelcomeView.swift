@@ -59,7 +59,7 @@ struct OB_WelcomeView: View {
                 // Slide headline — serif font for editorial feel
                 Text(slides[currentSlide].title)
                     .font(.obSlideTitle)
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
                     .padding(.horizontal, 32)
@@ -245,7 +245,7 @@ private struct WelcomeFireProgressCard: View {
 
                 Text("On track to retire at your target age")
                     .font(.system(size: 17, weight: .regular))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -265,7 +265,7 @@ private struct WelcomeFireProgressCard: View {
                         VStack(spacing: 2) {
                             Text("13%")
                                 .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundStyle(.white)
                             Text("ACHIEVED")
                                 .font(.system(size: 8, weight: .semibold))
                                 .foregroundColor(.white.opacity(0.58))
@@ -323,12 +323,12 @@ private struct WelcomeBudgetCard: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(name)
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .tracking(0.5)
                 Spacer()
                 Text(amount)
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
             }
             GeometryReader { g in
                 Capsule()
@@ -350,7 +350,7 @@ private struct WelcomeBudgetCard: View {
                                     Spacer()
                                     Text(item.1)
                                         .font(.system(size: 11.5, weight: .medium))
-                                        .foregroundColor(.white)
+                                        .foregroundStyle(.white)
                                     Text(item.2)
                         .font(.system(size: 9))
                         .foregroundColor(.white.opacity(0.45))
@@ -391,7 +391,7 @@ private struct WelcomeSavingsCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("US$20,200")
                         .font(.system(size: 22, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                     Text("Total saved this year")
                         .font(.system(size: 10))
                         .foregroundColor(.white.opacity(0.55))
@@ -455,7 +455,7 @@ private struct WelcomeSavingsCard: View {
                 .tracking(0.4)
             Text(value)
                 .font(.system(size: 15, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
         }
         .frame(maxWidth: .infinity, alignment: trailing ? .trailing : .leading)
     }
@@ -476,7 +476,7 @@ private struct WelcomeNetWorthCard: View {
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
                             Text("$210,150")
                                 .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundStyle(.white)
                             Text("+13.8%")
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundColor(AppColors.accentGreen)
