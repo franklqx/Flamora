@@ -66,7 +66,7 @@ struct OB_RoadmapView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollViewReader { proxy in
                 ScrollView(showsIndicators: false) {
@@ -421,7 +421,7 @@ struct OB_RoadmapView: View {
     private var stickyBottomCTA: some View {
         VStack(spacing: 0) {
             LinearGradient(
-                colors: [Color.black.opacity(0), Color.black],
+                colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -470,7 +470,7 @@ struct OB_RoadmapView: View {
             }
             .padding(.horizontal, AppSpacing.screenPadding)
             .padding(.bottom, 0)
-            .background(Color.black)
+            .background(AppColors.backgroundPrimary)
             .ignoresSafeArea(edges: .bottom)
         }
     }
@@ -676,7 +676,7 @@ struct OB_RoadmapView: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_RoadmapView(data: OnboardingData(), onNext: {}, onBackToLifestyle: {}, backAction: .constant(nil))
     }
 }

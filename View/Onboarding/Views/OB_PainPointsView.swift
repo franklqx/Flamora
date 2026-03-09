@@ -59,19 +59,19 @@ struct OB_PainPointsView: View {
             // Sticky CTA
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), Color.black],
+                    colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary],
                     startPoint: .top,
                     endPoint: .bottom
                 )
                 .frame(height: 32)
 
                 OB_PrimaryButton(isValid: isValid, action: onNext)
-                .background(Color.black)
+                .background(AppColors.backgroundPrimary)
                 .ignoresSafeArea(edges: .bottom)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color.black)
+        .background(AppColors.backgroundPrimary)
     }
 
     private var isValid: Bool {
@@ -168,7 +168,7 @@ private struct ChallengeCard: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_PainPointsView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

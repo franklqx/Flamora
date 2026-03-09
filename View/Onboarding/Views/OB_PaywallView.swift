@@ -34,7 +34,7 @@ struct OB_PaywallView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // Header
@@ -204,7 +204,7 @@ struct OB_PaywallView: View {
             // Sticky CTA（与 AgeView 一致）
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), Color.black],
+                    colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary],
                     startPoint: .top, endPoint: .bottom
                 )
                 .frame(height: 28)
@@ -238,7 +238,7 @@ struct OB_PaywallView: View {
                 }
                 .padding(.horizontal, AppSpacing.screenPadding)
                 .padding(.bottom, 0)
-                .background(Color.black)
+                .background(AppColors.backgroundPrimary)
                 .ignoresSafeArea(edges: .bottom)
             }
             .opacity(appear ? 1 : 0)
@@ -305,7 +305,7 @@ struct OB_PaywallView: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_PaywallView(data: OnboardingData(), onBack: {}, onComplete: {})
             .environment(SubscriptionManager.shared)
     }

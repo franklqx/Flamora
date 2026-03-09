@@ -16,7 +16,7 @@ struct OB_NameView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
                 .onTapGesture { isFocused = false }
 
             VStack(alignment: .leading, spacing: 0) {
@@ -103,7 +103,7 @@ struct OB_NameView: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_NameView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

@@ -37,7 +37,7 @@ struct AppColors {
     static let textInverse      = Color(hex: "#000000")
 
     // MARK: - Background (page-level)
-    static let backgroundPrimary    = Color(hex: "#000000")
+    static let backgroundPrimary    = Color(hex: "#121212")
     static let backgroundSecondary  = Color(hex: "#0F1419")
     static let backgroundInput      = Color(hex: "#1E2530")
 

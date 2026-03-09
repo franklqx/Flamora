@@ -24,7 +24,7 @@ struct OB_InvestmentView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -67,7 +67,7 @@ struct OB_InvestmentView: View {
             // Sticky CTA（与 AgeView 一致）
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), Color.black],
+                    colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary],
                     startPoint: .top, endPoint: .bottom
                 )
                 .frame(height: 28)
@@ -76,7 +76,7 @@ struct OB_InvestmentView: View {
                     data.currentNetWorth = "\(Int(investmentValue))"
                     onNext()
                 })
-                .background(Color.black)
+                .background(AppColors.backgroundPrimary)
                 .ignoresSafeArea(edges: .bottom)
             }
         }
@@ -222,7 +222,7 @@ struct OB_InvestmentView: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_InvestmentView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

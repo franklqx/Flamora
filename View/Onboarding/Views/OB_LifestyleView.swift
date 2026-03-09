@@ -123,7 +123,7 @@ struct OB_LifestyleView: View {
             // 底部 CTA — 和 ScrollView 同级，键盘弹出时自动上移
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), Color.black],
+                    colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary],
                     startPoint: .top, endPoint: .bottom
                 )
                 .frame(height: 28)
@@ -138,10 +138,10 @@ struct OB_LifestyleView: View {
                     onNext()
                 })
             }
-            .background(Color.black)
+            .background(AppColors.backgroundPrimary)
             .ignoresSafeArea(edges: .bottom)
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(AppColors.backgroundPrimary.ignoresSafeArea())
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
@@ -219,7 +219,7 @@ struct OB_LifestyleView: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_LifestyleView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

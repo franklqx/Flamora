@@ -801,7 +801,7 @@ private struct ValueFireContent: View {
 
 #Preview("Value Screen (full)") {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_ValueScreenView(data: OnboardingData(), onNext: {}, onBack: {})
         VStack {
             OB_OnboardingHeader(onBack: {}, current: 5, total: 10)

@@ -75,8 +75,8 @@ struct OB_WelcomeView: View {
                     switch slides[currentSlide].cardType {
                     case .fireProgress: WelcomeFireProgressCard()
                     case .budget:       WelcomeBudgetCard(isActive: currentSlide == 1)
-                    case .savings:     WelcomeSavingsCard()
-                    case .netWorth:    WelcomeNetWorthCard()
+                    case .savings:     WelcomeSavingsCard(isActive: currentSlide == 2)
+                    case .netWorth:    WelcomeNetWorthCard(isActive: currentSlide == 3)
                     }
                 }
                 .transition(.asymmetric(
@@ -152,21 +152,24 @@ private struct GlassCard<Content: View>: View {
             .background(
                 RoundedRectangle(cornerRadius: 24)
                     .fill(.ultraThinMaterial)
-                    .opacity(0.55)
-                    .overlay(
-                        LinearGradient(
-                            colors: [.white.opacity(0.25), .clear],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 24))
-                    )
+                    .opacity(0.4)
                     .overlay(
                         RoundedRectangle(cornerRadius: 24)
-                            .stroke(.white.opacity(0.25), lineWidth: 1)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [
+                                        .white.opacity(0.8),
+                                        .white.opacity(0.4),
+                                        .white.opacity(0.0)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.5
+                            )
                     )
             )
-            .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 6)
+            .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 6)
     }
 }
 
@@ -421,8 +424,48 @@ private struct WelcomeBudgetCard: View {
 // MARK: - Card 3: Savings Overview
 
 private struct WelcomeSavingsCard: View {
+    let isActive: Bool
+
     private let months = ["J","F","M","A","M","J","J","A","S","O","N","D"]
-    private let values: [CGFloat] = [0.55, 0.65, 0.50, 0.70, 0.75, 0.60, 0.80, 0.90, 0.72, 0, 0, 0]
+    // Jan(below), Feb(target), Mar(above), Apr(below), May(target), Jun(above),
+    // Jul(target), Aug(above), Sep(below), Oct-Dec(future)
+    private let values: [CGFloat] = [0.62, 0.75, 0.88, 0.58, 0.75, 0.85, 0.75, 0.95, 0.65, 0, 0, 0]
+    private let targetRatio: CGFloat = 0.75
+
+    @State private var barHeights: [CGFloat] = Array(repeating: 0, count: 12)
+    @State private var displayAmount: Int = 0
+
+    private static let formatter: NumberFormatter = {
+        let f = NumberFormatter(); f.numberStyle = .decimal; return f
+    }()
+    private func formatted(_ v: Int) -> String {
+        "$" + (Self.formatter.string(from: NSNumber(value: v)) ?? "\(v)")
+    }
+
+    private func animateCounter(to target: Int, duration: Double, update: @escaping (Int) -> Void) {
+        let start = Date()
+        Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { t in
+            let p = min(Date().timeIntervalSince(start) / duration, 1.0)
+            let eased = 1 - pow(1 - p, 3)
+            update(Int(Double(target) * eased))
+            if p >= 1.0 { t.invalidate(); update(target) }
+        }
+    }
+
+    private func startAnimation() {
+        // Bars: sequential grow-in — each bar fully grows before the next starts
+        let barDuration = 0.22
+        for i in 0..<values.count {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * barDuration) {
+                withAnimation(.easeOut(duration: barDuration)) {
+                    barHeights[i] = values[i]
+                }
+            }
+        }
+        // Amount counter — matches total bar animation duration so both finish together
+        let totalDuration = barDuration * Double(values.count)
+        animateCounter(to: 20200, duration: totalDuration) { displayAmount = $0 }
+    }
 
     var body: some View {
         GlassCard {
@@ -442,9 +485,10 @@ private struct WelcomeSavingsCard: View {
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("US$20,200")
+                    Text(formatted(displayAmount))
                         .font(.system(size: 22, weight: .bold))
                         .foregroundStyle(.white)
+                        .monospacedDigit()
                     Text("Total saved this year")
                         .font(.system(size: 10))
                         .foregroundColor(.white.opacity(0.55))
@@ -453,49 +497,74 @@ private struct WelcomeSavingsCard: View {
                 GeometryReader { geo in
                     let n = months.count
                     let gap: CGFloat = 3
+                    let labelH: CGFloat = 12
+                    let barAreaH = geo.size.height - labelH
                     let barW = (geo.size.width - gap * CGFloat(n - 1)) / CGFloat(n)
-                    let maxH = geo.size.height - 14
+                    // Y offset from top where a "target-height" bar's top sits
+                    let targetY = barAreaH * (1 - targetRatio)
 
-                    ZStack(alignment: .top) {
-                        HStack(spacing: 2) {
-                            ForEach(0..<18, id: \.self) { _ in
-                                Capsule()
-                                    .fill(Color.white.opacity(0.32))
-                                    .frame(width: 4, height: 1)
-                            }
-                            Text("TARGET")
-                                .font(.system(size: 6, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.38))
-                                .tracking(0.3)
+                    ZStack(alignment: .topLeading) {
+                        // Full-width dashed target line
+                        Path { p in
+                            p.move(to: CGPoint(x: 0, y: targetY))
+                            p.addLine(to: CGPoint(x: geo.size.width, y: targetY))
                         }
-                        .offset(y: maxH * 0.17)
+                        .stroke(style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                        .foregroundColor(.white.opacity(0.32))
 
+                        // "TARGET" label above right end of line
+                        Text("TARGET")
+                            .font(.system(size: 6, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.45))
+                            .tracking(0.3)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .offset(y: targetY - 9)
+
+                        // Bars
                         HStack(alignment: .bottom, spacing: gap) {
-                            ForEach(Array(zip(months, values).enumerated()), id: \.offset) { _, pair in
-                                let month = pair.0
+                            ForEach(Array(zip(months, values).enumerated()), id: \.offset) { idx, pair in
                                 let val = pair.1
+                                let animH = barHeights[idx]
+                                let isFuture = val == 0
+                                let isAboveTarget = val >= targetRatio
+
                                 VStack(spacing: 3) {
-                                    RoundedRectangle(cornerRadius: 3)
-                                        .fill(val > 0 ? Color.white : Color.white.opacity(0.18))
-                                        .frame(width: barW, height: max(6, maxH * (val > 0 ? val : 0.28)))
-                                    Text(month)
+                                    if isFuture {
+                                        // Future month: small stub
+                                        RoundedRectangle(cornerRadius: 2)
+                                            .fill(Color.white.opacity(0.18))
+                                            .frame(width: barW, height: 6)
+                                    } else {
+                                        // Active: white if at/above target, gray if below
+                                        RoundedRectangle(cornerRadius: 3)
+                                            .fill(isAboveTarget ? Color.white : Color.white.opacity(0.35))
+                                            .frame(width: barW, height: max(6, barAreaH * animH))
+                                    }
+                                    Text(pair.0)
                                         .font(.system(size: 6))
                                         .foregroundColor(.white.opacity(0.40))
                                         .frame(width: barW)
                                 }
                             }
                         }
-                        .frame(maxHeight: .infinity, alignment: .bottom)
+                        .frame(width: geo.size.width, height: geo.size.height, alignment: .bottom)
                     }
                 }
-                .frame(height: 74)
+                .frame(height: 80)
 
                 HStack {
-                    statItem(label: "TARGET RATE",   value: "20%",       trailing: false)
+                    statItem(label: "TARGET RATE",   value: "20%",     trailing: false)
                     Divider().background(Color.white.opacity(0.18)).frame(height: 28)
-                    statItem(label: "TARGET SAVING", value: "US$2,000",  trailing: true)
+                    statItem(label: "TARGET SAVING", value: "$2,000",  trailing: true)
                 }
             }
+        }
+        .onAppear { startAnimation() }
+        .onChange(of: isActive) { _, newValue in
+            guard newValue else { return }
+            barHeights = Array(repeating: 0, count: 12)
+            displayAmount = 0
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { startAnimation() }
         }
     }
 
@@ -516,23 +585,83 @@ private struct WelcomeSavingsCard: View {
 
 // MARK: - Card 4: Net Worth
 
+private struct NetWorthLineShape: Shape {
+    // 左下 (0,0.78) → 右上 (1,0.25)，涨跌波动但总体向上，类似真实 K 线图
+    private let rawPts: [(CGFloat, CGFloat)] = [
+        (0.00,0.78),(0.08,0.68),(0.17,0.75),(0.25,0.65),(0.33,0.70),
+        (0.42,0.58),(0.50,0.62),(0.58,0.48),(0.67,0.55),(0.75,0.42),
+        (0.83,0.50),(0.92,0.35),(0.96,0.40),(1.00,0.25)
+    ]
+    func path(in rect: CGRect) -> Path {
+        let pts = rawPts.map { CGPoint(x: $0.0 * rect.width, y: $0.1 * rect.height) }
+        var p = Path()
+        p.move(to: pts[0])
+        for i in 0..<pts.count - 1 {
+            let cp1 = CGPoint(x: (pts[i].x + pts[i+1].x) / 2, y: pts[i].y)
+            let cp2 = CGPoint(x: (pts[i].x + pts[i+1].x) / 2, y: pts[i+1].y)
+            p.addCurve(to: pts[i+1], control1: cp1, control2: cp2)
+        }
+        return p
+    }
+}
+
 private struct WelcomeNetWorthCard: View {
+    let isActive: Bool
+
+    @State private var trimEnd: CGFloat = 0
+    @State private var displayAmount: Int = 0
+    @State private var showDot = false
+    @State private var pulse = false
+
+    private static let formatter: NumberFormatter = {
+        let f = NumberFormatter(); f.numberStyle = .decimal; return f
+    }()
+    private func formatted(_ v: Int) -> String {
+        "$" + (Self.formatter.string(from: NSNumber(value: v)) ?? "\(v)")
+    }
+
+    private func animateCounter(to target: Int, duration: Double, update: @escaping (Int) -> Void) {
+        let start = Date()
+        Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { t in
+            let p = min(Date().timeIntervalSince(start) / duration, 1.0)
+            let eased = 1 - pow(1 - p, 3)
+            update(Int(Double(target) * eased))
+            if p >= 1.0 { t.invalidate(); update(target) }
+        }
+    }
+
+    private func startAnimation() {
+        // 折线从左到右描绘
+        withAnimation(.easeInOut(duration: 1.4).delay(0.2)) { trimEnd = 1.0 }
+        // 金额 counter
+        animateCounter(to: 210150, duration: 1.4) { displayAmount = $0 }
+        // 末端光点在折线画完后出现
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.7) {
+            showDot = true
+            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
+                pulse = true
+            }
+        }
+    }
+
     var body: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 16) {
                 HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("TOTAL NET WORTH")
                             .font(.system(size: 9, weight: .bold))
                             .foregroundColor(.white.opacity(0.65))
                             .tracking(0.8)
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text("$210,150")
+                            Text(formatted(displayAmount))
                                 .font(.system(size: 24, weight: .bold))
                                 .foregroundStyle(.white)
+                                .monospacedDigit()
                             Text("+13.8%")
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundColor(AppColors.accentGreen)
+                                .opacity(displayAmount > 0 ? 1 : 0)
                         }
                     }
                     Spacer()
@@ -545,25 +674,28 @@ private struct WelcomeNetWorthCard: View {
                 }
 
                 GeometryReader { geo in
-                    let w = geo.size.width
-                    let h = geo.size.height
-                    let pts: [CGPoint] = [
-                        (0.00,0.50),(0.10,0.60),(0.18,0.42),(0.26,0.62),(0.34,0.38),
-                        (0.42,0.55),(0.50,0.35),(0.58,0.50),(0.66,0.30),(0.74,0.42),
-                        (0.82,0.25),(0.90,0.38),(1.00,0.20)
-                    ].map { CGPoint(x: $0.0 * w, y: $0.1 * h) }
+                    ZStack {
+                        // 折线描绘动画
+                        NetWorthLineShape()
+                            .trim(from: 0, to: trimEnd)
+                            .stroke(Color.white, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
 
-                    Path { p in
-                        p.move(to: pts[0])
-                        for i in 0..<pts.count - 1 {
-                            let cp1 = CGPoint(x: (pts[i].x + pts[i+1].x) / 2, y: pts[i].y)
-                            let cp2 = CGPoint(x: (pts[i].x + pts[i+1].x) / 2, y: pts[i+1].y)
-                            p.addCurve(to: pts[i+1], control1: cp1, control2: cp2)
+                        // 末端脉冲光点 (曲线终点 y=0.25)
+                        if showDot {
+                            let endX = geo.size.width
+                            let endY = geo.size.height * 0.25
+                            Circle()
+                                .fill(Color.white.opacity(pulse ? 0.0 : 0.35))
+                                .frame(width: 18, height: 18)
+                                .position(x: endX, y: endY)
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 6, height: 6)
+                                .position(x: endX, y: endY)
                         }
                     }
-                    .stroke(Color.white, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
                 }
-                .frame(height: 58)
+                .frame(height: 70)
 
                 HStack(spacing: 0) {
                     ForEach(["1W","1M","3M","YTD","ALL"], id: \.self) { period in
@@ -572,15 +704,21 @@ private struct WelcomeNetWorthCard: View {
                             .font(.system(size: 10, weight: selected ? .semibold : .regular))
                             .foregroundColor(selected ? .black : .white.opacity(0.55))
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 6)
+                            .padding(.vertical, 8)
                             .background(selected ? Color.white : Color.clear)
                             .clipShape(Capsule())
                     }
                 }
-                .padding(3)
+                .padding(4)
                 .background(Color.white.opacity(0.12))
                 .clipShape(Capsule())
             }
+        }
+        .onAppear { startAnimation() }
+        .onChange(of: isActive) { _, newValue in
+            guard newValue else { return }
+            trimEnd = 0; displayAmount = 0; showDot = false; pulse = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { startAnimation() }
         }
     }
 }
