@@ -74,7 +74,7 @@ struct OB_WelcomeView: View {
                 Group {
                     switch slides[currentSlide].cardType {
                     case .fireProgress: WelcomeFireProgressCard()
-                    case .budget:       WelcomeBudgetCard()
+                    case .budget:       WelcomeBudgetCard(isActive: currentSlide == 1)
                     case .savings:     WelcomeSavingsCard()
                     case .netWorth:    WelcomeNetWorthCard()
                     }
@@ -238,6 +238,26 @@ private struct WelcomeFireProgressCard: View {
 // MARK: - Card 2: Budget
 
 private struct WelcomeBudgetCard: View {
+    let isActive: Bool
+
+    @State private var needsProgress: CGFloat = 0       // 0 → 0.62
+    @State private var wantsProgress: CGFloat = 0       // 0 → 0.38
+    @State private var needsDisplayAmount: Int = 0        // 0 → 2678 (Timer-driven)
+    @State private var wantsDisplayAmount: Int = 0        // 0 → 955  (Timer-driven)
+    @State private var showPercentages = false
+    @State private var showSubcategories = false
+    @State private var subcategoryVisible: [Bool] = Array(repeating: false, count: 6)
+
+    private static let amountFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        return f
+    }()
+
+    private func formattedNumber(_ value: Int) -> String {
+        Self.amountFormatter.string(from: NSNumber(value: value)) ?? "\(value)"
+    }
+
     var body: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 0) {
@@ -251,8 +271,12 @@ private struct WelcomeBudgetCard: View {
                 .padding(.bottom, 12)
 
                 budgetSection(
-                    name: "NEEDS", amount: "$2,678", pct: "62% OF INCOME", progress: 0.62,
-                    items: [("Rent","$1,768","41%"), ("Groceries","$614","14%"), ("Utilities","$296","7%")]
+                    name: "NEEDS",
+                    amount: needsDisplayAmount,
+                    pct: "62% OF INCOME",
+                    progress: needsProgress,
+                    items: [("Rent","$1,768","41%"), ("Groceries","$614","14%"), ("Utilities","$296","7%")],
+                    subcategoryIndices: [0, 2, 4]
                 )
 
                 Divider()
@@ -260,16 +284,84 @@ private struct WelcomeBudgetCard: View {
                     .padding(.vertical, 10)
 
                 budgetSection(
-                    name: "WANTS", amount: "$955", pct: "38% OF INCOME", progress: 0.38,
-                    items: [("Dining","$420","10%"), ("Shopping","$325","8%"), ("Travel","$210","5%")]
+                    name: "WANTS",
+                    amount: wantsDisplayAmount,
+                    pct: "38% OF INCOME",
+                    progress: wantsProgress,
+                    items: [("Dining","$420","10%"), ("Shopping","$325","8%"), ("Travel","$210","5%")],
+                    subcategoryIndices: [1, 3, 5]
                 )
+            }
+        }
+        .onAppear {
+            startAnimation()
+        }
+        .onChange(of: isActive) { _, newValue in
+            if newValue {
+                needsProgress = 0
+                wantsProgress = 0
+                needsDisplayAmount = 0
+                wantsDisplayAmount = 0
+                showPercentages = false
+                showSubcategories = false
+                subcategoryVisible = Array(repeating: false, count: 6)
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    startAnimation()
+                }
+            }
+        }
+    }
+
+    private func animateCounter(from: Int, to: Int, duration: Double, update: @escaping (Int) -> Void) {
+        let startTime = Date()
+        Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { timer in
+            let elapsed = Date().timeIntervalSince(startTime)
+            let progress = min(elapsed / duration, 1.0)
+            // easeOut cubic curve
+            let eased = 1 - pow(1 - progress, 3)
+            let current = Int(Double(from) + Double(to - from) * eased)
+            update(current)
+            if progress >= 1.0 {
+                timer.invalidate()
+                update(to)
+            }
+        }
+    }
+
+    private func startAnimation() {
+        // Step 1 — Progress bars + percentage labels (~2s)
+        withAnimation(.timingCurve(0.25, 0, 0.1, 1, duration: 2.0)) {
+            needsProgress = 0.62
+            wantsProgress = 0.38
+            showPercentages = true
+        }
+
+        // Step 1 — Amount counters (Timer-driven, 2s, easeOut)
+        animateCounter(from: 0, to: 2678, duration: 2.0) { needsDisplayAmount = $0 }
+        animateCounter(from: 0, to: 955, duration: 2.0) { wantsDisplayAmount = $0 }
+
+        // Step 2 — Subcategory expand + staggered slide-in (800ms after Step 1 ends = 2.8s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.8) {
+            withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 1.4)) {
+                showSubcategories = true
+            }
+
+            // Interleaved stagger: Rent(0) → Dining(280) → Groceries(560) → Shopping(840) → Utilities(1120) → Travel(1400)
+            let staggerDelays = [0.0, 0.280, 0.560, 0.840, 1.120, 1.400]
+            for i in 0..<6 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + staggerDelays[i]) {
+                    withAnimation(.easeOut(duration: 0.8)) {
+                        subcategoryVisible[i] = true
+                    }
+                }
             }
         }
     }
 
     @ViewBuilder
-    private func budgetSection(name: String, amount: String, pct: String, progress: CGFloat,
-                               items: [(String, String, String)]) -> some View {
+    private func budgetSection(name: String, amount: Int, pct: String, progress: CGFloat,
+                               items: [(String, String, String)], subcategoryIndices: [Int]) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline) {
                 Text(name)
@@ -277,9 +369,10 @@ private struct WelcomeBudgetCard: View {
                     .foregroundStyle(.white)
                     .tracking(0.5)
                 Spacer()
-                Text(amount)
+                Text("$" + formattedNumber(amount))
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(.white)
+                    .monospacedDigit()
             }
             GeometryReader { g in
                 Capsule()
@@ -291,27 +384,36 @@ private struct WelcomeBudgetCard: View {
             Text(pct)
                 .font(.system(size: 8))
                 .foregroundColor(.white.opacity(0.48))
+                .opacity(showPercentages ? 1 : 0)
                 .padding(.bottom, 4)
 
-                            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                                HStack(spacing: 4) {
-                                    Text(item.0)
-                                        .font(.system(size: 11.5))
-                                        .foregroundColor(.white.opacity(0.82))
-                                    Spacer()
-                                    Text(item.1)
-                                        .font(.system(size: 11.5, weight: .medium))
-                                        .foregroundStyle(.white)
-                                    Text(item.2)
-                        .font(.system(size: 9))
-                        .foregroundColor(.white.opacity(0.45))
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 2)
-                        .background(Color.white.opacity(0.12))
-                        .clipShape(Capsule())
+            VStack(spacing: 0) {
+                if showSubcategories {
+                    ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                        let globalIndex = subcategoryIndices[index]
+                        HStack(spacing: 4) {
+                            Text(item.0)
+                                .font(.system(size: 11.5))
+                                .foregroundColor(.white.opacity(0.82))
+                            Spacer()
+                            Text(item.1)
+                                .font(.system(size: 11.5, weight: .medium))
+                                .foregroundStyle(.white)
+                            Text(item.2)
+                                .font(.system(size: 9))
+                                .foregroundColor(.white.opacity(0.45))
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 2)
+                                .background(Color.white.opacity(0.12))
+                                .clipShape(Capsule())
+                        }
+                        .padding(.vertical, 1.5)
+                        .opacity(subcategoryVisible[globalIndex] ? 1 : 0)
+                        .offset(x: subcategoryVisible[globalIndex] ? 0 : -20)
+                    }
                 }
-                .padding(.vertical, 1.5)
             }
+            .clipped()
         }
     }
 }
