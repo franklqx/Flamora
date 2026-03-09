@@ -3,7 +3,7 @@
 //  Flamora app
 //
 //  Onboarding - Step 1: Welcome Carousel (4 pages)
-//  • 背景：程序化蓝天白云（不依赖图片资产）
+//  • 背景：background.jpg（Flamora app 文件夹）
 //  • 翻页：点击左半屏 ← 上一张 / 点击右半屏 → 下一张
 //
 
@@ -17,17 +17,19 @@ struct OB_WelcomeView: View {
     @State private var currentSlide = 0
 
     private let slides: [WelcomeSlide] = [
-        WelcomeSlide(title: "Real numbers.\nReal progress.\nReal freedom.", cardType: .fireProgress),
-        WelcomeSlide(title: "Know exactly where\nevery dollar goes.", cardType: .budget),
-        WelcomeSlide(title: "Build the habit that\ngets you there.", cardType: .savings),
-        WelcomeSlide(title: "Watch your money\nwork for you", cardType: .netWorth),
+        WelcomeSlide(title: "Track\nyour FIRE progress", subtitle: "See how close you are to financial freedom.", cardType: .fireProgress),
+        WelcomeSlide(title: "See\nyour spending", subtitle: "Know exactly where every dollar goes.", cardType: .budget),
+        WelcomeSlide(title: "Build\nbetter habits", subtitle: "Save consistently and grow your future.", cardType: .savings),
+        WelcomeSlide(title: "Grow\nyour net worth", subtitle: "Watch your money work for you.", cardType: .netWorth),
     ]
 
     var body: some View {
         ZStack(alignment: .bottom) {
 
-            // ── Sky background ──────────────────────────────────────
-            ProceduralSkyView()
+            // ── Background: background.jpg from Flamora app folder ───
+            Image("AppBackground")
+                .resizable()
+                .scaledToFill()
                 .ignoresSafeArea()
 
             // Subtle bottom vignette for CTA legibility
@@ -41,33 +43,32 @@ struct OB_WelcomeView: View {
             // ── Main content column ─────────────────────────────────
             VStack(spacing: 0) {
 
-                // Top icon badge
-                ZStack {
-                    RoundedRectangle(cornerRadius: 13)
-                        .fill(.ultraThinMaterial)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 13)
-                                .stroke(Color.white.opacity(0.42), lineWidth: 1)
-                        )
-                        .frame(width: 42, height: 42)
-                    Image(systemName: "circle.grid.3x3.fill")
-                        .font(.system(size: 15, weight: .regular))
-                        .foregroundColor(.white.opacity(0.88))
+                // App Logo — 对齐图1 排版
+                Image("FlameIcon")
+                    .resizable()
+                    .renderingMode(.template)
+                    .foregroundColor(.white)
+                    .frame(width: 56, height: 56)
+                    .padding(.top, 44)
+
+                // Slide headline — New York serif + subtitle
+                VStack(spacing: 6) {
+                    Text(slides[currentSlide].title)
+                        .font(.system(size: 42, weight: .regular, design: .serif))
+                        .fontWeight(.regular)
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(4)
+                    Text(slides[currentSlide].subtitle)
+                        .font(.system(size: 17, weight: .regular))
+                        .foregroundColor(.white.opacity(0.8))
+                        .multilineTextAlignment(.center)
                 }
-                .padding(.top, 22)
+                .padding(.horizontal, 32)
+                .padding(.top, 18)
+                .animation(.easeInOut(duration: 0.25), value: currentSlide)
 
-                // Slide headline — serif font for editorial feel
-                Text(slides[currentSlide].title)
-                    .font(.obSlideTitle)
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-                    .padding(.horizontal, 32)
-                    .padding(.top, 26)
-                    .frame(minHeight: 136, alignment: .top)
-                    .animation(.easeInOut(duration: 0.25), value: currentSlide)
-
-                Spacer().frame(height: 10)
+                Spacer().frame(height: 28)
 
                 // Slide card — wrapped in animation context
                 Group {
@@ -134,73 +135,11 @@ struct OB_WelcomeView: View {
 private struct WelcomeSlide {
     enum CardType { case fireProgress, budget, savings, netWorth }
     let title: String
+    let subtitle: String
     let cardType: CardType
 }
 
-// MARK: - Procedural Sky Background
-
-struct ProceduralSkyView: View {
-    var body: some View {
-        ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.26, green: 0.48, blue: 0.76),
-                    Color(red: 0.34, green: 0.57, blue: 0.82),
-                    Color(red: 0.46, green: 0.68, blue: 0.88),
-                    Color(red: 0.63, green: 0.80, blue: 0.93),
-                    Color(red: 0.82, green: 0.92, blue: 0.97),
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-
-            Ellipse()
-                .fill(Color.white.opacity(0.52))
-                .frame(width: 310, height: 105)
-                .blur(radius: 40)
-                .offset(x: 75, y: -250)
-
-            Ellipse()
-                .fill(Color.white.opacity(0.44))
-                .frame(width: 240, height: 78)
-                .blur(radius: 32)
-                .offset(x: -68, y: -175)
-
-            Ellipse()
-                .fill(Color.white.opacity(0.58))
-                .frame(width: 390, height: 130)
-                .blur(radius: 56)
-                .offset(x: 12, y: 85)
-
-            Ellipse()
-                .fill(Color.white.opacity(0.46))
-                .frame(width: 225, height: 72)
-                .blur(radius: 28)
-                .offset(x: 108, y: 28)
-
-            Ellipse()
-                .fill(Color.white.opacity(0.40))
-                .frame(width: 275, height: 88)
-                .blur(radius: 46)
-                .offset(x: 58, y: 215)
-
-            Ellipse()
-                .fill(Color.white.opacity(0.34))
-                .frame(width: 195, height: 62)
-                .blur(radius: 38)
-                .offset(x: -88, y: 265)
-
-            RadialGradient(
-                colors: [Color.white.opacity(0.16), Color.clear],
-                center: .top,
-                startRadius: 0,
-                endRadius: 320
-            )
-        }
-    }
-}
-
-// MARK: - Glass Card Base
+// MARK: - Glass Card Base (透明玻璃质感立体卡片)
 
 private struct GlassCard<Content: View>: View {
     @ViewBuilder let content: () -> Content
@@ -209,13 +148,25 @@ private struct GlassCard<Content: View>: View {
         content()
             .padding(.horizontal, 20)
             .padding(.vertical, 18)
-            .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 22))
-            .overlay(
-                RoundedRectangle(cornerRadius: 22)
-                    .stroke(Color.white.opacity(0.36), lineWidth: 1)
+            .frame(minHeight: 260)
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(.ultraThinMaterial)
+                    .opacity(0.55)
+                    .overlay(
+                        LinearGradient(
+                            colors: [.white.opacity(0.25), .clear],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 24))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(.white.opacity(0.25), lineWidth: 1)
+                    )
             )
-            .shadow(color: Color.black.opacity(0.10), radius: 18, x: 0, y: 6)
+            .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 6)
     }
 }
 

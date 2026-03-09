@@ -86,6 +86,27 @@ struct AppColors {
     static let glassBackground     = Color.black.opacity(0.68)
 }
 
+// MARK: - Gradient Wallpaper (Welcome / Onboarding 背景)
+
+struct MyGradients {
+    static let gradientFire: [Color] = [
+        Color(hex: "#A78BFA"),    // 紫色
+        Color(hex: "#FCA5A5"),    // 粉色
+        Color(hex: "#FCD34D")     // 黄色
+    ]
+}
+
+struct GradientWallpaperView: View {
+    var body: some View {
+        LinearGradient(
+            gradient: Gradient(colors: MyGradients.gradientFire),
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .ignoresSafeArea()
+    }
+}
+
 // MARK: - Hex Extension
 extension Color {
     init(hex: String) {
