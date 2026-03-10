@@ -13,7 +13,7 @@ struct OB_IntroView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            Color.black.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -77,14 +77,14 @@ struct OB_IntroView: View {
             // CTA
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary],
+                    colors: [Color.black.opacity(0), Color.black],
                     startPoint: .top,
                     endPoint: .bottom
                 )
                 .frame(height: 32)
 
                 OB_PrimaryButton(title: "Let's Do This", action: onNext)
-                .background(AppColors.backgroundPrimary)
+                .background(Color.black)
                 .ignoresSafeArea(edges: .bottom)
             }
         }
@@ -131,7 +131,7 @@ private struct OBInfoPill: View {
 
 #Preview {
     ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
+        Color.black.ignoresSafeArea()
         OB_IntroView(onNext: {}, onBack: {})
     }
 }

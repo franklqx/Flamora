@@ -3,8 +3,7 @@
 //  Flamora app
 //
 //  Onboarding - Step 1: Welcome Carousel (4 pages)
-//  • 背景：background.jpg（Flamora app 文件夹）
-//  • 翻页：点击左半屏 ← 上一张 / 点击右半屏 → 下一张
+//  • 翻页：点击左半屏 ← / 点击右半屏 → / 左右滑动 / 动画完成后自动播放
 //
 
 import SwiftUI
@@ -15,18 +14,40 @@ struct OB_WelcomeView: View {
     let onNext: () -> Void
 
     @State private var currentSlide = 0
+    @State private var slideDirection: Int = 1
+    @State private var autoAdvanceTask: DispatchWorkItem?
 
     private let slides: [WelcomeSlide] = [
-        WelcomeSlide(title: "Track\nyour FIRE progress", subtitle: "See how close you are to financial freedom.", cardType: .fireProgress),
-        WelcomeSlide(title: "See\nyour spending", subtitle: "Know exactly where every dollar goes.", cardType: .budget),
-        WelcomeSlide(title: "Build\nbetter habits", subtitle: "Save consistently and grow your future.", cardType: .savings),
-        WelcomeSlide(title: "Grow\nyour net worth", subtitle: "Watch your money work for you.", cardType: .netWorth),
+        WelcomeSlide(
+            title: "Retire\non your terms",
+            subtitle: "Track your FIRE progress.",
+            cardType: .fireProgress,
+            autoAdvanceDelay: 3.5
+        ),
+        WelcomeSlide(
+            title: "See\nyour spending",
+            subtitle: "Know exactly where every dollar goes.",
+            cardType: .budget,
+            autoAdvanceDelay: 5.5
+        ),
+        WelcomeSlide(
+            title: "Build\nbetter habits",
+            subtitle: "Save consistently and grow your future.",
+            cardType: .savings,
+            autoAdvanceDelay: 4.5
+        ),
+        WelcomeSlide(
+            title: "Grow\nyour net worth",
+            subtitle: "Watch your money work for you.",
+            cardType: .netWorth,
+            autoAdvanceDelay: 4.5
+        ),
     ]
 
     var body: some View {
         ZStack(alignment: .bottom) {
 
-            // ── Background: background.jpg from Flamora app folder ───
+            // ── Background ───────────────────────────────────────────
             Image("AppBackground")
                 .resizable()
                 .scaledToFill()
@@ -40,10 +61,10 @@ struct OB_WelcomeView: View {
             )
             .ignoresSafeArea()
 
-            // ── Main content column ─────────────────────────────────
+            // ── Main content column ──────────────────────────────────
             VStack(spacing: 0) {
 
-                // App Logo — 对齐图1 排版
+                // App Logo
                 Image("FlameIcon")
                     .resizable()
                     .renderingMode(.template)
@@ -51,7 +72,7 @@ struct OB_WelcomeView: View {
                     .frame(width: 56, height: 56)
                     .padding(.top, 44)
 
-                // Slide headline — New York serif + subtitle
+                // Slide headline
                 VStack(spacing: 6) {
                     Text(slides[currentSlide].title)
                         .font(.system(size: 42, weight: .regular, design: .serif))
@@ -70,7 +91,7 @@ struct OB_WelcomeView: View {
 
                 Spacer().frame(height: 28)
 
-                // Slide card — wrapped in animation context
+                // Slide card
                 Group {
                     switch slides[currentSlide].cardType {
                     case .fireProgress: WelcomeFireProgressCard()
@@ -80,8 +101,8 @@ struct OB_WelcomeView: View {
                     }
                 }
                 .transition(.asymmetric(
-                    insertion: .move(edge: currentSlide > 0 ? .trailing : .leading).combined(with: .opacity),
-                    removal:   .move(edge: currentSlide > 0 ? .leading  : .trailing).combined(with: .opacity)
+                    insertion: .move(edge: slideDirection > 0 ? .trailing : .leading).combined(with: .opacity),
+                    removal:   .move(edge: slideDirection > 0 ? .leading  : .trailing).combined(with: .opacity)
                 ))
                 .id(currentSlide)
                 .padding(.horizontal, 20)
@@ -103,30 +124,59 @@ struct OB_WelcomeView: View {
                 OB_PrimaryButton(title: "Get Started", action: onNext)
             }
 
-            // ── Left / right tap overlay (do not cover CTA) ─────────
+            // ── Tap + swipe overlay (excludes CTA area) ─────────────
             GeometryReader { geo in
                 HStack(spacing: 0) {
                     Color.clear
                         .contentShape(Rectangle())
-                        .onTapGesture {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                currentSlide = (currentSlide - 1 + slides.count) % slides.count
-                            }
-                        }
+                        .onTapGesture { navigate(by: -1) }
                         .frame(width: geo.size.width / 2)
 
                     Color.clear
                         .contentShape(Rectangle())
-                        .onTapGesture {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                currentSlide = (currentSlide + 1) % slides.count
-                            }
-                        }
+                        .onTapGesture { navigate(by: 1) }
                         .frame(width: geo.size.width / 2)
                 }
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 25)
+                        .onEnded { value in
+                            guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                            navigate(by: value.translation.width < 0 ? 1 : -1)
+                        }
+                )
             }
-            .padding(.bottom, 56 + 48 + 26 + 38)  // 56 按钮高度 + xxl 底部 + 其他
+            .padding(.bottom, 56 + 48 + 26 + 38)
         }
+        .onAppear {
+            scheduleAutoAdvance()
+        }
+    }
+
+    // MARK: - Navigation
+
+    private func navigate(by delta: Int) {
+        autoAdvanceTask?.cancel()
+        slideDirection = delta >= 0 ? 1 : -1
+        withAnimation(.easeInOut(duration: 0.3)) {
+            currentSlide = (currentSlide + delta + slides.count) % slides.count
+        }
+        scheduleAutoAdvance()
+    }
+
+    private func scheduleAutoAdvance() {
+        autoAdvanceTask?.cancel()
+        let slideIndex = currentSlide
+        let slideCount = slides.count
+        let delay = slides[slideIndex].autoAdvanceDelay
+        let task = DispatchWorkItem {
+            slideDirection = 1
+            withAnimation(.easeInOut(duration: 0.3)) {
+                currentSlide = (slideIndex + 1) % slideCount
+            }
+            scheduleAutoAdvance()
+        }
+        autoAdvanceTask = task
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: task)
     }
 }
 
@@ -137,6 +187,7 @@ private struct WelcomeSlide {
     let title: String
     let subtitle: String
     let cardType: CardType
+    let autoAdvanceDelay: Double
 }
 
 // MARK: - Glass Card Base (透明玻璃质感立体卡片)
@@ -173,7 +224,7 @@ private struct GlassCard<Content: View>: View {
     }
 }
 
-// MARK: - Card 1: FIRE Progress
+// MARK: - Card 1: FIRE Timeline (Vision — 你的自由生活)
 
 private struct WelcomeFireProgressCard: View {
     @State private var trimEnd: CGFloat = 0
@@ -182,28 +233,24 @@ private struct WelcomeFireProgressCard: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top) {
-                    Text("FIRE PROGRESS")
+                    Text("FIRE TIMELINE")
                         .font(.system(size: 9, weight: .bold))
                         .foregroundColor(.white.opacity(0.70))
                         .tracking(1.2)
                     Spacer()
                     Image(systemName: "flame.fill")
-                        .font(.system(size: 13))
-                        .foregroundColor(.white.opacity(0.85))
-                        .padding(7)
-                        .background(Color.white.opacity(0.18))
-                        .clipShape(Circle())
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.70))
                 }
 
                 Spacer().frame(height: 14)
 
-                Text("On track to retire at your target age")
+                Text("Financial freedom is within reach")
                     .font(.system(size: 17, weight: .regular))
                     .foregroundStyle(.white)
                     .lineSpacing(3)
-                    .fixedSize(horizontal: false, vertical: true)
 
-                Spacer().frame(height: 36)
+                Spacer().frame(height: 20)
 
                 HStack {
                     Spacer()
@@ -217,11 +264,11 @@ private struct WelcomeFireProgressCard: View {
                             .frame(width: 118, height: 118)
                             .rotationEffect(.degrees(-90))
                         VStack(spacing: 2) {
-                            Text("13%")
-                                .font(.system(size: 24, weight: .bold))
+                            Text("67%")
+                                .font(.system(size: 26, weight: .bold))
                                 .foregroundStyle(.white)
                             Text("ACHIEVED")
-                                .font(.system(size: 8, weight: .semibold))
+                                .font(.system(size: 7, weight: .semibold))
                                 .foregroundColor(.white.opacity(0.58))
                                 .tracking(0.6)
                         }
@@ -229,11 +276,40 @@ private struct WelcomeFireProgressCard: View {
                     Spacer()
                 }
 
-                Spacer().frame(height: 10)
+                Spacer().frame(height: 16)
+
+                // Bottom stats
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("RETIRE AGE")
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.45))
+                            .tracking(0.4)
+                        Text("35")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Divider()
+                        .background(Color.white.opacity(0.18))
+                        .frame(height: 28)
+
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("DAYS TO GO")
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.45))
+                            .tracking(0.4)
+                        Text("2,847")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                }
             }
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 1.2).delay(0.3)) { trimEnd = 0.13 }
+            withAnimation(.easeOut(duration: 1.2).delay(0.3)) { trimEnd = 0.67 }
         }
     }
 }

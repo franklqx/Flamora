@@ -29,7 +29,7 @@ struct OB_SpendingView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            Color.black.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -80,7 +80,7 @@ struct OB_SpendingView: View {
             // Sticky CTA（与 AgeView 一致）
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary],
+                    colors: [Color.black.opacity(0), Color.black],
                     startPoint: .top, endPoint: .bottom
                 )
                 .frame(height: 28)
@@ -89,7 +89,7 @@ struct OB_SpendingView: View {
                     data.monthlyExpenses = "\(Int(spendingValue))"
                     onNext()
                 })
-                .background(AppColors.backgroundPrimary)
+                .background(Color.black)
                 .ignoresSafeArea(edges: .bottom)
             }
         }
@@ -313,7 +313,7 @@ struct OB_SpendingView: View {
 
 #Preview {
     ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
+        Color.black.ignoresSafeArea()
         OB_SpendingView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

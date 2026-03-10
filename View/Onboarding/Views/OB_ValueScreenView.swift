@@ -14,7 +14,7 @@ struct OB_ValueScreenView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            Color.black.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -40,7 +40,7 @@ struct OB_ValueScreenView: View {
             // 固定在屏幕最下方的 CTA
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary],
+                    colors: [Color.black.opacity(0), Color.black],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -48,7 +48,7 @@ struct OB_ValueScreenView: View {
 
                 OB_PrimaryButton(title: "Continue", action: onNext)
             }
-            .background(AppColors.backgroundPrimary)
+            .background(Color.black)
             .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -311,7 +311,7 @@ private struct ValueMoneyTrackingContent: View {
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.lg)
     }
-    .background(AppColors.backgroundPrimary)
+    .background(Color.black)
 }
 
 // MARK: - pain_saving
@@ -456,7 +456,7 @@ private struct ValueSavingContent: View {
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.lg)
     }
-    .background(AppColors.backgroundPrimary)
+    .background(Color.black)
 }
 
 // MARK: - pain_investing
@@ -697,7 +697,7 @@ private struct CompoundGrowthChart: View {
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.lg)
     }
-    .background(AppColors.backgroundPrimary)
+    .background(Color.black)
 }
 
 // MARK: - pain_fire
@@ -796,12 +796,12 @@ private struct ValueFireContent: View {
             .padding(.horizontal, AppSpacing.sm)
             .padding(.bottom, AppSpacing.sm)
     }
-    .background(AppColors.backgroundPrimary)
+    .background(Color.black)
 }
 
 #Preview("Value Screen (full)") {
     ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
+        Color.black.ignoresSafeArea()
         OB_ValueScreenView(data: OnboardingData(), onNext: {}, onBack: {})
         VStack {
             OB_OnboardingHeader(onBack: {}, current: 5, total: 10)

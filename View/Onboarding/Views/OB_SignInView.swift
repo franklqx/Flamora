@@ -25,7 +25,7 @@ struct OB_SignInView: View {
 
     var body: some View {
         ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            Color(hex: "#121212").ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // MARK: - Top Bar

@@ -18,7 +18,7 @@ struct OB_AgeView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            Color.black.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -65,13 +65,13 @@ struct OB_AgeView: View {
             // Sticky CTA
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary],
+                    colors: [Color.black.opacity(0), Color.black],
                     startPoint: .top, endPoint: .bottom
                 )
                 .frame(height: 28)
 
                 OB_PrimaryButton(title: "Next", action: onNext)
-                .background(AppColors.backgroundPrimary)
+                .background(Color.black)
                 .ignoresSafeArea(edges: .bottom)
             }
         }
@@ -274,7 +274,7 @@ private struct OB_CurrencyPickerSheet: View {
 
 #Preview {
     ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
+        Color.black.ignoresSafeArea()
         OB_AgeView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }
