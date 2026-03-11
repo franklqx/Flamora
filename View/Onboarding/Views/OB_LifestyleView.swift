@@ -145,8 +145,8 @@ struct OB_LifestyleView: View {
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button("Done") {
-                    isCustomInputFocused = false
+                Button(action: { isCustomInputFocused = false }) {
+                    Image(systemName: "checkmark")
                 }
             }
         }

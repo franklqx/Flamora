@@ -29,29 +29,31 @@ struct OB_EditableAmountDisplay: View {
             Text(currencySymbol)
                 .font(.system(size: 32, weight: .bold))
                 .foregroundStyle(.white)
-            if isFocused {
+            ZStack {
+                // TextField 始终在视图树中，避免焦点丢失
                 TextField("", text: $editText)
                     .font(.system(size: 48, weight: .bold).monospacedDigit())
-                    .foregroundStyle(accentGradient)
+                    .foregroundStyle(.white)
                     .keyboardType(.numberPad)
                     .focused($isFocused)
                     .multilineTextAlignment(.center)
-                    .frame(minWidth: 80)
-                    .onAppear { editText = "\(Int(value))" }
+                    .opacity(isFocused ? 1 : 0)
                     .onChange(of: isFocused) { _, newVal in
                         if !newVal { commit() }
                     }
-            } else {
-                Text(formattedValue)
-                    .font(.system(size: 48, weight: .bold).monospacedDigit())
-                    .foregroundStyle(accentGradient)
-                    .contentTransition(.numericText())
-                    .frame(minWidth: 80, minHeight: 56)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        editText = "\(Int(value))"
-                        isFocused = true
-                    }
+
+                if !isFocused {
+                    Text(formattedValue)
+                        .font(.system(size: 48, weight: .bold).monospacedDigit())
+                        .foregroundStyle(accentGradient)
+                        .contentTransition(.numericText())
+                }
+            }
+            .frame(minWidth: 80, minHeight: 56)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                editText = "\(Int(value))"
+                isFocused = true
             }
             if !suffix.isEmpty {
                 Text(suffix)
@@ -66,7 +68,6 @@ struct OB_EditableAmountDisplay: View {
     private func commit() {
         let stripped = editText.replacingOccurrences(of: ",", with: "")
         let parsed = Double(stripped) ?? 0
-        let clamped = min(max(parsed, range.lowerBound), range.upperBound)
-        value = clamped
+        value = max(parsed, range.lowerBound)
     }
 }

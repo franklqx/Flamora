@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct OB_InvestmentView: View {
     @Bindable var data: OnboardingData
@@ -16,6 +17,7 @@ struct OB_InvestmentView: View {
     @FocusState private var isAmountFocused: Bool
     @State private var showInsight = false
     @State private var insightWorkItem: DispatchWorkItem?
+    @State private var lastSliderHapticTime = Date.distantPast
     private let investmentRange: ClosedRange<Double> = 0...20_000_000
 
     private var monthlyPassiveIncome: Int {
@@ -84,7 +86,9 @@ struct OB_InvestmentView: View {
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button("Done") { isAmountFocused = false }
+                Button(action: { isAmountFocused = false }) {
+                    Image(systemName: "checkmark")
+                }
             }
         }
         .onAppear {
@@ -112,7 +116,7 @@ struct OB_InvestmentView: View {
             VStack(spacing: 8) {
                 ZStack(alignment: .leading) {
                     GeometryReader { geo in
-                        let progress = CGFloat((investmentValue - investmentRange.lowerBound) / (investmentRange.upperBound - investmentRange.lowerBound))
+                        let progress = CGFloat(min(1.0, (investmentValue - investmentRange.lowerBound) / (investmentRange.upperBound - investmentRange.lowerBound)))
                         let thumbOffset: CGFloat = 14
                         let trackWidth = geo.size.width - thumbOffset * 2
 
@@ -130,9 +134,14 @@ struct OB_InvestmentView: View {
                     .frame(height: 28)
                     .allowsHitTesting(false)
 
-                    Slider(value: $investmentValue, in: investmentRange, step: 1000)
+                    Slider(value: Binding(get: { min(investmentValue, investmentRange.upperBound) }, set: { investmentValue = $0 }), in: investmentRange, step: 1000)
                         .frame(height: 28)
                         .onChange(of: investmentValue) { _, _ in
+                            let now = Date()
+                            if now.timeIntervalSince(lastSliderHapticTime) >= 0.06 {
+                                UISelectionFeedbackGenerator().selectionChanged()
+                                lastSliderHapticTime = now
+                            }
                             scheduleInsight()
                         }
                 }

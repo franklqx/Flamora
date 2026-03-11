@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct OB_AgeView: View {
     @Bindable var data: OnboardingData
@@ -14,6 +15,7 @@ struct OB_AgeView: View {
     var onBack: () -> Void
     @State private var showCurrencyPicker = false
     @State private var hasInitialized = false
+    @State private var lastSliderHapticTime = Date.distantPast
     private let ageRange: ClosedRange<Double> = 18...65
 
     var body: some View {
@@ -138,6 +140,13 @@ struct OB_AgeView: View {
                     // Slider 在上层，thumb 覆盖在进度条上面
                     Slider(value: $data.age, in: ageRange, step: 1)
                         .frame(height: 28)
+                        .onChange(of: data.age) { _, _ in
+                            let now = Date()
+                            if now.timeIntervalSince(lastSliderHapticTime) >= 0.06 {
+                                UISelectionFeedbackGenerator().selectionChanged()
+                                lastSliderHapticTime = now
+                            }
+                        }
                 }
                 .frame(height: 28)
 

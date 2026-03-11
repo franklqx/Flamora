@@ -47,12 +47,6 @@ struct OB_WelcomeView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
 
-            // ── Background ───────────────────────────────────────────
-            Image("AppBackground")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-
             // Subtle bottom vignette for CTA legibility
             LinearGradient(
                 colors: [Color.clear, Color.black.opacity(0.22)],
@@ -120,8 +114,7 @@ struct OB_WelcomeView: View {
                 }
                 .padding(.bottom, 20)
 
-                // Get Started CTA
-                OB_PrimaryButton(title: "Get Started", action: onNext)
+                Spacer().frame(height: 80)
             }
 
             // ── Tap + swipe overlay (excludes CTA area) ─────────────
@@ -146,7 +139,16 @@ struct OB_WelcomeView: View {
                 )
             }
             .padding(.bottom, 56 + 48 + 26 + 38)
+
+            // Get Started CTA
+            OB_PrimaryButton(title: "Get Started", action: onNext)
         }
+        .background(
+            Image("AppBackground")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+        )
         .onAppear {
             scheduleAutoAdvance()
         }
