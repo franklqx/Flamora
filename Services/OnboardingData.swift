@@ -128,9 +128,24 @@ class OnboardingData {
         return max(0, optimizedAccumulated - currentAccumulated)
     }
 
+    /// 显示用的 freedom age（cap 在 age + 50）
+    var displayFreedomAge: Int {
+        min(freedomAge, Int(age) + 50)
+    }
+
+    /// 是否被 cap 了
+    var isFreedomAgeCapped: Bool {
+        yearsToFire >= 50
+    }
+
     /// 提前年数
     var yearsSaved: Int {
         return max(0, freedomAge - optimizedFreedomAge)
+    }
+
+    /// yearsSaved 转天数显示
+    var daysSaved: Int {
+        yearsSaved * 365
     }
 
     /// 延迟1年的代价

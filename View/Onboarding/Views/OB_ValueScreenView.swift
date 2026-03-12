@@ -48,6 +48,7 @@ struct OB_ValueScreenView: View {
 
                 OB_PrimaryButton(title: "Continue", action: onNext)
             }
+            .padding(.bottom, 16)
             .background(Color.black)
             .ignoresSafeArea(edges: .bottom)
         }

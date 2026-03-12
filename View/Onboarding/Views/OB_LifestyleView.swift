@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct OB_LifestyleView: View {
     @Bindable var data: OnboardingData
@@ -63,6 +64,7 @@ struct OB_LifestyleView: View {
 
                         if selectedType != "custom" {
                             Button {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                 withAnimation(.easeInOut(duration: 0.2)) {
                                     selectedType = "custom"
                                 }
@@ -128,7 +130,7 @@ struct OB_LifestyleView: View {
                 )
                 .frame(height: 28)
 
-                OB_PrimaryButton(title: "Build My Roadmap", action: {
+                OB_PrimaryButton(title: "Build My Roadmap", isValid: selectedType != "custom" || (Double(customAmountText) ?? 0) > 0, action: {
                     data.fireType = selectedType
                     if selectedType == "custom" {
                         data.targetMonthlySpend = Double(customAmountText) ?? expenses
@@ -138,6 +140,7 @@ struct OB_LifestyleView: View {
                     onNext()
                 })
             }
+            .padding(.bottom, 16)
             .background(Color.black)
             .ignoresSafeArea(edges: .bottom)
         }
@@ -165,6 +168,7 @@ struct OB_LifestyleView: View {
         let amount = expenses * option.multiplier
 
         Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
             withAnimation(.spring(response: 0.3)) {
                 selectedType = option.key
             }

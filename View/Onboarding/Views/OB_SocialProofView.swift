@@ -65,9 +65,18 @@ struct OB_SocialProofView: View {
                                             .foregroundColor(.black)
                                             .multilineTextAlignment(.center)
                                     }
+                                    .opacity(showRightCard ? 1 : 0)
+                                    .animation(.easeOut(duration: 0.3).delay(0.4), value: showRightCard)
                                 }
-                                .scaleEffect(showRightCard ? 1.0 : 0.5)
-                                .opacity(showRightCard ? 1 : 0)
+                                .mask(
+                                    VStack {
+                                        Spacer(minLength: 0)
+                                        Rectangle()
+                                            .frame(height: showRightCard ? 160 : 0)
+                                    }
+                                    .frame(width: 140, height: 160)
+                                )
+                                .animation(.spring(response: 0.6, dampingFraction: 0.75), value: showRightCard)
 
                             Text("WITH \(Text("FLAMORA").font(.system(size: 12, weight: .medium).italic()).foregroundStyle(.white))")
                                 .font(.system(size: 12, weight: .medium))
@@ -117,6 +126,7 @@ struct OB_SocialProofView: View {
 
                 OB_PrimaryButton(title: "Continue", action: onNext)
             }
+            .padding(.bottom, 16)
             .background(AppColors.backgroundPrimary)
             .ignoresSafeArea(edges: .bottom)
         }

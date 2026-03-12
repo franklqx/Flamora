@@ -114,7 +114,7 @@ struct OB_WelcomeView: View {
                 }
                 .padding(.bottom, 20)
 
-                Spacer().frame(height: 80)
+                Spacer().frame(height: 64)
             }
 
             // ── Tap + swipe overlay (excludes CTA area) ─────────────
@@ -422,17 +422,17 @@ private struct WelcomeBudgetCard: View {
         animateCounter(from: 0, to: 2678, duration: 2.0) { needsDisplayAmount = $0 }
         animateCounter(from: 0, to: 955, duration: 2.0) { wantsDisplayAmount = $0 }
 
-        // Step 2 — Subcategory expand + staggered slide-in (800ms after Step 1 ends = 2.8s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.8) {
-            withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 1.4)) {
+        // Step 2 — Subcategory expand + staggered slide-in (1.8s after start)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+            withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 1.0)) {
                 showSubcategories = true
             }
 
-            // Interleaved stagger: Rent(0) → Dining(280) → Groceries(560) → Shopping(840) → Utilities(1120) → Travel(1400)
-            let staggerDelays = [0.0, 0.280, 0.560, 0.840, 1.120, 1.400]
+            // Interleaved stagger: 180ms intervals
+            let staggerDelays = [0.0, 0.180, 0.360, 0.540, 0.720, 0.900]
             for i in 0..<6 {
                 DispatchQueue.main.asyncAfter(deadline: .now() + staggerDelays[i]) {
-                    withAnimation(.easeOut(duration: 0.8)) {
+                    withAnimation(.easeOut(duration: 0.6)) {
                         subcategoryVisible[i] = true
                     }
                 }
@@ -548,19 +548,10 @@ private struct WelcomeSavingsCard: View {
     var body: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text("SAVING OVERVIEW")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundColor(.white.opacity(0.65))
-                        .tracking(0.8)
-                    Spacer()
-                    Image(systemName: "xmark")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.50))
-                        .padding(5)
-                        .background(Color.white.opacity(0.12))
-                        .clipShape(Circle())
-                }
+                Text("SAVING OVERVIEW")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(.white.opacity(0.65))
+                    .tracking(0.8)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(formatted(displayAmount))
@@ -725,30 +716,21 @@ private struct WelcomeNetWorthCard: View {
     var body: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 16) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("TOTAL NET WORTH")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundColor(.white.opacity(0.65))
-                            .tracking(0.8)
-                        HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text(formatted(displayAmount))
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundStyle(.white)
-                                .monospacedDigit()
-                            Text("+13.8%")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(AppColors.accentGreen)
-                                .opacity(displayAmount > 0 ? 1 : 0)
-                        }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("TOTAL NET WORTH")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(.white.opacity(0.65))
+                        .tracking(0.8)
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(formatted(displayAmount))
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundStyle(.white)
+                            .monospacedDigit()
+                        Text("+13.8%")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(AppColors.accentGreen)
+                            .opacity(displayAmount > 0 ? 1 : 0)
                     }
-                    Spacer()
-                    Image(systemName: "plus")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.85))
-                        .padding(8)
-                        .background(Color.white.opacity(0.18))
-                        .clipShape(Circle())
                 }
 
                 GeometryReader { geo in

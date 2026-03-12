@@ -18,7 +18,7 @@ struct OB_SpendingView: View {
     @State private var showInsight = false
     @State private var insightWorkItem: DispatchWorkItem?
     @State private var lastSliderHapticTime = Date.distantPast
-    private let spendingRange: ClosedRange<Double> = 0...200_000
+    private let spendingRange: ClosedRange<Double> = 0...20_000
 
     private var income: Double {
         Double(data.monthlyIncome) ?? 0
@@ -91,9 +91,10 @@ struct OB_SpendingView: View {
                     data.monthlyExpenses = "\(Int(spendingValue))"
                     onNext()
                 })
-                .background(Color.black)
-                .ignoresSafeArea(edges: .bottom)
             }
+            .padding(.bottom, 16)
+            .background(Color.black)
+            .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .toolbar {

@@ -84,9 +84,10 @@ struct OB_IntroView: View {
                 .frame(height: 32)
 
                 OB_PrimaryButton(title: "Let's Do This", action: onNext)
-                .background(Color.black)
-                .ignoresSafeArea(edges: .bottom)
             }
+            .padding(.bottom, 16)
+            .background(Color.black)
+            .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }

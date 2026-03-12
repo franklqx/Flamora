@@ -73,9 +73,10 @@ struct OB_AgeView: View {
                 .frame(height: 28)
 
                 OB_PrimaryButton(title: "Next", action: onNext)
-                .background(Color.black)
-                .ignoresSafeArea(edges: .bottom)
             }
+            .padding(.bottom, 16)
+            .background(Color.black)
+            .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {

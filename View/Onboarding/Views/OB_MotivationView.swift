@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct OB_MotivationView: View {
     @Bindable var data: OnboardingData
@@ -52,6 +53,7 @@ struct OB_MotivationView: View {
                                 option: option,
                                 isSelected: data.motivations.contains(option.key),
                                 onTap: {
+                                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                     withAnimation(.easeInOut(duration: 0.2)) {
                                         if data.motivations.contains(option.key) {
                                             data.motivations.remove(option.key)
@@ -79,9 +81,10 @@ struct OB_MotivationView: View {
                 .frame(height: 32)
 
                 OB_PrimaryButton(isValid: isValid, action: onNext)
-                .background(Color.black)
-                .ignoresSafeArea(edges: .bottom)
             }
+            .padding(.bottom, 16)
+            .background(Color.black)
+            .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }

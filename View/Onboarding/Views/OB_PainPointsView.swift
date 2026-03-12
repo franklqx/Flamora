@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct OB_PainPointsView: View {
     @Bindable var data: OnboardingData
@@ -39,6 +40,7 @@ struct OB_PainPointsView: View {
                                 option: option,
                                 isSelected: data.painPoint == option.key,
                                 onTap: {
+                                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                     withAnimation(.easeInOut(duration: 0.18)) {
                                         if data.painPoint == option.key {
                                             data.painPoint = ""
@@ -66,9 +68,10 @@ struct OB_PainPointsView: View {
                 .frame(height: 32)
 
                 OB_PrimaryButton(isValid: isValid, action: onNext)
-                .background(Color.black)
-                .ignoresSafeArea(edges: .bottom)
             }
+            .padding(.bottom, 16)
+            .background(Color.black)
+            .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color.black)

@@ -25,7 +25,7 @@ struct OB_SignInView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "#121212").ignoresSafeArea()
+            Color.black.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // MARK: - Top Bar
@@ -159,25 +159,28 @@ struct OB_SignInView: View {
                 Spacer()
 
                 // MARK: - Continue
-                OB_PrimaryButton(
-                    title: isLoading ? "Loading..." : "Continue",
-                    isValid: !email.isEmpty && !password.isEmpty && !isLoading,
-                    action: handleAuth
-                )
+                VStack(spacing: 0) {
+                    OB_PrimaryButton(
+                        title: isLoading ? "Loading..." : "Continue",
+                        isValid: !email.isEmpty && !password.isEmpty && !isLoading,
+                        action: handleAuth
+                    )
 
-                // MARK: - Terms
-                VStack(spacing: 2) {
-                    Text("BY CONTINUING, YOU AGREE TO OUR")
-                        .font(.system(size: 10, weight: .regular))
-                        .foregroundColor(AppColors.textTertiary)
-                    Text("TERMS & PRIVACY")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(AppColors.textTertiary)
-                        .underline()
+                    // MARK: - Terms
+                    VStack(spacing: 2) {
+                        Text("BY CONTINUING, YOU AGREE TO OUR")
+                            .font(.system(size: 10, weight: .regular))
+                            .foregroundColor(AppColors.textTertiary)
+                        Text("TERMS & PRIVACY")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(AppColors.textTertiary)
+                            .underline()
+                    }
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+                    .padding(.bottom, AppSpacing.lg)
                 }
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-                .padding(.bottom, AppSpacing.lg)
+                .padding(.bottom, 16)
             }
         }
         .onTapGesture { focusedField = nil }

@@ -237,7 +237,7 @@ struct OB_PaywallView: View {
                     .disabled(isPurchasing)
                 }
                 .padding(.horizontal, AppSpacing.screenPadding)
-                .padding(.bottom, 0)
+                .padding(.bottom, 16)
                 .background(Color.black)
                 .ignoresSafeArea(edges: .bottom)
             }

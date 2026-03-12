@@ -90,6 +90,7 @@ struct OB_NameView: View {
                 isFocused = false
                 onNext()
             })
+            .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear { isFocused = false }

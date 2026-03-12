@@ -18,7 +18,7 @@ struct OB_IncomeView: View {
     @State private var showInsight = false
     @State private var insightWorkItem: DispatchWorkItem?
     @State private var lastSliderHapticTime = Date.distantPast
-    private let incomeRange: ClosedRange<Double> = 0...200_000
+    private let incomeRange: ClosedRange<Double> = 0...20_000
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -79,9 +79,10 @@ struct OB_IncomeView: View {
                     data.monthlyIncome = "\(Int(incomeValue))"
                     onNext()
                 })
-                .background(Color.black)
-                .ignoresSafeArea(edges: .bottom)
             }
+            .padding(.bottom, 16)
+            .background(Color.black)
+            .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .toolbar {

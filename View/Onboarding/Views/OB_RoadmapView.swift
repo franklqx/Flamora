@@ -137,45 +137,111 @@ struct OB_RoadmapView: View {
 
     private var beforeTitle: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .firstTextBaseline, spacing: 0) {
-                Text("You will reach financial independence at age ")
-                    .foregroundStyle(.white)
-                Text("\(data.freedomAge)")
-                    .foregroundStyle(brandGradient)
-                Text(".")
-                    .foregroundStyle(.white)
+            Group {
+                switch data.userSituation {
+                case .cannotSave:
+                    Text("At your current pace, financial freedom is ")
+                        .foregroundStyle(.white)
+                    + Text("out of reach")
+                        .foregroundStyle(brandGradient)
+                    + Text(".")
+                        .foregroundStyle(.white)
+                default:
+                    if data.isFreedomAgeCapped {
+                        Text("You will reach financial independence at age ")
+                            .foregroundStyle(.white)
+                        + Text("\(data.displayFreedomAge)+")
+                            .foregroundStyle(brandGradient)
+                        + Text(".")
+                            .foregroundStyle(.white)
+                    } else {
+                        Text("You will reach financial independence at age ")
+                            .foregroundStyle(.white)
+                        + Text("\(data.freedomAge)")
+                            .foregroundStyle(brandGradient)
+                        + Text(".")
+                            .foregroundStyle(.white)
+                    }
+                }
             }
             .font(.system(size: 22, weight: .bold))
             .lineSpacing(3)
 
-            Text("Based on your current savings — no optimization.")
-                .font(.system(size: 13))
-                .foregroundColor(Color.white.opacity(0.45))
+            Group {
+                switch data.userSituation {
+                case .cannotSave:
+                    Text("You're spending everything you earn.")
+                case .notInvesting:
+                    Text("Your savings projected with 9% average annual returns.")
+                default:
+                    Text("Based on your current savings — no optimization.")
+                }
+            }
+            .font(.system(size: 13))
+            .foregroundColor(Color.white.opacity(0.45))
         }
     }
 
     private var afterTitle: some View {
         VStack(alignment: .leading, spacing: 4) {
-            let yearText = data.yearsSaved == 1 ? "1 year earlier" : "\(data.yearsSaved) years earlier"
-
-            HStack(alignment: .firstTextBaseline, spacing: 0) {
-                Text("With Flamora, you'll be free ")
-                    .foregroundStyle(.white)
-                Text(yearText)
-                    .foregroundStyle(brandGradient)
-                Text(" — at age ")
-                    .foregroundStyle(.white)
-                Text("\(data.optimizedFreedomAge)")
-                    .foregroundStyle(brandGradient)
-                Text(".")
-                    .foregroundStyle(.white)
+            Group {
+                switch data.userSituation {
+                case .cannotSave:
+                    Text("Start investing ")
+                        .foregroundStyle(.white)
+                    + Text("\(formatCurrency(data.suggestedExtraInvestment))/mo")
+                        .foregroundStyle(brandGradient)
+                    + Text(", you could be free by ")
+                        .foregroundStyle(.white)
+                    + Text("\(data.optimizedFreedomAge)")
+                        .foregroundStyle(brandGradient)
+                    + Text(".")
+                        .foregroundStyle(.white)
+                default:
+                    if data.yearsSaved == 0 {
+                        Text("With Flamora, you'll build ")
+                            .foregroundStyle(.white)
+                        + Text("+\(formatCompact(data.extraPortfolioValue)) more")
+                            .foregroundStyle(brandGradient)
+                        + Text(" by age ")
+                            .foregroundStyle(.white)
+                        + Text("\(data.optimizedFreedomAge)")
+                            .foregroundStyle(brandGradient)
+                        + Text(".")
+                            .foregroundStyle(.white)
+                    } else {
+                        let yearText = data.yearsSaved == 1 ? "1 year sooner" : "\(data.yearsSaved) years sooner"
+                        Text("With Flamora, you'll be free by ")
+                            .foregroundStyle(.white)
+                        + Text("\(data.optimizedFreedomAge)")
+                            .foregroundStyle(brandGradient)
+                        + Text(" — that's ")
+                            .foregroundStyle(.white)
+                        + Text(yearText)
+                            .foregroundStyle(brandGradient)
+                        + Text(".")
+                            .foregroundStyle(.white)
+                    }
+                }
             }
             .font(.system(size: 22, weight: .bold))
             .lineSpacing(3)
 
-            Text("Your current path has you working until \(data.freedomAge).")
-                .font(.system(size: 13))
-                .foregroundColor(Color.white.opacity(0.45))
+            Group {
+                switch data.userSituation {
+                case .cannotSave:
+                    Text("Your current path has no timeline to freedom.")
+                default:
+                    if data.yearsSaved == 0 {
+                        Text("You're already close — Flamora helps you finish strong.")
+                    } else {
+                        let label = data.isFreedomAgeCapped ? "\(data.displayFreedomAge)+" : "\(data.freedomAge)"
+                        Text("Your current path has you working until \(label).")
+                    }
+                }
+            }
+            .font(.system(size: 13))
+            .foregroundColor(Color.white.opacity(0.45))
         }
     }
 
@@ -239,18 +305,35 @@ struct OB_RoadmapView: View {
     // MARK: - 4. Chart
 
     private var chartSection: some View {
-        OB_BarChartView(
-            startAge: Int(data.age),
-            currentEndAge: data.freedomAge,
-            optimizedEndAge: data.optimizedFreedomAge,
-            startingNetWorth: Double(data.currentNetWorth) ?? 0,
-            monthlySavings: data.monthlySavings,
-            optimizedMonthlySavings: data.optimizedMonthlySavings,
-            currencySymbol: data.currencySymbol,
-            showCurrentBars: showCurrentBars,
-            showOptimizedBars: isRevealed
-        )
-        .frame(height: 236) // 200 chart + 36 x-axis
+        let currentEnd = data.userSituation == .cannotSave
+            ? min(Int(data.age) + 30, data.displayFreedomAge)
+            : data.displayFreedomAge
+
+        return ZStack {
+            OB_BarChartView(
+                startAge: Int(data.age),
+                currentEndAge: currentEnd,
+                optimizedEndAge: data.optimizedFreedomAge,
+                startingNetWorth: Double(data.currentNetWorth) ?? 0,
+                monthlySavings: data.monthlySavings,
+                optimizedMonthlySavings: data.optimizedMonthlySavings,
+                currencySymbol: data.currencySymbol,
+                showCurrentBars: showCurrentBars,
+                showOptimizedBars: isRevealed
+            )
+            .frame(height: 236) // 200 chart + 36 x-axis
+
+            // cannotSave Before: overlay text
+            if data.userSituation == .cannotSave && !isRevealed {
+                Text("No investment growth")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Color.white.opacity(0.25))
+                    .tracking(1)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .opacity(showCurrentBars ? 1 : 0)
+                    .animation(.easeOut(duration: 0.5), value: showCurrentBars)
+            }
+        }
         .padding(.horizontal, 12)
     }
 
@@ -280,10 +363,17 @@ struct OB_RoadmapView: View {
 
     private var beforeDataCards: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-            dataCard(label: "MONTHLY INCOME", value: formatCurrency(Double(data.monthlyIncome) ?? 0))
-            dataCard(label: "CURRENT INVESTMENT", value: formatCurrency(Double(data.currentNetWorth) ?? 0))
-            dataCard(label: "SAVINGS RATE", value: "\(Int(data.savingsRate))%")
-            dataCard(label: "LIFESTYLE SPENDING", value: formatCurrency(lifestyleSpending))
+            if data.userSituation == .cannotSave {
+                dataCard(label: "MONTHLY INCOME", value: formatCurrency(Double(data.monthlyIncome) ?? 0))
+                dataCard(label: "MONTHLY EXPENSES", value: formatCurrency(Double(data.monthlyExpenses) ?? 0))
+                dataCard(label: "SAVINGS RATE", value: "0%")
+                dataCard(label: "NET WORTH", value: formatCurrency(Double(data.currentNetWorth) ?? 0))
+            } else {
+                dataCard(label: "MONTHLY INCOME", value: formatCurrency(Double(data.monthlyIncome) ?? 0))
+                dataCard(label: "CURRENT INVESTMENT", value: formatCurrency(Double(data.currentNetWorth) ?? 0))
+                dataCard(label: "SAVINGS RATE", value: "\(Int(data.savingsRate))%")
+                dataCard(label: "LIFESTYLE SPENDING", value: formatCurrency(lifestyleSpending))
+            }
         }
     }
 
@@ -294,8 +384,9 @@ struct OB_RoadmapView: View {
                 .font(.system(size: 9))
                 .foregroundColor(Color.white.opacity(0.3))
                 .tracking(1)
-                .lineLimit(1)
+                .lineLimit(nil)
                 .minimumScaleFactor(0.8)
+                .frame(minHeight: 22, alignment: .bottom)
             Text(value)
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(.white)
@@ -316,29 +407,49 @@ struct OB_RoadmapView: View {
 
     private var afterDataCards: some View {
         let rateIncrease = data.optimizedSavingsRate - data.savingsRate
+        let isCannotSave = data.userSituation == .cannotSave
 
         let extraDisplay = data.extraPortfolioValue * counterProgress
         let rateDisplay = data.optimizedSavingsRate * counterProgress
         let fireDisplay = data.fireNumber * counterProgress
 
         return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-            // Card 1: EXTRA PORTFOLIO VALUE — gold gradient, counting
-            afterCard(label: "EXTRA PORTFOLIO VALUE") {
-                Text("+\(formatCompact(extraDisplay))")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [AppColors.gradientEnd, AppColors.gradientMiddle],
-                            startPoint: .leading,
-                            endPoint: .trailing
+            // Card 1: cannotSave → MONTHLY INVESTMENT, otherwise → EXTRA PORTFOLIO VALUE
+            if isCannotSave {
+                afterCard(label: "MONTHLY INVESTMENT") {
+                    Text("\(formatCurrency(data.suggestedExtraInvestment))/mo")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [AppColors.gradientEnd, AppColors.gradientMiddle],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
                         )
-                    )
-                    .minimumScaleFactor(0.6)
-                    .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .lineLimit(1)
+                }
+                .opacity(afterCard1Visible ? 1 : 0)
+                .offset(y: afterCard1Visible ? 0 : 10)
+                .animation(.easeOut(duration: 0.5), value: afterCard1Visible)
+            } else {
+                afterCard(label: "EXTRA PORTFOLIO VALUE") {
+                    Text("+\(formatCompact(extraDisplay))")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [AppColors.gradientEnd, AppColors.gradientMiddle],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .minimumScaleFactor(0.6)
+                        .lineLimit(1)
+                }
+                .opacity(afterCard1Visible ? 1 : 0)
+                .offset(y: afterCard1Visible ? 0 : 10)
+                .animation(.easeOut(duration: 0.5), value: afterCard1Visible)
             }
-            .opacity(afterCard1Visible ? 1 : 0)
-            .offset(y: afterCard1Visible ? 0 : 10)
-            .animation(.easeOut(duration: 0.5), value: afterCard1Visible)
 
             // Card 2: FREEDOM AGE — optimized age + delayed ↓ badge
             afterCard(label: "FREEDOM AGE") {
@@ -347,8 +458,8 @@ struct OB_RoadmapView: View {
                         .font(.system(size: 22, weight: .bold))
                         .foregroundColor(AppColors.gradientEnd)
 
-                    if showYearsSavedBadge {
-                        Text(" \u{2193}\(data.yearsSaved) yrs")
+                    if showYearsSavedBadge && data.daysSaved > 0 {
+                        Text(" \u{2193}\(data.daysSaved) days")
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(.white)
                             .transition(.opacity)
@@ -367,7 +478,12 @@ struct OB_RoadmapView: View {
                     Text("\(Int(rateDisplay))%")
                         .font(.system(size: 22, weight: .bold))
                         .foregroundColor(AppColors.gradientEnd)
-                    if rateIncrease > 0 {
+                    if isCannotSave {
+                        Text(" \u{2191}\(Int(data.optimizedSavingsRate))%")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .padding(.leading, 8)
+                    } else if rateIncrease > 0 {
                         Text(" \u{2191}\(Int(rateIncrease))%")
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(.white)
@@ -402,8 +518,9 @@ struct OB_RoadmapView: View {
                 .font(.system(size: 9))
                 .foregroundColor(Color.white.opacity(0.3))
                 .tracking(1)
-                .lineLimit(1)
+                .lineLimit(nil)
                 .minimumScaleFactor(0.8)
+                .frame(minHeight: 22, alignment: .bottom)
             value()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -469,7 +586,7 @@ struct OB_RoadmapView: View {
                     .animation(.easeOut(duration: 0.5), value: showRevealedCTA)
             }
             .padding(.horizontal, AppSpacing.screenPadding)
-            .padding(.bottom, 0)
+            .padding(.bottom, 16)
             .background(Color.black)
             .ignoresSafeArea(edges: .bottom)
         }
