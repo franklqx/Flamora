@@ -40,6 +40,13 @@
 		124C46622F56F65E00E4EA8B /* OB_PersonalizeProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C462F2F56F65E00E4EA8B /* OB_PersonalizeProgress.swift */; };
 		124C46632F56F65E00E4EA8B /* OB_BackButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46312F56F65E00E4EA8B /* OB_BackButton.swift */; };
 		124C46642F56F65E00E4EA8B /* OB_OnboardingHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46652F56F65E00E4EA8B /* OB_OnboardingHeader.swift */; };
+		12748F1E2F65CA1D00410D60 /* BudgetSetupModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748F1D2F65CA1D00410D60 /* BudgetSetupModels.swift */; };
+		12748F202F65CA4000410D60 /* APIService+BudgetSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748F1F2F65CA4000410D60 /* APIService+BudgetSetup.swift */; };
+		12748F232F65CA7300410D60 /* BudgetSetupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748F222F65CA7300410D60 /* BudgetSetupViewModel.swift */; };
+		12748F252F65CCEE00410D60 /* BudgetSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748F242F65CCEE00410D60 /* BudgetSetupView.swift */; };
+		12748F272F65CDAC00410D60 /* BS_FireGoalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748F262F65CDAC00410D60 /* BS_FireGoalView.swift */; };
+		12748F292F65CFE700410D60 /* BS_SetBudgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748F282F65CFE700410D60 /* BS_SetBudgetView.swift */; };
+		12748F2B2F65D00B00410D60 /* BS_ConfirmView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748F2A2F65D00B00410D60 /* BS_ConfirmView.swift */; };
 		1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */; };
 		1508AF372F5D1A2600D59781 /* OB_BarChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1508AF362F5D1A2600D59781 /* OB_BarChartView.swift */; };
 		152C19792F5D3C2C007E68AA /* OB_EditableAmountDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152C19782F5D3C2C007E68AA /* OB_EditableAmountDisplay.swift */; };
@@ -129,6 +136,13 @@
 		124C46452F56F65E00E4EA8B /* OB_WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_WelcomeView.swift; sourceTree = "<group>"; };
 		124C46472F56F65E00E4EA8B /* OB_ContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_ContainerView.swift; sourceTree = "<group>"; };
 		124C46652F56F65E00E4EA8B /* OB_OnboardingHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_OnboardingHeader.swift; sourceTree = "<group>"; };
+		12748F1D2F65CA1D00410D60 /* BudgetSetupModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetSetupModels.swift; sourceTree = "<group>"; };
+		12748F1F2F65CA4000410D60 /* APIService+BudgetSetup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIService+BudgetSetup.swift"; sourceTree = "<group>"; };
+		12748F222F65CA7300410D60 /* BudgetSetupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetSetupViewModel.swift; sourceTree = "<group>"; };
+		12748F242F65CCEE00410D60 /* BudgetSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetSetupView.swift; sourceTree = "<group>"; };
+		12748F262F65CDAC00410D60 /* BS_FireGoalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_FireGoalView.swift; sourceTree = "<group>"; };
+		12748F282F65CFE700410D60 /* BS_SetBudgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_SetBudgetView.swift; sourceTree = "<group>"; };
+		12748F2A2F65D00B00410D60 /* BS_ConfirmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_ConfirmView.swift; sourceTree = "<group>"; };
 		1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBackgroundView.swift; sourceTree = "<group>"; };
 		150899942F30F60F003DDFBF /* Flamora app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Flamora app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899A32F30F611003DDFBF /* Flamora appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -285,6 +299,18 @@
 			path = Onboarding;
 			sourceTree = "<group>";
 		};
+		12748F212F65CA5C00410D60 /* BudgetSetup */ = {
+			isa = PBXGroup;
+			children = (
+				12748F222F65CA7300410D60 /* BudgetSetupViewModel.swift */,
+				12748F242F65CCEE00410D60 /* BudgetSetupView.swift */,
+				12748F262F65CDAC00410D60 /* BS_FireGoalView.swift */,
+				12748F282F65CFE700410D60 /* BS_SetBudgetView.swift */,
+				12748F2A2F65D00B00410D60 /* BS_ConfirmView.swift */,
+			);
+			path = BudgetSetup;
+			sourceTree = "<group>";
+		};
 		1508998B2F30F60F003DDFBF = {
 			isa = PBXGroup;
 			children = (
@@ -316,6 +342,7 @@
 				12123E442F48D7E20011B385 /* PlaidLinkPresenter.swift */,
 				12123E352F4859CB0011B385 /* PlaidManager.swift */,
 				12123E362F4859CB0011B385 /* SubscriptionManager.swift */,
+				12748F1F2F65CA4000410D60 /* APIService+BudgetSetup.swift */,
 				1571A1D62F3C2A2C0024A729 /* APIService.swift */,
 				AAOB00112F38500000000001 /* OnboardingData.swift */,
 				AA5B00042F38500000001004 /* SupabaseManager.swift */,
@@ -328,6 +355,7 @@
 			children = (
 				1571A1D92F3C2A5B0024A729 /* OnboardingModels.swift */,
 				15A115972F3246460085ED9B /* mockdata.swift */,
+				12748F1D2F65CA1D00410D60 /* BudgetSetupModels.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -349,6 +377,7 @@
 		15E21AA52F3248F500A9BB60 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				12748F212F65CA5C00410D60 /* BudgetSetup */,
 				124C46482F56F65E00E4EA8B /* Onboarding */,
 				12123E3D2F485B920011B385 /* Settings */,
 				12123E402F485B920011B385 /* Shared */,
@@ -566,6 +595,7 @@
 			files = (
 				158CDE572F5637FA0038554A /* AppCard.swift in Sources */,
 				15E21AF12F33C40000A9BB60 /* BudgetCard.swift in Sources */,
+				12748F1E2F65CA1D00410D60 /* BudgetSetupModels.swift in Sources */,
 				15FF6EDB2F3109F40005F482 /* Colors.swift in Sources */,
 				15E21ADB2F33971100A9BB60 /* TabBarVisibilityPreferenceKey.swift in Sources */,
 				12123E372F4859CB0011B385 /* PlaidManager.swift in Sources */,
@@ -577,6 +607,7 @@
 				15FF6EDA2F31096B0005F482 /* GradientButton.swift in Sources */,
 				15E21AE12F33BB9300A9BB60 /* SavingsTargetCard.swift in Sources */,
 				1571A1D82F3C2A2C0024A729 /* APIService.swift in Sources */,
+				12748F252F65CCEE00410D60 /* BudgetSetupView.swift in Sources */,
 				15FF6EE02F310A040005F482 /* Typography.swift in Sources */,
 				15E21AA62F3248F500A9BB60 /* JourneyView.swift in Sources */,
 				1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */,
@@ -586,9 +617,11 @@
 				15E21AAF2F324F1F00A9BB60 /* MonthIndicator.swift in Sources */,
 				15E21AEF2F33C3F600A9BB60 /* IncomeCard.swift in Sources */,
 				15E21AAB2F324EFA00A9BB60 /* Spacing.swift in Sources */,
+				12748F272F65CDAC00410D60 /* BS_FireGoalView.swift in Sources */,
 				15E21AB92F3257D700A9BB60 /* GlassmorphicTabBar.swift in Sources */,
 				15E21AB12F32548A00A9BB60 /* SimulatorView.swift in Sources */,
 				15E21ADD2F33973100A9BB60 /* FlameTogglePill.swift in Sources */,
+				12748F2B2F65D00B00410D60 /* BS_ConfirmView.swift in Sources */,
 				15A115992F3246460085ED9B /* mockdata.swift in Sources */,
 				15E21AF52F33F2BE00A9BB60 /* AssetAllocationCard.swift in Sources */,
 				15E21AF32F33F2AD00A9BB60 /* AccountsCard.swift in Sources */,
@@ -602,6 +635,7 @@
 				12123E412F485B920011B385 /* PlaidLinkRepresentable.swift in Sources */,
 				12123E422F485B920011B385 /* PaywallSheet.swift in Sources */,
 				12123E432F485B920011B385 /* SettingsView.swift in Sources */,
+				12748F232F65CA7300410D60 /* BudgetSetupViewModel.swift in Sources */,
 				AAOB00012F38500000000001 /* OnboardingData.swift in Sources */,
 				12123E452F48D7E20011B385 /* PlaidLinkPresenter.swift in Sources */,
 				153CA31C2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift in Sources */,
@@ -611,6 +645,7 @@
 				124C464D2F56F65E00E4EA8B /* OB_LoadingView.swift in Sources */,
 				124C464F2F56F65E00E4EA8B /* OB_SpendingView.swift in Sources */,
 				124C46502F56F65E00E4EA8B /* OB_SplashView.swift in Sources */,
+				12748F292F65CFE700410D60 /* BS_SetBudgetView.swift in Sources */,
 				124C46522F56F65E00E4EA8B /* OB_WelcomeView.swift in Sources */,
 				124C46532F56F65E00E4EA8B /* OB_InvestmentView.swift in Sources */,
 				124C46542F56F65E00E4EA8B /* OB_RoadmapView.swift in Sources */,
@@ -628,6 +663,7 @@
 				124C465E2F56F65E00E4EA8B /* OB_ContainerView.swift in Sources */,
 				124C465F2F56F65E00E4EA8B /* OB_SignInView.swift in Sources */,
 				124C46612F56F65E00E4EA8B /* OB_PrimaryButton.swift in Sources */,
+				12748F202F65CA4000410D60 /* APIService+BudgetSetup.swift in Sources */,
 				124C46622F56F65E00E4EA8B /* OB_PersonalizeProgress.swift in Sources */,
 				124C46632F56F65E00E4EA8B /* OB_BackButton.swift in Sources */,
 				124C46642F56F65E00E4EA8B /* OB_OnboardingHeader.swift in Sources */,

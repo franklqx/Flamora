@@ -52,6 +52,12 @@ struct MainTabView: View {
                 .allowsHitTesting(true)
         }
         .ignoresSafeArea(.keyboard, edges: .all)
+        .fullScreenCover(isPresented: Binding(
+            get: { plaidManager.showBudgetSetup },
+            set: { plaidManager.showBudgetSetup = $0 }
+        )) {
+            BudgetSetupView()
+        }
         .sheet(isPresented: $showSettings) {
             SettingsView()
                 .environment(subscriptionManager)

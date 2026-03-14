@@ -91,7 +91,7 @@ class APIService {
         let data: T
     }
 
-    private func authenticatedRequest(
+     func authenticatedRequest(
         function: String,
         queryParams: [String: String] = [:],
         body: Data? = nil
@@ -110,7 +110,7 @@ class APIService {
         return request
     }
 
-    private func perform<T: Decodable>(_ request: URLRequest) async throws -> T {
+     func perform<T: Decodable>(_ request: URLRequest) async throws -> T {
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse

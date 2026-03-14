@@ -16,10 +16,10 @@ struct CashflowView: View {
     @State private var selectedMonthIndex = 0
     @State private var monthDates: [Date] = []
     @State private var hasInitializedMonths = false
-    @State private var currentSavings: Double = MockData.apiMonthlyBudget.savingsActual
-    @State private var needsTotal: Double = MockData.apiMonthlyBudget.needsSpent
-    @State private var wantsTotal: Double = MockData.apiMonthlyBudget.wantsSpent
-    @State private var totalSpend: Double = MockData.apiMonthlyBudget.needsSpent + MockData.apiMonthlyBudget.wantsSpent
+    @State private var currentSavings: Double = MockData.apiMonthlyBudget.savingsActual ?? 0
+    @State private var needsTotal: Double = MockData.apiMonthlyBudget.needsSpent ?? 0
+    @State private var wantsTotal: Double = MockData.apiMonthlyBudget.wantsSpent ?? 0
+    @State private var totalSpend: Double = (MockData.apiMonthlyBudget.needsSpent ?? 0) + (MockData.apiMonthlyBudget.wantsSpent ?? 0)
     @State private var reviewTransactions: [Transaction] = MockData.cashflowData.toReview.transactions
     @State private var reviewCount: Int = MockData.cashflowData.toReview.count
     @State private var showSavingsInput = false
@@ -140,10 +140,10 @@ private extension CashflowView {
         let (budget, txResponse) = await (budgetTask, txTask)
         if let b = budget {
             apiBudget = b
-            currentSavings = b.savingsActual
-            needsTotal = b.needsSpent
-            wantsTotal = b.wantsSpent
-            totalSpend = b.needsSpent + b.wantsSpent
+            currentSavings = b.savingsActual ?? 0
+            needsTotal = b.needsSpent ?? 0
+            wantsTotal = b.wantsSpent ?? 0
+            totalSpend = (b.needsSpent ?? 0) + (b.wantsSpent ?? 0)
         }
         if let tx = txResponse {
             reviewTransactions = tx.transactions.map {

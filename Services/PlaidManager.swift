@@ -15,7 +15,7 @@ class PlaidManager {
     var hasLinkedBank: Bool = false
     var isConnecting: Bool = false
     var connectedInstitutionName: String? = nil
-
+    var showBudgetSetup: Bool = false
     private var client: SupabaseClient { SupabaseManager.shared.client }
 
     private init() {}
@@ -105,6 +105,7 @@ class PlaidManager {
             let response: ExchangeResponse = try await client.functions.invoke("exchange-public-token", options: options)
             if response.success {
                 hasLinkedBank = true
+                showBudgetSetup = true
                 connectedInstitutionName = response.data.institution_name ?? institutionName
                 print("🏦 [PlaidManager] ✅ Bank linked! institution=\(connectedInstitutionName ?? "?"), accounts=\(response.data.accounts_linked)")
             } else {

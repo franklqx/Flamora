@@ -134,7 +134,7 @@ private extension JourneyView {
 
 private extension JourneyView {
     var budgetCard: some View {
-        let totalSpent = apiBudget.needsSpent + apiBudget.wantsSpent
+        let totalSpent = (apiBudget.needsSpent ?? 0) + (apiBudget.wantsSpent ?? 0)
         let totalBudget = apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget
         let progress = totalBudget > 0 ? min(totalSpent / totalBudget, 1.0) : 0
         let spentPercent = totalBudget > 0 ? Int(totalSpent / totalBudget * 100) : 0

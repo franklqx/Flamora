@@ -596,28 +596,13 @@ struct APIMonthlyBudget: Codable {
     let needsBudget: Double
     let wantsBudget: Double
     let savingsBudget: Double
-    let needsSpent: Double
-    let wantsSpent: Double
-    let savingsActual: Double
+    let needsSpent: Double?
+    let wantsSpent: Double?
+    let savingsActual: Double?
     let needsRatio: Double
     let wantsRatio: Double
     let savingsRatio: Double
     let isCustom: Bool
-
-    enum CodingKeys: String, CodingKey {
-        case budgetId = "budget_id"
-        case month
-        case needsBudget = "needs_budget"
-        case wantsBudget = "wants_budget"
-        case savingsBudget = "savings_budget"
-        case needsSpent = "needs_spent"
-        case wantsSpent = "wants_spent"
-        case savingsActual = "savings_actual"
-        case needsRatio = "needs_ratio"
-        case wantsRatio = "wants_ratio"
-        case savingsRatio = "savings_ratio"
-        case isCustom = "is_custom"
-    }
 }
 
 /// 对应后端 GET /user-profile
