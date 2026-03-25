@@ -16,12 +16,12 @@ struct GradientButton: View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Text(title)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.statRowSemibold)
                     .foregroundColor(.black)
 
                 if let icon {
                     Image(systemName: icon)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.figureSecondarySemibold)
                         .foregroundColor(.black)
                 }
             }

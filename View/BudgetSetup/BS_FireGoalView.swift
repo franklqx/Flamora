@@ -68,17 +68,17 @@ struct BS_FireGoalView: View {
                     Image(systemName: "chevron.left")
                     Text("Back")
                 }
-                .font(.system(size: 14))
+                .font(.bodySmall)
                 .foregroundStyle(.white.opacity(0.5))
             }
             .padding(.bottom, 8)
 
             Text("The Big Picture")
-                .font(.system(size: 28, weight: .bold))
+                .font(.cardFigurePrimary)
                 .foregroundStyle(.white)
 
             Text("What's your target retirement age?")
-                .font(.system(size: 14))
+                .font(.bodySmall)
                 .foregroundStyle(.white.opacity(0.45))
         }
     }
@@ -97,10 +97,10 @@ struct BS_FireGoalView: View {
                         }
                     } label: {
                         Image(systemName: "minus")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.h4)
                             .foregroundStyle(.white)
                             .frame(width: 44, height: 44)
-                            .background(Color.white.opacity(0.08))
+                            .background(AppColors.overlayWhiteStroke)
                             .clipShape(Circle())
                     }
 
@@ -121,10 +121,10 @@ struct BS_FireGoalView: View {
                         }
                     } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.h4)
                             .foregroundStyle(.white)
                             .frame(width: 44, height: 44)
-                            .background(Color.white.opacity(0.08))
+                            .background(AppColors.overlayWhiteStroke)
                             .clipShape(Circle())
                     }
                 }
@@ -143,11 +143,11 @@ struct BS_FireGoalView: View {
                 // Min/Max labels
                 HStack {
                     Text("\(viewModel.minTargetAge)")
-                        .font(.system(size: 11))
+                        .font(.cardHeader)
                         .foregroundStyle(.white.opacity(0.3))
                     Spacer()
                     Text("\(viewModel.maxTargetAge)")
-                        .font(.system(size: 11))
+                        .font(.cardHeader)
                         .foregroundStyle(.white.opacity(0.3))
                 }
             }
@@ -161,7 +161,7 @@ struct BS_FireGoalView: View {
 
             // Assumption text
             Text("Your plan assumes monthly savings are invested with an average 9% annual return, based on S&P 500 historical performance net of fees.*")
-                .font(.system(size: 11))
+                .font(.cardHeader)
                 .foregroundStyle(.white.opacity(0.3))
                 .lineSpacing(3)
         }
@@ -206,9 +206,9 @@ struct BS_FireGoalView: View {
                 Button { showInfoSheet = true } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "info.circle")
-                            .font(.system(size: 11))
+                            .font(.cardHeader)
                         Text("How this is calculated")
-                            .font(.system(size: 11))
+                            .font(.cardHeader)
                     }
                     .foregroundStyle(.white.opacity(0.3))
                 }
@@ -231,11 +231,11 @@ struct BS_FireGoalView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(config.title)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.bodySemibold)
                     .foregroundStyle(config.color)
 
                 Text(config.message)
-                    .font(.system(size: 13))
+                    .font(.footnoteRegular)
                     .foregroundStyle(.white.opacity(0.7))
                     .lineSpacing(3)
             }
@@ -376,7 +376,7 @@ struct BS_FireGoalView: View {
                 // Recommended badge
                 if isRecommended {
                     Text("RECOMMENDED")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(.miniLabel)
                         .tracking(0.08 * 9)
                         .foregroundStyle(Color(hex: "F5D76E"))
                         .padding(.horizontal, 8)
@@ -388,7 +388,7 @@ struct BS_FireGoalView: View {
                 // Title + Feasibility badge
                 HStack {
                     Text("Retire at \(plan.retirementAge)")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.h4)
                         .foregroundStyle(.white)
                     Spacer()
                     feasibilityBadge(plan.feasibility)
@@ -396,51 +396,51 @@ struct BS_FireGoalView: View {
 
                 // Subtitle
                 Text(subtitle)
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundStyle(.white.opacity(0.45))
 
                 // Stats row
                 HStack(spacing: 20) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("SAVE RATE")
-                            .font(.system(size: 9, weight: .semibold))
+                            .font(.miniLabel)
                             .tracking(0.08 * 9)
                             .foregroundStyle(.white.opacity(0.3))
 
                         if showDelta {
                             HStack(spacing: 4) {
                                 Text("\(formatted(plan.savingsRate))%")
-                                    .font(.system(size: 16, weight: .bold))
+                                    .font(.bodySemibold)
                                     .foregroundStyle(.white)
                                 Text("+\(formatted(plan.savingsRate - currentRate))%")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(.smallLabel)
                                     .foregroundStyle(Color(hex: "4ADE80"))
                             }
                         } else {
                             Text("\(formatted(plan.savingsRate))%")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.bodySemibold)
                                 .foregroundStyle(.white)
                         }
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("MONTHLY")
-                            .font(.system(size: 9, weight: .semibold))
+                            .font(.miniLabel)
                             .tracking(0.08 * 9)
                             .foregroundStyle(.white.opacity(0.3))
 
                         if showDelta {
                             HStack(spacing: 4) {
                                 Text("$\(formatted(plan.monthlySavings))")
-                                    .font(.system(size: 16, weight: .bold))
+                                    .font(.bodySemibold)
                                     .foregroundStyle(.white)
                                 Text("+$\(formatted(plan.monthlySavings - currentSavings))")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(.smallLabel)
                                     .foregroundStyle(Color(hex: "4ADE80"))
                             }
                         } else {
                             Text("$\(formatted(plan.monthlySavings))")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.bodySemibold)
                                 .foregroundStyle(.white)
                         }
                     }
@@ -469,7 +469,7 @@ struct BS_FireGoalView: View {
     private func feasibilityBadge(_ feasibility: String) -> some View {
         let (label, color) = feasibilityInfo(feasibility)
         Text(label)
-            .font(.system(size: 10, weight: .semibold))
+            .font(.label)
             .foregroundStyle(color)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
@@ -493,25 +493,25 @@ struct BS_FireGoalView: View {
     private func incomeGrowthHint(_ hint: IncomeGrowthHint) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Text("💡")
-                .font(.system(size: 14))
+                .font(.bodySmall)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("What if your income grows?")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnoteSemibold)
                     .foregroundStyle(.white.opacity(0.7))
                 Text("If your income increases to $\(formatted(hint.requiredIncome))/mo, your original target becomes achievable at \(Int(hint.targetRate))% savings rate.")
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundStyle(.white.opacity(0.4))
                     .lineSpacing(3)
             }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.03))
+        .background(AppColors.overlayWhiteWash)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                .stroke(AppColors.cardTopHighlight, lineWidth: 1)
         )
     }
 
@@ -539,7 +539,7 @@ struct BS_FireGoalView: View {
                                     .tint(.black)
                             }
                             Text(viewModel.isCalculating ? "Calculating..." : "Calculate My Plan")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(.figureSecondarySemibold)
                         }
                         .foregroundStyle(.black)
                         .frame(maxWidth: .infinity)
@@ -556,7 +556,7 @@ struct BS_FireGoalView: View {
                     .disabled(viewModel.isCalculating)
 
                     Text("See how your target holds up")
-                        .font(.system(size: 11))
+                        .font(.cardHeader)
                         .foregroundStyle(.white.opacity(0.3))
                 } else {
                     // Set My Budget button
@@ -574,7 +574,7 @@ struct BS_FireGoalView: View {
                                     .tint(.black)
                             }
                             Text("Set My Budget →")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(.figureSecondarySemibold)
                         }
                         .foregroundStyle(.black)
                         .frame(maxWidth: .infinity)
@@ -592,7 +592,7 @@ struct BS_FireGoalView: View {
                     .disabled(viewModel.selectedPlan == nil || viewModel.isSaving)
 
                     Text("Next: Allocate your budget")
-                        .font(.system(size: 11))
+                        .font(.cardHeader)
                         .foregroundStyle(.white.opacity(0.3))
                 }
             }
@@ -607,7 +607,7 @@ struct BS_FireGoalView: View {
     private var infoSheet: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("How this is calculated")
-                .font(.system(size: 18, weight: .bold))
+                .font(.h4)
                 .foregroundStyle(.white)
                 .padding(.bottom, 4)
 
@@ -617,10 +617,10 @@ struct BS_FireGoalView: View {
                 infoRow(label: "Your FIRE number", value: "$\(formatted(result.fireNumber))")
             }
 
-            Divider().background(Color.white.opacity(0.06))
+            Divider().background(AppColors.cardTopHighlight)
 
             Text("Based on the historical nominal return of the S&P 500 (~10% annually since 1957), adjusted for estimated fees. Projections assume consistent monthly contributions and reinvested returns. Actual results vary with market conditions. This tool provides estimates for planning purposes only and does not constitute financial advice. Past performance does not guarantee future results.")
-                .font(.system(size: 11))
+                .font(.cardHeader)
                 .foregroundStyle(.white.opacity(0.3))
                 .lineSpacing(3)
         }
@@ -634,11 +634,11 @@ struct BS_FireGoalView: View {
     private func infoRow(label: String, value: String) -> some View {
         HStack {
             Text(label)
-                .font(.system(size: 14))
+                .font(.bodySmall)
                 .foregroundStyle(.white.opacity(0.5))
             Spacer()
             Text(value)
-                .font(.system(size: 14, weight: .bold))
+                .font(.inlineFigureBold)
                 .foregroundStyle(.white)
         }
     }

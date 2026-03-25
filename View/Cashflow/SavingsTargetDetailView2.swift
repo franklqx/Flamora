@@ -13,9 +13,8 @@ struct SavingsTargetDetailView2: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @State private var monthlyAmounts: [Double?] = [
-        2150, 1800, 2400, 1950, 3100, 1200, 2200, 3500, 1900, nil, nil, nil
-    ]
+    @State private var selectedYear: Int
+    @State private var monthlyAmountsByYear: [Int: [Double?]]
     @State private var editingMonthIndex: Int? = nil
     @State private var editingAmount: Double = 0
     @State private var isShowingEditSheet: Bool = false
@@ -24,8 +23,34 @@ struct SavingsTargetDetailView2: View {
 
     private let months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
     private let monthsShort = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
+
+    init() {
+        let byYear = MockData.savingsByYear
+        let latest = byYear.keys.sorted().last ?? 2026
+        _selectedYear = State(initialValue: latest)
+        _monthlyAmountsByYear = State(initialValue: byYear)
+    }
+
+    private var availableYears: [Int] { monthlyAmountsByYear.keys.sorted() }
+    private var canGoPrev: Bool { (availableYears.first ?? Int.max) < selectedYear }
+    private var canGoNext: Bool { (availableYears.last  ?? Int.min) > selectedYear }
+
+    private var currentMonthlyAmounts: [Double?] {
+        monthlyAmountsByYear[selectedYear] ?? Array(repeating: nil, count: 12)
+    }
+
     private var annualSaved: Double {
-        monthlyAmounts.compactMap { $0 }.reduce(0, +)
+        currentMonthlyAmounts.compactMap { $0 }.reduce(0, +)
+    }
+
+    private func navigateYear(_ delta: Int) {
+        guard let idx = availableYears.firstIndex(of: selectedYear) else { return }
+        let newIdx = idx + delta
+        guard newIdx >= 0 && newIdx < availableYears.count else { return }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            selectedYear = availableYears[newIdx]
+            chartHoverIndex = nil
+        }
     }
 
     var body: some View {
@@ -37,14 +62,14 @@ struct SavingsTargetDetailView2: View {
                     // Header
                     HStack(alignment: .firstTextBaseline) {
                         Text("Saving overview")
-                            .font(.system(size: 28, weight: .bold))
+                            .font(.cardFigurePrimary)
                             .foregroundStyle(.white)
 
                         Spacer()
 
                         Button(action: { dismiss() }) {
                             Image(systemName: "xmark")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.bodySmallSemibold)
                                 .foregroundStyle(.white)
                                 .padding(.top, 2)
                         }
@@ -55,25 +80,39 @@ struct SavingsTargetDetailView2: View {
                     // Total saved
                     VStack(alignment: .leading, spacing: 8) {
                         Text(formatMoney(annualSaved))
-                            .font(.system(size: 36, weight: .bold))
+                            .font(.display)
                             .foregroundStyle(.white)
 
                         Text("Total saved this year")
-                            .font(.system(size: 15))
-                            .foregroundColor(Color(hex: "#9CA3AF"))
+                            .font(.supportingText)
+                            .foregroundColor(AppColors.textTertiary)
                     }
 
-                    // Chart
-                    chartView
-                        .frame(height: 220)
-                        .padding(.top, 10)
+                    // Chart section with year picker
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Text("ANNUAL TREND")
+                                .font(.cardHeader)
+                                .foregroundColor(AppColors.textTertiary)
+                                .tracking(1.5)
+
+                            Spacer()
+
+                            yearPicker
+                        }
+
+                        chartView
+                            .frame(height: 220)
+                            .padding(.top, AppSpacing.xs)
+                    }
+                    .padding(.top, AppSpacing.sm)
 
                     // Target info
                     HStack(spacing: 30) {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("TARGET SAVING RATE")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundColor(Color(hex: "#6B7280"))
+                                .font(.cardHeader)
+                                .foregroundColor(AppColors.textTertiary)
 
                             Text("\(Int(MockData.apiMonthlyBudget.savingsRatio))%")
                                 .font(.system(size: 26, weight: .bold))
@@ -82,12 +121,12 @@ struct SavingsTargetDetailView2: View {
 
                         Divider()
                             .frame(height: 50)
-                            .background(Color(hex: "#2A2A2A"))
+                            .background(AppColors.surfaceBorder)
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text("TARGET SAVING")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundColor(Color(hex: "#6B7280"))
+                                .font(.cardHeader)
+                                .foregroundColor(AppColors.textTertiary)
 
                             Text(formatMoney(targetAmount))
                                 .font(.system(size: 26, weight: .bold))
@@ -96,13 +135,13 @@ struct SavingsTargetDetailView2: View {
 
                         Spacer()
                     }
-                    .padding(.vertical, 10)
+                    .padding(.vertical, AppSpacing.sm)
 
                     // Monthly milestones
                     VStack(alignment: .leading, spacing: 16) {
                         Text("MONTHLY MILESTONES")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(Color(hex: "#6B7280"))
+                            .font(.smallLabel)
+                            .foregroundColor(AppColors.textTertiary)
 
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                             ForEach(0..<12) { index in
@@ -110,16 +149,16 @@ struct SavingsTargetDetailView2: View {
                             }
                         }
                     }
-                    .padding(.top, 10)
+                    .padding(.top, AppSpacing.sm)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
+                .padding(.horizontal, AppSpacing.screenPadding)
+                .padding(.top, AppSpacing.screenPadding)
                 .padding(.bottom, 100)
             }
         }
         .preferredColorScheme(.dark)
         .offset(y: dragOffset)
-        .gesture(
+        .simultaneousGesture(
             DragGesture()
                 .onChanged { value in
                     if value.translation.height > 0 {
@@ -147,7 +186,35 @@ struct SavingsTargetDetailView2: View {
         }
     }
 
+    // MARK: - Year Picker
+
+    private var yearPicker: some View {
+        HStack(spacing: 12) {
+            Button { navigateYear(-1) } label: {
+                Image(systemName: "chevron.left")
+                    .font(.footnoteRegular)
+                    .foregroundColor(canGoPrev ? AppColors.textSecondary : AppColors.textTertiary)
+            }
+            .disabled(!canGoPrev)
+            .buttonStyle(.plain)
+
+            Text(String(selectedYear))
+                .font(.footnoteRegular)
+                .foregroundColor(AppColors.textSecondary)
+                .frame(minWidth: 36)
+
+            Button { navigateYear(1) } label: {
+                Image(systemName: "chevron.right")
+                    .font(.footnoteRegular)
+                    .foregroundColor(canGoNext ? AppColors.textSecondary : AppColors.textTertiary)
+            }
+            .disabled(!canGoNext)
+            .buttonStyle(.plain)
+        }
+    }
+
     // MARK: - Chart View
+
     private let maxChartAmount: Double = 3500
 
     private var chartView: some View {
@@ -163,7 +230,7 @@ struct SavingsTargetDetailView2: View {
                     path.addLine(to: CGPoint(x: geometry.size.width, y: targetY))
                 }
                 .stroke(style: StrokeStyle(lineWidth: 1, dash: [5, 5]))
-                .foregroundColor(Color(hex: "#6B7280"))
+                .foregroundColor(AppColors.textTertiary)
 
                 HStack(alignment: .bottom, spacing: 8) {
                     ForEach(0..<12) { index in
@@ -175,15 +242,22 @@ struct SavingsTargetDetailView2: View {
 
                 // Target label
                 Text("TARGET")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(Color(hex: "#6B7280"))
+                    .font(.label)
+                    .foregroundColor(AppColors.textTertiary)
                     .position(x: geometry.size.width - 30, y: targetY - 10)
             }
         }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 30)
+                .onEnded { value in
+                    guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                    navigateYear(value.translation.width < 0 ? 1 : -1)
+                }
+        )
     }
 
     private func barView(index: Int, maxHeight: CGFloat) -> some View {
-        let amount = monthlyAmounts[index]
+        let amount = index < currentMonthlyAmounts.count ? currentMonthlyAmounts[index] : nil
         let height = calculateHeight(amount: amount, maxHeight: maxHeight)
         let isTarget = (amount ?? 0) >= targetAmount
 
@@ -193,8 +267,8 @@ struct SavingsTargetDetailView2: View {
                 .frame(height: height)
 
             Text(monthsShort[index])
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(Color(hex: "#9CA3AF"))
+                .font(.cardHeader)
+                .foregroundColor(AppColors.textSecondary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -205,26 +279,26 @@ struct SavingsTargetDetailView2: View {
 
         return ZStack {
             if let index = chartHoverIndex {
-                let amount = monthlyAmounts[index]
+                let amount = index < currentMonthlyAmounts.count ? currentMonthlyAmounts[index] : nil
                 let barHeight = calculateHeight(amount: amount, maxHeight: maxHeight)
                 let xPosition = step * (CGFloat(index) + 0.5)
                 let yPosition = max(18, geometry.size.height - barHeight - 40)
 
                 VStack(spacing: 6) {
                     Text(months[index])
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(Color(hex: "#9CA3AF"))
+                        .font(.label)
+                        .foregroundColor(AppColors.textSecondary)
 
                     Text(amount == nil ? "--" : formatMoney(amount ?? 0))
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.smallLabel)
                         .foregroundStyle(.white)
                 }
                 .padding(.vertical, 8)
                 .padding(.horizontal, 10)
-                .background(Color(hex: "#121212"))
+                .background(AppColors.surface)
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color(hex: "#2A2A2A"), lineWidth: 1)
+                        .stroke(AppColors.surfaceBorder, lineWidth: 1)
                 )
                 .cornerRadius(10)
                 .position(x: xPosition, y: yPosition)
@@ -256,7 +330,7 @@ struct SavingsTargetDetailView2: View {
 
     private func barColor(amount: Double?, isTarget: Bool) -> AnyShapeStyle {
         if amount == nil {
-            return AnyShapeStyle(Color(hex: "#2B2B2B"))
+            return AnyShapeStyle(AppColors.surfaceBorder)
         }
         if isTarget {
             return AnyShapeStyle(
@@ -267,20 +341,21 @@ struct SavingsTargetDetailView2: View {
                 )
             )
         }
-        return AnyShapeStyle(Color(hex: "#3B3B3B"))
+        return AnyShapeStyle(AppColors.surfaceElevated)
     }
 
     // MARK: - Month Card
+
     private func monthCard(index: Int) -> some View {
-        let amount = monthlyAmounts[index]
+        let amount = index < currentMonthlyAmounts.count ? currentMonthlyAmounts[index] : nil
         let isTarget = (amount ?? 0) >= targetAmount
         let hasData = amount != nil
 
         return VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text(months[index])
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(hasData ? Color(hex: "#9CA3AF") : Color(hex: "#6B7280"))
+                    .font(.smallLabel)
+                    .foregroundColor(hasData ? AppColors.textSecondary : AppColors.textTertiary)
 
                 Spacer()
 
@@ -291,21 +366,21 @@ struct SavingsTargetDetailView2: View {
 
             if let amount = amount {
                 Text("\(formatMoney(amount)) / \(formatMoney(targetAmount))")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.bodySmallSemibold)
                     .foregroundStyle(.white)
             } else {
                 Text("-- / \(formatMoney(targetAmount))")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color(hex: "#6B7280"))
+                    .font(.bodySmallSemibold)
+                    .foregroundColor(AppColors.textTertiary)
             }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(hex: "#121212"))
+        .background(AppColors.surface)
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(hasData ? Color(hex: "#2A2A2A") : Color(hex: "#1F1F1F"), lineWidth: 1)
+                .stroke(hasData ? AppColors.surfaceBorder : AppColors.surfaceBorder.opacity(0.5), lineWidth: 1)
         )
         .opacity(hasData ? 1.0 : 0.7)
         .contentShape(RoundedRectangle(cornerRadius: 16))
@@ -328,21 +403,23 @@ struct SavingsTargetDetailView2: View {
 
     private func beginEditMonth(index: Int) {
         editingMonthIndex = index
-        editingAmount = monthlyAmounts[index] ?? 0
+        editingAmount = (index < currentMonthlyAmounts.count ? currentMonthlyAmounts[index] : nil) ?? 0
         isShowingEditSheet = true
     }
 
     private func applyEditedAmount() {
         guard let index = editingMonthIndex else { return }
+        var amounts = monthlyAmountsByYear[selectedYear] ?? Array(repeating: nil, count: 12)
         if editingAmount > 0 {
-            monthlyAmounts[index] = editingAmount
+            amounts[index] = editingAmount
         } else {
-            monthlyAmounts[index] = nil
+            amounts[index] = nil
         }
+        monthlyAmountsByYear[selectedYear] = amounts
     }
 
-
     // MARK: - Helper
+
     private func formatMoney(_ value: Double) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency

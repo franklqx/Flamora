@@ -58,7 +58,7 @@ struct OB_PaywallView: View {
                     // MARK: - Header
                     VStack(spacing: AppSpacing.sm) {
                         Image(systemName: "flame")
-                            .font(.system(size: 32))
+                            .font(.h1)
                             .foregroundStyle(LinearGradient(
                                 colors: AppColors.gradientFire,
                                 startPoint: .topLeading,
@@ -66,7 +66,7 @@ struct OB_PaywallView: View {
                             ))
 
                         Text("Flamora Pro")
-                            .font(.system(size: 32, weight: .bold))
+                            .font(.h1)
                             .foregroundStyle(.white)
 
                         Text("Your complete toolkit for Financial Independence")
@@ -75,7 +75,7 @@ struct OB_PaywallView: View {
                             .multilineTextAlignment(.center)
 
                         Text("7-day free trial, cancel anytime")
-                            .font(.system(size: 15, weight: .medium))
+                            .font(.supportingText)
                             .foregroundColor(AppColors.success)
                     }
                     .opacity(appear ? 1 : 0)
@@ -89,7 +89,7 @@ struct OB_PaywallView: View {
                         ForEach(Array(features.enumerated()), id: \.offset) { index, feature in
                             HStack(spacing: 14) {
                                 Image(systemName: "checkmark.circle")
-                                    .font(.system(size: 16))
+                                    .font(.bodyRegular)
                                     .foregroundStyle(LinearGradient(
                                         colors: [AppColors.accentBlue, AppColors.accentPurple],
                                         startPoint: .leading,
@@ -107,7 +107,7 @@ struct OB_PaywallView: View {
                             .padding(.vertical, 8)
 
                             if index < features.count - 1 {
-                                Divider().overlay(Color.white.opacity(0.08))
+                                Divider().overlay(AppColors.overlayWhiteStroke)
                             }
                         }
                     }
@@ -116,7 +116,7 @@ struct OB_PaywallView: View {
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
                     .overlay(
                         RoundedRectangle(cornerRadius: AppRadius.lg)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                            .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
                     )
                     .opacity(appear ? 1 : 0)
                     .offset(y: appear ? 0 : 20)
@@ -161,7 +161,7 @@ struct OB_PaywallView: View {
                             }
 
                             Text("BEST VALUE")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.label)
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)

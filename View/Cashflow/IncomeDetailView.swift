@@ -15,8 +15,9 @@ struct IncomeDetailView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var dragOffset: CGFloat = 0
-    @State private var selectedBarIndex: Int = 0
-    @State private var editableMonthlyData: [Int: IncomeMonthData]
+    @State private var selectedBarIndex: Int
+    @State private var selectedYear: Int
+    @State private var editableDataByYear: [Int: [Int: IncomeMonthData]]
     @State private var isSourceEditorPresented = false
     @State private var editingSourceID = ""
     @State private var editingSourceSeriesKey = ""
@@ -28,23 +29,32 @@ struct IncomeDetailView: View {
     private let monthLabels = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
     private let monthsFull = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-    init(data: IncomeDetailData) {
+    init(data: IncomeDetailData, initialSelectedMonth: Int = 0) {
         self.data = data
-        _editableMonthlyData = State(initialValue: data.monthlyData)
+        let latest = data.availableYears.last ?? 2026
+        _selectedYear = State(initialValue: latest)
+        _editableDataByYear = State(initialValue: data.monthlyDataByYear)
+        _selectedBarIndex = State(initialValue: initialSelectedMonth)
+    }
+
+    private var currentTrend: [Double?] {
+        data.trendsByYear[selectedYear] ?? Array(repeating: nil, count: 12)
+    }
+    private var currentMonthlyData: [Int: IncomeMonthData] {
+        editableDataByYear[selectedYear] ?? [:]
     }
 
     private var maxChartValue: Double {
-        let values = data.annualTrend.compactMap { $0 }
+        let values = currentTrend.compactMap { $0 }
         return max(values.max() ?? 1, 1)
     }
 
-    /// Current month's data based on selected bar
     private var selectedMonthData: IncomeMonthData? {
-        editableMonthlyData[selectedBarIndex]
+        currentMonthlyData[selectedBarIndex]
     }
 
     private var selectedTotal: Double {
-        selectedMonthData?.total ?? data.annualTrend[selectedBarIndex] ?? 0
+        selectedMonthData?.total ?? (currentTrend.indices.contains(selectedBarIndex) ? currentTrend[selectedBarIndex] : nil) ?? 0
     }
 
     private var selectedSources: [IncomeDetailSource] {
@@ -53,6 +63,22 @@ struct IncomeDetailView: View {
 
     private var selectedMonthLabel: String {
         monthsFull[selectedBarIndex]
+    }
+
+    private var canGoPrev: Bool { (data.availableYears.first ?? Int.max) < selectedYear }
+    private var canGoNext: Bool { (data.availableYears.last  ?? Int.min) > selectedYear }
+
+    private func navigateYear(_ delta: Int) {
+        let years = data.availableYears
+        guard let idx = years.firstIndex(of: selectedYear) else { return }
+        let newIdx = idx + delta
+        guard newIdx >= 0 && newIdx < years.count else { return }
+        let newYear = years[newIdx]
+        let trend = data.trendsByYear[newYear] ?? []
+        withAnimation(.easeInOut(duration: 0.2)) {
+            selectedYear = newYear
+            selectedBarIndex = trend.indices.last(where: { trend[$0] != nil }) ?? 0
+        }
     }
 
     var body: some View {
@@ -74,7 +100,7 @@ struct IncomeDetailView: View {
         }
         .preferredColorScheme(.dark)
         .offset(y: dragOffset)
-        .gesture(
+        .simultaneousGesture(
             DragGesture()
                 .onChanged { value in
                     if value.translation.height > 0 {
@@ -111,14 +137,14 @@ private extension IncomeDetailView {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 Text(data.title)
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.cardFigurePrimary)
                     .foregroundStyle(.white)
 
                 Spacer()
 
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.bodySmallSemibold)
                         .foregroundStyle(.white)
                         .padding(.top, 2)
                 }
@@ -127,11 +153,11 @@ private extension IncomeDetailView {
 
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(formatCurrency(selectedTotal))
-                    .font(.system(size: 32, weight: .bold))
+                    .font(.h1)
                     .foregroundStyle(.white)
 
                 Text("earned in \(selectedMonthLabel)")
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.bodyRegular)
                     .foregroundColor(Color(hex: "#9CA3AF"))
             }
         }
@@ -144,19 +170,39 @@ private extension IncomeDetailView {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Text("ANNUAL TREND")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.segmentLabel(selected: false))
                     .foregroundColor(Color(hex: "#6B7280"))
                     .tracking(1.5)
-
                 Spacer()
-
-                Text("Jan - Dec 2026")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color(hex: "#9CA3AF"))
+                yearPicker
             }
-
             chartView
                 .frame(height: 220)
+        }
+    }
+
+    var yearPicker: some View {
+        HStack(spacing: 12) {
+            Button { navigateYear(-1) } label: {
+                Image(systemName: "chevron.left")
+                    .font(.footnoteRegular)
+                    .foregroundColor(canGoPrev ? AppColors.textSecondary : AppColors.textTertiary)
+            }
+            .disabled(!canGoPrev)
+            .buttonStyle(.plain)
+
+            Text(String(selectedYear))
+                .font(.footnoteRegular)
+                .foregroundColor(AppColors.textSecondary)
+                .frame(minWidth: 36)
+
+            Button { navigateYear(1) } label: {
+                Image(systemName: "chevron.right")
+                    .font(.footnoteRegular)
+                    .foregroundColor(canGoNext ? AppColors.textSecondary : AppColors.textTertiary)
+            }
+            .disabled(!canGoNext)
+            .buttonStyle(.plain)
         }
     }
 
@@ -169,45 +215,45 @@ private extension IncomeDetailView {
 
             HStack(alignment: .bottom, spacing: barSpacing) {
                 ForEach(0..<12, id: \.self) { index in
-                    barColumn(
-                        index: index,
-                        barWidth: barWidth,
-                        maxHeight: barAreaHeight
-                    )
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedBarIndex = index
+                    barColumn(index: index, barWidth: barWidth, maxHeight: barAreaHeight)
+                        .onTapGesture {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedBarIndex = index
+                            }
                         }
-                    }
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 30)
+                .onEnded { value in
+                    guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                    navigateYear(value.translation.width < 0 ? 1 : -1)
+                }
+        )
     }
 
     func barColumn(index: Int, barWidth: CGFloat, maxHeight: CGFloat) -> some View {
-        let amount = data.annualTrend[index]
+        let amount: Double? = currentTrend.indices.contains(index) ? currentTrend[index] : nil
         let height = barHeight(for: amount, maxHeight: maxHeight)
         let isSelected = index == selectedBarIndex
 
         return VStack(spacing: 10) {
             Group {
-                if
-                    isSelected,
-                    amount != nil,
-                    let monthData = editableMonthlyData[index],
-                    !monthData.sources.isEmpty
-                {
+                if isSelected, amount != nil,
+                   let monthData = currentMonthlyData[index], !monthData.sources.isEmpty {
                     stackedBarFill(for: monthData)
                 } else {
                     RoundedRectangle(cornerRadius: 4)
                         .fill(Color(hex: "#D1D5DB").opacity(0.25))
                 }
             }
-                .frame(width: barWidth, height: height)
-                .opacity(amount == nil ? 0.3 : 1.0)
+            .frame(width: barWidth, height: height)
+            .opacity(amount == nil ? 0.3 : 1.0)
 
             Text(monthLabels[index])
-                .font(.system(size: 11, weight: isSelected ? .bold : .semibold))
+                .font(.segmentLabel(selected: isSelected))
                 .foregroundColor(isSelected ? .white : Color(hex: "#9CA3AF"))
         }
         .frame(maxWidth: .infinity)
@@ -216,12 +262,13 @@ private extension IncomeDetailView {
     func barHeight(for amount: Double?, maxHeight: CGFloat) -> CGFloat {
         guard let amount = amount, amount > 0 else { return 16 }
         let ratio = min(amount / maxChartValue, 1.0)
-        return max(16, maxHeight * CGFloat(ratio))
+        return max(16, maxHeight * 0.5 * CGFloat(ratio))
     }
 
     func stackedBarFill(for monthData: IncomeMonthData) -> some View {
         let total = max(monthData.sources.reduce(0) { $0 + $1.amount }, 0.0001)
         let stackedSources = Array(monthData.sources.reversed())
+        let colors = colorMap(for: monthData.sources)
 
         return GeometryReader { geometry in
             let availableHeight = geometry.size.height
@@ -229,7 +276,7 @@ private extension IncomeDetailView {
             VStack(spacing: 0) {
                 ForEach(stackedSources) { source in
                     Rectangle()
-                        .fill(sourceColor(for: source))
+                        .fill(colors[source.id] ?? colorScale[0])
                         .frame(maxWidth: .infinity)
                         .frame(height: availableHeight * CGFloat(source.amount / total))
                 }
@@ -243,9 +290,10 @@ private extension IncomeDetailView {
 // MARK: - Sources
 private extension IncomeDetailView {
     var sourcesSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        let colors = colorMap(for: selectedSources)
+        return VStack(alignment: .leading, spacing: 16) {
             Text("Sources")
-                .font(.system(size: 22, weight: .bold))
+                .font(.detailTitle)
                 .foregroundStyle(.white)
 
             VStack(spacing: 12) {
@@ -253,7 +301,10 @@ private extension IncomeDetailView {
                     Button {
                         openSourceEditor(for: source)
                     } label: {
-                        sourceCard(source: source)
+                        sourceCard(
+                            source: source,
+                            fillColor: colors[source.id] ?? colorScale[0]
+                        )
                     }
                     .buttonStyle(.plain)
                 }
@@ -261,7 +312,7 @@ private extension IncomeDetailView {
         }
     }
 
-    func sourceCard(source: IncomeDetailSource) -> some View {
+    func sourceCard(source: IncomeDetailSource, fillColor: Color) -> some View {
         GeometryReader { geometry in
             let width = geometry.size.width
             let ratio = min(max(source.percentage / 100, 0), 1)
@@ -269,20 +320,20 @@ private extension IncomeDetailView {
 
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(AppColors.cardTopHighlight)
 
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(sourceColor(for: source).opacity(0.88))
+                    .fill(fillColor.opacity(0.88))
                     .frame(width: fillWidth)
 
                 HStack(spacing: 14) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(source.name)
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.bodySemibold)
                             .foregroundStyle(.white)
 
                         Text("\(source.account) · \(source.type.displayName)")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.footnoteRegular)
                             .foregroundColor(Color(hex: "#D1D5DB").opacity(0.8))
                     }
 
@@ -290,11 +341,11 @@ private extension IncomeDetailView {
 
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(formatCurrency(source.amount))
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.bodySemibold)
                             .foregroundStyle(.white)
 
                         Text("\(Int(source.percentage.rounded()))%")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.footnoteRegular)
                             .foregroundColor(Color(hex: "#9CA3AF"))
                     }
                 }
@@ -302,10 +353,6 @@ private extension IncomeDetailView {
             }
         }
         .frame(height: 92)
-    }
-
-    func sourceColor(for source: IncomeDetailSource) -> Color {
-        Color(hex: source.colorHex)
     }
 
     func openSourceEditor(for source: IncomeDetailSource) {
@@ -322,30 +369,25 @@ private extension IncomeDetailView {
         let trimmedName = editingSourceName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return }
 
+        var yearData = editableDataByYear[selectedYear] ?? [:]
         if applySmartRules {
-            for monthIndex in editableMonthlyData.keys {
-                guard let monthData = editableMonthlyData[monthIndex] else { continue }
-                let updatedSources = monthData.sources.map { source in
+            for monthIndex in yearData.keys {
+                guard let monthData = yearData[monthIndex] else { continue }
+                let updated = monthData.sources.map { source -> IncomeDetailSource in
                     guard sourceSeriesKey(for: source.id) == editingSourceSeriesKey else { return source }
-                    var updated = source
-                    updated.name = trimmedName
-                    updated.type = editingSourceType
-                    return updated
+                    var s = source; s.name = trimmedName; s.type = editingSourceType; return s
                 }
-                editableMonthlyData[monthIndex] = IncomeMonthData(total: monthData.total, sources: updatedSources)
+                yearData[monthIndex] = IncomeMonthData(total: monthData.total, sources: updated)
             }
         } else {
-            guard let monthData = editableMonthlyData[editingSourceMonthIndex] else { return }
-            let updatedSources = monthData.sources.map { source in
+            guard let monthData = yearData[editingSourceMonthIndex] else { return }
+            let updated = monthData.sources.map { source -> IncomeDetailSource in
                 guard source.id == editingSourceID else { return source }
-                var updated = source
-                updated.name = trimmedName
-                updated.type = editingSourceType
-                return updated
+                var s = source; s.name = trimmedName; s.type = editingSourceType; return s
             }
-            editableMonthlyData[editingSourceMonthIndex] = IncomeMonthData(total: monthData.total, sources: updatedSources)
+            yearData[editingSourceMonthIndex] = IncomeMonthData(total: monthData.total, sources: updated)
         }
-
+        editableDataByYear[selectedYear] = yearData
         isSourceEditorPresented = false
     }
 
@@ -357,6 +399,21 @@ private extension IncomeDetailView {
 
 // MARK: - Helper
 private extension IncomeDetailView {
+    var colorScale: [Color] {
+        data.accentColor == "#34D399"
+            ? AppColors.activeIncomeScale
+            : AppColors.passiveIncomeScale
+    }
+
+    func colorMap(for sources: [IncomeDetailSource]) -> [String: Color] {
+        let sorted = sources.sorted { $0.percentage > $1.percentage }
+        var map: [String: Color] = [:]
+        for (index, source) in sorted.enumerated() {
+            map[source.id] = colorScale[min(index, colorScale.count - 1)]
+        }
+        return map
+    }
+
     func formatCurrency(_ value: Double) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
@@ -401,147 +458,185 @@ private struct IncomeSourceEditorSheet: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "#17181F").ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 Capsule()
-                    .fill(Color(hex: "#4B5563"))
+                    .fill(AppColors.surfaceBorder)
                     .frame(width: 44, height: 5)
-                    .padding(.top, 12)
+                    .padding(.top, AppSpacing.sm)
 
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: AppSpacing.md) {
                     HStack {
                         Text("Edit Source")
-                            .font(.system(size: 33, weight: .bold))
-                            .foregroundStyle(.white)
+                            .font(.h1)
+                            .foregroundStyle(AppColors.textPrimary)
 
                         Spacer()
 
                         Button(action: onClose) {
                             Image(systemName: "xmark")
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundColor(Color(hex: "#9CA3AF"))
+                                .font(.figureSecondarySemibold)
+                                .foregroundColor(AppColors.textSecondary)
                                 .frame(width: 30, height: 30)
                         }
                         .buttonStyle(.plain)
                     }
 
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Text("Source Name")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .font(.figureSecondarySemibold)
+                            .foregroundStyle(AppColors.textPrimary)
 
                         TextField("Rental Property", text: $sourceName)
                             .textInputAutocapitalization(.words)
                             .disableAutocorrection(true)
-                            .font(.system(size: 17, weight: .medium))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 14)
+                            .font(.fieldBodyMedium)
+                            .foregroundStyle(AppColors.textPrimary)
+                            .padding(.horizontal, AppSpacing.sm + 2)
                             .frame(height: 48)
                             .background(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .fill(Color.white.opacity(0.08))
+                                RoundedRectangle(cornerRadius: AppRadius.md)
+                                    .fill(AppColors.overlayWhiteStroke)
                             )
                     }
 
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Text("Income Type")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .font(.figureSecondarySemibold)
+                            .foregroundStyle(AppColors.textPrimary)
 
-                        HStack(spacing: 6) {
+                        HStack(spacing: AppSpacing.xs) {
                             ForEach(IncomeSourceType.allCases, id: \.self) { type in
                                 Button {
                                     selectedType = type
                                 } label: {
                                     Text(type.displayName)
-                                        .font(.system(size: 16, weight: .semibold))
+                                        .font(.bodySemibold)
                                         .foregroundColor(
                                             selectedType == type
-                                            ? Color(hex: "#111827")
-                                            : Color(hex: "#9CA3AF")
+                                            ? AppColors.textInverse
+                                            : AppColors.textTertiary
                                         )
                                         .frame(maxWidth: .infinity)
                                         .frame(height: 38)
                                         .background(
                                             Capsule()
-                                                .fill(selectedType == type ? Color.white : Color.clear)
+                                                .fill(selectedType == type ? AppColors.textPrimary : Color.clear)
                                         )
                                 }
                                 .buttonStyle(.plain)
                             }
                         }
-                        .padding(4)
+                        .padding(AppSpacing.xs)
                         .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.white.opacity(0.08))
+                            RoundedRectangle(cornerRadius: AppRadius.md)
+                                .fill(AppColors.overlayWhiteStroke)
                         )
 
-                        HStack(alignment: .top, spacing: 8) {
+                        HStack(alignment: .top, spacing: AppSpacing.sm) {
                             Image(systemName: "info.circle.fill")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(Color(hex: "#6B7280"))
+                                .font(.footnoteSemibold)
+                                .foregroundColor(AppColors.textTertiary)
                                 .padding(.top, 1)
 
                             Text(selectedType.helperDescription)
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(Color(hex: "#9CA3AF"))
+                                .font(.footnoteRegular)
+                                .foregroundColor(AppColors.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
 
                     Divider()
-                        .overlay(Color.white.opacity(0.08))
+                        .overlay(AppColors.overlayWhiteStroke)
 
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: AppSpacing.sm) {
+                        VStack(alignment: .leading, spacing: AppSpacing.xs) {
                             Text("Smart Rules")
-                                .font(.system(size: 17, weight: .semibold))
-                                .foregroundStyle(.white)
+                                .font(.statRowSemibold)
+                                .foregroundStyle(AppColors.textPrimary)
 
                             Text("Apply to all history & future records")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(Color(hex: "#9CA3AF"))
+                                .font(.inlineLabel)
+                                .foregroundColor(AppColors.textSecondary)
                         }
 
                         Spacer()
 
-                        Toggle("", isOn: $applySmartRules)
-                            .labelsHidden()
-                            .tint(Color(hex: "#A78BFA"))
+                        SmartRulesGradientToggle(isOn: $applySmartRules)
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
+                .padding(.horizontal, AppSpacing.screenPadding)
+                .padding(.top, AppSpacing.md)
 
-                Spacer(minLength: 16)
+                Spacer(minLength: AppSpacing.md)
 
                 Divider()
-                    .overlay(Color.white.opacity(0.08))
+                    .overlay(AppColors.overlayWhiteStroke)
 
                 Button(action: onSave) {
                     Text("Save Changes")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(.white)
+                        .font(.sheetPrimaryButton)
+                        .foregroundStyle(AppColors.textPrimary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
                         .background(
-                            RoundedRectangle(cornerRadius: 14)
-                                .fill(Color.white.opacity(0.08))
+                            RoundedRectangle(cornerRadius: AppRadius.md)
+                                .fill(AppColors.overlayWhiteStroke)
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: 14)
-                                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: AppRadius.md)
+                                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
                         )
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
-                .padding(.bottom, 14)
+                .padding(.horizontal, AppSpacing.screenPadding)
+                .padding(.top, AppSpacing.md)
+                .padding(.bottom, AppSpacing.sm + 2)
                 .disabled(isSaveDisabled)
                 .opacity(isSaveDisabled ? 0.45 : 1)
             }
         }
+    }
+}
+
+/// iOS `Toggle` tint cannot be a gradient; custom track uses `AppColors.gradientFire` when on.
+private struct SmartRulesGradientToggle: View {
+    @Binding var isOn: Bool
+
+    private let trackW: CGFloat = 51
+    private let trackH: CGFloat = 31
+    private let thumbSize: CGFloat = 26
+
+    var body: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) { isOn.toggle() }
+        } label: {
+            ZStack(alignment: isOn ? .trailing : .leading) {
+                Capsule()
+                    .fill(
+                        isOn
+                        ? AnyShapeStyle(
+                            LinearGradient(
+                                colors: AppColors.gradientFire,
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        : AnyShapeStyle(AppColors.surfaceInput)
+                    )
+                    .frame(width: trackW, height: trackH)
+
+                Circle()
+                    .fill(AppColors.textPrimary)
+                    .frame(width: thumbSize, height: thumbSize)
+                    .shadow(color: AppColors.cardShadow.opacity(0.35), radius: 2, y: 1)
+                    .padding(.horizontal, AppSpacing.xs)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Smart Rules")
+        .accessibilityValue(isOn ? "On" : "Off")
     }
 }
 
@@ -552,26 +647,58 @@ struct SpendingAnalysisDetailView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var dragOffset: CGFloat = 0
-    @State private var selectedBarIndex: Int = 0
+    @State private var selectedBarIndex: Int
+    @State private var selectedYear: Int
     @State private var selectedCategory: SpendingDetailCategory?
 
     private let monthLabels = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
     private let monthsFull = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     private let monthsLong = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
+    init(data: SpendingDetailData) {
+        self.data = data
+        let latest = data.availableYears.last ?? 2026
+        let trend = data.trendsByYear[latest] ?? []
+        _selectedYear = State(initialValue: latest)
+        _selectedBarIndex = State(initialValue: trend.indices.last(where: { trend[$0] != nil }) ?? 0)
+    }
+
     private var accentColor: Color { Color(hex: data.accentColor) }
 
+    private var currentTrend: [Double?] {
+        data.trendsByYear[selectedYear] ?? Array(repeating: nil, count: 12)
+    }
+    private var currentMonthlyData: [Int: SpendingDetailMonthData] {
+        data.monthlyDataByYear[selectedYear] ?? [:]
+    }
+
     private var maxChartValue: Double {
-        let values = data.annualTrend.compactMap { $0 }
+        let values = currentTrend.compactMap { $0 }
         return max(values.max() ?? 1, 1)
     }
 
     private var selectedMonthData: SpendingDetailMonthData? {
-        data.monthlyData[selectedBarIndex]
+        currentMonthlyData[selectedBarIndex]
     }
 
     private var selectedTotal: Double {
-        selectedMonthData?.total ?? data.annualTrend[selectedBarIndex] ?? 0
+        selectedMonthData?.total ?? (currentTrend.indices.contains(selectedBarIndex) ? currentTrend[selectedBarIndex] : nil) ?? 0
+    }
+
+    private var canGoPrev: Bool { (data.availableYears.first ?? Int.max) < selectedYear }
+    private var canGoNext: Bool { (data.availableYears.last  ?? Int.min) > selectedYear }
+
+    private func navigateYear(_ delta: Int) {
+        let years = data.availableYears
+        guard let idx = years.firstIndex(of: selectedYear) else { return }
+        let newIdx = idx + delta
+        guard newIdx >= 0 && newIdx < years.count else { return }
+        let newYear = years[newIdx]
+        let trend = data.trendsByYear[newYear] ?? []
+        withAnimation(.easeInOut(duration: 0.2)) {
+            selectedYear = newYear
+            selectedBarIndex = trend.indices.last(where: { trend[$0] != nil }) ?? 0
+        }
     }
 
     private var selectedCategories: [SpendingDetailCategory] {
@@ -605,7 +732,7 @@ struct SpendingAnalysisDetailView: View {
         }
         .preferredColorScheme(.dark)
         .offset(y: dragOffset)
-        .gesture(
+        .simultaneousGesture(
             DragGesture()
                 .onChanged { value in
                     if value.translation.height > 0 {
@@ -637,14 +764,14 @@ private extension SpendingAnalysisDetailView {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 Text(data.title)
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.cardFigurePrimary)
                     .foregroundStyle(.white)
 
                 Spacer()
 
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.bodySmallSemibold)
                         .foregroundStyle(.white)
                         .padding(.top, 2)
                 }
@@ -653,11 +780,11 @@ private extension SpendingAnalysisDetailView {
 
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(formatCurrencyNoCents(selectedTotal))
-                    .font(.system(size: 32, weight: .bold))
+                    .font(.h1)
                     .foregroundStyle(.white)
 
                 Text("spend in \(selectedMonthLabel)")
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.bodyRegular)
                     .foregroundColor(Color(hex: "#9CA3AF"))
             }
         }
@@ -666,8 +793,43 @@ private extension SpendingAnalysisDetailView {
 
 private extension SpendingAnalysisDetailView {
     var chartSection: some View {
-        chartView
-            .frame(height: 220)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("ANNUAL TREND")
+                    .font(.segmentLabel(selected: false))
+                    .foregroundColor(Color(hex: "#6B7280"))
+                    .tracking(1.5)
+                Spacer()
+                yearPicker
+            }
+            chartView
+                .frame(height: 220)
+        }
+    }
+
+    var yearPicker: some View {
+        HStack(spacing: 12) {
+            Button { navigateYear(-1) } label: {
+                Image(systemName: "chevron.left")
+                    .font(.footnoteRegular)
+                    .foregroundColor(canGoPrev ? AppColors.textSecondary : AppColors.textTertiary)
+            }
+            .disabled(!canGoPrev)
+            .buttonStyle(.plain)
+
+            Text(String(selectedYear))
+                .font(.footnoteRegular)
+                .foregroundColor(AppColors.textSecondary)
+                .frame(minWidth: 36)
+
+            Button { navigateYear(1) } label: {
+                Image(systemName: "chevron.right")
+                    .font(.footnoteRegular)
+                    .foregroundColor(canGoNext ? AppColors.textSecondary : AppColors.textTertiary)
+            }
+            .disabled(!canGoNext)
+            .buttonStyle(.plain)
+        }
     }
 
     var chartView: some View {
@@ -687,11 +849,19 @@ private extension SpendingAnalysisDetailView {
                         }
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 30)
+                .onEnded { value in
+                    guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                    navigateYear(value.translation.width < 0 ? 1 : -1)
+                }
+        )
     }
 
     func barColumn(index: Int, barWidth: CGFloat, maxHeight: CGFloat) -> some View {
-        let amount = data.annualTrend[index]
+        let amount: Double? = currentTrend.indices.contains(index) ? currentTrend[index] : nil
         let height = barHeight(for: amount, maxHeight: maxHeight)
         let isSelected = index == selectedBarIndex
 
@@ -702,7 +872,7 @@ private extension SpendingAnalysisDetailView {
                 .opacity(amount == nil ? 0.3 : 1.0)
 
             Text(monthLabels[index])
-                .font(.system(size: 11, weight: isSelected ? .bold : .semibold))
+                .font(.segmentLabel(selected: isSelected))
                 .foregroundColor(isSelected ? .white : Color(hex: "#9CA3AF"))
         }
         .frame(maxWidth: .infinity)
@@ -711,7 +881,7 @@ private extension SpendingAnalysisDetailView {
     func barHeight(for amount: Double?, maxHeight: CGFloat) -> CGFloat {
         guard let amount = amount, amount > 0 else { return 16 }
         let ratio = min(amount / maxChartValue, 1.0)
-        return max(16, maxHeight * CGFloat(ratio))
+        return max(16, maxHeight * 0.5 * CGFloat(ratio))
     }
 }
 
@@ -719,7 +889,7 @@ private extension SpendingAnalysisDetailView {
     var categoriesSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Categories")
-                .font(.system(size: 22, weight: .bold))
+                .font(.detailTitle)
                 .foregroundStyle(.white)
 
             VStack(spacing: 12) {
@@ -743,7 +913,7 @@ private extension SpendingAnalysisDetailView {
 
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.white.opacity(0.04))
+                    .fill(AppColors.overlayWhiteWash)
 
                 RoundedRectangle(cornerRadius: 20)
                     .fill(accentColor.opacity(0.82))
@@ -752,12 +922,12 @@ private extension SpendingAnalysisDetailView {
                 HStack(spacing: 12) {
                     HStack(spacing: 10) {
                         Image(systemName: category.icon)
-                            .font(.system(size: 21, weight: .semibold))
+                            .font(.categoryRowIcon)
                             .foregroundStyle(.white)
                             .frame(width: 24)
 
                         Text(category.name)
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.bodySemibold)
                             .foregroundStyle(.white)
                     }
 
@@ -765,11 +935,11 @@ private extension SpendingAnalysisDetailView {
 
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(formatCurrency(category.amount))
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.bodySemibold)
                             .foregroundStyle(.white)
 
                         Text("\(Int(category.percentage.rounded()))%")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.footnoteRegular)
                             .foregroundColor(Color(hex: "#9CA3AF"))
                     }
                 }
@@ -952,6 +1122,7 @@ private struct SpendingCategoryTransactionsDetailView: View {
     let groups: [SpendingCategoryTransactionGroup]
 
     @Environment(\.dismiss) private var dismiss
+    @State private var dragOffset: CGFloat = 0
 
     var body: some View {
         ZStack {
@@ -971,6 +1142,24 @@ private struct SpendingCategoryTransactionsDetailView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .offset(y: dragOffset)
+        .simultaneousGesture(
+            DragGesture()
+                .onChanged { value in
+                    if value.translation.height > 0 {
+                        dragOffset = value.translation.height
+                    }
+                }
+                .onEnded { value in
+                    if value.translation.height > 150 {
+                        dismiss()
+                    } else {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            dragOffset = 0
+                        }
+                    }
+                }
+        )
     }
 }
 
@@ -978,7 +1167,7 @@ private extension SpendingCategoryTransactionsDetailView {
     var backButton: some View {
         Button(action: { dismiss() }) {
             Image(systemName: "chevron.left")
-                .font(.system(size: 26, weight: .semibold))
+                .font(.navChevron)
                 .foregroundStyle(.white)
                 .padding(.vertical, 8)
         }
@@ -988,15 +1177,15 @@ private extension SpendingCategoryTransactionsDetailView {
     var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(category.name)
-                .font(.system(size: 28, weight: .bold))
+                .font(.cardFigurePrimary)
                 .foregroundStyle(.white)
 
             Text(formatCurrency(category.amount))
-                .font(.system(size: 48, weight: .bold))
+                .font(.currencyHero)
                 .foregroundStyle(.white)
 
             Text("Total spend in \(monthLabel)")
-                .font(.system(size: 16, weight: .medium))
+                .font(.bodyRegular)
                 .foregroundColor(Color(hex: "#94A3B8"))
         }
     }
@@ -1006,7 +1195,7 @@ private extension SpendingCategoryTransactionsDetailView {
             ForEach(groups) { group in
                 VStack(alignment: .leading, spacing: 10) {
                     Text(group.title)
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.inlineFigureBold)
                         .tracking(2)
                         .foregroundColor(Color(hex: "#94A3B8"))
 
@@ -1016,7 +1205,7 @@ private extension SpendingCategoryTransactionsDetailView {
 
                             if index < group.items.count - 1 {
                                 Divider()
-                                    .background(Color.white.opacity(0.10))
+                                    .background(AppColors.glassBorder)
                             }
                         }
                     }
@@ -1029,18 +1218,18 @@ private extension SpendingCategoryTransactionsDetailView {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.merchant)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.bodySemibold)
                     .foregroundStyle(.white)
 
                 Text(item.subtitle)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.footnoteRegular)
                     .foregroundColor(Color(hex: "#94A3B8"))
             }
 
             Spacer()
 
             Text(formatCurrency(item.amount))
-                .font(.system(size: 16, weight: .bold))
+                .font(.bodySemibold)
                 .foregroundStyle(.white)
                 .padding(.top, 2)
         }
@@ -1072,7 +1261,10 @@ struct TotalSpendingAnalysisDetailView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var dragOffset: CGFloat = 0
-    @State private var selectedBarIndex: Int = 0
+    @State private var selectedBarIndex: Int
+    @State private var selectedYear: Int
+    @State private var showNeedsDetail = false
+    @State private var showWantsDetail = false
 
     private let monthLabels = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
     private let monthsFull = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -1080,21 +1272,52 @@ struct TotalSpendingAnalysisDetailView: View {
     private let needsColor = Color(hex: "#A78BFA")
     private let wantsColor = Color(hex: "#93C5FD")
 
+    init(data: TotalSpendingDetailData) {
+        self.data = data
+        let latest = data.availableYears.last ?? 2026
+        let trend = data.trendsByYear[latest] ?? []
+        _selectedYear = State(initialValue: latest)
+        _selectedBarIndex = State(initialValue: trend.indices.last(where: { trend[$0] != nil }) ?? 0)
+    }
+
+    private var currentTrend: [Double?] {
+        data.trendsByYear[selectedYear] ?? Array(repeating: nil, count: 12)
+    }
+    private var currentMonthlyData: [Int: TotalSpendingMonthData] {
+        data.monthlyDataByYear[selectedYear] ?? [:]
+    }
+
     private var maxChartValue: Double {
-        let values = data.annualTrend.compactMap { $0 }
+        let values = currentTrend.compactMap { $0 }
         return max(values.max() ?? 1, 1)
     }
 
     private var selectedMonthData: TotalSpendingMonthData? {
-        data.monthlyData[selectedBarIndex]
+        currentMonthlyData[selectedBarIndex]
     }
 
     private var selectedTotal: Double {
-        selectedMonthData?.total ?? data.annualTrend[selectedBarIndex] ?? 0
+        selectedMonthData?.total ?? (currentTrend.indices.contains(selectedBarIndex) ? currentTrend[selectedBarIndex] : nil) ?? 0
     }
 
     private var selectedMonthLabel: String {
         monthsFull[selectedBarIndex]
+    }
+
+    private var canGoPrev: Bool { (data.availableYears.first ?? Int.max) < selectedYear }
+    private var canGoNext: Bool { (data.availableYears.last  ?? Int.min) > selectedYear }
+
+    private func navigateYear(_ delta: Int) {
+        let years = data.availableYears
+        guard let idx = years.firstIndex(of: selectedYear) else { return }
+        let newIdx = idx + delta
+        guard newIdx >= 0 && newIdx < years.count else { return }
+        let newYear = years[newIdx]
+        let trend = data.trendsByYear[newYear] ?? []
+        withAnimation(.easeInOut(duration: 0.2)) {
+            selectedYear = newYear
+            selectedBarIndex = trend.indices.last(where: { trend[$0] != nil }) ?? 0
+        }
     }
 
     var body: some View {
@@ -1116,7 +1339,7 @@ struct TotalSpendingAnalysisDetailView: View {
         }
         .preferredColorScheme(.dark)
         .offset(y: dragOffset)
-        .gesture(
+        .simultaneousGesture(
             DragGesture()
                 .onChanged { value in
                     if value.translation.height > 0 {
@@ -1133,6 +1356,12 @@ struct TotalSpendingAnalysisDetailView: View {
                     }
                 }
         )
+        .fullScreenCover(isPresented: $showNeedsDetail) {
+            SpendingAnalysisDetailView(data: MockData.needsSpendingDetail)
+        }
+        .fullScreenCover(isPresented: $showWantsDetail) {
+            SpendingAnalysisDetailView(data: MockData.wantsSpendingDetail)
+        }
     }
 }
 
@@ -1141,14 +1370,14 @@ private extension TotalSpendingAnalysisDetailView {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 Text(data.title)
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.cardFigurePrimary)
                     .foregroundStyle(.white)
 
                 Spacer()
 
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.bodySmallSemibold)
                         .foregroundStyle(.white)
                         .padding(.top, 2)
                 }
@@ -1157,11 +1386,11 @@ private extension TotalSpendingAnalysisDetailView {
 
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(formatCurrencyNoCents(selectedTotal))
-                    .font(.system(size: 32, weight: .bold))
+                    .font(.h1)
                     .foregroundStyle(.white)
 
                 Text("spend in \(selectedMonthLabel)")
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.bodyRegular)
                     .foregroundColor(Color(hex: "#9CA3AF"))
             }
         }
@@ -1170,8 +1399,43 @@ private extension TotalSpendingAnalysisDetailView {
 
 private extension TotalSpendingAnalysisDetailView {
     var chartSection: some View {
-        chartView
-            .frame(height: 220)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("ANNUAL TREND")
+                    .font(.segmentLabel(selected: false))
+                    .foregroundColor(Color(hex: "#6B7280"))
+                    .tracking(1.5)
+                Spacer()
+                yearPicker
+            }
+            chartView
+                .frame(height: 220)
+        }
+    }
+
+    var yearPicker: some View {
+        HStack(spacing: 12) {
+            Button { navigateYear(-1) } label: {
+                Image(systemName: "chevron.left")
+                    .font(.footnoteRegular)
+                    .foregroundColor(canGoPrev ? AppColors.textSecondary : AppColors.textTertiary)
+            }
+            .disabled(!canGoPrev)
+            .buttonStyle(.plain)
+
+            Text(String(selectedYear))
+                .font(.footnoteRegular)
+                .foregroundColor(AppColors.textSecondary)
+                .frame(minWidth: 36)
+
+            Button { navigateYear(1) } label: {
+                Image(systemName: "chevron.right")
+                    .font(.footnoteRegular)
+                    .foregroundColor(canGoNext ? AppColors.textSecondary : AppColors.textTertiary)
+            }
+            .disabled(!canGoNext)
+            .buttonStyle(.plain)
+        }
     }
 
     var chartView: some View {
@@ -1192,24 +1456,24 @@ private extension TotalSpendingAnalysisDetailView {
                 }
             }
         }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 30)
+                .onEnded { value in
+                    guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                    navigateYear(value.translation.width < 0 ? 1 : -1)
+                }
+        )
     }
 
     func barColumn(index: Int, barWidth: CGFloat, maxHeight: CGFloat) -> some View {
-        let amount = data.annualTrend[index]
+        let amount: Double? = currentTrend.indices.contains(index) ? currentTrend[index] : nil
         let height = barHeight(for: amount, maxHeight: maxHeight)
         let isSelected = index == selectedBarIndex
 
         return VStack(spacing: 10) {
             Group {
-                if isSelected {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(
-                            LinearGradient(
-                                colors: [needsColor, wantsColor],
-                                startPoint: .bottom,
-                                endPoint: .top
-                            )
-                        )
+                if isSelected, amount != nil, let monthData = currentMonthlyData[index] {
+                    stackedBarFill(for: monthData)
                 } else {
                     RoundedRectangle(cornerRadius: 4)
                         .fill(Color(hex: "#D1D5DB").opacity(0.25))
@@ -1219,10 +1483,25 @@ private extension TotalSpendingAnalysisDetailView {
             .opacity(amount == nil ? 0.3 : 1.0)
 
             Text(monthLabels[index])
-                .font(.system(size: 11, weight: isSelected ? .bold : .semibold))
+                .font(.segmentLabel(selected: isSelected))
                 .foregroundColor(isSelected ? .white : Color(hex: "#9CA3AF"))
         }
         .frame(maxWidth: .infinity)
+    }
+
+    func stackedBarFill(for monthData: TotalSpendingMonthData) -> some View {
+        let total = max(monthData.total, 0.0001)
+        return GeometryReader { geometry in
+            let h = geometry.size.height
+            VStack(spacing: 0) {
+                Rectangle().fill(wantsColor)
+                    .frame(height: h * CGFloat(monthData.wantsAmount / total))
+                Rectangle().fill(needsColor)
+                    .frame(height: h * CGFloat(monthData.needsAmount / total))
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 
     func barHeight(for amount: Double?, maxHeight: CGFloat) -> CGFloat {
@@ -1236,63 +1515,82 @@ private extension TotalSpendingAnalysisDetailView {
     var sourcesSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Sources")
-                .font(.system(size: 22, weight: .bold))
+                .font(.detailTitle)
                 .foregroundStyle(.white)
 
             if let monthData = selectedMonthData {
                 VStack(spacing: 12) {
-                    sourceCard(
-                        name: "Needs",
-                        amount: monthData.needsAmount,
-                        percentage: monthData.needsPercentage,
-                        color: needsColor
-                    )
+                    Button { showNeedsDetail = true } label: {
+                        sourceCard(
+                            name: "Needs",
+                            amount: monthData.needsAmount,
+                            percentage: monthData.needsPercentage,
+                            color: needsColor
+                        )
+                    }
+                    .buttonStyle(.plain)
 
-                    sourceCard(
-                        name: "Wants",
-                        amount: monthData.wantsAmount,
-                        percentage: monthData.wantsPercentage,
-                        color: wantsColor
-                    )
+                    Button { showWantsDetail = true } label: {
+                        sourceCard(
+                            name: "Wants",
+                            amount: monthData.wantsAmount,
+                            percentage: monthData.wantsPercentage,
+                            color: wantsColor
+                        )
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
     }
 
     func sourceCard(name: String, amount: Double, percentage: Double, color: Color) -> some View {
-        HStack(spacing: 14) {
-            RoundedRectangle(cornerRadius: 4)
-                .fill(color)
-                .frame(width: 5, height: 56)
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            let ratio = min(max(percentage / 100, 0), 1)
+            let fillWidth = ratio == 0 ? 0 : max(56, width * CGFloat(ratio))
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(name)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.white)
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: AppRadius.lg)
+                    .fill(AppColors.cardTopHighlight)
 
-                Text("\(selectedMonthLabel) 2026")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color(hex: "#6B7280"))
-            }
+                RoundedRectangle(cornerRadius: AppRadius.lg)
+                    .fill(color.opacity(0.88))
+                    .frame(width: fillWidth)
 
-            Spacer()
+                HStack(spacing: 14) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(name)
+                            .font(.bodySemibold)
+                            .foregroundStyle(.white)
 
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(formatCurrency(amount))
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.white)
+                        Text("\(selectedMonthLabel) \(selectedYear)")
+                            .font(.footnoteRegular)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
 
-                Text("\(Int(percentage.rounded()))%")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color(hex: "#9CA3AF"))
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(formatCurrency(amount))
+                            .font(.bodySemibold)
+                            .foregroundStyle(.white)
+
+                        HStack(spacing: 4) {
+                            Text("\(Int(percentage.rounded()))%")
+                                .font(.footnoteRegular)
+                                .foregroundColor(AppColors.textSecondary)
+
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                    }
+                }
+                .padding(.horizontal, 18)
             }
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(color.opacity(0.35))
-        )
+        .frame(height: 92)
     }
 }
 

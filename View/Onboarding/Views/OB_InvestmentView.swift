@@ -47,7 +47,7 @@ struct OB_InvestmentView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("INVESTMENT PORTFOLIO")
-                            .font(.obStepLabel)
+                            .font(.cardRowMeta)
                             .foregroundColor(AppColors.textTertiary)
                             .tracking(0.8)
 
@@ -123,7 +123,7 @@ struct OB_InvestmentView: View {
 
                         ZStack(alignment: .leading) {
                             Capsule()
-                                .fill(Color.white.opacity(0.15))
+                                .fill(AppColors.glassPillStroke)
                                 .frame(width: trackWidth, height: 4)
                             Capsule()
                                 .fill(accentGradient)
@@ -168,7 +168,7 @@ struct OB_InvestmentView: View {
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.xl)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
         )
     }
 

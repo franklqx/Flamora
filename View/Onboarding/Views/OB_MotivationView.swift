@@ -26,7 +26,7 @@ struct OB_MotivationView: View {
                     if !data.userName.isEmpty {
                         HStack(spacing: 6) {
                             Image(systemName: "person.crop.circle")
-                                .font(.system(size: 16))
+                                .font(.bodyRegular)
                                 .foregroundColor(AppColors.textSecondary)
                             Text("Hi \(data.userName)")
                                 .font(.bodySmall)
@@ -118,7 +118,7 @@ struct MotivationCard: View {
                         .frame(width: 36, height: 36)
 
                     Image(systemName: option.icon)
-                        .font(.system(size: 16))
+                        .font(.bodyRegular)
                         .foregroundColor(isSelected ? .black : AppColors.textSecondary)
                 }
                 .frame(width: 36, height: 36)

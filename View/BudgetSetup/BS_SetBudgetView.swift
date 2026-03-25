@@ -32,7 +32,7 @@ struct BS_SetBudgetView: View {
 
                     // Disclaimer under summary cards
                     Text("*Based on 9% annual return assumption")
-                        .font(.system(size: 10))
+                        .font(.label)
                         .foregroundStyle(.white.opacity(0.25))
                         .padding(.horizontal, 26)
 
@@ -68,17 +68,17 @@ struct BS_SetBudgetView: View {
                     Image(systemName: "chevron.left")
                     Text("Back")
                 }
-                .font(.system(size: 14))
+                .font(.bodySmall)
                 .foregroundStyle(.white.opacity(0.5))
             }
             .padding(.bottom, 8)
 
             Text("Set Your Budget")
-                .font(.system(size: 28, weight: .bold))
+                .font(.cardFigurePrimary)
                 .foregroundStyle(.white)
 
             Text("Based on your FIRE goal and real spending data.")
-                .font(.system(size: 14))
+                .font(.bodySmall)
                 .foregroundStyle(.white.opacity(0.45))
         }
     }
@@ -90,7 +90,7 @@ struct BS_SetBudgetView: View {
             // Target age
             VStack(alignment: .leading, spacing: 8) {
                 Text("TARGET AGE")
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.miniLabel)
                     .tracking(0.08 * 9)
                     .foregroundStyle(.white.opacity(0.3))
 
@@ -111,7 +111,7 @@ struct BS_SetBudgetView: View {
             // Monthly savings
             VStack(alignment: .leading, spacing: 8) {
                 Text("MONTHLY SAVINGS")
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.miniLabel)
                     .tracking(0.08 * 9)
                     .foregroundStyle(.white.opacity(0.3))
 
@@ -144,7 +144,7 @@ struct BS_SetBudgetView: View {
                         .fill(Color(hex: "B4A0E5"))
                         .frame(width: 8, height: 8)
                     Text("NEEDS")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(.miniLabel)
                         .tracking(0.08 * 9)
                         .foregroundStyle(.white.opacity(0.5))
                 }
@@ -152,7 +152,7 @@ struct BS_SetBudgetView: View {
                 Spacer()
 
                 Text("$\(formattedInt(viewModel.needsBudget)) /mo")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.bodySemibold)
                     .foregroundStyle(.white)
                     .monospacedDigit()
             }
@@ -182,11 +182,11 @@ struct BS_SetBudgetView: View {
                     ForEach(viewModel.needsCategories) { category in
                         HStack {
                             Text(category.name)
-                                .font(.system(size: 13))
+                                .font(.footnoteRegular)
                                 .foregroundStyle(.white.opacity(0.6))
                             Spacer()
                             Text("$\(formattedInt(category.amount))")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.footnoteSemibold)
                                 .foregroundStyle(.white.opacity(0.8))
                                 .monospacedDigit()
                         }
@@ -197,7 +197,7 @@ struct BS_SetBudgetView: View {
 
             // Footer
             Text("Based on your past 6 months average")
-                .font(.system(size: 11))
+                .font(.cardHeader)
                 .foregroundStyle(.white.opacity(0.25))
                 .padding(.top, 4)
         }
@@ -239,10 +239,10 @@ struct BS_SetBudgetView: View {
     private func warningBanner(message: String, color: Color) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 12))
+                .font(.caption)
                 .foregroundStyle(color)
             Text(message)
-                .font(.system(size: 12))
+                .font(.caption)
                 .foregroundStyle(color.opacity(0.9))
                 .lineSpacing(2)
         }
@@ -263,7 +263,7 @@ struct BS_SetBudgetView: View {
                         .fill(Color(hex: "6BB8C4"))
                         .frame(width: 8, height: 8)
                     Text("WANTS")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(.miniLabel)
                         .tracking(0.08 * 9)
                         .foregroundStyle(.white.opacity(0.5))
                 }
@@ -272,7 +272,7 @@ struct BS_SetBudgetView: View {
 
                 if let spending = viewModel.avgSpending {
                     Text("Avg: $\(formattedInt(spending.avgMonthlyWants))")
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(.white.opacity(0.3))
                 }
             }
@@ -289,9 +289,9 @@ struct BS_SetBudgetView: View {
                 if diff >= 0 {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.up.right")
-                            .font(.system(size: 10))
+                            .font(.label)
                         Text("+$\(formattedInt(diff)) buffer")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.smallLabel)
                     }
                     .foregroundStyle(Color(hex: "4ADE80"))
                     .padding(.horizontal, 10)
@@ -301,9 +301,9 @@ struct BS_SetBudgetView: View {
                 } else {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.down.right")
-                            .font(.system(size: 10))
+                            .font(.label)
                         Text("-$\(formattedInt(abs(diff))) less than usual")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.smallLabel)
                     }
                     .foregroundStyle(Color(hex: "FB923C"))
                     .padding(.horizontal, 10)
@@ -315,7 +315,7 @@ struct BS_SetBudgetView: View {
 
             // Explanation
             Text("This is your flexible spending — dining, shopping, entertainment, travel.")
-                .font(.system(size: 12))
+                .font(.caption)
                 .foregroundStyle(.white.opacity(0.35))
                 .lineSpacing(2)
         }
@@ -333,7 +333,7 @@ struct BS_SetBudgetView: View {
     private var monthlySplitBar: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("YOUR MONTHLY SPLIT")
-                .font(.system(size: 9, weight: .semibold))
+                .font(.miniLabel)
                 .tracking(0.08 * 9)
                 .foregroundStyle(.white.opacity(0.3))
 
@@ -352,7 +352,7 @@ struct BS_SetBudgetView: View {
                             .frame(width: geo.size.width * needsPct)
                             .overlay(
                                 Text("\(Int(needsPct * 100))%")
-                                    .font(.system(size: 10, weight: .semibold))
+                                    .font(.label)
                                     .foregroundStyle(.white)
                                     .opacity(needsPct > 0.12 ? 1 : 0)
                             )
@@ -365,7 +365,7 @@ struct BS_SetBudgetView: View {
                             .frame(width: geo.size.width * wantsPct)
                             .overlay(
                                 Text("\(Int(wantsPct * 100))%")
-                                    .font(.system(size: 10, weight: .semibold))
+                                    .font(.label)
                                     .foregroundStyle(.white)
                                     .opacity(wantsPct > 0.12 ? 1 : 0)
                             )
@@ -384,7 +384,7 @@ struct BS_SetBudgetView: View {
                             .frame(width: geo.size.width * savingsPct)
                             .overlay(
                                 Text("\(Int(savingsPct * 100))%")
-                                    .font(.system(size: 10, weight: .semibold))
+                                    .font(.label)
                                     .foregroundStyle(.black)
                                     .opacity(savingsPct > 0.12 ? 1 : 0)
                             )
@@ -398,21 +398,21 @@ struct BS_SetBudgetView: View {
                 HStack(spacing: 4) {
                     Circle().fill(Color(hex: "B4A0E5")).frame(width: 6, height: 6)
                     Text("Needs $\(formattedInt(viewModel.needsBudget))")
-                        .font(.system(size: 11))
+                        .font(.cardHeader)
                         .foregroundStyle(.white.opacity(0.5))
                 }
                 Spacer()
                 HStack(spacing: 4) {
                     Circle().fill(Color(hex: "6BB8C4")).frame(width: 6, height: 6)
                     Text("Wants $\(formattedInt(viewModel.wantsBudget))")
-                        .font(.system(size: 11))
+                        .font(.cardHeader)
                         .foregroundStyle(.white.opacity(0.5))
                 }
                 Spacer()
                 HStack(spacing: 4) {
                     Circle().fill(Color(hex: "F5D76E")).frame(width: 6, height: 6)
                     Text("Save $\(formattedInt(viewModel.savingsAmount))")
-                        .font(.system(size: 11))
+                        .font(.cardHeader)
                         .foregroundStyle(.white.opacity(0.5))
                 }
             }
@@ -443,7 +443,7 @@ struct BS_SetBudgetView: View {
                     viewModel.goToStep(.confirm)
                 } label: {
                     Text("Review Plan →")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.figureSecondarySemibold)
                         .foregroundStyle(.black)
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
@@ -458,7 +458,7 @@ struct BS_SetBudgetView: View {
                 }
 
                 Text("Next: Review and confirm your plan")
-                    .font(.system(size: 11))
+                    .font(.cardHeader)
                     .foregroundStyle(.white.opacity(0.3))
             }
             .padding(.horizontal, 26)

@@ -17,13 +17,20 @@ struct ContentView: View {
     // 观察 SupabaseManager 的 auth 状态
     private let supabase = SupabaseManager.shared
 
+    // ⚡ 开发调试：设为 true 跳过 Onboarding 直接进主界面
+    #if DEBUG
+    private let skipToMain = true
+    #else
+    private let skipToMain = false
+    #endif
+
     var body: some View {
         GeometryReader { proxy in
             let currentSize = proxy.size
             let displaySize = effectiveDisplaySize(for: currentSize)
-  
+
             ZStack {
-                if isOnboardingComplete && hasCompletedOnboarding {
+                if skipToMain || (isOnboardingComplete && hasCompletedOnboarding) {
                     MainTabView()
                         .transition(.opacity)
                 } else {

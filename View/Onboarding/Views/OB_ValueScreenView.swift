@@ -90,11 +90,11 @@ private struct ValueMoneyTrackingContent: View {
                         ForEach(0..<transactions.count, id: \.self) { index in
                             HStack {
                                 Text(transactions[index].name)
-                                    .font(.system(size: 15))
+                                    .font(.supportingText)
                                     .foregroundColor(AppColors.textPrimary)
                                 Spacer()
                                 Text(transactions[index].amount)
-                                    .font(.system(size: 15, weight: .medium))
+                                    .font(.supportingText)
                                     .foregroundColor(AppColors.textPrimary)
                             }
                             .padding(.vertical, 10)
@@ -144,11 +144,11 @@ private struct ValueMoneyTrackingContent: View {
 
                             VStack(spacing: 2) {
                                 Text("TOTAL")
-                                    .font(.system(size: 10, weight: .medium))
+                                    .font(.label)
                                     .foregroundColor(AppColors.textTertiary)
                                     .tracking(1)
                                 Text("$3,200")
-                                    .font(.system(size: 22, weight: .bold))
+                                    .font(.detailTitle)
                                     .foregroundColor(AppColors.textPrimary)
                             }
                         }
@@ -229,14 +229,14 @@ private struct ValueMoneyTrackingContent: View {
                 HStack(spacing: 10) {
                     Circle().fill(color).frame(width: 10, height: 10)
                     Text(title)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.supportingText)
                         .foregroundColor(AppColors.textPrimary)
                     Spacer()
                     Text(total)
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.cardFigureSecondary)
                         .foregroundColor(AppColors.textPrimary)
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.caption)
                         .foregroundColor(AppColors.textTertiary)
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 }
@@ -251,15 +251,15 @@ private struct ValueMoneyTrackingContent: View {
                     ForEach(0..<items.count, id: \.self) { i in
                         HStack(spacing: 10) {
                             Image(systemName: items[i].icon)
-                                .font(.system(size: 16))
+                                .font(.bodyRegular)
                                 .foregroundStyle(.white)
                                 .frame(width: 20)
                             Text(items[i].category)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.footnoteRegular)
                                 .foregroundColor(AppColors.textPrimary)
                             Spacer()
                             Text(items[i].amount)
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.footnoteSemibold)
                                 .foregroundColor(AppColors.textSecondary)
                         }
                         .padding(.vertical, 8)
@@ -339,13 +339,13 @@ private struct ValueSavingContent: View {
                         Text("✦")
                             .font(.system(size: 10))
                         Text("MONTHLY TRACKING")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.label)
                             .tracking(1)
                     }
                     .foregroundColor(AppColors.textTertiary)
                     Spacer()
                     Text("2026")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.cardRowMeta)
                         .foregroundColor(AppColors.textSecondary)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
@@ -379,11 +379,11 @@ private struct ValueSavingContent: View {
                             Text("✦")
                                 .font(.system(size: 8))
                             Text("SAVING RATE")
-                                .font(.system(size: 9, weight: .semibold))
+                                .font(.miniLabel)
                         }
                         .foregroundColor(AppColors.textTertiary)
                         Text("20%")
-                            .font(.system(size: 18, weight: .bold))
+                            .font(.h4)
                             .foregroundColor(AppColors.textPrimary)
                     }
                     Spacer()
@@ -392,11 +392,11 @@ private struct ValueSavingContent: View {
                             Text("✦")
                                 .font(.system(size: 8))
                             Text("TARGET SAVING")
-                                .font(.system(size: 9, weight: .semibold))
+                                .font(.miniLabel)
                         }
                         .foregroundColor(AppColors.textTertiary)
                         Text("$200")
-                            .font(.system(size: 18, weight: .bold))
+                            .font(.h4)
                             .foregroundColor(AppColors.textPrimary)
                     }
                 }
@@ -445,7 +445,7 @@ private struct ValueSavingContent: View {
             }
 
             Text(months[index])
-                .font(.system(size: 9, weight: .medium))
+                .font(.miniLabel)
                 .foregroundColor(AppColors.textTertiary)
         }
     }
@@ -486,7 +486,7 @@ private struct ValueInvestingContent: View {
                             .foregroundColor(AppColors.textTertiary)
                             .tracking(0.5)
                         Text("$213,000")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.bodySemibold)
                             .foregroundColor(AppColors.textPrimary)
                     }
                     .padding(.horizontal, 12)
@@ -502,7 +502,7 @@ private struct ValueInvestingContent: View {
                 }
 
                 Text("Investing $300/month")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.caption)
                     .foregroundColor(AppColors.textSecondary)
                     .frame(maxWidth: .infinity)
 
@@ -514,11 +514,11 @@ private struct ValueInvestingContent: View {
                         HStack(spacing: 6) {
                             Circle().fill(AppColors.gradientStart).frame(width: 8, height: 8)
                             Text("Start now")
-                                .font(.system(size: 12))
+                                .font(.caption)
                                 .foregroundColor(AppColors.textSecondary)
                         }
                         Text("$549k")
-                            .font(.system(size: 22, weight: .bold))
+                            .font(.detailTitle)
                             .foregroundColor(AppColors.textPrimary)
                     }
                     Spacer()
@@ -526,11 +526,11 @@ private struct ValueInvestingContent: View {
                         HStack(spacing: 6) {
                             Circle().fill(AppColors.textTertiary).frame(width: 8, height: 8)
                             Text("Wait 5 yrs")
-                                .font(.system(size: 12))
+                                .font(.caption)
                                 .foregroundColor(AppColors.textSecondary)
                         }
                         Text("$336k")
-                            .font(.system(size: 22, weight: .bold))
+                            .font(.detailTitle)
                             .foregroundColor(AppColors.textPrimary)
                     }
                 }
@@ -649,7 +649,7 @@ private struct CompoundGrowthChart: View {
 
                 // Y-axis label
                 Text("$550k")
-                    .font(.system(size: 9))
+                    .font(.miniLabel)
                     .foregroundColor(AppColors.textTertiary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
@@ -661,7 +661,7 @@ private struct CompoundGrowthChart: View {
                     Spacer()
                     Text("Year 30")
                 }
-                .font(.system(size: 9))
+                .font(.miniLabel)
                 .foregroundColor(AppColors.textTertiary)
                 .frame(maxHeight: .infinity, alignment: .bottom)
             }

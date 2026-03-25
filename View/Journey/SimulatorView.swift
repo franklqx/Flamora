@@ -44,9 +44,9 @@ struct SimulatorSettings {
 }
 
 struct SimulatorView: View {
+    @Binding var displayState: SimulatorDisplayState
     @State private var settings: SimulatorSettings = .fromAPI()
     @State private var showEditor = false
-    @State private var displayState: DisplayState = .overview
     @State private var isPulsing = false
     let isFireOn: Bool
     let onFireToggle: (() -> Void)?
@@ -64,10 +64,12 @@ struct SimulatorView: View {
     }
 
     init(
+        displayState: Binding<SimulatorDisplayState>,
         bottomPadding: CGFloat = 0,
         isFireOn: Bool = true,
         onFireToggle: (() -> Void)? = nil
     ) {
+        _displayState = displayState
         self.isFireOn = isFireOn
         self.onFireToggle = onFireToggle
         self.bottomPadding = bottomPadding
@@ -75,7 +77,7 @@ struct SimulatorView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color.clear  // 与其他页面一致，不额外添加黑色层
 
             switch displayState {
             case .overview:
@@ -86,7 +88,6 @@ struct SimulatorView: View {
                 resultsContent
             }
         }
-        .preference(key: HeaderVisibilityPreferenceKey.self, value: displayState == .overview)
         .animation(nil, value: bottomPadding)
         .fullScreenCover(isPresented: $showEditor) {
             SimulatorEditProfileView(
@@ -108,7 +109,7 @@ struct SimulatorView: View {
     }
 }
 
-private enum DisplayState {
+enum SimulatorDisplayState {
     case overview
     case loading
     case results
@@ -134,9 +135,9 @@ private extension SimulatorView {
 
                 }
                 .frame(minHeight: proxy.size.height, alignment: .top)
-                .padding(.bottom, bottomPadding)
+                .padding(.bottom, max(bottomPadding, AppSpacing.lg))
+                .padding(.top, AppSpacing.md)
             }
-            .padding(.top, AppSpacing.lg)
         }
     }
 
@@ -151,11 +152,11 @@ private extension SimulatorView {
 
         return HStack(spacing: 6) {
             Text("FIRE by age")
-                .font(.system(size: 28, weight: .bold))
+                .font(.cardFigurePrimary)
                 .foregroundStyle(.white)
 
             Text("\(fireAge)")
-                .font(.system(size: 28, weight: .bold))
+                .font(.cardFigurePrimary)
                 .foregroundStyle(ageGradient)
         }
         .frame(maxWidth: .infinity, alignment: .center)
@@ -173,7 +174,7 @@ private extension SimulatorView {
     var detailedAnalysis: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("DETAILED WEALTH ANALYSIS")
-                .font(.system(size: 11, weight: .semibold))
+                .font(.cardHeader)
                 .foregroundColor(AppColors.textTertiary)
                 .tracking(1.5)
                 .padding(.horizontal, AppSpacing.screenPadding)
@@ -208,11 +209,11 @@ private extension SimulatorView {
 
             VStack(spacing: 8) {
                 Text("Simulating your future…")
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.detailTitle)
                     .foregroundStyle(.white)
 
                 Text("ANALYZING CONTRIBUTION PATTERNS…")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnoteSemibold)
                     .foregroundColor(AppColors.textTertiary)
                     .tracking(1.5)
             }
@@ -226,8 +227,6 @@ private extension SimulatorView {
         GeometryReader { proxy in
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 24) {
-                    resultsHeader
-
                     resultsTitle
 
                     resultsChart
@@ -241,48 +240,25 @@ private extension SimulatorView {
 
                 }
                 .frame(minHeight: proxy.size.height, alignment: .top)
-                .padding(.bottom, bottomPadding)
+                .padding(.bottom, max(bottomPadding, AppSpacing.lg))
+                .padding(.top, AppSpacing.md)
                 .padding(.horizontal, AppSpacing.screenPadding)
             }
-            .padding(.top, AppSpacing.lg)
-        }
-    }
-
-    var resultsHeader: some View {
-        HStack(spacing: 10) {
-            FlameIcon(size: 18, color: AppColors.brandPrimary)
-
-            Text("PREDICT")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(AppColors.brandSecondary)
-                .tracking(2)
-
-            Spacer()
-
-            Button(action: {
-                displayState = .overview
-            }) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(AppColors.textSecondary)
-                    .frame(width: 28, height: 28)
-            }
-            .buttonStyle(.plain)
         }
     }
 
     var resultsTitle: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("You will reach financial")
-                .font(.system(size: 28, weight: .bold))
+                .font(.cardFigurePrimary)
                 .foregroundStyle(.white)
 
             Text("independence at age \(computedFireCalculation.fireAge)")
-                .font(.system(size: 28, weight: .bold))
+                .font(.cardFigurePrimary)
                 .foregroundStyle(.white)
 
             Text("Detailed FIRE progress analysis")
-                .font(.system(size: 15, weight: .medium))
+                .font(.supportingText)
                 .foregroundColor(AppColors.textTertiary)
         }
     }
@@ -332,13 +308,13 @@ private extension SimulatorView {
 
             HStack {
                 Text("Age \(settings.age)")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.footnoteRegular)
                     .foregroundColor(AppColors.textTertiary)
 
                 Spacer()
 
                 Text("Age \(computedFireCalculation.fireAge) (FIRE)")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnoteSemibold)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 6)
@@ -348,7 +324,7 @@ private extension SimulatorView {
                 Spacer()
 
                 Text("Age 90")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.footnoteRegular)
                     .foregroundColor(AppColors.textTertiary)
             }
         }
@@ -379,20 +355,20 @@ private extension SimulatorView {
     func resultStatCard(title: String, value: String, subvalue: String, accent: Color) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 12, weight: .bold))
+                .font(.smallLabel)
                 .foregroundColor(AppColors.textTertiary)
                 .tracking(1.2)
 
             Text(value)
-                .font(.system(size: 20, weight: .bold))
+                .font(.h3)
                 .foregroundStyle(.white)
 
             Text(subvalue)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.bodySmallSemibold)
                 .foregroundColor(accent)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(18)
+        .padding(AppSpacing.md)
         .background(AppColors.surface)
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.lg)
@@ -451,7 +427,7 @@ private extension SimulatorEditProfileView {
             FlameIcon(size: 18, color: AppColors.brandPrimary)
 
             Text("PREDICT")
-                .font(.system(size: 14, weight: .bold))
+                .font(.inlineFigureBold)
                 .foregroundColor(AppColors.textSecondary)
                 .tracking(2)
 
@@ -459,7 +435,7 @@ private extension SimulatorEditProfileView {
 
             Button(action: onClose) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.bodySemibold)
                     .foregroundColor(AppColors.textSecondary)
                     .frame(width: 28, height: 28)
             }
@@ -518,7 +494,7 @@ private extension SimulatorEditProfileView {
                     Spacer()
 
                     Image(systemName: showAdvanced ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.bodySmallSemibold)
                         .foregroundColor(AppColors.textSecondary)
                 }
                 .padding(.vertical, 12)
@@ -579,7 +555,7 @@ private struct SettingRow: View {
         Button(action: action) {
             HStack {
                 Text(title)
-                    .font(.body)
+                    .font(.bodyRegular)
                     .foregroundColor(AppColors.textSecondary)
 
                 Spacer()
@@ -591,12 +567,12 @@ private struct SettingRow: View {
 
                     if !unit.isEmpty {
                         Text(unit)
-                            .font(.body)
+                            .font(.bodyRegular)
                             .foregroundColor(AppColors.textTertiary)
                     }
 
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.bodySmallSemibold)
                         .foregroundColor(AppColors.textTertiary)
                 }
             }
@@ -674,7 +650,7 @@ private struct SettingEditorSheet: View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
                 Text(field.title)
-                    .font(.headline)
+                    .font(.statRowSemibold)
                     .foregroundStyle(.white)
 
                 HStack {
@@ -684,7 +660,7 @@ private struct SettingEditorSheet: View {
 
                     if !field.suffix.isEmpty {
                         Text(field.suffix)
-                            .font(.body)
+                            .font(.bodyRegular)
                             .foregroundColor(AppColors.textSecondary)
                     }
                 }
@@ -851,11 +827,11 @@ private struct CircularProgressView: View {
             .frame(height: 44)
 
             Text(percentText)
-                .font(.system(size: 32, weight: .bold))
+                .font(.h1)
                 .foregroundStyle(.white)
 
             Text("ACHIEVED")
-                .font(.system(size: 9, weight: .semibold))
+                .font(.miniLabel)
                 .foregroundColor(AppColors.textTertiary)
                 .tracking(2)
         }
@@ -864,5 +840,5 @@ private struct CircularProgressView: View {
 
 // MARK: - Preview
 #Preview {
-    SimulatorView()
+    SimulatorView(displayState: .constant(.overview))
 }

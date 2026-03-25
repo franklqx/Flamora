@@ -2,79 +2,97 @@
 //  IncomeCard.swift
 //  Flamora app
 //
+//  Donut-style Total Income card
+//  Active Income  →  AppColors.accentGreen  (large arc)
+//  Passive Income →  AppColors.accentPurple (small arc)
+//
+//  NOTE: Uses mock data today. When bank accounts are linked,
+//  replace `income` (monthly) and `yearlyIncome` with API responses.
+//
 
 import SwiftUI
 
 struct IncomeCard: View {
+
+    /// Current month income (mock → will come from API after bank link)
     let income: Income
-    let monthDates: [Date]
-    let selectedMonthIndex: Int
-    var onMonthSelected: ((Int) -> Void)? = nil
-    var onCardTapped: (() -> Void)? = nil
-    var onActiveTapped: (() -> Void)? = nil
+    /// Current year-to-date income (mock → will come from API after bank link)
+    var yearlyIncome: Income? = nil
+
+    var onCardTapped:    (() -> Void)? = nil
+    var onActiveTapped:  (() -> Void)? = nil
     var onPassiveTapped: (() -> Void)? = nil
+    /// Called when the period toggle changes — lets parent reload data
+    var onPeriodChanged: ((Bool) -> Void)? = nil   // true = year, false = month
 
-    // Relative bar heights per month (last 5 visible months)
-    // These are proportion values 0.0–1.0 representing historical income levels
-    private let monthBarRatios: [Double] = [0.68, 0.55, 0.62, 0.80, 0.95, 1.0, 0.88, 0.92, 0.78, 0.85, 0.90, 1.0]
+    // MARK: – Internal state
 
-    private var visibleMonthIndices: [Int] {
-        let total = monthDates.count
-        guard total > 0 else { return [] }
-        let end = min(selectedMonthIndex + 1, total)
-        let start = max(end - 5, 0)
-        return Array(start..<end)
+    @State private var period: Period = .month
+
+    private enum Period { case month, year }
+
+    // MARK: – Design tokens
+
+    private let activeColor  = AppColors.accentGreen
+    private let passiveColor = AppColors.accentPurple
+    private let ringWidth: CGFloat = 14
+
+    // MARK: – Derived values
+
+    /// The Income object currently displayed (switches on toggle)
+    private var displayed: Income {
+        (period == .year ? yearlyIncome : nil) ?? income
     }
+
+    private var activeFraction: Double {
+        displayed.total > 0 ? max(0.01, displayed.active  / displayed.total) : 0.85
+    }
+    private var passiveFraction: Double {
+        displayed.total > 0 ? max(0.01, displayed.passive / displayed.total) : 0.12
+    }
+
+    // Label shown inside the donut center
+    private var centerSubLabel: String {
+        period == .year ? "YTD \(currentYear)" : shortMonthLabel
+    }
+
+    // Label shown below the period toggle
+    private var periodRangeLabel: String {
+        period == .year ? yearRangeLabel : fullMonthLabel
+    }
+
+    private var shortMonthLabel: String {
+        let f = DateFormatter(); f.dateFormat = "MMM yyyy"
+        return f.string(from: Date())
+    }
+    private var fullMonthLabel: String {
+        let f = DateFormatter(); f.dateFormat = "MMMM yyyy"
+        return f.string(from: Date())
+    }
+    private var yearRangeLabel: String {
+        let f = DateFormatter(); f.dateFormat = "MMM d"
+        return "Jan 1 – \(f.string(from: Date())), \(currentYear)"
+    }
+    private var currentYear: Int {
+        Calendar.current.component(.year, from: Date())
+    }
+
+    // MARK: – Body
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            Text("TOTAL INCOME")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(AppColors.textTertiary)
-                .tracking(1.0)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.horizontal, AppSpacing.cardPadding)
+            donutSection
                 .padding(.top, AppSpacing.cardPadding)
-                .padding(.bottom, 2)
-                .contentShape(Rectangle())
-                .onTapGesture { onCardTapped?() }
+                .padding(.bottom, AppSpacing.xs)
 
-            // Large total amount
-            totalAmountView
-                .padding(.horizontal, AppSpacing.cardPadding)
-                .contentShape(Rectangle())
-                .onTapGesture { onCardTapped?() }
+            divider
 
-            // Monthly bar chart
-            monthlyBarChart
-                .padding(.horizontal, AppSpacing.cardPadding)
-                .padding(.top, 16)
-                .padding(.bottom, 4)
-
-            // Divider
-            Rectangle()
-                .fill(AppColors.surfaceBorder)
-                .frame(height: 0.5)
-                .padding(.horizontal, AppSpacing.cardPadding)
-                .padding(.vertical, 12)
-
-            // Breakdown rows
-            VStack(spacing: 14) {
-                incomeRow(
-                    title: "Active Income",
-                    amount: income.active,
-                    color: AppColors.accentBlue,
-                    onTap: onActiveTapped
-                )
-                incomeRow(
-                    title: "Passive Income",
-                    amount: income.passive,
-                    color: AppColors.accentBlue,
-                    onTap: onPassiveTapped
-                )
+            VStack(spacing: AppSpacing.xs) {
+                periodToggle
+                periodLabel
             }
             .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.top, AppSpacing.md)
             .padding(.bottom, AppSpacing.cardPadding)
         }
         .background(AppColors.surface)
@@ -85,132 +103,226 @@ struct IncomeCard: View {
         )
     }
 
-    // MARK: - Sub-views
+    // MARK: – Donut section
 
-    private var totalAmountView: some View {
-        let parts = formatCurrencyWithCents(income.total)
-        return HStack(alignment: .firstTextBaseline, spacing: 0) {
-            Text(parts.dollars)
-                .font(.system(size: 32, weight: .bold))
-                .foregroundStyle(.white)
-            Text(parts.cents)
-                .font(.system(size: 18, weight: .bold))
-                .foregroundColor(AppColors.textTertiary)
-        }
-        .frame(maxWidth: .infinity, alignment: .center)
-    }
+    private var donutSection: some View {
+        VStack(spacing: 0) {
 
-    private var monthlyBarChart: some View {
-        let indices = visibleMonthIndices
-
-        return HStack(alignment: .bottom, spacing: 0) {
-            ForEach(indices, id: \.self) { idx in
-                let isSelected = idx == selectedMonthIndex
-                let ratioIdx = min(idx, monthBarRatios.count - 1)
-                let ratio = monthBarRatios[ratioIdx]
-                let barH = CGFloat(20 + ratio * 60)
-                let monthLabel = Self.barMonthFormatter.string(from: monthDates[idx])
-
-                VStack(spacing: 6) {
-                    // Bar
-                    ZStack(alignment: .bottom) {
-                        // Background capsule
-                        Capsule()
-                            .fill(AppColors.surfaceInput)
-                            .frame(width: 16, height: 80)
-
-                        // Fill capsule
-                        Capsule()
-                            .fill(
-                                isSelected
-                                ? LinearGradient(
-                                    colors: [AppColors.accentBlueBright, AppColors.accentPurple],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                  )
-                                : LinearGradient(
-                                    colors: [AppColors.accentBlue.opacity(0.5), AppColors.accentBlue.opacity(0.3)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                  )
-                            )
-                            .frame(width: 16, height: max(12, barH * 0.85))
-                    }
-
-                    // Month label
-                    Text(monthLabel)
-                        .font(.system(size: 10, weight: isSelected ? .bold : .medium))
-                        .foregroundColor(isSelected ? .white : AppColors.textTertiary)
-                }
-                .frame(maxWidth: .infinity)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    onMonthSelected?(idx)
-                }
-            }
-        }
-        .frame(height: 100)
-    }
-
-    private func incomeRow(title: String, amount: Double, color: Color, onTap: (() -> Void)?) -> some View {
-        Button { onTap?() } label: {
+            // ── Passive label (top-trailing) ──────────────────────────────
             HStack {
-                Circle()
-                    .fill(color)
-                    .frame(width: 8, height: 8)
-                Text(title)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(AppColors.textSecondary)
                 Spacer()
-                Text(formatCurrencyWithCents(amount).full)
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
+                Button { onPassiveTapped?() } label: {
+                    VStack(alignment: .trailing, spacing: 3) {
+                        Text(formatAmount(displayed.passive))
+                            .font(.bodySemibold)
+                            .foregroundStyle(.white)
+                        HStack(spacing: 5) {
+                            Circle()
+                                .fill(passiveColor)
+                                .frame(width: 6, height: 6)
+                            Text("Passive")
+                                .font(.footnoteRegular)
+                                .foregroundColor(AppColors.textSecondary)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
             }
+            .frame(height: 44)
+            .padding(.horizontal, AppSpacing.cardPadding)
+
+            // ── Donut ring + tappable center ──────────────────────────────
+            ZStack {
+                donutRings
+
+                Button { onCardTapped?() } label: {
+                    VStack(spacing: 4) {
+                        Text("Total Income")
+                            .font(.footnoteRegular)
+                            .foregroundColor(AppColors.textTertiary)
+                        Text(formatAmount(displayed.total))
+                            .font(.cardFigurePrimary)
+                            .foregroundStyle(.white)
+                        Text(centerSubLabel)
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(width: 200, height: 200)
+
+            // ── Active label (bottom-left) ────────────────────────────────
+            HStack {
+                Button { onActiveTapped?() } label: {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(formatAmount(displayed.active))
+                            .font(.bodySemibold)
+                            .foregroundStyle(.white)
+                        HStack(spacing: 5) {
+                            Circle()
+                                .fill(activeColor)
+                                .frame(width: 6, height: 6)
+                            Text("Active")
+                                .font(.footnoteRegular)
+                                .foregroundColor(AppColors.textSecondary)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+                Spacer()
+            }
+            .frame(height: 44)
+            .padding(.horizontal, AppSpacing.cardPadding)
+        }
+    }
+
+    // MARK: – Donut rings
+
+    private var donutRings: some View {
+        // halfGap applied symmetrically on both sides of every endpoint
+        // → both gaps (active↔passive and passive↔active) become exactly 2×halfGap
+        let halfGap = 0.015   // 2×halfGap ≈ 10.8° per gap, both gaps equal
+        let pf = passiveFraction
+
+        return ZStack {
+            // Background track
+            Circle()
+                .stroke(AppColors.surfaceInput, lineWidth: ringWidth)
+                .opacity(0.4)
+
+            // Active arc (large – clockwise after passive segment)
+            Circle()
+                .trim(
+                    from: pf + halfGap,
+                    to:   max(pf + halfGap + 0.01, 1.0 - halfGap)
+                )
+                .stroke(
+                    LinearGradient(
+                        colors: [activeColor.opacity(0.75), activeColor],
+                        startPoint: .topLeading,
+                        endPoint:   .bottomTrailing
+                    ),
+                    style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+
+            // Passive arc (small – at 12 o'clock)
+            Circle()
+                .trim(
+                    from: halfGap,
+                    to:   max(halfGap + 0.01, pf - halfGap)
+                )
+                .stroke(passiveColor,
+                        style: StrokeStyle(lineWidth: ringWidth, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+        }
+        .frame(width: 200, height: 200)
+        .padding(ringWidth * 0.5)
+        .contentShape(Circle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onEnded { value in
+                    // Center of the 214×214 view (200 + 2×7 padding)
+                    let center = CGPoint(x: 107, y: 107)
+                    let dx = Double(value.location.x - center.x)
+                    let dy = Double(value.location.y - center.y)
+                    let distance = sqrt(dx * dx + dy * dy)
+                    // Only respond to taps in the ring band (skip center button area)
+                    guard distance > 60 && distance < 115 else { return }
+                    // Convert to clockwise angle from 12 o'clock, normalized [0, 1)
+                    var deg = atan2(dy, dx) * 180 / .pi
+                    deg = (deg + 90 + 360).truncatingRemainder(dividingBy: 360)
+                    let normalized = deg / 360.0
+                    if normalized < pf {
+                        onPassiveTapped?()
+                    } else {
+                        onActiveTapped?()
+                    }
+                }
+        )
+    }
+
+    // MARK: – Divider
+
+    private var divider: some View {
+        Rectangle()
+            .fill(AppColors.surfaceBorder)
+            .frame(height: 0.5)
+            .padding(.horizontal, AppSpacing.cardPadding)
+    }
+
+    // MARK: – Period toggle
+
+    private var periodToggle: some View {
+        HStack(spacing: 2) {
+            togglePill("This Month", selected: period == .month) {
+                withAnimation(.easeInOut(duration: 0.18)) {
+                    period = .month
+                    onPeriodChanged?(false)
+                }
+            }
+            togglePill("This Year", selected: period == .year) {
+                withAnimation(.easeInOut(duration: 0.18)) {
+                    period = .year
+                    onPeriodChanged?(true)
+                }
+            }
+        }
+        .padding(3)
+        .background(AppColors.surfaceInput)
+        .clipShape(Capsule())
+    }
+
+    private func togglePill(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.inlineLabel)
+                .foregroundColor(selected ? AppColors.textInverse : AppColors.textSecondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, AppSpacing.xs + 2)
+                .background(
+                    Capsule().fill(selected ? AppColors.textPrimary : Color.clear)
+                )
         }
         .buttonStyle(.plain)
-        .disabled(onTap == nil)
     }
 
-    // MARK: - Formatters
+    // MARK: – Period label (below toggle)
 
-    private static let barMonthFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMM''yy"
-        return f
-    }()
+    private var periodLabel: some View {
+        Text(periodRangeLabel)
+            .font(.footnoteRegular)
+            .foregroundColor(AppColors.textTertiary)
+            .frame(maxWidth: .infinity, alignment: .center)
+    }
 
-    private func formatCurrencyWithCents(_ value: Double) -> CurrencyParts {
+    // MARK: – Formatter
+
+    private func formatAmount(_ value: Double) -> String {
         let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.currencyCode = "USD"
-        f.maximumFractionDigits = 2
-        f.minimumFractionDigits = 2
-        let formatted = f.string(from: NSNumber(value: value)) ?? "$0.00"
-        let pieces = formatted.split(separator: ".")
-        let dollars = pieces.first.map(String.init) ?? "$0"
-        let cents = pieces.count > 1 ? ".\(pieces[1])" : ".00"
-        return CurrencyParts(dollars: dollars, cents: cents, full: formatted)
+        f.numberStyle           = .currency
+        f.currencyCode          = "USD"
+        f.maximumFractionDigits = 0
+        f.minimumFractionDigits = 0
+        return f.string(from: NSNumber(value: value)) ?? "$0"
     }
 }
 
-private struct CurrencyParts { let dollars: String; let cents: String; let full: String }
+// MARK: - Preview
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
-        let dates: [Date] = {
-            let cal = Calendar.current
-            let now = Date()
-            let base = cal.date(from: cal.dateComponents([.year, .month], from: now))!
-            return (-4...0).compactMap { cal.date(byAdding: .month, value: $0, to: base) }
-        }()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         IncomeCard(
-            income: MockData.cashflowData.income,
-            monthDates: dates,
-            selectedMonthIndex: dates.count - 1,
-            onCardTapped: {},
-            onActiveTapped: {},
+            income:       MockData.cashflowData.income,
+            yearlyIncome: MockData.yearlyIncome,
+            onCardTapped:    {},
+            onActiveTapped:  {},
             onPassiveTapped: {}
-        ).padding()
+        )
+        .padding(AppSpacing.md)
     }
 }

@@ -41,7 +41,7 @@ struct OB_AgeView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("YOUR AGE")
-                            .font(.obStepLabel)
+                            .font(.cardRowMeta)
                             .foregroundColor(AppColors.textTertiary)
                             .tracking(0.8)
 
@@ -52,7 +52,7 @@ struct OB_AgeView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("PRIMARY CURRENCY")
-                            .font(.obStepLabel)
+                            .font(.cardRowMeta)
                             .foregroundColor(AppColors.textTertiary)
                             .tracking(0.8)
 
@@ -124,7 +124,7 @@ struct OB_AgeView: View {
                         ZStack(alignment: .leading) {
                             // 底色轨道
                             Capsule()
-                                .fill(Color.white.opacity(0.15))
+                                .fill(AppColors.glassPillStroke)
                                 .frame(width: trackWidth, height: 4)
 
                             // 渐变进度
@@ -183,7 +183,7 @@ struct OB_AgeView: View {
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.xl)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
         )
     }
 
@@ -206,7 +206,7 @@ struct OB_AgeView: View {
                 Spacer()
 
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnoteSemibold)
                     .foregroundColor(AppColors.textTertiary)
             }
             .padding(.horizontal, 20)

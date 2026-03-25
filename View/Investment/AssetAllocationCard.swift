@@ -17,11 +17,11 @@ struct AssetAllocationCard: View {
             // Header
             HStack(spacing: 6) {
                 Text("ASSET ALLOCATION")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.cardHeader)
                     .foregroundColor(AppColors.textTertiary)
-                    .tracking(0.8)
+                    .tracking(AppTypography.Tracking.cardHeader)
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.miniLabel)
                     .foregroundColor(AppColors.textTertiary)
                 Spacer()
             }
@@ -43,11 +43,11 @@ struct AssetAllocationCard: View {
 
                     VStack(spacing: 1) {
                         Text("TOTAL")
-                            .font(.system(size: 9, weight: .bold))
+                            .font(.miniLabel)
                             .foregroundColor(AppColors.textTertiary)
-                            .tracking(0.5)
+                            .tracking(AppTypography.Tracking.miniUppercase)
                         Text(formatCompact(totalAmount))
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.inlineFigureBold)
                             .foregroundStyle(.white)
                     }
                 }
@@ -123,10 +123,10 @@ private struct AllocationRow: View {
             Circle().fill(color).frame(width: 8, height: 8)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnoteSemibold)
                     .foregroundStyle(.white)
                 Text("\(percent)% · \(formatCurrency(amount))")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.cardRowMeta)
                     .foregroundColor(AppColors.textTertiary)
             }
         }

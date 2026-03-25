@@ -15,7 +15,19 @@
       "Bash(git restore --staged \"Flamora app.xcodeproj/project.pbxproj\" \"Flamora app.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved\")",
       "Bash(git restore \"Flamora app.xcodeproj/project.pbxproj\" \"Flamora app.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved\")",
       "Bash(sudo xcode-select -s /Applications/Xcode.app/Contents/Developer)",
-      "Bash(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer /usr/bin/xcodebuild -scheme \"Flamora app\" -project \"/Users/frankli/Desktop/关羽与吕布/Flamora app/Flamora app.xcodeproj\" -destination \"platform=iOS Simulator,name=iPhone 17 Pro\" build)"
+      "Bash(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer /usr/bin/xcodebuild -scheme \"Flamora app\" -project \"/Users/frankli/Desktop/关羽与吕布/Flamora app/Flamora app.xcodeproj\" -destination \"platform=iOS Simulator,name=iPhone 17 Pro\" build)",
+      "Read(//private/tmp/**)",
+      "Bash(unzip -q /Users/frankli/Desktop/FabBar-main.zip)",
+      "Bash(unzip -q /Users/frankli/Desktop/awesome-liquid-glass-main.zip)",
+      "Bash(unzip -q /Users/frankli/Desktop/LiquidGlassKit-master.zip)",
+      "Bash(unzip -q /Users/frankli/Desktop/adaptive_platform_ui-main.zip)",
+      "Bash(openclaw reset:*)",
+      "Bash(openclaw --help)",
+      "Bash(openclaw doctor:*)",
+      "Bash(openclaw agents:*)",
+      "Bash(launchctl kickstart:*)",
+      "Bash(~/.bun/bin/bun --version)",
+      "Read(//Users/frankli/.claude/**)"
     ]
   }
 }

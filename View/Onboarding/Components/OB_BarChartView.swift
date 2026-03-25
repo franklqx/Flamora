@@ -371,17 +371,17 @@ struct OB_BarChartView: View {
     private var thumbView: some View {
         ZStack {
             Circle()
-                .fill(Color.white.opacity(0.12))
+                .fill(AppColors.overlayWhiteMid)
                 .frame(width: 24, height: 24)
                 .background(
                     Circle().fill(.ultraThinMaterial)
                 )
                 .clipShape(Circle())
             Circle()
-                .stroke(Color.white.opacity(0.2), lineWidth: 1.5)
+                .stroke(AppColors.overlayWhiteHigh, lineWidth: 1.5)
                 .frame(width: 24, height: 24)
             RoundedRectangle(cornerRadius: 3)
-                .fill(Color.white.opacity(0.5))
+                .fill(AppColors.overlayWhiteOnPhoto)
                 .frame(width: 5, height: 12)
         }
     }
@@ -434,20 +434,20 @@ struct OB_BarChartView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("Age \(age)")
-                    .font(.system(size: 10))
-                    .foregroundColor(Color.white.opacity(0.3))
+                    .font(.label)
+                    .foregroundColor(AppColors.overlayWhiteForegroundSoft)
 
                 if showOpt {
                     Text("Flamora: \(formatCompactValue(optVal))")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.footnoteSemibold)
                         .foregroundColor(Color(hex: "FCA5A5"))
 
                     Text("Current: \(formatCompactValue(currentVal))")
-                        .font(.system(size: 12))
-                        .foregroundColor(Color.white.opacity(0.3))
+                        .font(.caption)
+                        .foregroundColor(AppColors.overlayWhiteForegroundSoft)
                 } else {
                     Text(formatCompactValue(currentVal))
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.footnoteSemibold)
                         .foregroundStyle(.white)
                 }
             }
@@ -457,7 +457,7 @@ struct OB_BarChartView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    .stroke(AppColors.overlayWhiteMid, lineWidth: 1)
             )
             .position(x: clampedX, y: tooltipY)
             .animation(.easeOut(duration: 0.1), value: activeIndex)
@@ -484,7 +484,7 @@ struct OB_BarChartView: View {
         HStack {
             Text("Today")
                 .font(.system(size: 12, weight: .light))
-                .foregroundColor(Color.white.opacity(0.6))
+                .foregroundColor(AppColors.overlayWhiteAt60)
 
             Spacer()
 
@@ -496,7 +496,7 @@ struct OB_BarChartView: View {
             } else {
                 Text("\(currentFireYear)")
                     .font(.system(size: 12, weight: .light))
-                    .foregroundColor(Color.white.opacity(0.6))
+                    .foregroundColor(AppColors.overlayWhiteAt60)
                     .transition(.opacity)
             }
         }

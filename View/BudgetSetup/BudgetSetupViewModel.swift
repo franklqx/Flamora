@@ -356,7 +356,7 @@ class BudgetSetupViewModel {
         isSaving = true
         saveError = nil
 
-        var finalNeedsRatio = round(needsRatio * 10) / 10
+        let finalNeedsRatio = round(needsRatio * 10) / 10
         var finalWantsRatio = round(wantsRatio * 10) / 10
         let finalSavingsRatio = savingsRatio
 

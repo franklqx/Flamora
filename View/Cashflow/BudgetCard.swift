@@ -30,15 +30,21 @@ struct BudgetCard: View {
     var body: some View {
         VStack(spacing: 0) {
             // Header
-            HStack(spacing: 6) {
+            HStack {
                 Text("TOTAL SPEND")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.cardHeader)
                     .foregroundColor(AppColors.textTertiary)
-                    .tracking(0.8)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundColor(AppColors.textTertiary)
+                    .tracking(AppTypography.Tracking.cardHeader)
                 Spacer()
+                HStack(spacing: 3) {
+                    Text(currentMonthLabel)
+                        .font(.cardHeader)
+                        .foregroundColor(AppColors.textTertiary)
+                        .tracking(AppTypography.Tracking.cardHeader)
+                    Image(systemName: "chevron.right")
+                        .font(.miniLabel)
+                        .foregroundColor(AppColors.textTertiary)
+                }
             }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.top, AppSpacing.cardPadding)
@@ -55,10 +61,10 @@ struct BudgetCard: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(formatCurrency(spending.total))
-                        .font(.system(size: 28, weight: .bold))
+                        .font(.cardFigurePrimary)
                         .foregroundStyle(.white)
                     Text("/ \(formatCurrency(spending.budgetLimit))")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.inlineLabel)
                         .foregroundColor(AppColors.textTertiary)
                 }
 
@@ -98,6 +104,12 @@ struct BudgetCard: View {
         )
     }
 
+    private var currentMonthLabel: String {
+        let f = DateFormatter()
+        f.dateFormat = "MMM"
+        return f.string(from: Date()).uppercased()
+    }
+
     private var segmentedBar: some View {
         GeometryReader { geo in
             let w = geo.size.width
@@ -110,15 +122,12 @@ struct BudgetCard: View {
 
             ZStack(alignment: .leading) {
                 Capsule().fill(AppColors.progressTrack).frame(height: 6)
-                Capsule()
-                    .fill(
-                        LinearGradient(
-                            colors: [AppColors.accentBlueBright, AppColors.accentGreen],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .frame(width: max(nWidth + wWidth, 0), height: 6)
+                HStack(spacing: 0) {
+                    Rectangle().fill(needsColor).frame(width: nWidth)
+                    Rectangle().fill(wantsColor).frame(width: wWidth)
+                }
+                .clipShape(Capsule())
+                .frame(height: 6)
             }
         }
         .frame(height: 6)
@@ -155,7 +164,7 @@ private struct BudgetRowItem: View {
                     .fill(color)
                     .frame(width: 8, height: 8)
                 Text(title)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.inlineLabel)
                     .foregroundColor(AppColors.textSecondary)
             }
 
@@ -163,10 +172,11 @@ private struct BudgetRowItem: View {
 
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(current)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.cardFigureSecondary)
                     .foregroundStyle(.white)
                 Text("/ \(total)")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.caption)
+                    .fontWeight(.medium)
                     .foregroundColor(AppColors.textTertiary)
             }
         }

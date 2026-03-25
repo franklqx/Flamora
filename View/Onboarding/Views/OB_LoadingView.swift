@@ -97,7 +97,7 @@ struct OB_LoadingView: View {
                         .frame(width: 20, height: 20)
                 case .done:
                     Image(systemName: "checkmark")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.inlineLabel)
                         .foregroundColor(AppColors.textTertiary)
                         .frame(width: 20, height: 20)
                 }

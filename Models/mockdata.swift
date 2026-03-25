@@ -221,15 +221,26 @@ struct ToReview: Codable {
     let transactions: [Transaction]
 }
 
-struct Transaction: Codable {
+struct TransactionCategory: Identifiable {
+    let id: String
+    let name: String    // e.g. "Rent & Housing"
+    let icon: String    // SF Symbol name
+    let parent: String  // "needs" | "wants"
+}
+
+struct Transaction: Codable, Identifiable {
     let id: String
     let merchant: String
     let amount: Double
-    let date: String
+    let date: String        // "MM-DD" or "YYYY-MM-DD"
+    let time: String?       // "HH:mm" e.g. "09:32"
     let pendingClassification: Bool
-    
+    var subcategory: String?   // e.g. "Rent & Housing" — drives category
+    var category: String?      // "needs" | "wants" — derived from subcategory, stored for API
+    var note: String?
+
     enum CodingKeys: String, CodingKey {
-        case id, merchant, amount, date
+        case id, merchant, amount, date, time, subcategory, category, note
         case pendingClassification = "pending_classification"
     }
 }
@@ -332,10 +343,11 @@ struct IncomeMonthData {
 }
 
 struct IncomeDetailData {
-    let title: String          // "Active Income" or "Passive Income"
-    let accentColor: String    // hex color
-    let annualTrend: [Double?] // 12 months of data (nil = no data)
-    let monthlyData: [Int: IncomeMonthData] // month index (0-11) -> sources for that month
+    let title: String
+    let accentColor: String
+    let trendsByYear: [Int: [Double?]]              // year -> 12 months
+    let monthlyDataByYear: [Int: [Int: IncomeMonthData]] // year -> (month -> data)
+    var availableYears: [Int] { trendsByYear.keys.sorted() }
 }
 
 struct TotalIncomeMonthData {
@@ -347,9 +359,10 @@ struct TotalIncomeMonthData {
 }
 
 struct TotalIncomeDetailData {
-    let title: String          // "Total Income"
-    let annualTrend: [Double?] // 12 months of combined data
-    let monthlyData: [Int: TotalIncomeMonthData]
+    let title: String
+    let trendsByYear: [Int: [Double?]]
+    let monthlyDataByYear: [Int: [Int: TotalIncomeMonthData]]
+    var availableYears: [Int] { trendsByYear.keys.sorted() }
 }
 
 // MARK: - Spending Detail Models
@@ -368,10 +381,11 @@ struct SpendingDetailMonthData {
 }
 
 struct SpendingDetailData {
-    let title: String          // "Spending Analysis (Needs/Wants)"
-    let accentColor: String    // hex color
-    let annualTrend: [Double?] // 12 months spending totals
-    let monthlyData: [Int: SpendingDetailMonthData]
+    let title: String
+    let accentColor: String
+    let trendsByYear: [Int: [Double?]]
+    let monthlyDataByYear: [Int: [Int: SpendingDetailMonthData]]
+    var availableYears: [Int] { trendsByYear.keys.sorted() }
 }
 
 struct TotalSpendingMonthData {
@@ -383,9 +397,10 @@ struct TotalSpendingMonthData {
 }
 
 struct TotalSpendingDetailData {
-    let title: String          // "Spending Analysis"
-    let annualTrend: [Double?] // 12 months total spending
-    let monthlyData: [Int: TotalSpendingMonthData]
+    let title: String
+    let trendsByYear: [Int: [Double?]]
+    let monthlyDataByYear: [Int: [Int: TotalSpendingMonthData]]
+    var availableYears: [Int] { trendsByYear.keys.sorted() }
 }
 
 // MARK: - Mock Data Instance
@@ -395,39 +410,39 @@ struct MockData {
     // MARK: Journey Mock Data
     static let journeyData = JourneyData(
         netWorth: NetWorth(
-            total: 342850.45,
+            total: 208240.00,
             growthAmount: 8240.00,
-            growthPercent: 2.4
+            growthPercent: 4.12
         ),
         budget: Budget(
-            spent: 2050.00,
-            limit: 4000.00,
-            percent: 51,
-            period: "Nov 2023",
-            daysLeft: 12
+            spent: 4380.00,
+            limit: 6000.00,
+            percent: 73,
+            period: "Mar 2026",
+            daysLeft: 7
         ),
         passiveIncome: PassiveIncome(
-            projected: 1250.00,
-            target: 3000.00,
-            percent: 42
+            projected: 2268.00,
+            target: 5000.00,
+            percent: 45
         ),
         savingsRate: SavingsRate(
-            current: 0.20,
+            current: 0.26,
             target: 0.40,
             months: [
-                MonthStatus(month: "Aug", status: "success"),
-                MonthStatus(month: "Sep", status: "success"),
-                MonthStatus(month: "Oct", status: "failed"),
-                MonthStatus(month: "Nov", status: "pending")
+                MonthStatus(month: "Dec", status: "success"),
+                MonthStatus(month: "Jan", status: "success"),
+                MonthStatus(month: "Feb", status: "success"),
+                MonthStatus(month: "Mar", status: "pending")
             ],
-            savedThisMonth: 3200.00,
-            streakMonths: 4,
-            monthlySavings: [1200, 1900, 2750, 2300, 3000, 3200]
+            savedThisMonth: 2200.00,
+            streakMonths: 3,
+            monthlySavings: [1950, 2050, 1800, 2100, 2050, 2200]
         ),
         fireProgress: FireProgress(
-            percent: 25,
-            targetAge: 45,
-            currentAge: 35
+            percent: 22,
+            targetAge: 50,
+            currentAge: 30
         )
     )
     
@@ -487,38 +502,90 @@ struct MockData {
     
     // MARK: Cashflow Mock Data
     static let cashflowData = CashflowData(
-        month: "2024-02",
+        month: "2026-03",
         savingsTarget: SavingsTarget(
-            current: 4250.00,
-            goal: 5000.00,
-            percent: 85
+            current: 2200.00,
+            goal: 2000.00,
+            percent: 110
         ),
         income: Income(
-            total: 8427.64,
-            active: 6159.72,
-            passive: 2267.92,
+            total: 8428.00,
+            active: 6160.00,
+            passive: 2268.00,
             sources: [
-                IncomeSource(id: "1", name: "Business", amount: 3317.74, type: "active"),
-                IncomeSource(id: "2", name: "Salary", amount: 2841.98, type: "active"),
-                IncomeSource(id: "3", name: "Investment", amount: 2267.92, type: "passive")
+                IncomeSource(id: "1", name: "Tech Corp Salary", amount: 5913.60, type: "active"),
+                IncomeSource(id: "2", name: "Consulting",       amount:  246.40, type: "active"),
+                IncomeSource(id: "3", name: "Dividends & Interest", amount: 1542.24, type: "passive"),
+                IncomeSource(id: "4", name: "Real Estate",      amount:  725.76, type: "passive")
             ]
         ),
         spending: Spending(
-            total: 2050.00,
-            needs: 1500.00,
-            wants: 550.00,
-            budgetLimit: 4000.00
+            total: 4380.00,
+            needs: 3090.00,
+            wants: 1290.00,
+            budgetLimit: 6000.00
         ),
         toReview: ToReview(
-            count: 6,
+            count: 2,
             transactions: [
-                Transaction(id: "1", merchant: "Starbucks", amount: 5.50, date: "2024-02-01", pendingClassification: true),
-                Transaction(id: "2", merchant: "Whole Foods", amount: 87.32, date: "2024-02-01", pendingClassification: true),
-                Transaction(id: "3", merchant: "Shell Gas Station", amount: 45.00, date: "2024-02-02", pendingClassification: true)
+                Transaction(id: "1", merchant: "Target",    amount: 54.20, date: "2026-03-18", time: "14:33", pendingClassification: true, subcategory: nil, category: nil, note: nil),
+                Transaction(id: "2", merchant: "Uber Eats", amount: 32.50, date: "2026-03-20", time: "20:07", pendingClassification: true, subcategory: nil, category: nil, note: nil)
             ]
         )
     )
     
+    // MARK: Yearly Income Mock (Jan 1 – today YTD; swap with API after bank link)
+    // NOTE: These are placeholder values. Real data will come from the backend
+    //       once the user links their bank account via Plaid.
+    // YTD Jan–Mar 2026: Jan(5800+1950) + Feb(6000+2100) + Mar(6160+2268)
+    static let yearlyIncome = Income(
+        total: 24_278.00,
+        active: 17_960.00,
+        passive:  6_318.00,
+        sources: [
+            IncomeSource(id: "y1", name: "Tech Corp Salary",      amount: 17_228.16, type: "active"),
+            IncomeSource(id: "y2", name: "Consulting",            amount:    731.84, type: "active"),
+            IncomeSource(id: "y3", name: "Dividends & Interest",  amount:  4_296.24, type: "passive"),
+            IncomeSource(id: "y4", name: "Real Estate",           amount:  2_021.76, type: "passive")
+        ]
+    )
+
+    // MARK: Transaction Categories (single source of truth — swap with API later)
+    static let transactionCategories: [TransactionCategory] = [
+        // Needs
+        TransactionCategory(id: "rent",     name: "Rent & Housing",  icon: "house.fill",       parent: "needs"),
+        TransactionCategory(id: "grocery",  name: "Groceries",       icon: "cart.fill",         parent: "needs"),
+        TransactionCategory(id: "utility",  name: "Utilities",       icon: "bolt.fill",         parent: "needs"),
+        TransactionCategory(id: "transit",  name: "Transportation",  icon: "car.fill",          parent: "needs"),
+        TransactionCategory(id: "health",   name: "Health & Fitness",icon: "cross.case.fill",   parent: "needs"),
+        // Wants
+        TransactionCategory(id: "dining",   name: "Dining & Social", icon: "fork.knife",        parent: "wants"),
+        TransactionCategory(id: "shopping", name: "Shopping",        icon: "bag.fill",          parent: "wants"),
+        TransactionCategory(id: "subs",     name: "Subscriptions",   icon: "play.tv.fill",      parent: "wants"),
+        TransactionCategory(id: "travel",   name: "Travel",          icon: "airplane",          parent: "wants"),
+        TransactionCategory(id: "hobbies",  name: "Hobbies & Leisure",icon: "paintpalette.fill",parent: "wants"),
+    ]
+
+    static func categoryParent(for subcategory: String) -> String? {
+        transactionCategories.first(where: { $0.name == subcategory })?.parent
+    }
+
+    // MARK: All Transactions Mock Data
+    static let allTransactions: [Transaction] = [
+        Transaction(id: "t1",  merchant: "Rent",              amount: 1850.00, date: "2026-03-01", time: "09:00", pendingClassification: false, subcategory: "Rent & Housing",   category: "needs", note: "Monthly rent"),
+        Transaction(id: "t2",  merchant: "Whole Foods",       amount:   92.40, date: "2026-03-03", time: "11:24", pendingClassification: false, subcategory: "Groceries",        category: "needs", note: nil),
+        Transaction(id: "t3",  merchant: "Con Edison",        amount:   98.50, date: "2026-03-04", time: "08:00", pendingClassification: false, subcategory: "Utilities",        category: "needs", note: nil),
+        Transaction(id: "t4",  merchant: "Netflix",           amount:   15.99, date: "2026-03-07", time: "00:01", pendingClassification: false, subcategory: "Subscriptions",    category: "wants", note: nil),
+        Transaction(id: "t5",  merchant: "Shell Gas Station", amount:   48.00, date: "2026-03-10", time: "17:48", pendingClassification: false, subcategory: "Transportation",   category: "needs", note: nil),
+        Transaction(id: "t6",  merchant: "Starbucks",         amount:    6.75, date: "2026-03-12", time: "08:15", pendingClassification: false, subcategory: "Dining & Social",  category: "wants", note: nil),
+        Transaction(id: "t7",  merchant: "Apple Music",       amount:   10.99, date: "2026-03-14", time: "00:01", pendingClassification: false, subcategory: "Subscriptions",    category: "wants", note: nil),
+        Transaction(id: "t8",  merchant: "CVS Pharmacy",      amount:   34.20, date: "2026-03-15", time: "13:05", pendingClassification: false, subcategory: "Health & Fitness", category: "needs", note: nil),
+        Transaction(id: "t9",  merchant: "Trader Joe's",      amount:   76.80, date: "2026-03-17", time: "10:30", pendingClassification: false, subcategory: "Groceries",        category: "needs", note: nil),
+        Transaction(id: "t10", merchant: "Target",            amount:   54.20, date: "2026-03-18", time: "14:33", pendingClassification: true,  subcategory: nil,                category: nil,     note: nil),
+        Transaction(id: "t11", merchant: "Uber Eats",         amount:   32.50, date: "2026-03-20", time: "20:07", pendingClassification: true,  subcategory: nil,                category: nil,     note: nil),
+        Transaction(id: "t12", merchant: "Equinox",           amount:   85.00, date: "2026-03-22", time: "07:00", pendingClassification: false, subcategory: "Health & Fitness", category: "needs", note: nil)
+    ]
+
     // MARK: Investment Mock Data
     static let investmentData = InvestmentData(
         portfolio: Portfolio(
@@ -530,9 +597,12 @@ struct MockData {
                 oneYear: 15.7
             ),
             chartData: [
-                ChartPoint(date: "2024-01-01", value: 120000.00),
-                ChartPoint(date: "2024-01-15", value: 122000.00),
-                ChartPoint(date: "2024-02-01", value: 125450.80)
+                ChartPoint(date: "2025-04-01", value: 98500.00),
+                ChartPoint(date: "2025-07-01", value: 105200.00),
+                ChartPoint(date: "2025-10-01", value: 112800.00),
+                ChartPoint(date: "2026-01-01", value: 119300.00),
+                ChartPoint(date: "2026-02-01", value: 122600.00),
+                ChartPoint(date: "2026-03-24", value: 125450.80)
             ]
         ),
         accounts: [
@@ -683,166 +753,150 @@ extension MockData {
     // MARK: - Income Detail Mock Data
 
     static let activeIncomeDetail: IncomeDetailData = {
-        let salaryBase = 5800.0
-        let consultBase = 200.0
-        let trend: [Double?] = [6250, 3800, 4200, 3600, 4800, 3200, 4500, 5200, 5600, 5800, 6100, 6400]
-        var monthly: [Int: IncomeMonthData] = [:]
-        for i in 0..<12 {
-            if let total = trend[i] {
-                let salaryAmount = total * 0.96
-                let consultAmount = total * 0.04
-                monthly[i] = IncomeMonthData(
-                    total: total,
-                    sources: [
-                        IncomeDetailSource(id: "active-1-\(i)", name: "Tech Corp Salary", account: "Main Account", amount: salaryAmount, percentage: 96, colorHex: "#93C5FD", type: .active),
-                        IncomeDetailSource(id: "active-2-\(i)", name: "Consulting", account: "Business Account", amount: consultAmount, percentage: 4, colorHex: "#FDBA74", type: .active)
-                    ]
-                )
-            }
-        }
+        let trend2025: [Double?] = [5200, 5300, 5400, 5500, 5600, 5650, 5700, 5750, 5700, 5800, 5850, 5900]
+        let trend2026: [Double?] = [5800, 6000, 6160, nil, nil, nil, nil, nil, nil, nil, nil, nil]
         return IncomeDetailData(
             title: "Active Income",
-            accentColor: "#93C5FD",
-            annualTrend: trend,
-            monthlyData: monthly
+            accentColor: "#34D399",
+            trendsByYear: [2025: trend2025, 2026: trend2026],
+            monthlyDataByYear: [
+                2025: buildActiveMonthly(trend: trend2025, yearTag: "2025"),
+                2026: buildActiveMonthly(trend: trend2026, yearTag: "2026")
+            ]
         )
     }()
 
-    static let passiveIncomeDetail: IncomeDetailData = {
-        let trend: [Double?] = [1250, 2400, 2800, 3100, 3500, 2900, 4200, 4800, 5100, 5400, 5800, 6200]
+    private static func buildActiveMonthly(trend: [Double?], yearTag: String) -> [Int: IncomeMonthData] {
         var monthly: [Int: IncomeMonthData] = [:]
         for i in 0..<12 {
-            if let total = trend[i] {
-                let dividendAmount = total * 0.68
-                let realEstateAmount = total * 0.32
-                monthly[i] = IncomeMonthData(
-                    total: total,
-                    sources: [
-                        IncomeDetailSource(id: "passive-1-\(i)", name: "Dividends & Interest", account: "Chase Savings", amount: dividendAmount, percentage: 68, colorHex: "#A78BFA", type: .passive),
-                        IncomeDetailSource(id: "passive-2-\(i)", name: "Real Estate", account: "Main Account", amount: realEstateAmount, percentage: 32, colorHex: "#5EEAD4", type: .passive)
-                    ]
-                )
-            }
+            guard let total = trend[i] else { continue }
+            monthly[i] = IncomeMonthData(total: total, sources: [
+                IncomeDetailSource(id: "active-1-\(yearTag)-\(i)", name: "Tech Corp Salary", account: "Main Account",    amount: total * 0.96, percentage: 96, colorHex: "#93C5FD", type: .active),
+                IncomeDetailSource(id: "active-2-\(yearTag)-\(i)", name: "Consulting",        account: "Business Account", amount: total * 0.04, percentage:  4, colorHex: "#FDBA74", type: .active)
+            ])
         }
+        return monthly
+    }
+
+    static let passiveIncomeDetail: IncomeDetailData = {
+        let trend2025: [Double?] = [800, 850, 950, 1000, 1100, 1150, 1200, 1300, 1400, 1500, 1700, 1900]
+        let trend2026: [Double?] = [1950, 2100, 2268, nil, nil, nil, nil, nil, nil, nil, nil, nil]
         return IncomeDetailData(
             title: "Passive Income",
             accentColor: "#A78BFA",
-            annualTrend: trend,
-            monthlyData: monthly
+            trendsByYear: [2025: trend2025, 2026: trend2026],
+            monthlyDataByYear: [
+                2025: buildPassiveMonthly(trend: trend2025, yearTag: "2025"),
+                2026: buildPassiveMonthly(trend: trend2026, yearTag: "2026")
+            ]
         )
     }()
+
+    private static func buildPassiveMonthly(trend: [Double?], yearTag: String) -> [Int: IncomeMonthData] {
+        var monthly: [Int: IncomeMonthData] = [:]
+        for i in 0..<12 {
+            guard let total = trend[i] else { continue }
+            monthly[i] = IncomeMonthData(total: total, sources: [
+                IncomeDetailSource(id: "passive-1-\(yearTag)-\(i)", name: "Dividends & Interest", account: "Chase Savings", amount: total * 0.68, percentage: 68, colorHex: "#A78BFA", type: .passive),
+                IncomeDetailSource(id: "passive-2-\(yearTag)-\(i)", name: "Real Estate",           account: "Main Account",  amount: total * 0.32, percentage: 32, colorHex: "#5EEAD4", type: .passive)
+            ])
+        }
+        return monthly
+    }
 
     // MARK: - Total Income Detail Mock Data
 
     static let totalIncomeDetail: TotalIncomeDetailData = {
-        let activeTrend: [Double?] = activeIncomeDetail.annualTrend
-        let passiveTrend: [Double?] = passiveIncomeDetail.annualTrend
-        var combinedTrend: [Double?] = []
-        var monthly: [Int: TotalIncomeMonthData] = [:]
-        for i in 0..<12 {
-            let activeVal = activeTrend[i]
-            let passiveVal = passiveTrend[i]
-            if let a = activeVal, let p = passiveVal {
-                let total = a + p
-                let activePct = (a / total) * 100.0
-                let passivePct = (p / total) * 100.0
-                combinedTrend.append(total)
-                monthly[i] = TotalIncomeMonthData(
-                    total: total,
-                    activeAmount: a,
-                    passiveAmount: p,
-                    activePercentage: activePct,
-                    passivePercentage: passivePct
-                )
-            } else {
-                combinedTrend.append(nil)
+        var trendsByYear: [Int: [Double?]] = [:]
+        var monthlyDataByYear: [Int: [Int: TotalIncomeMonthData]] = [:]
+        for year in [2025, 2026] {
+            let at = activeIncomeDetail.trendsByYear[year] ?? Array(repeating: nil, count: 12)
+            let pt = passiveIncomeDetail.trendsByYear[year] ?? Array(repeating: nil, count: 12)
+            var combined: [Double?] = []
+            var monthly: [Int: TotalIncomeMonthData] = [:]
+            for i in 0..<12 {
+                if let a = at[i], let p = pt[i] {
+                    let total = a + p
+                    combined.append(total)
+                    monthly[i] = TotalIncomeMonthData(total: total, activeAmount: a, passiveAmount: p,
+                                                      activePercentage: a/total*100, passivePercentage: p/total*100)
+                } else { combined.append(nil) }
             }
+            trendsByYear[year] = combined
+            monthlyDataByYear[year] = monthly
         }
-        return TotalIncomeDetailData(
-            title: "Total Income",
-            annualTrend: combinedTrend,
-            monthlyData: monthly
-        )
+        return TotalIncomeDetailData(title: "Total Income", trendsByYear: trendsByYear, monthlyDataByYear: monthlyDataByYear)
     }()
 
     // MARK: - Spending Detail Mock Data
 
     static let needsSpendingDetail: SpendingDetailData = {
-        let trend: [Double?] = [3000, 3250, 3090, 3440, 3180, 3590, 3360, 3040, 3220, 3470, 3810, 3350]
-        let baseCategories: [(name: String, icon: String, amount: Double)] = [
-            ("Rent & Housing", "house.fill", 1850.00),
-            ("Groceries", "cart.fill", 642.50),
-            ("Utilities", "bolt.fill", 310.20),
-            ("Transportation", "car.fill", 215.00),
-            ("Health & Fitness", "cross.case.fill", 120.00)
+        let trend2025: [Double?] = [2800, 2850, 2900, 2950, 2900, 2950, 3000, 2950, 2980, 3000, 3050, 3000]
+        let trend2026: [Double?] = [3000, 3050, 3090, nil, nil, nil, nil, nil, nil, nil, nil, nil]
+        let base: [(name: String, icon: String, amount: Double)] = [
+            ("Rent & Housing",   "house.fill",      1850.00),
+            ("Groceries",        "cart.fill",         642.50),
+            ("Utilities",        "bolt.fill",         310.20),
+            ("Transportation",   "car.fill",          215.00),
+            ("Health & Fitness", "cross.case.fill",   120.00)
         ]
-
         return SpendingDetailData(
-            title: "Spending Analysis (Needs)",
-            accentColor: "#A78BFA",
-            annualTrend: trend,
-            monthlyData: buildSpendingMonthlyData(
-                prefix: "needs",
-                trend: trend,
-                baseCategories: baseCategories
-            )
+            title: "Spending Analysis (Needs)", accentColor: "#A78BFA",
+            trendsByYear: [2025: trend2025, 2026: trend2026],
+            monthlyDataByYear: [
+                2025: buildSpendingMonthlyData(prefix: "needs-2025", trend: trend2025, baseCategories: base),
+                2026: buildSpendingMonthlyData(prefix: "needs-2026", trend: trend2026, baseCategories: base)
+            ]
         )
     }()
 
     static let wantsSpendingDetail: SpendingDetailData = {
-        let trend: [Double?] = [1240, 1420, 1290, 1640, 1360, 1760, 1480, 1290, 1420, 1560, 1850, 1570]
-        let baseCategories: [(name: String, icon: String, amount: Double)] = [
-            ("Dining & Social", "fork.knife", 420.00),
-            ("Shopping", "bag.fill", 325.50),
-            ("Subscriptions", "tv.fill", 155.00),
-            ("Travel", "airplane", 210.00),
-            ("Hobbies & Leisure", "paintpalette.fill", 129.50)
+        let trend2025: [Double?] = [1100, 1150, 1200, 1300, 1250, 1400, 1350, 1300, 1280, 1350, 1500, 1600]
+        let trend2026: [Double?] = [1240, 1270, 1290, nil, nil, nil, nil, nil, nil, nil, nil, nil]
+        let base: [(name: String, icon: String, amount: Double)] = [
+            ("Dining & Social",   "fork.knife",         420.00),
+            ("Shopping",          "bag.fill",            325.50),
+            ("Subscriptions",     "tv.fill",             155.00),
+            ("Travel",            "airplane",            210.00),
+            ("Hobbies & Leisure", "paintpalette.fill",   129.50)
         ]
-
         return SpendingDetailData(
-            title: "Spending Analysis (Wants)",
-            accentColor: "#93C5FD",
-            annualTrend: trend,
-            monthlyData: buildSpendingMonthlyData(
-                prefix: "wants",
-                trend: trend,
-                baseCategories: baseCategories
-            )
+            title: "Spending Analysis (Wants)", accentColor: "#93C5FD",
+            trendsByYear: [2025: trend2025, 2026: trend2026],
+            monthlyDataByYear: [
+                2025: buildSpendingMonthlyData(prefix: "wants-2025", trend: trend2025, baseCategories: base),
+                2026: buildSpendingMonthlyData(prefix: "wants-2026", trend: trend2026, baseCategories: base)
+            ]
         )
     }()
 
     static let totalSpendingDetail: TotalSpendingDetailData = {
-        let needsTrend = needsSpendingDetail.annualTrend
-        let wantsTrend = wantsSpendingDetail.annualTrend
-        var totalTrend: [Double?] = []
-        var monthly: [Int: TotalSpendingMonthData] = [:]
-
-        for index in 0..<12 {
-            let needsAmount = needsTrend[index]
-            let wantsAmount = wantsTrend[index]
-            if let needs = needsAmount, let wants = wantsAmount {
-                let total = needs + wants
-                let needsPct = total > 0 ? (needs / total) * 100.0 : 0
-                let wantsPct = total > 0 ? (wants / total) * 100.0 : 0
-                totalTrend.append(total)
-                monthly[index] = TotalSpendingMonthData(
-                    total: total,
-                    needsAmount: needs,
-                    wantsAmount: wants,
-                    needsPercentage: needsPct,
-                    wantsPercentage: wantsPct
-                )
-            } else {
-                totalTrend.append(nil)
+        var trendsByYear: [Int: [Double?]] = [:]
+        var monthlyDataByYear: [Int: [Int: TotalSpendingMonthData]] = [:]
+        for year in [2025, 2026] {
+            let nt = needsSpendingDetail.trendsByYear[year] ?? Array(repeating: nil, count: 12)
+            let wt = wantsSpendingDetail.trendsByYear[year] ?? Array(repeating: nil, count: 12)
+            var combined: [Double?] = []
+            var monthly: [Int: TotalSpendingMonthData] = [:]
+            for i in 0..<12 {
+                if let n = nt[i], let w = wt[i] {
+                    let total = n + w
+                    combined.append(total)
+                    monthly[i] = TotalSpendingMonthData(total: total, needsAmount: n, wantsAmount: w,
+                                                        needsPercentage: n/total*100, wantsPercentage: w/total*100)
+                } else { combined.append(nil) }
             }
+            trendsByYear[year] = combined
+            monthlyDataByYear[year] = monthly
         }
-
-        return TotalSpendingDetailData(
-            title: "Spending Analysis",
-            annualTrend: totalTrend,
-            monthlyData: monthly
-        )
+        return TotalSpendingDetailData(title: "Spending Analysis", trendsByYear: trendsByYear, monthlyDataByYear: monthlyDataByYear)
     }()
+
+    /// Monthly savings by year — used by SavingsTargetDetailView2
+    static let savingsByYear: [Int: [Double?]] = [
+        2025: [1800, 1900, 2050, 2150, 2200, 2100, 2300, 2250, 2150, 2200, 2380, 2450],
+        2026: [1800, 2100, 2200, nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil ]
+    ]
 
     private static func buildSpendingMonthlyData(
         prefix: String,
@@ -851,28 +905,18 @@ extension MockData {
     ) -> [Int: SpendingDetailMonthData] {
         let baseTotal = max(baseCategories.reduce(0) { $0 + $1.amount }, 1)
         var monthly: [Int: SpendingDetailMonthData] = [:]
-
         for index in 0..<12 {
             guard let total = trend[index] else { continue }
             let scale = total / baseTotal
-
-            let categories = baseCategories.enumerated().map { item -> SpendingDetailCategory in
-                let (offset, value) = item
+            let categories = baseCategories.enumerated().map { (offset, value) -> SpendingDetailCategory in
                 let scaledAmount = rounded2(value.amount * scale)
-                let percentage = total > 0 ? (scaledAmount / total) * 100 : 0
                 return SpendingDetailCategory(
-                    id: "\(prefix)-\(offset)-\(index)",
-                    icon: value.icon,
-                    name: value.name,
-                    amount: scaledAmount,
-                    percentage: percentage
+                    id: "\(prefix)-\(offset)-\(index)", icon: value.icon, name: value.name,
+                    amount: scaledAmount, percentage: total > 0 ? (scaledAmount / total) * 100 : 0
                 )
-            }
-            .sorted { $0.amount > $1.amount }
-
+            }.sorted { $0.amount > $1.amount }
             monthly[index] = SpendingDetailMonthData(total: total, categories: categories)
         }
-
         return monthly
     }
 
@@ -892,22 +936,22 @@ extension MockData {
         yearsRemaining: 20,
         progressPercentage: 22.22,
         onTrack: true,
-        createdAt: "2026-02-05T13:25:44Z"
+        createdAt: "2026-03-01T09:00:00Z"
     )
 
     /// 模拟后端 /monthly-budget 返回
     static let apiMonthlyBudget = APIMonthlyBudget(
         budgetId: "b8410610-d803-471d-929c-89fcbabb920c",
-        month: "2026-02-01",
-        needsBudget: 5000.00,
-        wantsBudget: 3000.00,
+        month: "2026-03-01",
+        needsBudget: 4000.00,
+        wantsBudget: 2000.00,
         savingsBudget: 2000.00,
-        needsSpent: 2450.30,
-        wantsSpent: 1820.50,
-        savingsActual: 2100.00,
+        needsSpent: 3090.00,
+        wantsSpent: 1290.00,
+        savingsActual: 2200.00,
         needsRatio: 50.00,
-        wantsRatio: 30.00,
-        savingsRatio: 20.00,
+        wantsRatio: 25.00,
+        savingsRatio: 25.00,
         isCustom: false
     )
 
@@ -922,8 +966,8 @@ extension MockData {
         timezone: "America/New_York",
         onboardingCompleted: true,
         onboardingStep: 5,
-        createdAt: "2026-02-01T10:00:00Z",
-        updatedAt: "2026-02-05T13:25:44Z"
+        createdAt: "2025-09-01T10:00:00Z",
+        updatedAt: "2026-03-24T10:00:00Z"
     )
 
     /// 模拟后端 /net-worth-summary 返回
@@ -932,7 +976,7 @@ extension MockData {
         previousNetWorth: 200000.00,
         growthAmount: 8240.00,
         growthPercentage: 4.12,
-        asOfDate: "2026-02-05",
+        asOfDate: "2026-03-24",
         breakdown: APINetWorthSummary.NetWorthBreakdown(
             assets: 250000.00,
             liabilities: 41760.00

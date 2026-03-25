@@ -102,7 +102,7 @@ private extension SettingsView {
                             trailing: {
                                 AnyView(
                                     Text(subscriptionManager.isPremium ? "Active" : "Upgrade")
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.footnoteSemibold)
                                         .foregroundColor(
                                             subscriptionManager.isPremium
                                                 ? AppColors.accentGreen
@@ -129,7 +129,7 @@ private extension SettingsView {
                             trailing: {
                                 AnyView(
                                     Image(systemName: "arrow.up.right")
-                                        .font(.system(size: 12))
+                                        .font(.caption)
                                         .foregroundColor(AppColors.textTertiary)
                                     )
                                 }
@@ -214,7 +214,7 @@ private extension SettingsView {
             }
         }) {
             Text("Sign Out")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.bodySemibold)
                 .foregroundColor(AppColors.error)
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
@@ -230,12 +230,12 @@ private extension SettingsView {
     var legalSection: some View {
         HStack(spacing: 16) {
             Text("Privacy Policy")
-                .font(.system(size: 12))
+                .font(.caption)
                 .foregroundColor(AppColors.textMuted)
             Text("•")
                 .foregroundColor(AppColors.textMuted)
             Text("Terms of Service")
-                .font(.system(size: 12))
+                .font(.caption)
                 .foregroundColor(AppColors.textMuted)
         }
         .frame(maxWidth: .infinity)
@@ -248,7 +248,7 @@ private extension SettingsView {
 
     func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 12, weight: .semibold))
+            .font(.smallLabel)
             .foregroundColor(AppColors.textTertiary)
             .textCase(.uppercase)
             .tracking(0.8)
@@ -277,7 +277,7 @@ private extension SettingsView {
     ) -> some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.figureSecondarySemibold)
                 .foregroundColor(iconColor)
                 .frame(width: 34, height: 34)
                 .background(iconColor.opacity(0.15))
@@ -285,13 +285,13 @@ private extension SettingsView {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.supportingText)
                     .foregroundStyle(.white)
                     .lineLimit(1)
 
                 if let subtitle {
                     Text(subtitle)
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundColor(AppColors.textTertiary)
                 }
             }

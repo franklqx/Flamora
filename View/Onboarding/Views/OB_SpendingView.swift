@@ -52,7 +52,7 @@ struct OB_SpendingView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("MONTHLY SPENDING")
-                            .font(.obStepLabel)
+                            .font(.cardRowMeta)
                             .foregroundColor(AppColors.textTertiary)
                             .tracking(0.8)
 
@@ -64,7 +64,7 @@ struct OB_SpendingView: View {
                     if showInsight && spendingValue > 0 && income > 0 {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("SAVINGS RATE")
-                                .font(.obStepLabel)
+                                .font(.cardRowMeta)
                                 .foregroundColor(AppColors.textTertiary)
                                 .tracking(0.8)
 
@@ -136,7 +136,7 @@ struct OB_SpendingView: View {
 
                         ZStack(alignment: .leading) {
                             Capsule()
-                                .fill(Color.white.opacity(0.15))
+                                .fill(AppColors.glassPillStroke)
                                 .frame(width: trackWidth, height: 4)
                             Capsule()
                                 .fill(accentGradient)
@@ -185,7 +185,7 @@ struct OB_SpendingView: View {
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.xl)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
         )
     }
 
@@ -219,14 +219,14 @@ struct OB_SpendingView: View {
                     .contentTransition(.numericText())
                     .animation(.spring(response: 0.3), value: rate)
                 Text("%")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.cardFigurePrimary)
                     .foregroundStyle(.white)
                 Spacer()
             }
 
             // 分割线
             Rectangle()
-                .fill(Color.white.opacity(0.08))
+                .fill(AppColors.overlayWhiteStroke)
                 .frame(height: 1)
 
             // Income − Spending = Saved 分解
@@ -288,7 +288,7 @@ struct OB_SpendingView: View {
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.xl)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
         )
     }
 

@@ -133,7 +133,7 @@ private struct ChallengeCard: View {
                 Group {
                     if isSelected {
                         Image(systemName: "checkmark.circle")
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(.h3)
                             .foregroundStyle(
                                 LinearGradient(
                                     colors: AppColors.gradientFire,

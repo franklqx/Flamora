@@ -18,19 +18,31 @@ struct SavingsTargetCard: View {
         return min(max(currentAmount / targetAmount, 0), 1)
     }
 
+    /// Actual % of target (can exceed 100% when over-saving).
+    private var achievedPercent: Int {
+        guard targetAmount > 0 else { return 0 }
+        return Int((currentAmount / targetAmount * 100).rounded())
+    }
+
     var body: some View {
         ZStack(alignment: .topTrailing) {
             VStack(spacing: 0) {
                 // Header row
-                HStack(spacing: 6) {
+                HStack {
                     Text("SAVINGS TARGET")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.cardHeader)
                         .foregroundColor(AppColors.textTertiary)
-                        .tracking(0.8)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundColor(AppColors.textTertiary)
+                        .tracking(AppTypography.Tracking.cardHeader)
                     Spacer()
+                    HStack(spacing: 3) {
+                        Text(currentMonthLabel)
+                            .font(.cardHeader)
+                            .foregroundColor(AppColors.textTertiary)
+                            .tracking(AppTypography.Tracking.cardHeader)
+                        Image(systemName: "chevron.right")
+                            .font(.miniLabel)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.top, AppSpacing.cardPadding)
@@ -45,16 +57,17 @@ struct SavingsTargetCard: View {
                     if currentAmount > 0 {
                         HStack(alignment: .firstTextBaseline, spacing: 6) {
                             Text(formatCurrency(currentAmount))
-                                .font(.system(size: 28, weight: .bold))
+                                .font(.cardFigurePrimary)
                                 .foregroundStyle(.white)
                             Text("/ \(formatCurrency(targetAmount))")
-                                .font(.system(size: 16, weight: .medium))
+                                .font(.bodyRegular)
+                                .fontWeight(.medium)
                                 .foregroundColor(AppColors.textTertiary)
                         }
                         .padding(.top, AppSpacing.md)
                     } else {
                         Text(formatCurrency(targetAmount))
-                            .font(.system(size: 28, weight: .bold))
+                            .font(.cardFigurePrimary)
                             .foregroundStyle(.white)
                             .padding(.top, AppSpacing.md)
                     }
@@ -63,14 +76,14 @@ struct SavingsTargetCard: View {
                         VStack(spacing: 10) {
                             HStack {
                                 Text("CURRENT STATUS")
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(.segmentLabel(selected: false))
                                     .foregroundColor(AppColors.textTertiary)
-                                    .tracking(0.6)
+                                    .tracking(AppTypography.Tracking.miniUppercase)
                                 Spacer()
-                                Text("\(Int(progress * 100))% ACHIEVED")
-                                    .font(.system(size: 11, weight: .bold))
+                                Text("\(achievedPercent)% ACHIEVED")
+                                    .font(.segmentLabel(selected: true))
                                     .foregroundStyle(.white)
-                                    .tracking(0.4)
+                                    .tracking(AppTypography.Tracking.miniUppercase)
                             }
                             .padding(.top, 14)
 
@@ -99,12 +112,13 @@ struct SavingsTargetCard: View {
                             )
                             .frame(width: 40, height: 40)
                         Image(systemName: "plus")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.h4)
                             .foregroundStyle(.white)
                     }
                 }
                 .buttonStyle(.plain)
-                .padding(.top, 14)
+                // Below header row so it does not overlap month + chevron
+                .padding(.top, AppSpacing.cardPadding + AppSpacing.md + AppSpacing.sm + AppSpacing.xs)
                 .padding(.trailing, AppSpacing.cardPadding)
             }
         }
@@ -114,6 +128,12 @@ struct SavingsTargetCard: View {
             RoundedRectangle(cornerRadius: AppRadius.lg)
                 .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
         )
+    }
+
+    private var currentMonthLabel: String {
+        let f = DateFormatter()
+        f.dateFormat = "MMM"
+        return f.string(from: Date()).uppercased()
     }
 
     private var progressBar: some View {
@@ -127,7 +147,13 @@ struct SavingsTargetCard: View {
                     .fill(AppColors.progressTrack)
                     .frame(height: 6)
                 Capsule()
-                    .fill(Color.white)
+                    .fill(
+                        LinearGradient(
+                            colors: AppColors.gradientFire,
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
                     .frame(width: pW, height: 6)
             }
         }

@@ -32,7 +32,7 @@ struct MonthIndicator: View {
             }
 
             Text(month)
-                .font(.system(size: 13, weight: .medium))
+                .font(.footnoteRegular)
                 .foregroundColor(labelColor)
         }
     }
@@ -58,15 +58,15 @@ struct MonthIndicator: View {
             switch status {
             case .success:
                 Image(systemName: "checkmark")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.h4)
                     .foregroundColor(.black)
             case .failed:
                 Image(systemName: "xmark")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.h4)
                     .foregroundColor(AppColors.textTertiary)
             case .pending:
                 Image(systemName: "ellipsis")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.h4)
                     .foregroundColor(AppColors.textMuted)
             }
         }

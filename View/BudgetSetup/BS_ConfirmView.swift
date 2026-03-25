@@ -75,7 +75,7 @@ struct BS_ConfirmView: View {
                     Image(systemName: "chevron.left")
                     Text("Back")
                 }
-                .font(.system(size: 14))
+                .font(.bodySmall)
                 .foregroundStyle(.white.opacity(0.5))
             }
             .padding(.bottom, 8)
@@ -86,17 +86,17 @@ struct BS_ConfirmView: View {
                     .fill(Color(hex: "1C1C1E"))
                     .frame(width: 44, height: 44)
                 Image(systemName: "checkmark")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.h4)
                     .foregroundStyle(Color(hex: "4ADE80"))
             }
             .padding(.bottom, 4)
 
             Text("Your FIRE Plan")
-                .font(.system(size: 28, weight: .bold))
+                .font(.cardFigurePrimary)
                 .foregroundStyle(.white)
 
             Text("Review and confirm your budget.")
-                .font(.system(size: 14))
+                .font(.bodySmall)
                 .foregroundStyle(.white.opacity(0.45))
         }
     }
@@ -106,7 +106,7 @@ struct BS_ConfirmView: View {
     private var budgetSummaryRing: some View {
         VStack(spacing: 16) {
             Text("MONTHLY BUDGET")
-                .font(.system(size: 9, weight: .semibold))
+                .font(.miniLabel)
                 .tracking(0.08 * 9)
                 .foregroundStyle(.white.opacity(0.3))
 
@@ -114,7 +114,7 @@ struct BS_ConfirmView: View {
             ZStack {
                 // Background ring
                 Circle()
-                    .stroke(Color.white.opacity(0.05), lineWidth: 20)
+                    .stroke(AppColors.cardTopHighlight, lineWidth: 20)
                     .frame(width: 160, height: 160)
 
                 // Needs arc (purple)
@@ -149,7 +149,7 @@ struct BS_ConfirmView: View {
                         .foregroundStyle(.white)
                         .monospacedDigit()
                     Text("income")
-                        .font(.system(size: 11))
+                        .font(.cardHeader)
                         .foregroundStyle(.white.opacity(0.4))
                 }
             }
@@ -193,16 +193,16 @@ struct BS_ConfirmView: View {
                 .fill(color)
                 .frame(width: 8, height: 8)
             Text(label)
-                .font(.system(size: 13))
+                .font(.footnoteRegular)
                 .foregroundStyle(.white.opacity(0.6))
             Spacer()
             Text("\(percent)%")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.footnoteSemibold)
                 .foregroundStyle(.white.opacity(0.5))
                 .monospacedDigit()
                 .frame(width: 40, alignment: .trailing)
             Text("$\(formattedInt(amount))")
-                .font(.system(size: 13, weight: .bold))
+                .font(.footnoteBold)
                 .foregroundStyle(.white)
                 .monospacedDigit()
                 .frame(width: 70, alignment: .trailing)
@@ -217,7 +217,7 @@ struct BS_ConfirmView: View {
 
         return VStack(alignment: .leading, spacing: 16) {
             Text("FIRE IMPACT")
-                .font(.system(size: 9, weight: .semibold))
+                .font(.miniLabel)
                 .tracking(0.08 * 9)
                 .foregroundStyle(.white.opacity(0.3))
 
@@ -237,7 +237,7 @@ struct BS_ConfirmView: View {
                     Text("\(abs(diff)) \(abs(diff) == 1 ? "year" : "years") behind your target — consider increasing savings")
                 }
             }
-            .font(.system(size: 13))
+            .font(.footnoteRegular)
             .foregroundStyle(.white.opacity(0.5))
 
             // Three stats row
@@ -250,7 +250,7 @@ struct BS_ConfirmView: View {
                 )
 
                 Rectangle()
-                    .fill(Color.white.opacity(0.06))
+                    .fill(AppColors.cardTopHighlight)
                     .frame(width: 1, height: 36)
 
                 statItem(
@@ -260,7 +260,7 @@ struct BS_ConfirmView: View {
                 )
 
                 Rectangle()
-                    .fill(Color.white.opacity(0.06))
+                    .fill(AppColors.cardTopHighlight)
                     .frame(width: 1, height: 36)
 
                 statItem(
@@ -311,11 +311,11 @@ struct BS_ConfirmView: View {
     private func statItem(label: String, value: String, color: Color) -> some View {
         VStack(spacing: 4) {
             Text(label)
-                .font(.system(size: 9, weight: .semibold))
+                .font(.miniLabel)
                 .tracking(0.08 * 9)
                 .foregroundStyle(.white.opacity(0.3))
             Text(value)
-                .font(.system(size: 15, weight: .bold))
+                .font(.cardFigureSecondary)
                 .foregroundStyle(color)
                 .monospacedDigit()
                 .minimumScaleFactor(0.7)
@@ -329,20 +329,20 @@ struct BS_ConfirmView: View {
     private var tipCard: some View {
         HStack(alignment: .top, spacing: 12) {
             Text("💡")
-                .font(.system(size: 16))
+                .font(.bodyRegular)
 
             Text("You can always adjust your budget and FIRE goal later in Settings. We'll track your progress and send alerts when you're close to your limits.")
-                .font(.system(size: 13))
+                .font(.footnoteRegular)
                 .foregroundStyle(.white.opacity(0.45))
                 .lineSpacing(3)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.03))
+        .background(AppColors.overlayWhiteWash)
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                .stroke(AppColors.cardTopHighlight, lineWidth: 1)
         )
     }
 
@@ -372,7 +372,7 @@ struct BS_ConfirmView: View {
                                 .tint(.white)
                         }
                         Text(viewModel.isSaving ? "Saving..." : "Start My Journey 🚀")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.figureSecondarySemibold)
                     }
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
@@ -396,7 +396,7 @@ struct BS_ConfirmView: View {
                 // Error message
                 if let error = viewModel.saveError {
                     Text(error)
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(Color(hex: "EF4444"))
                         .padding(.top, 4)
                 }
@@ -412,7 +412,7 @@ struct BS_ConfirmView: View {
     private var infoSheet: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("How this is calculated")
-                .font(.system(size: 18, weight: .bold))
+                .font(.h4)
                 .foregroundStyle(.white)
                 .padding(.bottom, 4)
 
@@ -423,7 +423,7 @@ struct BS_ConfirmView: View {
             }
             infoRow(label: "Monthly savings", value: "$\(formattedInt(viewModel.savingsAmount))")
 
-            Divider().background(Color.white.opacity(0.06))
+            Divider().background(AppColors.cardTopHighlight)
 
             Text("Based on the historical nominal return of the S&P 500 (~10% annually since 1957), adjusted for estimated fees. Projections assume consistent monthly contributions and reinvested returns. Actual results vary with market conditions. This tool provides estimates for planning purposes only and does not constitute financial advice. Past performance does not guarantee future results.")
                 .font(.system(size: 11))
@@ -440,11 +440,11 @@ struct BS_ConfirmView: View {
     private func infoRow(label: String, value: String) -> some View {
         HStack {
             Text(label)
-                .font(.system(size: 14))
+                .font(.bodySmall)
                 .foregroundStyle(.white.opacity(0.5))
             Spacer()
             Text(value)
-                .font(.system(size: 14, weight: .bold))
+                .font(.inlineFigureBold)
                 .foregroundStyle(.white)
         }
     }

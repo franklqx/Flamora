@@ -14,11 +14,11 @@ struct AccountsCard: View {
             // Header
             HStack(spacing: 6) {
                 Text("INVESTMENT ACCOUNTS")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.cardHeader)
                     .foregroundColor(AppColors.textTertiary)
-                    .tracking(0.8)
+                    .tracking(AppTypography.Tracking.cardHeader)
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.miniLabel)
                     .foregroundColor(AppColors.textTertiary)
                 Spacer()
             }
@@ -63,23 +63,24 @@ private struct AccountRow: View {
                     .fill(iconColor.opacity(0.15))
                     .frame(width: 38, height: 38)
                 Image(systemName: iconName)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.figureSecondarySemibold)
                     .foregroundColor(iconColor)
             }
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(account.institution)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.figureSecondarySemibold)
                     .foregroundStyle(.white)
                 Text(account.type)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.caption)
+                    .fontWeight(.medium)
                     .foregroundColor(AppColors.textTertiary)
             }
 
             Spacer()
 
             Text(formatCurrency(account.balance))
-                .font(.system(size: 15, weight: .bold))
+                .font(.cardFigureSecondary)
                 .foregroundStyle(.white)
         }
         .padding(.horizontal, AppSpacing.cardPadding)

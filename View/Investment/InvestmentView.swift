@@ -31,9 +31,13 @@ struct InvestmentView: View {
 
             GeometryReader { proxy in
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 16) {
-                        PortfolioCard(portfolio: computedPortfolio)
-                            .padding(.horizontal, AppSpacing.screenPadding)
+                    VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                        // 顶部第一张：投资页展示与 Journey 同风格的净资产卡片
+                        PortfolioCard(
+                            portfolioBalance: 85240.0,
+                            gainAmount: 3240.0,
+                            gainPercentage: 3.95
+                        )
 
                         AccountsCard(
                             accounts: computedAccounts,
@@ -96,12 +100,12 @@ private struct InvestmentCTAView: View {
 
                     VStack(spacing: AppSpacing.sm) {
                         Text("Track Your\nInvestments")
-                            .font(.system(size: 32, weight: .bold))
+                            .font(.h1)
                             .foregroundStyle(.white)
                             .multilineTextAlignment(.center)
 
                         Text("Connect your brokerage and bank accounts\nto see your full portfolio in one place.")
-                            .font(.system(size: 15))
+                            .font(.supportingText)
                             .foregroundColor(AppColors.textSecondary)
                             .multilineTextAlignment(.center)
                             .lineSpacing(4)
@@ -111,11 +115,11 @@ private struct InvestmentCTAView: View {
                         ForEach(features, id: \.0) { icon, text in
                             HStack(spacing: 12) {
                                 Image(systemName: icon)
-                                    .font(.system(size: 16))
+                                    .font(.bodyRegular)
                                     .foregroundColor(AppColors.accentGreen)
                                     .frame(width: 24)
                                 Text(text)
-                                    .font(.system(size: 14, weight: .medium))
+                                    .font(.inlineLabel)
                                     .foregroundStyle(.white)
                                 Spacer()
                             }
@@ -140,10 +144,10 @@ private struct InvestmentCTAView: View {
                                 ProgressView().tint(.black)
                             } else {
                                 Text("Connect to Accounts")
-                                    .font(.system(size: 17, weight: .semibold))
+                                    .font(.statRowSemibold)
                                     .foregroundColor(.black)
                                 Image(systemName: "arrow.right")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.figureSecondarySemibold)
                                     .foregroundColor(.black)
                             }
                         }
@@ -194,15 +198,6 @@ private extension InvestmentView {
     }
     private func fetchHoldings() async -> APIHoldingsResponse? {
         try? await APIService.shared.getInvestmentHoldings()
-    }
-
-    var computedPortfolio: Portfolio {
-        guard let nw = apiNetWorth else { return data.portfolio }
-        return Portfolio(
-            totalBalance: nw.totalNetWorth,
-            performance: data.portfolio.performance,
-            chartData: data.portfolio.chartData
-        )
     }
 
     var computedAccounts: [Account] {
@@ -271,14 +266,14 @@ private struct InvestmentAccountsBreakdownDetailView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 Text(data.title)
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.cardFigurePrimary)
                     .foregroundStyle(.white)
 
                 Spacer()
 
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.bodySmallSemibold)
                         .foregroundStyle(.white)
                         .padding(.top, 2)
                 }
@@ -287,11 +282,11 @@ private struct InvestmentAccountsBreakdownDetailView: View {
 
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(formatCurrency(data.totalAmount, minFractionDigits: 2, maxFractionDigits: 2))
-                    .font(.system(size: 32, weight: .bold))
+                    .font(.h1)
                     .foregroundStyle(.white)
 
                 Text("across connected accounts")
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.bodyRegular)
                     .foregroundColor(AppColors.textSecondary)
             }
         }
@@ -300,7 +295,7 @@ private struct InvestmentAccountsBreakdownDetailView: View {
     private var allocationsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Allocations")
-                .font(.system(size: 22, weight: .bold))
+                .font(.detailTitle)
                 .foregroundStyle(.white)
 
             VStack(spacing: 12) {
@@ -332,27 +327,27 @@ private struct InvestmentAccountPositionRow: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(position.symbol)
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.h3)
                     .foregroundStyle(.white)
                     .minimumScaleFactor(0.8)
                     .lineLimit(1)
 
                 Text(position.institution.uppercased())
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.smallLabel)
                     .tracking(0.4)
                     .foregroundColor(AppColors.textSecondary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.white.opacity(0.06))
+                            .fill(AppColors.cardTopHighlight)
                     )
             }
 
             Spacer()
 
             Text(formatCurrency(position.amount))
-                .font(.system(size: 20, weight: .bold))
+                .font(.h3)
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -361,7 +356,7 @@ private struct InvestmentAccountPositionRow: View {
         .padding(.vertical, 16)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.04))
+                .fill(AppColors.overlayWhiteWash)
         )
     }
 

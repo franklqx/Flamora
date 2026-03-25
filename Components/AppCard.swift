@@ -20,6 +20,19 @@ struct AppCardModifier: ViewModifier {
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
             )
+            // Top-edge highlight (simulates overhead lighting)
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(
+                        LinearGradient(
+                            colors: [AppColors.cardTopHighlight, Color.clear],
+                            startPoint: .top,
+                            endPoint: .center
+                        ),
+                        lineWidth: 0.5
+                    )
+            )
+            .shadow(color: AppColors.cardShadow, radius: 16, x: 0, y: 8)
     }
 }
 

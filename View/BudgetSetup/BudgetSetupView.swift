@@ -24,7 +24,7 @@ struct BudgetSetupView: View {
                         .tint(Color(hex: "F5D76E"))
                         .scaleEffect(1.5)
                     Text("Analyzing your finances...")
-                        .font(.system(size: 14))
+                        .font(.bodySmall)
                         .foregroundStyle(.white.opacity(0.5))
                 }
                 .onAppear {
@@ -42,7 +42,7 @@ struct BudgetSetupView: View {
                 // TODO: Step 2 — Financial Diagnosis (placeholder)
                 VStack(spacing: 20) {
                     Text("Financial Diagnosis")
-                        .font(.system(size: 22, weight: .bold))
+                        .font(.detailTitle)
                         .foregroundStyle(.white)
                     Text("Step 2 — Coming soon")
                         .foregroundStyle(.white.opacity(0.5))
@@ -63,7 +63,7 @@ struct BudgetSetupView: View {
                     Button("Set Your FIRE Goal →") {
                         viewModel.goToStep(.fireGoal)
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.figureSecondarySemibold)
                     .foregroundStyle(.black)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
@@ -96,11 +96,11 @@ struct BudgetSetupView: View {
     private func metricRow(_ label: String, _ value: String) -> some View {
         HStack {
             Text(label)
-                .font(.system(size: 13))
+                .font(.footnoteRegular)
                 .foregroundStyle(.white.opacity(0.5))
             Spacer()
             Text(value)
-                .font(.system(size: 13, weight: .bold))
+                .font(.footnoteBold)
                 .foregroundStyle(.white)
         }
     }

@@ -36,7 +36,7 @@ struct OB_NameView: View {
                         .frame(width: 44, height: 44)
                         .overlay(
                             Image(systemName: "person.crop.circle")
-                                .font(.system(size: 18, weight: .semibold))
+                                .font(.h4)
                                 .foregroundStyle(.white)
                         )
                     Spacer()
@@ -75,7 +75,7 @@ struct OB_NameView: View {
                     .overlay(
                         RoundedRectangle(cornerRadius: AppRadius.lg)
                             .stroke(
-                                isFocused ? Color.white.opacity(0.3) : AppColors.borderDefault,
+                                isFocused ? AppColors.overlayWhiteForegroundSoft : AppColors.borderDefault,
                                 lineWidth: 1
                             )
                     )

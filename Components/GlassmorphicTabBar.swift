@@ -2,84 +2,107 @@
 //  GlassmorphicTabBar.swift
 //  Flamora app
 //
-//  底部 Tab Bar - 超透明玻璃质感，小方框图标按钮
+//  底部 Tab Bar - iOS 26 原生液态玻璃质感 (FabBar 尺寸)
+//  左侧胶囊：3个导航Tab（图标+标签）；右侧FAB圆圈：火焰按钮
+//  Simulator 激活时左侧胶囊滑出消失，只剩火焰 FAB
 //
 
 import SwiftUI
 
 struct GlassmorphicTabBar: View {
     @Binding var selectedTab: Int
+    let isSimulatorShown: Bool
+    let onFlameToggle: () -> Void
+    @Namespace private var tabIndicator
+
+    private let tabs: [(icon: String, label: String)] = [
+        ("house", "Home"),
+        ("creditcard", "Cash"),
+        ("chart.pie", "Invest")
+    ]
 
     var body: some View {
-        HStack(spacing: 0) {
-            TabBarButton(
-                icon: "house",
-                isSelected: selectedTab == 0
-            ) { selectedTab = 0 }
-
-            Spacer()
-
-            TabBarButton(
-                icon: "creditcard",
-                isSelected: selectedTab == 1
-            ) { selectedTab = 1 }
-
-            Spacer()
-
-            TabBarButton(
-                icon: "chart.pie",
-                isSelected: selectedTab == 2
-            ) { selectedTab = 2 }
-        }
-        .padding(.horizontal, 36)
-        .padding(.vertical, 10)
-        .background(
-            ZStack {
-                RoundedRectangle(cornerRadius: 28)
-                    .fill(AppColors.glassBackground)
-                RoundedRectangle(cornerRadius: 28)
-                    .stroke(AppColors.glassBorder, lineWidth: 0.75)
+        HStack(alignment: .center, spacing: 0) {
+            // 左侧玻璃胶囊 — Simulator 激活时滑出消失
+            if !isSimulatorShown {
+                HStack(spacing: 0) {
+                    ForEach(tabs.indices, id: \.self) { i in
+                        GlassTabButton(
+                            icon: tabs[i].icon,
+                            label: tabs[i].label,
+                            isSelected: selectedTab == i,
+                            namespace: tabIndicator
+                        ) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedTab = i
+                            }
+                        }
+                    }
+                }
+                .padding(2)
+                .glassEffect(.regular, in: .capsule)
+                .transition(.move(edge: .leading).combined(with: .opacity))
             }
-        )
-        .shadow(color: Color.black.opacity(0.50), radius: 20, x: 0, y: 6)
-        .padding(.horizontal, 20)
-        .padding(.bottom, 12)
-        .padding(.top, 6)
+
+            Spacer()
+
+            // 右侧火焰 FAB — 始终可见，62×62，激活时渐变色
+            Button(action: onFlameToggle) {
+                Image("FlameIcon")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(
+                        isSimulatorShown
+                            ? AnyShapeStyle(LinearGradient(
+                                colors: [AppColors.accentPurple, AppColors.accentPink],
+                                startPoint: .top,
+                                endPoint: .bottom))
+                            : AnyShapeStyle(AppColors.overlayWhiteForegroundMuted)
+                    )
+                    .frame(width: 20, height: 20)
+                    .frame(width: 62, height: 62)
+            }
+            .buttonStyle(.plain)
+            .tint(isSimulatorShown ? AppColors.gradientFlamePill[1] : AppColors.overlayWhiteForegroundMuted)
+            .glassEffect(.regular, in: .circle)
+        }
+        .contentShape(Rectangle())
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isSimulatorShown)
+        .padding(.horizontal, 21)
+        .padding(.bottom, 0)
+        .padding(.top, 2)
     }
 }
 
-struct TabBarButton: View {
+private struct GlassTabButton: View {
     let icon: String
+    let label: String
     let isSelected: Bool
+    let namespace: Namespace.ID
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            ZStack {
-                // 小方框背景
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(isSelected
-                        ? Color.white.opacity(0.12)
-                        : Color.clear
-                    )
-                    .frame(width: 46, height: 40)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(
-                                isSelected
-                                    ? Color.white.opacity(0.18)
-                                    : Color.clear,
-                                lineWidth: 0.75
-                            )
-                    )
-
+            VStack(spacing: 1) {
                 Image(systemName: icon)
-                    .font(.system(size: 20, weight: isSelected ? .semibold : .regular))
-                    .foregroundColor(isSelected ? .white : .white.opacity(0.35))
+                    .font(.chromeIconMedium)
+                    .frame(height: 28)
+                Text(label)
+                    .font(.label)
             }
-            .frame(width: 46, height: 40)
+            .foregroundStyle(isSelected ? .white : AppColors.overlayWhiteForegroundMuted)
+            .frame(maxWidth: .infinity)
+            .frame(height: 58)
+            .background {
+                if isSelected {
+                    Capsule()
+                        .fill(AppColors.glassPillStroke)
+                        .matchedGeometryEffect(id: "tabIndicator", in: namespace)
+                }
+            }
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(.plain)
     }
 }
 
@@ -88,7 +111,11 @@ struct TabBarButton: View {
         Color.black.ignoresSafeArea()
         VStack {
             Spacer()
-            GlassmorphicTabBar(selectedTab: .constant(0))
+            GlassmorphicTabBar(
+                selectedTab: .constant(0),
+                isSimulatorShown: false,
+                onFlameToggle: {}
+            )
         }
     }
 }

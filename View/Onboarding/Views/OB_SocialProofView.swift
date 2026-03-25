@@ -38,7 +38,7 @@ struct OB_SocialProofView: View {
                                 .frame(width: 100, height: 96)
 
                             Text("ON YOUR OWN")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.caption)
                                 .foregroundColor(AppColors.textTertiary)
                                 .opacity(showLabels ? 1 : 0)
                         }
@@ -61,7 +61,7 @@ struct OB_SocialProofView: View {
                                             .font(.system(size: 42, weight: .bold))
                                             .foregroundColor(.black)
                                         Text("more confidence\nin your freedom")
-                                            .font(.system(size: 13))
+                                            .font(.footnoteRegular)
                                             .foregroundColor(.black)
                                             .multilineTextAlignment(.center)
                                     }
@@ -78,8 +78,8 @@ struct OB_SocialProofView: View {
                                 )
                                 .animation(.spring(response: 0.6, dampingFraction: 0.75), value: showRightCard)
 
-                            Text("WITH \(Text("FLAMORA").font(.system(size: 12, weight: .medium).italic()).foregroundStyle(.white))")
-                                .font(.system(size: 12, weight: .medium))
+                            Text("WITH \(Text("FLAMORA").font(.caption.italic()).foregroundStyle(.white))")
+                                .font(.caption)
                                 .foregroundColor(AppColors.textTertiary)
                                 .opacity(showLabels ? 1 : 0)
                         }
