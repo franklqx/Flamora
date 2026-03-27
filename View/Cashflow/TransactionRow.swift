@@ -81,11 +81,11 @@ struct TransactionRow: View {
     private var badgeStyle: (String, Color, Color, Bool) {
         if let sub = transaction.subcategory {
             let parent = MockData.categoryParent(for: sub)
-            let color = parent == "needs" ? AppColors.accentPurple : AppColors.accentBlue
+            let color = parent == "needs" ? AppColors.chartBlue : AppColors.chartGold
             return (sub, color.opacity(0.2), color, false)
         }
         if let cat = transaction.category {
-            let color = cat == "needs" ? AppColors.accentPurple : AppColors.accentBlue
+            let color = cat == "needs" ? AppColors.chartBlue : AppColors.chartGold
             let label = cat == "needs" ? "Needs" : "Wants"
             return (label, color.opacity(0.2), color, false)
         }

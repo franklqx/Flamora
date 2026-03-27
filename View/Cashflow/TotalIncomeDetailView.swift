@@ -31,8 +31,8 @@ struct TotalIncomeDetailView: View {
     private let monthLabels = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
     private let monthsFull = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-    private let activeColor  = AppColors.accentGreen   // matches IncomeCard — Active
-    private let passiveColor = AppColors.accentPurple  // matches IncomeCard — Passive
+    private let activeColor  = AppColors.accentGreenDeep  // matches IncomeCard — Active
+    private let passiveColor = AppColors.accentPurpleMid  // matches IncomeCard — Passive
 
     private var currentTrend: [Double?] {
         data.trendsByYear[selectedYear] ?? Array(repeating: nil, count: 12)

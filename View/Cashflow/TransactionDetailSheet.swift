@@ -74,6 +74,38 @@ struct TransactionDetailSheet: View {
                     .padding(.top, AppSpacing.sm)
                     .padding(.horizontal, AppSpacing.cardPadding)
 
+                // MARK: Account
+                if let acct = transactionAccount {
+                    HStack(spacing: AppSpacing.sm) {
+                        Group {
+                            if let urlString = acct.logoUrl, let url = URL(string: urlString) {
+                                AsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case .success(let image):
+                                        image.resizable().scaledToFill()
+                                            .frame(width: 20, height: 20)
+                                            .clipShape(Circle())
+                                    default:
+                                        Circle().fill(AppColors.surfaceElevated)
+                                            .frame(width: 20, height: 20)
+                                    }
+                                }
+                            } else {
+                                Circle().fill(AppColors.surfaceElevated)
+                                    .frame(width: 20, height: 20)
+                            }
+                        }
+                        Text(acct.institution)
+                            .font(.inlineLabel)
+                            .foregroundColor(AppColors.textSecondary)
+                        Text("·  \(acct.accountType.displayLabel)")
+                            .font(.inlineLabel)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                    .padding(.top, AppSpacing.sm)
+                    .padding(.horizontal, AppSpacing.cardPadding)
+                }
+
                 // MARK: Category section
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
                     Text("CATEGORY")
@@ -82,10 +114,10 @@ struct TransactionDetailSheet: View {
                         .tracking(0.8)
 
                     // Needs group
-                    categoryGroup(label: "NEEDS", color: AppColors.accentPurple, categories: needsCategories)
+                    categoryGroup(label: "NEEDS", color: AppColors.chartBlue, categories: needsCategories)
 
                     // Wants group
-                    categoryGroup(label: "WANTS", color: AppColors.accentBlue, categories: wantsCategories)
+                    categoryGroup(label: "WANTS", color: AppColors.chartAmber, categories: wantsCategories)
                 }
                 .padding(.top, AppSpacing.lg)
                 .padding(.horizontal, AppSpacing.cardPadding)
@@ -128,7 +160,7 @@ struct TransactionDetailSheet: View {
                 .padding(.bottom, AppSpacing.xl)
             }
         }
-        .background(Color.black)
+        .background(AppColors.backgroundPrimary)
     }
 
     // MARK: - Category Group
@@ -167,7 +199,7 @@ struct TransactionDetailSheet: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, AppSpacing.sm)
             .padding(.horizontal, AppSpacing.md)
-            .background(isSelected ? color.opacity(0.25) : Color.clear)
+            .background(isSelected ? color.opacity(0.35) : Color.clear)
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.md)
@@ -178,6 +210,11 @@ struct TransactionDetailSheet: View {
     }
 
     // MARK: - Helpers
+
+    private var transactionAccount: Account? {
+        guard let accountId = transaction.accountId else { return nil }
+        return MockData.allAccounts.first { $0.id == accountId }
+    }
 
     private var currentIcon: String {
         if let sub = selectedSubcategory,

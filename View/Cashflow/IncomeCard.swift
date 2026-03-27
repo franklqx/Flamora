@@ -3,8 +3,8 @@
 //  Flamora app
 //
 //  Donut-style Total Income card
-//  Active Income  →  AppColors.accentGreen  (large arc)
-//  Passive Income →  AppColors.accentPurple (small arc)
+//  Active Income  →  AppColors.accentGreenDeep  (large arc)
+//  Passive Income →  AppColors.accentPurpleMid (small arc)
 //
 //  NOTE: Uses mock data today. When bank accounts are linked,
 //  replace `income` (monthly) and `yearlyIncome` with API responses.
@@ -33,8 +33,8 @@ struct IncomeCard: View {
 
     // MARK: – Design tokens
 
-    private let activeColor  = AppColors.accentGreen
-    private let passiveColor = AppColors.accentPurple
+    private let activeColor  = AppColors.accentGreenDeep
+    private let passiveColor = AppColors.accentPurpleMid
     private let ringWidth: CGFloat = 14
 
     // MARK: – Derived values

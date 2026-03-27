@@ -18,7 +18,7 @@ struct AllTransactionsView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // MARK: Header
@@ -79,9 +79,10 @@ struct AllTransactionsView: View {
                     }
                     .padding(.bottom, 100)
                 }
+                .background(AppColors.backgroundPrimary)
             }
+            .offset(y: dragOffset)
         }
-        .offset(y: dragOffset)
         .simultaneousGesture(
             DragGesture()
                 .onChanged { value in
@@ -99,6 +100,7 @@ struct AllTransactionsView: View {
                     }
                 }
         )
+        .preferredColorScheme(.dark)
         .sheet(item: $selectedTransaction) { transaction in
             TransactionDetailSheet(transaction: transaction) { updated in
                 updateLocal(updated)

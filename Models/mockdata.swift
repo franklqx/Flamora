@@ -238,10 +238,12 @@ struct Transaction: Codable, Identifiable {
     var subcategory: String?   // e.g. "Rent & Housing" — drives category
     var category: String?      // "needs" | "wants" — derived from subcategory, stored for API
     var note: String?
+    var accountId: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case id, merchant, amount, date, time, subcategory, category, note
         case pendingClassification = "pending_classification"
+        case accountId = "account_id"
     }
 }
 
@@ -284,23 +286,69 @@ struct ChartPoint: Codable {
     let value: Double
 }
 
-struct Account: Codable {
-    let id: String
-    let institution: String
-    let type: String
-    let balance: Double
-    let connected: Bool
-}
-
 struct Allocation: Codable {
     let stocks: AssetClass
-    let bonds: AssetClass
+    let bonds: AssetClass    // Crypto
     let cash: AssetClass
+    let other: AssetClass?   // Other (gold, alts, etc.)
 }
 
 struct AssetClass: Codable {
     let percent: Int
     let amount: Double
+}
+
+// MARK: - Account Type
+
+enum AccountType: String, Codable, CaseIterable {
+    case brokerage = "Brokerage"
+    case crypto    = "Crypto"
+    case bank      = "Bank"
+
+    var isInvestment: Bool { self == .brokerage || self == .crypto }
+
+    var displayLabel: String {
+        switch self {
+        case .brokerage: return "Brokerage"
+        case .crypto:    return "Crypto"
+        case .bank:      return "Bank Account"
+        }
+    }
+}
+
+// MARK: - Holding
+
+struct Holding: Identifiable {
+    let id: String
+    let accountId: String
+    let symbol: String
+    let name: String
+    let shares: Double
+    let totalValue: Double
+    var logoUrl: String? = nil
+}
+
+// MARK: - Balance Snapshot（账户趋势图用）
+
+struct BalanceSnapshot: Identifiable {
+    let id: String
+    let accountId: String
+    let date: Date
+    let balance: Double
+}
+
+struct Account: Codable, Identifiable {
+    let id: String
+    let institution: String
+    let accountType: AccountType
+    let balance: Double
+    let connected: Bool
+    let logoUrl: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, institution, balance, connected, logoUrl
+        case accountType = "type"
+    }
 }
 
 struct InvestmentAccountsBreakdownData: Codable {
@@ -572,19 +620,57 @@ struct MockData {
 
     // MARK: All Transactions Mock Data
     static let allTransactions: [Transaction] = [
-        Transaction(id: "t1",  merchant: "Rent",              amount: 1850.00, date: "2026-03-01", time: "09:00", pendingClassification: false, subcategory: "Rent & Housing",   category: "needs", note: "Monthly rent"),
-        Transaction(id: "t2",  merchant: "Whole Foods",       amount:   92.40, date: "2026-03-03", time: "11:24", pendingClassification: false, subcategory: "Groceries",        category: "needs", note: nil),
-        Transaction(id: "t3",  merchant: "Con Edison",        amount:   98.50, date: "2026-03-04", time: "08:00", pendingClassification: false, subcategory: "Utilities",        category: "needs", note: nil),
-        Transaction(id: "t4",  merchant: "Netflix",           amount:   15.99, date: "2026-03-07", time: "00:01", pendingClassification: false, subcategory: "Subscriptions",    category: "wants", note: nil),
-        Transaction(id: "t5",  merchant: "Shell Gas Station", amount:   48.00, date: "2026-03-10", time: "17:48", pendingClassification: false, subcategory: "Transportation",   category: "needs", note: nil),
-        Transaction(id: "t6",  merchant: "Starbucks",         amount:    6.75, date: "2026-03-12", time: "08:15", pendingClassification: false, subcategory: "Dining & Social",  category: "wants", note: nil),
-        Transaction(id: "t7",  merchant: "Apple Music",       amount:   10.99, date: "2026-03-14", time: "00:01", pendingClassification: false, subcategory: "Subscriptions",    category: "wants", note: nil),
-        Transaction(id: "t8",  merchant: "CVS Pharmacy",      amount:   34.20, date: "2026-03-15", time: "13:05", pendingClassification: false, subcategory: "Health & Fitness", category: "needs", note: nil),
-        Transaction(id: "t9",  merchant: "Trader Joe's",      amount:   76.80, date: "2026-03-17", time: "10:30", pendingClassification: false, subcategory: "Groceries",        category: "needs", note: nil),
-        Transaction(id: "t10", merchant: "Target",            amount:   54.20, date: "2026-03-18", time: "14:33", pendingClassification: true,  subcategory: nil,                category: nil,     note: nil),
-        Transaction(id: "t11", merchant: "Uber Eats",         amount:   32.50, date: "2026-03-20", time: "20:07", pendingClassification: true,  subcategory: nil,                category: nil,     note: nil),
-        Transaction(id: "t12", merchant: "Equinox",           amount:   85.00, date: "2026-03-22", time: "07:00", pendingClassification: false, subcategory: "Health & Fitness", category: "needs", note: nil)
+        Transaction(id: "t1",  merchant: "Rent",              amount: 1850.00, date: "2026-03-01", time: "09:00", pendingClassification: false, subcategory: "Rent & Housing",   category: "needs", note: "Monthly rent",  accountId: "4"),
+        Transaction(id: "t2",  merchant: "Whole Foods",       amount:   92.40, date: "2026-03-03", time: "11:24", pendingClassification: false, subcategory: "Groceries",        category: "needs", note: nil,            accountId: "5"),
+        Transaction(id: "t3",  merchant: "Con Edison",        amount:   98.50, date: "2026-03-04", time: "08:00", pendingClassification: false, subcategory: "Utilities",        category: "needs", note: nil,            accountId: "4"),
+        Transaction(id: "t4",  merchant: "Netflix",           amount:   15.99, date: "2026-03-07", time: "00:01", pendingClassification: false, subcategory: "Subscriptions",    category: "wants", note: nil,            accountId: "4"),
+        Transaction(id: "t5",  merchant: "Shell Gas Station", amount:   48.00, date: "2026-03-10", time: "17:48", pendingClassification: false, subcategory: "Transportation",   category: "needs", note: nil,            accountId: "5"),
+        Transaction(id: "t6",  merchant: "Starbucks",         amount:    6.75, date: "2026-03-12", time: "08:15", pendingClassification: false, subcategory: "Dining & Social",  category: "wants", note: nil,            accountId: "4"),
+        Transaction(id: "t7",  merchant: "Apple Music",       amount:   10.99, date: "2026-03-14", time: "00:01", pendingClassification: false, subcategory: "Subscriptions",    category: "wants", note: nil,            accountId: "4"),
+        Transaction(id: "t8",  merchant: "CVS Pharmacy",      amount:   34.20, date: "2026-03-15", time: "13:05", pendingClassification: false, subcategory: "Health & Fitness", category: "needs", note: nil,            accountId: "5"),
+        Transaction(id: "t9",  merchant: "Trader Joe's",      amount:   76.80, date: "2026-03-17", time: "10:30", pendingClassification: false, subcategory: "Groceries",        category: "needs", note: nil,            accountId: "5"),
+        Transaction(id: "t10", merchant: "Target",            amount:   54.20, date: "2026-03-18", time: "14:33", pendingClassification: true,  subcategory: nil,                category: nil,     note: nil,            accountId: "4"),
+        Transaction(id: "t11", merchant: "Uber Eats",         amount:   32.50, date: "2026-03-20", time: "20:07", pendingClassification: true,  subcategory: nil,                category: nil,     note: nil,            accountId: "4"),
+        Transaction(id: "t12", merchant: "Equinox",           amount:   85.00, date: "2026-03-22", time: "07:00", pendingClassification: false, subcategory: "Health & Fitness", category: "needs", note: nil,            accountId: "5")
     ]
+
+    // MARK: Holdings Mock Data
+    static let holdings: [Holding] = [
+        // Fidelity (id: "1")
+        Holding(id: "h1", accountId: "1", symbol: "VTI",  name: "Vanguard Total Stock Market ETF", shares: 180.0, totalValue: 42500.00, logoUrl: "https://www.google.com/s2/favicons?domain=vanguard.com&sz=64"),
+        Holding(id: "h2", accountId: "1", symbol: "AAPL", name: "Apple Inc.",                       shares: 120.0, totalValue: 24800.00, logoUrl: "https://www.google.com/s2/favicons?domain=apple.com&sz=64"),
+        Holding(id: "h3", accountId: "1", symbol: "MSFT", name: "Microsoft Corporation",             shares: 55.0,  totalValue: 17700.00, logoUrl: "https://www.google.com/s2/favicons?domain=microsoft.com&sz=64"),
+        // Schwab (id: "2")
+        Holding(id: "h4", accountId: "2", symbol: "VOO",  name: "Vanguard S&P 500 ETF",             shares: 60.0,  totalValue: 16500.00, logoUrl: "https://www.google.com/s2/favicons?domain=vanguard.com&sz=64"),
+        Holding(id: "h5", accountId: "2", symbol: "QQQ",  name: "Invesco QQQ Trust",                shares: 25.0,  totalValue: 8500.00,  logoUrl: "https://www.google.com/s2/favicons?domain=invesco.com&sz=64"),
+        // Coinbase (id: "3")
+        Holding(id: "h6", accountId: "3", symbol: "BTC",  name: "Bitcoin",                          shares: 0.12,  totalValue: 10200.00, logoUrl: "https://assets.coincap.io/assets/icons/btc@2x.png"),
+        Holding(id: "h7", accountId: "3", symbol: "ETH",  name: "Ethereum",                         shares: 2.5,   totalValue: 5250.80,  logoUrl: "https://assets.coincap.io/assets/icons/eth@2x.png"),
+        // Other — Gold
+        Holding(id: "h8", accountId: "other", symbol: "GLD",  name: "SPDR Gold Shares ETF",         shares: 52.0,  totalValue: 11480.00, logoUrl: nil),
+        Holding(id: "h9", accountId: "other", symbol: "IAU",  name: "iShares Gold Trust",            shares: 148.0, totalValue: 7337.62,  logoUrl: nil),
+    ]
+
+    // MARK: Account Balance History Mock Data
+    static let accountBalanceHistory: [String: [BalanceSnapshot]] = makeAccountBalanceHistory()
+
+    private static func makeAccountBalanceHistory() -> [String: [BalanceSnapshot]] {
+        func make(_ id: String, _ data: [(Int, Double)]) -> [BalanceSnapshot] {
+            let cal = Calendar.current
+            let now = Date()
+            return data.enumerated().map { i, tuple in
+                let date = cal.date(byAdding: .weekOfYear, value: -tuple.0, to: now) ?? now
+                return BalanceSnapshot(id: "\(id)_\(i)", accountId: id, date: date, balance: tuple.1)
+            }.sorted { $0.date < $1.date }
+        }
+        return [
+            "1": make("1", [(52,72000),(44,74500),(36,76800),(28,75200),(20,78000),(12,80500),(8,82000),(4,84000),(2,85000),(0,85000)]),
+            "2": make("2", [(52,20000),(44,20800),(36,21500),(28,22000),(20,22800),(12,23500),(8,24200),(4,24800),(2,25000),(0,25000)]),
+            "3": make("3", [(52,9000),(44,10200),(36,11500),(28,10800),(20,12000),(12,13500),(8,14000),(4,15000),(2,15300),(0,15450)]),
+            "4": make("4", [(52,10800),(48,9200),(44,11600),(40,9500),(36,12100),(32,10200),(28,12400),(24,10800),(20,12500),(16,11000),(12,12800),(8,11500),(4,12600),(2,12300),(0,12500)]),
+            "5": make("5", [(52,7000),(44,7400),(36,7100),(28,7800),(20,8100),(12,7900),(8,8200),(4,8300),(2,8150),(0,8200)])
+        ]
+    }
 
     // MARK: Investment Mock Data
     static let investmentData = InvestmentData(
@@ -606,16 +692,37 @@ struct MockData {
             ]
         ),
         accounts: [
-            Account(id: "1", institution: "Fidelity", type: "Investment", balance: 85000.00, connected: true),
-            Account(id: "2", institution: "Schwab", type: "Brokerage", balance: 25000.00, connected: true),
-            Account(id: "3", institution: "Coinbase", type: "Crypto", balance: 15450.80, connected: true)
+            Account(id: "1", institution: "Fidelity",  accountType: .brokerage, balance: 85000.00,  connected: true, logoUrl: "https://www.google.com/s2/favicons?domain=fidelity.com&sz=64"),
+            Account(id: "2", institution: "Schwab",    accountType: .brokerage, balance: 25000.00,  connected: true, logoUrl: "https://www.google.com/s2/favicons?domain=schwab.com&sz=64"),
+            Account(id: "3", institution: "Coinbase",  accountType: .crypto,    balance: 15450.80,  connected: true, logoUrl: "https://www.google.com/s2/favicons?domain=coinbase.com&sz=64")
         ],
         allocation: Allocation(
-            stocks: AssetClass(percent: 80, amount: 100360.64),
-            bonds: AssetClass(percent: 15, amount: 18817.62),
-            cash: AssetClass(percent: 5, amount: 6272.54)
+            stocks: AssetClass(percent: 68, amount: 85306.54),
+            bonds: AssetClass(percent: 12, amount: 15054.10),  // Crypto
+            cash: AssetClass(percent: 5, amount: 6272.54),
+            other: AssetClass(percent: 15, amount: 18817.62)
         )
     )
+
+    static let bankAccounts: [Account] = [
+        Account(id: "4", institution: "Chase",           accountType: .bank, balance: 12500.00, connected: true, logoUrl: "https://www.google.com/s2/favicons?domain=chase.com&sz=64"),
+        Account(id: "5", institution: "Bank of America", accountType: .bank, balance: 8200.00,  connected: true, logoUrl: "https://www.google.com/s2/favicons?domain=bankofamerica.com&sz=64")
+    ]
+
+    static var allAccounts: [Account] {
+        investmentData.accounts + bankAccounts
+    }
+
+    static let accountLastUpdated: [String: Date] = {
+        let now = Date()
+        return [
+            "1": now.addingTimeInterval(-5 * 60),         // 5 min ago
+            "2": now.addingTimeInterval(-12 * 60),        // 12 min ago
+            "3": now.addingTimeInterval(-2 * 60),         // 2 min ago
+            "4": now.addingTimeInterval(-60 * 60),        // 1 hour ago
+            "5": now.addingTimeInterval(-3 * 60 * 60)     // 3 hours ago
+        ]
+    }()
 
     static let investmentAccountsBreakdown = InvestmentAccountsBreakdownData(
         title: "Stocks breakdown",
@@ -736,10 +843,11 @@ struct APIAccount: Codable {
     let type: String
     let balance: Double
     let institution: String
+    let logoUrl: String?
 
     enum CodingKeys: String, CodingKey {
         case accountId = "account_id"
-        case name, type, balance, institution
+        case name, type, balance, institution, logoUrl
     }
 }
 
@@ -841,7 +949,7 @@ extension MockData {
             ("Health & Fitness", "cross.case.fill",   120.00)
         ]
         return SpendingDetailData(
-            title: "Spending Analysis (Needs)", accentColor: "#A78BFA",
+            title: "Spending Analysis (Needs)", accentColor: "#2563EB",
             trendsByYear: [2025: trend2025, 2026: trend2026],
             monthlyDataByYear: [
                 2025: buildSpendingMonthlyData(prefix: "needs-2025", trend: trend2025, baseCategories: base),
@@ -861,7 +969,7 @@ extension MockData {
             ("Hobbies & Leisure", "paintpalette.fill",   129.50)
         ]
         return SpendingDetailData(
-            title: "Spending Analysis (Wants)", accentColor: "#93C5FD",
+            title: "Spending Analysis (Wants)", accentColor: "#D97706",
             trendsByYear: [2025: trend2025, 2026: trend2026],
             monthlyDataByYear: [
                 2025: buildSpendingMonthlyData(prefix: "wants-2025", trend: trend2025, baseCategories: base),
@@ -987,14 +1095,16 @@ extension MockData {
                 name: "Fidelity 401(k)",
                 type: "investment",
                 balance: 150000.00,
-                institution: "Fidelity"
+                institution: "Fidelity",
+                logoUrl: nil
             ),
             APIAccount(
                 accountId: "mock-account-2",
                 name: "Chase Checking",
                 type: "cash",
                 balance: 25000.00,
-                institution: "Chase"
+                institution: "Chase",
+                logoUrl: nil
             )
         ]
     )

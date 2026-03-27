@@ -10,11 +10,11 @@ internal import Auth
 
 struct MainTabView: View {
     @State private var selectedTab = 0
-    @State private var tabBeforeSimulator = 0          // 记住进入 Simulator 前所在的 Tab
+    @State private var tabBeforeSimulator = 0
     @State private var isSimulatorShown = false
     @State private var simulatorDisplayState: SimulatorDisplayState = .overview
     @State private var showSettings = false
-    /// Journey 卡片直达二级页（不切到 Cash Flow Tab）
+    @State private var flipAngle: Double = 0
     @State private var journeyCashflowSecondary: CashflowJourneyDestination? = nil
 
     @Environment(SubscriptionManager.self) private var subscriptionManager
@@ -22,74 +22,70 @@ struct MainTabView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            // 全局纯黑背景
             AppBackgroundView()
 
-            // 内容区域
-            Group {
-                switch selectedTab {
-                case 0:
-                    JourneyContainerView(
-                        onFireTapped: flipPage,
-                        onInvestmentTapped: { selectedTab = 2 },
-                        onOpenCashflowDestination: { journeyCashflowSecondary = $0 }
+            // 内容区域 — 参与翻转，header 不参与
+            ZStack {
+                if isSimulatorShown {
+                    AppColors.backgroundPrimary.ignoresSafeArea()
+                        .zIndex(1)
+                    SimulatorView(
+                        displayState: $simulatorDisplayState,
+                        bottomPadding: 0,
+                        isFireOn: true,
+                        onFireToggle: flipPage
                     )
-                case 1:
-                    CashflowView()
-                case 2:
-                    InvestmentView()
-                default:
-                    JourneyContainerView(
-                        onFireTapped: flipPage,
-                        onInvestmentTapped: { selectedTab = 2 },
-                        onOpenCashflowDestination: { journeyCashflowSecondary = $0 }
-                    )
+                    .zIndex(2)
+                } else {
+                    Group {
+                        switch selectedTab {
+                        case 0:
+                            JourneyContainerView(
+                                onFireTapped: flipPage,
+                                onInvestmentTapped: { selectedTab = 2 },
+                                onOpenCashflowDestination: { journeyCashflowSecondary = $0 }
+                            )
+                        case 1:
+                            CashflowView()
+                        case 2:
+                            InvestmentView()
+                        default:
+                            JourneyContainerView(
+                                onFireTapped: flipPage,
+                                onInvestmentTapped: { selectedTab = 2 },
+                                onOpenCashflowDestination: { journeyCashflowSecondary = $0 }
+                            )
+                        }
+                    }
+                    .background(Color.clear)
+                    .transaction { $0.animation = nil }
                 }
             }
-            .background(Color.clear)
-            .transaction { $0.animation = nil }
+            // 用透明占位把内容推到 header 下方
             .safeAreaInset(edge: .top, spacing: 0) {
-                TopHeaderBar(
-                    pageTitle: pageTitleFor(selectedTab),
-                    leftAction: headerLeftAction,
-                    onSettingsTapped: { showSettings = true },
-                    isVisible: true
-                )
+                Color.clear.frame(height: TopHeaderBar.height)
             }
-
-            // 全局 Simulator 覆盖层 — 从任意 Tab 打开，覆盖全部内容
-            if isSimulatorShown {
-                Color.black.ignoresSafeArea()
-                    .zIndex(1)
-
-                SimulatorView(
-                    displayState: $simulatorDisplayState,
-                    bottomPadding: 0,
-                    isFireOn: true,
-                    onFireToggle: flipPage
-                )
-                .safeAreaInset(edge: .top, spacing: 0) {
-                    TopHeaderBar(
-                        pageTitle: "Simulator",
-                        leftAction: headerLeftAction,
-                        onSettingsTapped: { showSettings = true },
-                        isVisible: simulatorDisplayState != .loading
-                    )
-                }
-                .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .bottom)))
-                .zIndex(2)
-            }
-        }
-        // 底部导航：用 opacity 控制显隐，避免 view 销毁/重建导致 glassEffect tint 重置
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            GlassmorphicTabBar(
-                selectedTab: $selectedTab,
-                isSimulatorShown: isSimulatorShown,
-                onFlameToggle: flipPage
+            .rotation3DEffect(
+                .degrees(flipAngle),
+                axis: (x: 0, y: 1, z: 0),
+                perspective: 0.3
             )
-            .ignoresSafeArea(edges: .bottom)
-            .opacity(showTabBar ? 1 : 0)
-            .allowsHitTesting(showTabBar)
+            .opacity(abs(flipAngle) >= 90 ? 0 : 1)
+
+            // 静态顶部导航 — 永远不参与翻转
+            TopHeaderBar(
+                pageTitle: pageTitleFor(selectedTab),
+                leftAction: headerLeftAction,
+                onSettingsTapped: { showSettings = true },
+                isVisible: !isSimulatorShown || simulatorDisplayState != .loading
+            )
+            .zIndex(10)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            GlassmorphicTabBar(selectedTab: $selectedTab)
+                .ignoresSafeArea(edges: .bottom)
+                .opacity(showTabBar ? 1 : 0)
+                .allowsHitTesting(showTabBar)
         }
         .ignoresSafeArea(.keyboard, edges: .all)
         .fullScreenCover(isPresented: Binding(
@@ -113,13 +109,8 @@ struct MainTabView: View {
         }
     }
 
-    // Simulator overview 时显示火焰 FAB，loading/results 时隐藏整个 tab bar
     private var showTabBar: Bool {
-        if isSimulatorShown {
-            if case .overview = simulatorDisplayState { return true }
-            return false
-        }
-        return true
+        !isSimulatorShown
     }
 
     private func pageTitleFor(_ tab: Int) -> String {
@@ -136,25 +127,29 @@ struct MainTabView: View {
         if isSimulatorShown, case .results = simulatorDisplayState {
             return .close(action: { simulatorDisplayState = .overview })
         }
-        switch selectedTab {
-        case 2:
-            return .eye(action: {})
-        default:
-            return .none
-        }
+        return .flame(isActive: isSimulatorShown, action: flipPage)
     }
 
     private func flipPage() {
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-            if isSimulatorShown {
-                // 关闭：恢复之前的 Tab
+        let opening = !isSimulatorShown
+        // 第一阶段：当前页翻转消失
+        withAnimation(.easeIn(duration: 0.2)) {
+            flipAngle = 90
+        }
+        // 中点切换内容，再翻转出来
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            if opening {
+                tabBeforeSimulator = selectedTab
+                isSimulatorShown = true
+            } else {
                 isSimulatorShown = false
                 selectedTab = tabBeforeSimulator
                 simulatorDisplayState = .overview
-            } else {
-                // 打开：记录当前 Tab
-                tabBeforeSimulator = selectedTab
-                isSimulatorShown = true
+            }
+            flipAngle = -90
+            // 第二阶段：新页翻转进入
+            withAnimation(.easeOut(duration: 0.2)) {
+                flipAngle = 0
             }
         }
     }

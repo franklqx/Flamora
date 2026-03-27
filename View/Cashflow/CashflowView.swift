@@ -203,7 +203,10 @@ private extension CashflowView {
             }
             .padding(.horizontal, AppSpacing.screenPadding)
 
-            ForEach(allTransactions.prefix(5)) { transaction in
+            ForEach(allTransactions.sorted {
+                if $0.date != $1.date { return $0.date > $1.date }
+                return ($0.time ?? "") > ($1.time ?? "")
+            }.prefix(5)) { transaction in
                 TransactionRow(transaction: transaction) {
                     selectedTransaction = transaction
                 }
@@ -250,7 +253,7 @@ private struct CashflowCTAView: View {
                         Circle()
                             .fill(
                                 RadialGradient(
-                                    colors: [AppColors.accentBlue.opacity(0.15), Color.clear],
+                                    colors: [AppColors.chartAmber.opacity(0.15), Color.clear],
                                     center: .center,
                                     startRadius: 0,
                                     endRadius: 80

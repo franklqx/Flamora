@@ -765,14 +765,14 @@ private extension SpendingAnalysisDetailView {
             HStack(alignment: .firstTextBaseline) {
                 Text(data.title)
                     .font(.cardFigurePrimary)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
 
                 Spacer()
 
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
                         .font(.bodySmallSemibold)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textSecondary)
                         .padding(.top, 2)
                 }
                 .buttonStyle(.plain)
@@ -781,11 +781,11 @@ private extension SpendingAnalysisDetailView {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(formatCurrencyNoCents(selectedTotal))
                     .font(.h1)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
 
                 Text("spend in \(selectedMonthLabel)")
                     .font(.bodyRegular)
-                    .foregroundColor(Color(hex: "#9CA3AF"))
+                    .foregroundColor(AppColors.textTertiary)
             }
         }
     }
@@ -873,7 +873,7 @@ private extension SpendingAnalysisDetailView {
 
             Text(monthLabels[index])
                 .font(.segmentLabel(selected: isSelected))
-                .foregroundColor(isSelected ? .white : Color(hex: "#9CA3AF"))
+                .foregroundColor(isSelected ? AppColors.textPrimary : AppColors.textTertiary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -890,7 +890,7 @@ private extension SpendingAnalysisDetailView {
         VStack(alignment: .leading, spacing: 16) {
             Text("Categories")
                 .font(.detailTitle)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
 
             VStack(spacing: 12) {
                 ForEach(selectedCategories) { category in
@@ -923,12 +923,12 @@ private extension SpendingAnalysisDetailView {
                     HStack(spacing: 10) {
                         Image(systemName: category.icon)
                             .font(.categoryRowIcon)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                             .frame(width: 24)
 
                         Text(category.name)
                             .font(.bodySemibold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                     }
 
                     Spacer()
@@ -936,11 +936,11 @@ private extension SpendingAnalysisDetailView {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(formatCurrency(category.amount))
                             .font(.bodySemibold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
 
                         Text("\(Int(category.percentage.rounded()))%")
                             .font(.footnoteRegular)
-                            .foregroundColor(Color(hex: "#9CA3AF"))
+                            .foregroundColor(AppColors.textTertiary)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -1269,8 +1269,8 @@ struct TotalSpendingAnalysisDetailView: View {
     private let monthLabels = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
     private let monthsFull = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-    private let needsColor = Color(hex: "#A78BFA")
-    private let wantsColor = Color(hex: "#93C5FD")
+    private var needsColor: Color { AppColors.chartBlue }
+    private var wantsColor: Color { AppColors.chartAmber }
 
     init(data: TotalSpendingDetailData) {
         self.data = data
@@ -1371,14 +1371,14 @@ private extension TotalSpendingAnalysisDetailView {
             HStack(alignment: .firstTextBaseline) {
                 Text(data.title)
                     .font(.cardFigurePrimary)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
 
                 Spacer()
 
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
                         .font(.bodySmallSemibold)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textSecondary)
                         .padding(.top, 2)
                 }
                 .buttonStyle(.plain)
@@ -1387,11 +1387,11 @@ private extension TotalSpendingAnalysisDetailView {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(formatCurrencyNoCents(selectedTotal))
                     .font(.h1)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
 
                 Text("spend in \(selectedMonthLabel)")
                     .font(.bodyRegular)
-                    .foregroundColor(Color(hex: "#9CA3AF"))
+                    .foregroundColor(AppColors.textTertiary)
             }
         }
     }
@@ -1484,7 +1484,7 @@ private extension TotalSpendingAnalysisDetailView {
 
             Text(monthLabels[index])
                 .font(.segmentLabel(selected: isSelected))
-                .foregroundColor(isSelected ? .white : Color(hex: "#9CA3AF"))
+                .foregroundColor(isSelected ? AppColors.textPrimary : AppColors.textTertiary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -1516,7 +1516,7 @@ private extension TotalSpendingAnalysisDetailView {
         VStack(alignment: .leading, spacing: 16) {
             Text("Sources")
                 .font(.detailTitle)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
 
             if let monthData = selectedMonthData {
                 VStack(spacing: 12) {
@@ -1562,7 +1562,7 @@ private extension TotalSpendingAnalysisDetailView {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(name)
                             .font(.bodySemibold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
 
                         Text("\(selectedMonthLabel) \(selectedYear)")
                             .font(.footnoteRegular)
@@ -1574,7 +1574,7 @@ private extension TotalSpendingAnalysisDetailView {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(formatCurrency(amount))
                             .font(.bodySemibold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
 
                         HStack(spacing: 4) {
                             Text("\(Int(percentage.rounded()))%")

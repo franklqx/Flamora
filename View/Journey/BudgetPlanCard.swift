@@ -89,8 +89,8 @@ struct BudgetPlanCard: View {
                             ZStack(alignment: .leading) {
                                 Capsule().fill(AppColors.progressTrack).frame(height: 6)
                                 HStack(spacing: 0) {
-                                    Rectangle().fill(AppColors.accentPurple).frame(width: nWidth)
-                                    Rectangle().fill(AppColors.accentBlue).frame(width: wWidth)
+                                    Rectangle().fill(AppColors.chartBlue).frame(width: nWidth)
+                                    Rectangle().fill(AppColors.chartAmber).frame(width: wWidth)
                                 }
                                 .clipShape(Capsule())
                                 .frame(height: 6)

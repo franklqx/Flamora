@@ -12,8 +12,8 @@ struct BudgetCard: View {
     let onWantsTapped: (() -> Void)?
     private let apiBudget = MockData.apiMonthlyBudget
 
-    private var needsColor: Color { AppColors.accentPurple }
-    private var wantsColor: Color { AppColors.accentBlue }
+    private var needsColor: Color { AppColors.chartBlue }
+    private var wantsColor: Color { AppColors.chartAmber }
 
     init(
         spending: Spending,

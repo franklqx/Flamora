@@ -73,9 +73,22 @@ struct AppColors {
     static let accentPink           = Color(hex: "#F9A8D4")
     static let accentAmber          = Color(hex: "#FCD34D")
     static let accentGreen          = Color(hex: "#34D399")
+    /// 负向涨跌等（与 `error` 同色）
+    static let accentRed            = AppColors.error
     static let accentGreenDeep      = Color(hex: "#059669")
     static let accentGreenLight     = Color(hex: "#6EE7B7")
     static let accentGreenFaint     = Color(hex: "#A7F3D0")
+
+    // MARK: - Chart Series Colors（深色背景专用图表色）
+    static let chartBlue    = Color(hex: "#2563EB")   // 深蓝 — Stocks / Needs
+    static let chartAmber   = Color(hex: "#D97706")   // 深琥珀 — Crypto / Bonds
+    /// Wants 分类（与 chartAmber 同色，语义别名）
+    static let chartGold    = chartAmber
+    static let chartRose    = Color(hex: "#DB2777")   // 深玫红 — Other
+    static let chartSteelBlue = Color(hex: "#6699CC") // Steel Blue — Stocks
+    static let chartSageGreen = Color(hex: "#71963C") // Sage Green — Cash
+    static let chartYellow    = Color(hex: "#F2D349") // Yellow — Crypto
+    static let chartCoral     = Color(hex: "#D99468") // Coral — Other
 
     // MARK: - Flame Toggle (blue-purple per reference design)
     static let gradientFlamePill: [Color] = [
