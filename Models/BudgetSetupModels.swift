@@ -2,135 +2,266 @@
 //  BudgetSetupModels.swift
 //  Flamora app
 //
-//  Response models for Budget Setup flow (Steps 1-5)
-//  Matches calculate-fire-goal v2, save-fire-goal v2, calculate-avg-spending, generate-financial-diagnosis
+//  V2 Response models for Budget Setup flow
+//  Matches: calculate-spending-stats, generate-plans, generate-spending-plan
+//
+//  NOTE on decoding:
+//  APIService.perform uses keyDecodingStrategy = .convertFromSnakeCase, so all
+//  response structs (Decodable) need NO explicit CodingKeys — the strategy maps
+//  snake_case JSON keys to camelCase Swift properties automatically.
+//
+//  Request structs (Encodable only) DO have explicit CodingKeys because
+//  JSONEncoder has no keyEncodingStrategy set, so snake_case must be specified.
 //
 
 import Foundation
 
-// MARK: - calculate-fire-goal Response
+// MARK: - calculate-spending-stats Response
 
-struct FireGoalResponse: Codable {
-    let phase: Int                          // 0, 2, or 3
-    let phaseSub: String?                   // nil — backend doesn't return this
-    let strategy: String                    // "goal_achievable", "user_choice", "impossible"
-    let fireNumber: Double
-    let gapToFire: Double
-    let requiredMonthlyContribution: Double
-    let requiredSavingsRate: Double
-    let yearsToRetirement: Int
-    let isAchievable: Bool
-    let currentPath: FireGoalPlan
-    let planA: FireGoalPlan?
-    let planB: FireGoalPlan?
-    let recommended: FireGoalPlan?
-    let incomeGrowthHint: IncomeGrowthHint?
+struct SpendingStatsResponse: Codable {
+    let avgMonthlyIncome: Double
+    let avgMonthlyExpenses: Double
+    let avgMonthlySavings: Double
+    let currentSavingsRate: Double
 
-    /// Derive sub-phase from phase + gapToFire (backend doesn't compute phase_sub)
-    var effectivePhaseSub: String {
-        if let sub = phaseSub { return sub }
-        if phase == 0 {
-            return gapToFire <= 0 ? "0a" : "0b"
-        }
-        return phase == 2 ? "1" : "2"
+    let avgMonthlyFixed: Double
+    let avgMonthlyFlexible: Double
+
+    let fixedExpenses: [FixedExpenseItem]
+    let flexibleBreakdown: [FlexibleBreakdownItem]
+
+    let incomeSource: String              // "plaid" or "manual"
+    let monthsAnalyzed: Int
+    let dataQuality: String               // "good" or "limited"
+    let totalTransactions: Int
+
+    let monthlyBreakdown: [MonthlyBreakdownItem]
+}
+
+struct FixedExpenseItem: Codable, Identifiable {
+    var id: String { name }
+    let name: String
+    let pfcDetailed: String?
+    let avgMonthlyAmount: Double
+    let monthsAppeared: Int
+    let variancePct: Double
+    let isAlwaysFixed: Bool
+}
+
+struct FlexibleBreakdownItem: Codable, Identifiable {
+    var id: String { subcategory }
+    let subcategory: String
+    let avgMonthlyAmount: Double
+    let shareOfFlexible: Double
+    let transactionCount: Int
+}
+
+struct MonthlyBreakdownItem: Codable, Identifiable {
+    var id: String { month }
+    let month: String
+    let income: Double
+    let fixed: Double
+    let flexible: Double
+    let savings: Double
+}
+
+// MARK: - generate-plans Response
+
+struct PlansResponse: Codable {
+    let baseline: BaselinePlan
+    let plans: ThreePlans
+    let userTier: String                  // "in_debt", "beginner", "intermediate", "advanced"
+    let maxPossibleRate: Double
+    let critical: Bool
+    let currentNetWorth: Double
+    let currentAge: Int
+    let assumptions: PlanAssumptions?
+}
+
+struct BaselinePlan: Codable {
+    let savingsRate: Double
+    let monthlySave: Double
+    let projection1y: Double
+    let projection5y: Double
+    let projection10y: Double
+
+    // .convertFromSnakeCase capitalises the letter after a digit boundary:
+    // "projection_1y" → "projection1Y" (capital Y), not "projection1y".
+    // Raw values here must match what the strategy actually produces.
+    enum CodingKeys: String, CodingKey {
+        case savingsRate
+        case monthlySave
+        case projection1y  = "projection1Y"
+        case projection5y  = "projection5Y"
+        case projection10y = "projection10Y"
     }
 }
 
-struct FireGoalPlan: Codable {
-    let retirementAge: Int
+struct ThreePlans: Codable {
+    let steady: PlanDetail
+    let recommended: PlanDetail
+    let accelerate: PlanDetail
+}
+
+struct PlanDetail: Codable, Identifiable {
+    var id: String { "\(savingsRate)" }
     let savingsRate: Double
-    let monthlySavings: Double
-    let feasibility: String                 // "comfortable", "balanced", "aggressive", "unrealistic"
+    let monthlySave: Double
+    let monthlySpend: Double
+    let flexibleSpend: Double
+    let extraPerMonth: Double
+    let flexibleCompressionPct: Double
+    let projection1y: Double
+    let projection5y: Double
+    let projection10y: Double
+    let gainVsBaseline10y: Double
+    let feasibility: String               // "easy", "moderate", "challenging", "extreme"
+    let status: String                    // "on_track", "breakeven", "deficit"
+
+    // .convertFromSnakeCase capitalises the letter after a digit boundary:
+    // "projection_1y" → "projection1Y" (capital Y), "gain_vs_baseline_10y" → "gainVsBaseline10Y".
+    enum CodingKeys: String, CodingKey {
+        case savingsRate
+        case monthlySave
+        case monthlySpend
+        case flexibleSpend
+        case extraPerMonth
+        case flexibleCompressionPct
+        case projection1y          = "projection1Y"
+        case projection5y          = "projection5Y"
+        case projection10y         = "projection10Y"
+        case gainVsBaseline10y     = "gainVsBaseline10Y"
+        case feasibility
+        case status
+    }
 }
 
-struct IncomeGrowthHint: Codable {
-    let requiredIncome: Double
-    let increasePercent: Double
-    let targetRate: Double
+struct PlanAssumptions: Codable {
+    let nominalReturn: Double
+    let inflation: Double
+    let realReturn: Double
 }
 
-struct FireGoalMeta: Codable {
-    let timestamp: String
-    let userId: String
-    let returnRateAssumption: Double
-    let withdrawalRate: Double
-    let inputs: FireGoalInputs
+// MARK: - generate-spending-plan Response
+
+struct SpendingPlanResponse: Codable {
+    let month: String
+    let planRate: Double
+    let planName: String
+
+    let totalIncome: Double
+    let totalSavings: Double
+    let totalSpend: Double
+
+    let fixedBudget: FixedBudget
+    let flexibleBudget: FlexibleBudget
+
+    let fixedExceedsBudget: Bool
+
+    let ratios: BudgetRatios?
 }
 
-struct FireGoalInputs: Codable {
-    let currentAge: Int
-    let targetRetirementAge: Int
-    let desiredMonthlyExpenses: Double
+struct FixedBudget: Codable {
+    let total: Double
+    let items: [FixedBudgetItem]
+}
+
+struct FixedBudgetItem: Codable, Identifiable {
+    var id: String { name }
+    let name: String
+    let pfcDetailed: String?
+    let monthlyAmount: Double
+    let isUserCorrected: Bool
+}
+
+struct FlexibleBudget: Codable {
+    let total: Double
+    let items: [FlexibleBudgetItem]
+}
+
+struct FlexibleBudgetItem: Codable, Identifiable {
+    var id: String { subcategory }
+    let subcategory: String
+    let suggestedAmount: Double
+    let historicalAvg: Double
+    let changePct: Double
+}
+
+struct BudgetRatios: Codable {
+    let savings: Double
+    let fixed: Double
+    let flexible: Double
+}
+
+// MARK: - generate-plans Request (sent from client)
+
+struct GeneratePlansRequest: Encodable {
+    let currentSavingsRate: Double
+    let avgMonthlyIncome: Double
+    let avgMonthlySavings: Double
+    let avgMonthlyFixed: Double
+    let avgMonthlyFlexible: Double
     let currentNetWorth: Double
-    let monthlyIncome: Double
-    let currentMonthlyExpenses: Double
-    let netWorthSource: String
-}
-
-// MARK: - save-fire-goal Request & Response
-
-struct SaveFireGoalRequest: Encodable {
     let currentAge: Int
-    let targetRetirementAge: Int
-    let desiredMonthlyExpenses: Double
-    let fireNumber: Double
-    let requiredMonthlyContribution: Double
-    let requiredSavingsRate: Double
-    let selectedPlan: String                // "current", "plan_a", "plan_b", "recommended"
-    let adjustmentPhase: Int
-    let adjustmentPhaseSub: String
-    let adjustmentStrategy: String
 
     enum CodingKeys: String, CodingKey {
+        case currentSavingsRate = "current_savings_rate"
+        case avgMonthlyIncome = "avg_monthly_income"
+        case avgMonthlySavings = "avg_monthly_savings"
+        case avgMonthlyFixed = "avg_monthly_fixed"
+        case avgMonthlyFlexible = "avg_monthly_flexible"
+        case currentNetWorth = "current_net_worth"
         case currentAge = "current_age"
-        case targetRetirementAge = "target_retirement_age"
-        case desiredMonthlyExpenses = "desired_monthly_expenses"
-        case fireNumber = "fire_number"
-        case requiredMonthlyContribution = "required_monthly_contribution"
-        case requiredSavingsRate = "required_savings_rate"
-        case selectedPlan = "selected_plan"
-        case adjustmentPhase = "adjustment_phase"
-        case adjustmentPhaseSub = "adjustment_phase_sub"
-        case adjustmentStrategy = "adjustment_strategy"
     }
 }
 
-struct SaveFireGoalResponse: Codable {
-    let goalId: String
-    let userId: String
-    let targetRetirementAge: Int
-    let fireNumber: Double
-    let requiredSavingsRate: Double
-    let requiredMonthlyContribution: Double
-    let selectedPlan: String
-    let adjustmentPhase: Int?
-    let adjustmentPhaseSub: String?
-    let isActive: Bool
-}
+// MARK: - generate-spending-plan Request (sent from client)
 
-// MARK: - calculate-avg-spending Response (extended for budget setup)
-
-struct AvgSpendingResponse: Codable {
-    let avgMonthlySpending: Double
-    let avgMonthlyNeeds: Double
-    let avgMonthlyWants: Double
-    let avgMonthlyIncomeDetected: Double
-    let monthsAnalyzed: Int
-    let outliersRemoved: Int
-    let incomeDiscrepancy: Bool
-    let manualIncome: Double
-    let monthlyBreakdown: [MonthlySpendingBreakdown]
-    let fallback: Bool
-}
-
-struct MonthlySpendingBreakdown: Codable {
+struct GenerateSpendingPlanRequest: Encodable {
+    let selectedPlanRate: Double
+    let selectedPlanName: String
+    let avgMonthlyIncome: Double
+    let fixedExpenses: [FixedExpenseInput]
+    let flexibleBreakdown: [FlexibleBreakdownInput]
     let month: String
-    let needs: Double
-    let wants: Double
-    let total: Double
+
+    enum CodingKeys: String, CodingKey {
+        case selectedPlanRate = "selected_plan_rate"
+        case selectedPlanName = "selected_plan_name"
+        case avgMonthlyIncome = "avg_monthly_income"
+        case fixedExpenses = "fixed_expenses"
+        case flexibleBreakdown = "flexible_breakdown"
+        case month
+    }
 }
 
-// MARK: - generate-financial-diagnosis Response
+struct FixedExpenseInput: Encodable {
+    let name: String
+    let pfcDetailed: String?
+    let monthlyAmount: Double
+    let isUserCorrected: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case pfcDetailed = "pfc_detailed"
+        case monthlyAmount = "monthly_amount"
+        case isUserCorrected = "is_user_corrected"
+    }
+}
+
+struct FlexibleBreakdownInput: Encodable {
+    let subcategory: String
+    let avgMonthlyAmount: Double
+    let shareOfFlexible: Double
+
+    enum CodingKeys: String, CodingKey {
+        case subcategory
+        case avgMonthlyAmount = "avg_monthly_amount"
+        case shareOfFlexible = "share_of_flexible"
+    }
+}
+
+// MARK: - Financial Diagnosis (kept from V1, still uses existing AI function)
 
 struct FinancialDiagnosisResponse: Codable {
     let metrics: DiagnosisMetrics
@@ -159,34 +290,50 @@ struct AIDiagnosis: Codable {
 
 struct DiagnosisInsight: Codable, Identifiable {
     var id: String { "\(type)-\(title)" }
-    let type: String                        // "positive", "warning", "tip"
+    let type: String                      // "positive", "warning", "tip"
     let title: String
     let description: String
+}
+
+// MARK: - Diagnosis Request (adapted for V2 stats output)
+
+struct DiagnosisRequestBody: Encodable {
+    let manualIncome: Double
+    let avgMonthlySpending: Double
+    let avgMonthlyNeeds: Double           // mapped from fixed
+    let avgMonthlyWants: Double           // mapped from flexible
+    let avgMonthlyIncomeDetected: Double
+    let monthsAnalyzed: Int
+    let monthlyBreakdown: [MonthlyBreakdownForDiagnosis]
+    let incomeDiscrepancy: Bool
+    let fallback: Bool
+    let plaidNetWorth: Double
+    let age: Int
 
     enum CodingKeys: String, CodingKey {
-        case type, title, description
+        case manualIncome = "manual_income"
+        case avgMonthlySpending = "avg_monthly_spending"
+        case avgMonthlyNeeds = "avg_monthly_needs"
+        case avgMonthlyWants = "avg_monthly_wants"
+        case avgMonthlyIncomeDetected = "avg_monthly_income_detected"
+        case monthsAnalyzed = "months_analyzed"
+        case monthlyBreakdown = "monthly_breakdown"
+        case incomeDiscrepancy = "income_discrepancy"
+        case fallback
+        case plaidNetWorth = "plaid_net_worth"
+        case age
     }
 }
 
-// MARK: - generate-monthly-budget Request & Response
-
-struct GenerateMonthlyBudgetRequest: Encodable {
+struct MonthlyBreakdownForDiagnosis: Encodable {
     let month: String
-    let needsRatio: Double
-    let wantsRatio: Double
-    let savingsRatio: Double
-    let source: String                      // "setup" for initial, "manual" for later adjustments
-
-    enum CodingKeys: String, CodingKey {
-        case month
-        case needsRatio = "needs_ratio"
-        case wantsRatio = "wants_ratio"
-        case savingsRatio = "savings_ratio"
-        case source
-    }
+    let needs: Double
+    let wants: Double
+    let total: Double
 }
 
-// MARK: - get-user-profile Response (for budget setup)
+// MARK: - get-user-profile Response (unchanged from V1)
+
 struct UserProfileForBudget: Codable {
     let monthlyIncome: Double
     let age: Int
@@ -194,20 +341,4 @@ struct UserProfileForBudget: Codable {
     let plaidNetWorth: Double?
     let hasLinkedBank: Bool
     let currencyCode: String
-}
-
-// MARK: - Spending Summary (subcategory breakdown for Step 4)
-
-struct SpendingSummaryResponse: Codable {
-    let month: String
-    let categories: [SpendingCategory]
-    let needsTotal: Double
-    let wantsTotal: Double
-}
-
-struct SpendingCategory: Codable, Identifiable {
-    var id: String { name }
-    let name: String
-    let amount: Double
-    let flamoraCategory: String             // "needs" or "wants"
 }

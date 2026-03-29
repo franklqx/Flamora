@@ -96,7 +96,20 @@ class APIService {
         queryParams: [String: String] = [:],
         body: Data? = nil
     ) async throws -> URLRequest {
-        let session = try await SupabaseManager.shared.client.auth.session
+        // Proactively refresh session if token is expiring within 60s
+        let session: Session
+        do {
+            let current = try await SupabaseManager.shared.client.auth.session
+            if current.expiresAt <= Date().timeIntervalSince1970 + 60 {
+                session = try await SupabaseManager.shared.client.auth.refreshSession()
+            } else {
+                session = current
+            }
+        } catch {
+            // If session fetch fails, try refreshing once
+            session = try await SupabaseManager.shared.client.auth.refreshSession()
+        }
+
         var urlComponents = URLComponents(string: "\(baseURL)/\(function)")!
         if !queryParams.isEmpty {
             urlComponents.queryItems = queryParams.map { URLQueryItem(name: $0.key, value: $0.value) }
@@ -115,6 +128,38 @@ class APIService {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
+
+        // On 401, log response body and retry once with refreshed session
+        if httpResponse.statusCode == 401 {
+            let bodyText = String(data: data, encoding: .utf8) ?? "(\(data.count) bytes)"
+            guard let originalURL = request.url else {
+                print("❌ [APIService] 401 response body: \(bodyText)")
+                throw APIError.httpError(401)
+            }
+            let function = originalURL.lastPathComponent
+            print("⚠️ [APIService] 401 for \(function) — body: \(bodyText)")
+            print("⚠️ [APIService] Refreshing session and retrying...")
+            let refreshedSession = try await SupabaseManager.shared.client.auth.refreshSession()
+            var retryRequest = request
+            retryRequest.setValue("Bearer \(refreshedSession.accessToken)", forHTTPHeaderField: "Authorization")
+            let (retryData, retryResponse) = try await URLSession.shared.data(for: retryRequest)
+            guard let retryHttp = retryResponse as? HTTPURLResponse else {
+                throw APIError.invalidResponse
+            }
+            guard (200...299).contains(retryHttp.statusCode) else {
+                let retryBody = String(data: retryData, encoding: .utf8) ?? "(\(retryData.count) bytes)"
+                print("❌ [APIService] Retry also failed with \(retryHttp.statusCode) — body: \(retryBody)")
+                if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: retryData) {
+                    throw APIError.serverError(errorResponse.error.message)
+                }
+                throw APIError.httpError(retryHttp.statusCode)
+            }
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            let wrapper = try decoder.decode(APIResponse<T>.self, from: retryData)
+            return wrapper.data
+        }
+
         guard (200...299).contains(httpResponse.statusCode) else {
             if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
                 throw APIError.serverError(errorResponse.error.message)

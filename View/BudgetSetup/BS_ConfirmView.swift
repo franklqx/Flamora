@@ -2,8 +2,8 @@
 //  BS_ConfirmView.swift
 //  Flamora app
 //
-//  Budget Setup — Step 5: Confirm & Save
-//  Final review before entering the main app
+//  Budget Setup — Step 6: Confirm & Save
+//  V2: Budget ring + extra savings compound growth + plan details
 //
 
 import SwiftUI
@@ -12,37 +12,35 @@ struct BS_ConfirmView: View {
     @Bindable var viewModel: BudgetSetupViewModel
     var onComplete: () -> Void
 
-    // Gradient
-    private let gradientColors = [Color(hex: "F5D76E"), Color(hex: "E8829B"), Color(hex: "B4A0E5")]
+    private let gradientColors = [Color(hex: "F5C842"), Color(hex: "E88BC4"), Color(hex: "B4A0E5")]
+    private let purpleColor = Color(hex: "C084FC")
+    private let tealColor = Color(hex: "34D399")
+    private let goldColor = Color(hex: "FBBF24")
 
-    // Animation
     @State private var showContent = false
     @State private var ringProgress: Double = 0
-    @State private var showInfoSheet = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            Color(hex: "0A0A0C").ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 20) {
-                    Spacer().frame(height: 56)
+                    Spacer().frame(height: 60)
 
-                    // Header
                     headerSection
                         .padding(.horizontal, 26)
 
-                    // Budget summary ring
-                    budgetSummaryRing
-                        .padding(.horizontal, 26)
+                    if let plan = viewModel.spendingPlan, let selected = viewModel.selectedPlan {
+                        budgetSummaryRing(plan: plan, selectedPlan: selected)
+                            .padding(.horizontal, 26)
 
-                    // FIRE impact card
-                    fireImpactCard
-                        .padding(.horizontal, 26)
+                        planDetailsCard(plan: plan, selectedPlan: selected)
+                            .padding(.horizontal, 26)
 
-                    // Tip card
-                    tipCard
-                        .padding(.horizontal, 26)
+                        tipCard
+                            .padding(.horizontal, 26)
+                    }
 
                     Spacer().frame(height: 140)
                 }
@@ -50,290 +48,156 @@ struct BS_ConfirmView: View {
             .opacity(showContent ? 1 : 0)
             .offset(y: showContent ? 0 : 20)
             .onAppear {
-                withAnimation(.easeOut(duration: 0.6)) {
-                    showContent = true
-                }
-                withAnimation(.easeOut(duration: 1.2).delay(0.3)) {
-                    ringProgress = 1.0
-                }
+                withAnimation(.easeOut(duration: 0.6)) { showContent = true }
+                withAnimation(.easeOut(duration: 1.2).delay(0.3)) { ringProgress = 1.0 }
             }
 
-            // Sticky CTA
             stickyBottomCTA
         }
-        .sheet(isPresented: $showInfoSheet) { infoSheet }
     }
 
     // MARK: - Header
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Button {
-                viewModel.goBack()
-            } label: {
+            Button { viewModel.goBack() } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
                     Text("Back")
                 }
                 .font(.system(size: 14))
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(Color(hex: "ABABAB"))
             }
             .padding(.bottom, 8)
 
-            // Checkmark icon
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(hex: "1C1C1E"))
-                    .frame(width: 44, height: 44)
-                Image(systemName: "checkmark")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(Color(hex: "4ADE80"))
-            }
-            .padding(.bottom, 4)
-
-            Text("Your FIRE Plan")
+            Text("Your Plan")
                 .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(.white)
-
-            Text("Review and confirm your budget.")
-                .font(.system(size: 14))
-                .foregroundStyle(.white.opacity(0.45))
+                .foregroundStyle(Color(hex: "F2F0ED"))
         }
     }
 
     // MARK: - Budget Summary Ring
 
-    private var budgetSummaryRing: some View {
-        VStack(spacing: 16) {
-            Text("MONTHLY BUDGET")
-                .font(.system(size: 9, weight: .semibold))
-                .tracking(0.08 * 9)
-                .foregroundStyle(.white.opacity(0.3))
+    private func budgetSummaryRing(plan: SpendingPlanResponse, selectedPlan: PlanDetail) -> some View {
+        let budgetTotal = plan.fixedBudget.total + plan.flexibleBudget.total
+        let fixedFrac = budgetTotal > 0 ? plan.fixedBudget.total / budgetTotal : 0.5
 
-            // Ring chart
+        return VStack(spacing: 20) {
             ZStack {
-                // Background ring
+                // Background track
                 Circle()
                     .stroke(Color.white.opacity(0.05), lineWidth: 20)
-                    .frame(width: 160, height: 160)
+                    .frame(width: 200, height: 200)
 
-                // Needs arc (purple)
-                let needsFraction = viewModel.needsRatio / 100
-                let wantsFraction = viewModel.wantsRatio / 100
-                let savingsFraction = viewModel.savingsRatio / 100
-
+                // Fixed arc (purple) with round caps
                 Circle()
-                    .trim(from: 0, to: needsFraction * ringProgress)
-                    .stroke(Color(hex: "B4A0E5"), style: StrokeStyle(lineWidth: 20, lineCap: .butt))
-                    .frame(width: 160, height: 160)
+                    .trim(from: 0, to: fixedFrac * ringProgress)
+                    .stroke(purpleColor, style: StrokeStyle(lineWidth: 20, lineCap: .round))
+                    .frame(width: 200, height: 200)
                     .rotationEffect(.degrees(-90))
 
-                // Wants arc (teal)
+                // Flexible arc (teal) with round caps
                 Circle()
-                    .trim(from: needsFraction, to: (needsFraction + wantsFraction) * ringProgress)
-                    .stroke(Color(hex: "6BB8C4"), style: StrokeStyle(lineWidth: 20, lineCap: .butt))
-                    .frame(width: 160, height: 160)
+                    .trim(from: fixedFrac * ringProgress, to: ringProgress)
+                    .stroke(tealColor, style: StrokeStyle(lineWidth: 20, lineCap: .round))
+                    .frame(width: 200, height: 200)
                     .rotationEffect(.degrees(-90))
 
-                // Savings arc (gradient approximation — use pink)
-                Circle()
-                    .trim(from: needsFraction + wantsFraction, to: (needsFraction + wantsFraction + savingsFraction) * ringProgress)
-                    .stroke(Color(hex: "E8829B"), style: StrokeStyle(lineWidth: 20, lineCap: .butt))
-                    .frame(width: 160, height: 160)
-                    .rotationEffect(.degrees(-90))
-
-                // Center text
-                VStack(spacing: 2) {
-                    Text("$\(formattedInt(viewModel.monthlyIncome))")
-                        .font(.system(size: 22, weight: .black))
-                        .foregroundStyle(.white)
+                VStack(spacing: 4) {
+                    Text("MONTHLY BUDGET")
+                        .font(.system(size: 11, weight: .semibold))
+                        .tracking(0.8)
+                        .foregroundStyle(.white.opacity(0.5))
+                    Text("$\(formattedInt(selectedPlan.monthlySpend))")
+                        .font(.system(size: 30, weight: .bold))
+                        .foregroundStyle(Color(hex: "F2F0ED"))
                         .monospacedDigit()
-                    Text("income")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.4))
                 }
             }
 
-            // Legend rows
-            VStack(spacing: 10) {
-                legendRow(
-                    color: Color(hex: "B4A0E5"),
-                    label: "Needs",
-                    percent: Int(viewModel.needsRatio),
-                    amount: viewModel.needsBudget
-                )
-                legendRow(
-                    color: Color(hex: "6BB8C4"),
-                    label: "Wants",
-                    percent: Int(viewModel.wantsRatio),
-                    amount: viewModel.wantsBudget
-                )
-                legendRow(
-                    color: Color(hex: "E8829B"),
-                    label: "Savings",
-                    percent: Int(viewModel.savingsRatio),
-                    amount: viewModel.savingsAmount
-                )
+            // Legend — side by side
+            HStack(spacing: 32) {
+                legendItem(color: purpleColor, label: "Fixed", amount: plan.fixedBudget.total)
+                legendItem(color: tealColor, label: "Flexible", amount: plan.flexibleBudget.total)
             }
         }
-        .padding(20)
+        .padding(24)
         .frame(maxWidth: .infinity)
-        .background(Color(hex: "1C1C1E"))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .background(Color.white.opacity(0.03))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color(hex: "2A2A2E"), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
     }
 
     @ViewBuilder
-    private func legendRow(color: Color, label: String, percent: Int, amount: Double) -> some View {
-        HStack {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
-            Text(label)
-                .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.6))
-            Spacer()
-            Text("\(percent)%")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.5))
-                .monospacedDigit()
-                .frame(width: 40, alignment: .trailing)
-            Text("$\(formattedInt(amount))")
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.white)
-                .monospacedDigit()
-                .frame(width: 70, alignment: .trailing)
+    private func legendItem(color: Color, label: String, amount: Double) -> some View {
+        HStack(spacing: 8) {
+            Circle().fill(color).frame(width: 8, height: 8)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(hex: "ABABAB"))
+                Text("$\(formattedInt(amount))")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Color(hex: "F2F0ED"))
+                    .monospacedDigit()
+            }
         }
     }
 
-    // MARK: - FIRE Impact Card
+    // MARK: - Plan Details Card
 
-    private var fireImpactCard: some View {
-        let targetAge = viewModel.selectedPlan?.retirementAge ?? 0
-        let diff = targetAge - viewModel.freedomAge
+    private func planDetailsCard(plan: SpendingPlanResponse, selectedPlan: PlanDetail) -> some View {
+        let income = viewModel.spendingStats?.avgMonthlyIncome ?? viewModel.monthlyIncome
+        let rows: [(label: String, value: String, isRate: Bool)] = [
+            ("Plan", viewModel.selectedPlanName, false),
+            ("Monthly income", "$\(formattedInt(income))", false),
+            ("Monthly budget", "$\(formattedInt(selectedPlan.monthlySpend))", false),
+            ("Monthly savings", "$\(formattedInt(selectedPlan.monthlySave))", false),
+            ("Savings rate", formattedPct(selectedPlan.savingsRate), true)
+        ]
 
-        return VStack(alignment: .leading, spacing: 16) {
-            Text("FIRE IMPACT")
-                .font(.system(size: 9, weight: .semibold))
-                .tracking(0.08 * 9)
-                .foregroundStyle(.white.opacity(0.3))
-
-            // Large age
-            Text("Age \(viewModel.freedomAge)")
-                .font(.system(size: 40, weight: .black))
-                .foregroundStyle(.white)
-                .monospacedDigit()
-
-            // Status message
-            Group {
-                if diff == 0 {
-                    Text("You'll reach financial freedom at your target age")
-                } else if diff > 0 {
-                    Text("You'll reach freedom \(diff) \(diff == 1 ? "year" : "years") ahead of your target")
-                } else {
-                    Text("\(abs(diff)) \(abs(diff) == 1 ? "year" : "years") behind your target — consider increasing savings")
+        return VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                if index > 0 {
+                    Rectangle()
+                        .fill(Color.white.opacity(0.05))
+                        .frame(height: 1)
                 }
-            }
-            .font(.system(size: 13))
-            .foregroundStyle(.white.opacity(0.5))
-
-            // Three stats row
-            HStack(spacing: 0) {
-                statItem(
-                    label: "Savings Rate",
-                    value: "\(Int(viewModel.savingsRatio))%",
-                    color: viewModel.savingsRatio >= (viewModel.selectedPlan?.savingsRate ?? 0)
-                        ? Color(hex: "4ADE80") : Color(hex: "FB923C")
-                )
-
-                Rectangle()
-                    .fill(Color.white.opacity(0.06))
-                    .frame(width: 1, height: 36)
-
-                statItem(
-                    label: "Monthly Savings",
-                    value: "$\(formattedInt(viewModel.savingsAmount))",
-                    color: .white
-                )
-
-                Rectangle()
-                    .fill(Color.white.opacity(0.06))
-                    .frame(width: 1, height: 36)
-
-                statItem(
-                    label: "FIRE Number",
-                    value: "$\(formattedCompact(viewModel.fireGoalResult?.fireNumber ?? 0))",
-                    color: .white
-                )
-            }
-
-            // Disclaimer link
-            Button { showInfoSheet = true } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 10))
-                    Text("Based on 9% annual return assumption")
-                        .font(.system(size: 10))
+                HStack {
+                    Text(row.label)
+                        .font(.system(size: 14))
+                        .foregroundStyle(.white.opacity(0.45))
+                    Spacer()
+                    Text(row.value)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(row.isRate ? goldColor : Color(hex: "F2F0ED"))
+                        .monospacedDigit()
                 }
-                .foregroundStyle(.white.opacity(0.25))
+                .padding(.vertical, 12)
+                .padding(.horizontal, 16)
             }
         }
-        .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(Color(hex: "1C1C1E"))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(hex: "F5D76E").opacity(0.05),
-                                    Color(hex: "B4A0E5").opacity(0.05)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .background(Color.white.opacity(0.03))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color(hex: "2A2A2E"), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
-    }
-
-    @ViewBuilder
-    private func statItem(label: String, value: String, color: Color) -> some View {
-        VStack(spacing: 4) {
-            Text(label)
-                .font(.system(size: 9, weight: .semibold))
-                .tracking(0.08 * 9)
-                .foregroundStyle(.white.opacity(0.3))
-            Text(value)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(color)
-                .monospacedDigit()
-                .minimumScaleFactor(0.7)
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Tip Card
 
     private var tipCard: some View {
         HStack(alignment: .top, spacing: 12) {
-            Text("💡")
+            Text("\u{1F4A1}")
                 .font(.system(size: 16))
-
-            Text("You can always adjust your budget and FIRE goal later in Settings. We'll track your progress and send alerts when you're close to your limits.")
+            Text("You can adjust your budget anytime in Settings.")
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.45))
+                .foregroundStyle(.white.opacity(0.35))
                 .lineSpacing(3)
         }
         .padding(16)
@@ -350,102 +214,44 @@ struct BS_ConfirmView: View {
 
     private var stickyBottomCTA: some View {
         VStack(spacing: 0) {
-            LinearGradient(
-                colors: [Color.black.opacity(0), Color.black],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 28)
+            LinearGradient(colors: [Color(hex: "0A0A0C").opacity(0), Color(hex: "0A0A0C")], startPoint: .top, endPoint: .bottom)
+                .frame(height: 28)
 
-            VStack(spacing: 8) {
+            VStack(spacing: 0) {
                 Button {
                     Task {
                         let success = await viewModel.saveFinalBudget()
-                        if success {
-                            onComplete()
-                        }
+                        if success { onComplete() }
                     }
                 } label: {
                     HStack(spacing: 8) {
                         if viewModel.isSaving {
-                            ProgressView()
-                                .tint(.white)
+                            ProgressView().tint(.white)
                         }
-                        Text(viewModel.isSaving ? "Saving..." : "Start My Journey 🚀")
+                        Text(viewModel.isSaving ? "Saving..." : "Start My Journey")
                             .font(.system(size: 15, weight: .semibold))
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.black)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
                     .background(
-                        LinearGradient(
-                            colors: gradientColors,
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+                        LinearGradient(colors: gradientColors, startPoint: .topLeading, endPoint: .bottomTrailing)
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 100))
-                    .shadow(color: Color(hex: "E8829B").opacity(0.25), radius: 16, y: 8)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: Color(hex: "E88BC4").opacity(0.25), radius: 16, y: 8)
                 }
                 .disabled(viewModel.isSaving)
 
-                Text("Your budget and FIRE goal will be saved")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.3))
-
-                // Error message
                 if let error = viewModel.saveError {
                     Text(error)
                         .font(.system(size: 12))
-                        .foregroundStyle(Color(hex: "EF4444"))
-                        .padding(.top, 4)
+                        .foregroundStyle(Color(hex: "F56B6B"))
+                        .padding(.top, 8)
                 }
             }
             .padding(.horizontal, 26)
             .padding(.bottom, 16)
-            .background(Color.black)
-        }
-    }
-
-    // MARK: - Info Sheet
-
-    private var infoSheet: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("How this is calculated")
-                .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(.white)
-                .padding(.bottom, 4)
-
-            infoRow(label: "Annual return assumption", value: "9%")
-            infoRow(label: "Withdrawal rate", value: "4% (25× rule)")
-            if let result = viewModel.fireGoalResult {
-                infoRow(label: "Your FIRE number", value: "$\(formattedCompact(result.fireNumber))")
-            }
-            infoRow(label: "Monthly savings", value: "$\(formattedInt(viewModel.savingsAmount))")
-
-            Divider().background(Color.white.opacity(0.06))
-
-            Text("Based on the historical nominal return of the S&P 500 (~10% annually since 1957), adjusted for estimated fees. Projections assume consistent monthly contributions and reinvested returns. Actual results vary with market conditions. This tool provides estimates for planning purposes only and does not constitute financial advice. Past performance does not guarantee future results.")
-                .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.3))
-                .lineSpacing(3)
-        }
-        .padding(24)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .presentationDetents([.medium])
-        .presentationBackground(Color(white: 0.12))
-    }
-
-    @ViewBuilder
-    private func infoRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.system(size: 14))
-                .foregroundStyle(.white.opacity(0.5))
-            Spacer()
-            Text(value)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(.white)
+            .background(Color(hex: "0A0A0C"))
         }
     }
 
@@ -458,12 +264,14 @@ struct BS_ConfirmView: View {
         return formatter.string(from: NSNumber(value: value)) ?? "\(Int(value))"
     }
 
+    private func formattedPct(_ value: Double) -> String {
+        if value == value.rounded() { return "\(Int(value))%" }
+        return String(format: "%.1f%%", value)
+    }
+
     private func formattedCompact(_ value: Double) -> String {
-        if value >= 1_000_000 {
-            return String(format: "%.1fM", value / 1_000_000)
-        } else if value >= 1_000 {
-            return "\(Int(value / 1_000))K"
-        }
+        if value >= 1_000_000 { return String(format: "%.1fM", value / 1_000_000) }
+        if value >= 1_000 { return "\(Int(value / 1_000))K" }
         return formattedInt(value)
     }
 }

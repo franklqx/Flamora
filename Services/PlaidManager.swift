@@ -7,6 +7,7 @@
 
 import Foundation
 import Supabase
+internal import Functions
 
 @Observable
 class PlaidManager {
@@ -80,6 +81,12 @@ class PlaidManager {
 
         } catch let decodingError as DecodingError {
             print("🏦 [PlaidManager] ❌ JSON decode failed: \(decodingError)")
+        } catch let error as FunctionsError {
+            print("🏦 [PlaidManager] ❌ FunctionsError: \(error)")
+            if case .httpError(let code, let data) = error {
+                let body = String(data: data, encoding: .utf8) ?? "non-UTF8 (\(data.count) bytes)"
+                print("🏦 [PlaidManager] ❌ HTTP \(code) body: \(body)")
+            }
         } catch {
             print("🏦 [PlaidManager] ❌ startLinkFlow error: \(error)")
         }
