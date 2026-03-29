@@ -45,8 +45,8 @@ struct OB_OnboardingHeader: View {
             .frame(height: 44)
 
             Text("\(current) of \(total)")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(Color.white.opacity(0.5))
+                .font(.label)
+                .foregroundColor(AppColors.overlayWhiteOnPhoto)
                 .tracking(0.8)
                 .lineLimit(1)
                 .padding(.leading, AppSpacing.sm)

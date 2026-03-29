@@ -17,7 +17,11 @@ class SubscriptionManager {
 
     private let entitlementId = "Flamora Pro"
 
-    private init() {}
+    private init() {
+        #if DEBUG
+        isPremium = true
+        #endif
+    }
 
     // MARK: - App 启动时调用
     static func configure() {
@@ -26,6 +30,9 @@ class SubscriptionManager {
 
     // MARK: - 检查订阅状态
     func checkStatus() async {
+        #if DEBUG
+        return  // mock 模式：跳过真实 API 调用
+        #endif
         print("🔍 [SubscriptionManager] checkStatus() called")
         do {
             let info = try await Purchases.shared.customerInfo()

@@ -34,7 +34,7 @@ struct OB_SignInView: View {
                 }
                 .overlay {
                     Text("FLAMORA")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.caption)
                         .tracking(3)
                         .foregroundColor(AppColors.textSecondary)
                 }
@@ -62,7 +62,7 @@ struct OB_SignInView: View {
                                 .font(.system(size: 20))
                                 .foregroundColor(.black)
                             Text("Sign in with Apple")
-                                .font(.system(size: 16, weight: .medium))
+                                .font(.bodyRegular)
                                 .foregroundColor(.black)
                         }
                         .frame(maxWidth: .infinity)
@@ -80,7 +80,7 @@ struct OB_SignInView: View {
                                 .font(.system(size: 20, weight: .bold, design: .rounded))
                                 .foregroundColor(Color(hex: "#4285F4"))
                             Text("Sign in with Google")
-                                .font(.system(size: 16, weight: .medium))
+                                .font(.bodyRegular)
                                 .foregroundColor(.black)
                         }
                         .frame(maxWidth: .infinity)
@@ -97,7 +97,7 @@ struct OB_SignInView: View {
                         .fill(AppColors.borderDefault)
                         .frame(height: 1)
                     Text("OR SIGN UP WITH EMAIL")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.cardRowMeta)
                         .foregroundColor(AppColors.textTertiary)
                         .fixedSize()
                     Rectangle()
@@ -169,10 +169,10 @@ struct OB_SignInView: View {
                     // MARK: - Terms
                     VStack(spacing: 2) {
                         Text("BY CONTINUING, YOU AGREE TO OUR")
-                            .font(.system(size: 10, weight: .regular))
+                            .font(.label)
                             .foregroundColor(AppColors.textTertiary)
                         Text("TERMS & PRIVACY")
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.label)
                             .foregroundColor(AppColors.textTertiary)
                             .underline()
                     }

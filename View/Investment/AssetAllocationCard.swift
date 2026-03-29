@@ -7,9 +7,33 @@ import SwiftUI
 
 struct AssetAllocationCard: View {
     let allocation: Allocation
+    @State private var showDetail = false
 
     private var totalAmount: Double {
-        allocation.stocks.amount + allocation.bonds.amount + allocation.cash.amount
+        allocation.stocks.amount + allocation.bonds.amount + allocation.cash.amount + (allocation.other?.amount ?? 0)
+    }
+
+    private struct AllocRow {
+        let title: String
+        let percent: Int
+        let amount: Double
+        let color: Color
+    }
+
+    private var sortedRows: [AllocRow] {
+        var rows = [
+            AllocRow(title: "U.S. Stocks", percent: allocation.stocks.percent, amount: allocation.stocks.amount, color: AppColors.chartSteelBlue),
+            AllocRow(title: "Crypto", percent: allocation.bonds.percent, amount: allocation.bonds.amount, color: AppColors.chartYellow),
+            AllocRow(title: "Cash", percent: allocation.cash.percent, amount: allocation.cash.amount, color: AppColors.chartSageGreen)
+        ]
+        if let other = allocation.other, other.percent > 0 {
+            rows.append(AllocRow(title: "Other", percent: other.percent, amount: other.amount, color: AppColors.chartCoral))
+        }
+        return rows.sorted { $0.percent > $1.percent }
+    }
+
+    private var allocationSegments: [ChartSegment] {
+        sortedRows.map { ChartSegment(percent: $0.percent, color: $0.color) }
     }
 
     var body: some View {
@@ -17,17 +41,19 @@ struct AssetAllocationCard: View {
             // Header
             HStack(spacing: 6) {
                 Text("ASSET ALLOCATION")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.cardHeader)
                     .foregroundColor(AppColors.textTertiary)
-                    .tracking(0.8)
+                    .tracking(AppTypography.Tracking.cardHeader)
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.miniLabel)
                     .foregroundColor(AppColors.textTertiary)
                 Spacer()
             }
+            .contentShape(Rectangle())
+            .onTapGesture { showDetail = true }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.top, AppSpacing.cardPadding)
-            .padding(.bottom, 12)
+            .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
 
             Rectangle()
                 .fill(AppColors.surfaceBorder)
@@ -43,40 +69,24 @@ struct AssetAllocationCard: View {
 
                     VStack(spacing: 1) {
                         Text("TOTAL")
-                            .font(.system(size: 9, weight: .bold))
+                            .font(.miniLabel)
                             .foregroundColor(AppColors.textTertiary)
-                            .tracking(0.5)
+                            .tracking(AppTypography.Tracking.miniUppercase)
                         Text(formatCompact(totalAmount))
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.inlineFigureBold)
                             .foregroundStyle(.white)
                     }
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    AllocationRow(
-                        title: "U.S. Stocks",
-                        percent: allocation.stocks.percent,
-                        amount: allocation.stocks.amount,
-                        color: AppColors.accentBlue
-                    )
-                    AllocationRow(
-                        title: "Cash",
-                        percent: allocation.cash.percent,
-                        amount: allocation.cash.amount,
-                        color: AppColors.accentGreen
-                    )
-                    AllocationRow(
-                        title: "Crypto",
-                        percent: allocation.bonds.percent,
-                        amount: allocation.bonds.amount,
-                        color: AppColors.accentAmber
-                    )
-                    AllocationRow(
-                        title: "Other",
-                        percent: max(100 - allocation.stocks.percent - allocation.bonds.percent - allocation.cash.percent, 0),
-                        amount: max(totalAmount * 0.02, 0),
-                        color: AppColors.accentPink
-                    )
+                    ForEach(sortedRows.indices, id: \.self) { i in
+                        AllocationRow(
+                            title: sortedRows[i].title,
+                            percent: sortedRows[i].percent,
+                            amount: sortedRows[i].amount,
+                            color: sortedRows[i].color
+                        )
+                    }
                 }
 
                 Spacer()
@@ -90,16 +100,9 @@ struct AssetAllocationCard: View {
             RoundedRectangle(cornerRadius: AppRadius.xl)
                 .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
         )
-    }
-
-    private var allocationSegments: [ChartSegment] {
-        let otherPct = max(100 - allocation.stocks.percent - allocation.bonds.percent - allocation.cash.percent, 0)
-        return [
-            ChartSegment(percent: allocation.stocks.percent, color: AppColors.accentBlue),
-            ChartSegment(percent: allocation.cash.percent,   color: AppColors.accentGreen),
-            ChartSegment(percent: allocation.bonds.percent,  color: AppColors.accentAmber),
-            ChartSegment(percent: otherPct,                  color: AppColors.accentPink)
-        ]
+        .fullScreenCover(isPresented: $showDetail) {
+            AssetAllocationDetailView(allocation: allocation)
+        }
     }
 
     private func formatCompact(_ value: Double) -> String {
@@ -123,10 +126,10 @@ private struct AllocationRow: View {
             Circle().fill(color).frame(width: 8, height: 8)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnoteSemibold)
                     .foregroundStyle(.white)
                 Text("\(percent)% · \(formatCurrency(amount))")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.cardRowMeta)
                     .foregroundColor(AppColors.textTertiary)
             }
         }
@@ -181,7 +184,7 @@ private struct ChartSegment { let percent: Int; let color: Color }
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         AssetAllocationCard(allocation: MockData.investmentData.allocation).padding()
     }
 }

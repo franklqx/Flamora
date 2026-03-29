@@ -19,10 +19,18 @@ class PlaidManager {
     var showBudgetSetup: Bool = false
     private var client: SupabaseClient { SupabaseManager.shared.client }
 
-    private init() {}
+    private init() {
+        #if DEBUG
+        hasLinkedBank = true
+        connectedInstitutionName = "Chase Bank"
+        #endif
+    }
 
     // MARK: - 从 user-profile 加载银行连接状态
     func loadStatus() async {
+        #if DEBUG
+        return  // mock 模式：跳过真实 API 调用
+        #endif
         print("🏦 [PlaidManager] loadStatus() called")
         do {
             let session = try await client.auth.session

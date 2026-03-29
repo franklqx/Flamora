@@ -52,10 +52,17 @@
 		CDAA00022FA0000000000001 /* CategoryDisplayHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA00012FA0000000000001 /* CategoryDisplayHelper.swift */; };
 		1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */; };
 		1508AF372F5D1A2600D59781 /* OB_BarChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1508AF362F5D1A2600D59781 /* OB_BarChartView.swift */; };
+		152BE0822F67A66100CACBBC /* SmoothPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152BE0812F67A66100CACBBC /* SmoothPath.swift */; };
+		152BE0842F67A66C00CACBBC /* GlassPillSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152BE0832F67A66C00CACBBC /* GlassPillSelector.swift */; };
+		152BE0862F67A67000CACBBC /* ChartInteractionLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152BE0852F67A67000CACBBC /* ChartInteractionLayer.swift */; };
+		152BE08A2F67A67200CACBBC /* NoDelayScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152BE0892F67A67100CACBBC /* NoDelayScrollView.swift */; };
 		152C19792F5D3C2C007E68AA /* OB_EditableAmountDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152C19782F5D3C2C007E68AA /* OB_EditableAmountDisplay.swift */; };
-		153CA3182F34E952001ED98E /* NetWorthCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3172F34E952001ED98E /* NetWorthCard.swift */; };
+		153CA3182F34E952001ED98E /* PortfolioCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3172F34E952001ED98E /* PortfolioCard.swift */; };
 		153CA31A2F34EDEC001ED98E /* TopHeaderBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3192F34EDEC001ED98E /* TopHeaderBar.swift */; };
 		153CA31C2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA31B2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift */; };
+		153CA3212F34E960001ED98E /* DailyQuoteCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3202F34E960001ED98E /* DailyQuoteCard.swift */; };
+		153CA3272F34E963001ED98F /* SavingsRateCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3242F34E963001ED98F /* SavingsRateCard.swift */; };
+		153CA32B2F34E965001ED990 /* BudgetPlanCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA32A2F34E965001ED990 /* BudgetPlanCard.swift */; };
 		153CA32C2F3562AC001ED98E /* SavingsTargetDetailView2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA32B2F3562AC001ED98E /* SavingsTargetDetailView2.swift */; };
 		1571A1D82F3C2A2C0024A729 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1571A1D62F3C2A2C0024A729 /* APIService.swift */; };
 		1571A1DA2F3C2A5B0024A729 /* OnboardingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1571A1D92F3C2A5B0024A729 /* OnboardingModels.swift */; };
@@ -81,9 +88,14 @@
 		15E21AEF2F33C3F600A9BB60 /* IncomeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AEE2F33C3F600A9BB60 /* IncomeCard.swift */; };
 		15E21AF12F33C40000A9BB60 /* BudgetCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF02F33C40000A9BB60 /* BudgetCard.swift */; };
 		15E21AF32F33F2AD00A9BB60 /* AccountsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF22F33F2AD00A9BB60 /* AccountsCard.swift */; };
+		15E21B102F33F31000A9BB70 /* AccountDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21B0F2F33F31000A9BB70 /* AccountDetailView.swift */; };
 		15E21AF52F33F2BE00A9BB60 /* AssetAllocationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */; };
-		15E21AF72F33F2C600A9BB60 /* PortfolioCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF62F33F2C600A9BB60 /* PortfolioCard.swift */; };
+		15E21B142F33F33000A9BB80 /* AssetAllocationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21B132F33F33000A9BB80 /* AssetAllocationDetailView.swift */; };
+		15E21AF82F34010000A9BB71 /* TransactionDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF72F34010000A9BB70 /* TransactionDetailSheet.swift */; };
+		15E21AFA2F34020000A9BB72 /* TransactionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF92F34020000A9BB73 /* TransactionRow.swift */; };
+		15E21AFC2F34030000A9BB74 /* AllTransactionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AFB2F34030000A9BB75 /* AllTransactionsView.swift */; };
 		15FF6EDA2F31096B0005F482 /* GradientButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED92F31043F0005F482 /* GradientButton.swift */; };
+		15FF6EDF2F3104500005F482 /* ConnectAccountCTAView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6EDE2F3104500005F482 /* ConnectAccountCTAView.swift */; };
 		15FF6EDB2F3109F40005F482 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED72F31033C0005F482 /* Colors.swift */; };
 		15FF6EE02F310A040005F482 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED82F3103F70005F482 /* Typography.swift */; };
 		AA5B00032F38500000001003 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = AA5B00022F38500000001002 /* Supabase */; };
@@ -154,10 +166,17 @@
 		150899A32F30F611003DDFBF /* Flamora appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899AD2F30F611003DDFBF /* Flamora appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1508AF362F5D1A2600D59781 /* OB_BarChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_BarChartView.swift; sourceTree = "<group>"; };
+		152BE0812F67A66100CACBBC /* SmoothPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmoothPath.swift; sourceTree = "<group>"; };
+		152BE0832F67A66C00CACBBC /* GlassPillSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassPillSelector.swift; sourceTree = "<group>"; };
+		152BE0852F67A67000CACBBC /* ChartInteractionLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartInteractionLayer.swift; sourceTree = "<group>"; };
+		152BE0892F67A67100CACBBC /* NoDelayScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoDelayScrollView.swift; sourceTree = "<group>"; };
 		152C19782F5D3C2C007E68AA /* OB_EditableAmountDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_EditableAmountDisplay.swift; sourceTree = "<group>"; };
-		153CA3172F34E952001ED98E /* NetWorthCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetWorthCard.swift; sourceTree = "<group>"; };
+		153CA3172F34E952001ED98E /* PortfolioCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioCard.swift; sourceTree = "<group>"; };
 		153CA3192F34EDEC001ED98E /* TopHeaderBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopHeaderBar.swift; sourceTree = "<group>"; };
 		153CA31B2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeaderVisibilityPreferenceKey.swift; sourceTree = "<group>"; };
+		153CA3202F34E960001ED98E /* DailyQuoteCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyQuoteCard.swift; sourceTree = "<group>"; };
+		153CA3242F34E963001ED98F /* SavingsRateCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsRateCard.swift; sourceTree = "<group>"; };
+		153CA32A2F34E965001ED990 /* BudgetPlanCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetPlanCard.swift; sourceTree = "<group>"; };
 		153CA32B2F3562AC001ED98E /* SavingsTargetDetailView2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsTargetDetailView2.swift; sourceTree = "<group>"; };
 		1571A1D62F3C2A2C0024A729 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
 		1571A1D92F3C2A5B0024A729 /* OnboardingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingModels.swift; sourceTree = "<group>"; };
@@ -183,11 +202,16 @@
 		15E21AEE2F33C3F600A9BB60 /* IncomeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomeCard.swift; sourceTree = "<group>"; };
 		15E21AF02F33C40000A9BB60 /* BudgetCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetCard.swift; sourceTree = "<group>"; };
 		15E21AF22F33F2AD00A9BB60 /* AccountsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountsCard.swift; sourceTree = "<group>"; };
+		15E21B0F2F33F31000A9BB70 /* AccountDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountDetailView.swift; sourceTree = "<group>"; };
 		15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetAllocationCard.swift; sourceTree = "<group>"; };
-		15E21AF62F33F2C600A9BB60 /* PortfolioCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioCard.swift; sourceTree = "<group>"; };
+		15E21B132F33F33000A9BB80 /* AssetAllocationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetAllocationDetailView.swift; sourceTree = "<group>"; };
+		15E21AF72F34010000A9BB70 /* TransactionDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionDetailSheet.swift; sourceTree = "<group>"; };
+		15E21AF92F34020000A9BB73 /* TransactionRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionRow.swift; sourceTree = "<group>"; };
+		15E21AFB2F34030000A9BB75 /* AllTransactionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllTransactionsView.swift; sourceTree = "<group>"; };
 		15FF6ED72F31033C0005F482 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
 		15FF6ED82F3103F70005F482 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		15FF6ED92F31043F0005F482 /* GradientButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientButton.swift; sourceTree = "<group>"; };
+		15FF6EDE2F3104500005F482 /* ConnectAccountCTAView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectAccountCTAView.swift; sourceTree = "<group>"; };
 		AA5B00042F38500000001004 /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
 		AAOB00112F38500000000001 /* OnboardingData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingData.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -380,7 +404,10 @@
 		15E21AA42F3248F500A9BB60 /* Journey */ = {
 			isa = PBXGroup;
 			children = (
-				153CA3172F34E952001ED98E /* NetWorthCard.swift */,
+				153CA3172F34E952001ED98E /* PortfolioCard.swift */,
+				153CA3202F34E960001ED98E /* DailyQuoteCard.swift */,
+				153CA3242F34E963001ED98F /* SavingsRateCard.swift */,
+				153CA32A2F34E965001ED990 /* BudgetPlanCard.swift */,
 				15E21ABA2F325A9D00A9BB60 /* JourneyContainerView.swift */,
 				15E21AA32F3248F500A9BB60 /* JourneyView.swift */,
 				15E21AAE2F324F1F00A9BB60 /* MonthIndicator.swift */,
@@ -417,6 +444,9 @@
 				15E21AEE2F33C3F600A9BB60 /* IncomeCard.swift */,
 				15E21AE22F33BBB600A9BB60 /* SavingsInputSheet.swift */,
 				15E21AE02F33BB9200A9BB60 /* SavingsTargetCard.swift */,
+				15E21AF72F34010000A9BB70 /* TransactionDetailSheet.swift */,
+				15E21AF92F34020000A9BB73 /* TransactionRow.swift */,
+				15E21AFB2F34030000A9BB75 /* AllTransactionsView.swift */,
 			);
 			path = Cashflow;
 			sourceTree = "<group>";
@@ -424,9 +454,10 @@
 		15E21AEB2F33BE1900A9BB60 /* Investment */ = {
 			isa = PBXGroup;
 			children = (
-				15E21AF62F33F2C600A9BB60 /* PortfolioCard.swift */,
 				15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */,
+				15E21B132F33F33000A9BB80 /* AssetAllocationDetailView.swift */,
 				15E21AF22F33F2AD00A9BB60 /* AccountsCard.swift */,
+				15E21B0F2F33F31000A9BB70 /* AccountDetailView.swift */,
 				15E21AB62F3257C600A9BB60 /* InvestmentView.swift */,
 			);
 			path = Investment;
@@ -445,6 +476,10 @@
 		15FF6ED62F31031D0005F482 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				152BE0832F67A66C00CACBBC /* GlassPillSelector.swift */,
+				152BE0852F67A67000CACBBC /* ChartInteractionLayer.swift */,
+				152BE0892F67A67100CACBBC /* NoDelayScrollView.swift */,
+				152BE0812F67A66100CACBBC /* SmoothPath.swift */,
 				158CDE562F5637FA0038554A /* AppCard.swift */,
 				1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */,
 				153CA31B2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift */,
@@ -453,6 +488,7 @@
 				15E21AD82F3394B100A9BB60 /* FlameIcon.swift */,
 				15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */,
 				15FF6ED92F31043F0005F482 /* GradientButton.swift */,
+				15FF6EDE2F3104500005F482 /* ConnectAccountCTAView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -620,16 +656,27 @@
 				15E21AB72F3257C600A9BB60 /* InvestmentView.swift in Sources */,
 				15E21ABB2F325A9D00A9BB60 /* JourneyContainerView.swift in Sources */,
 				15E21AAD2F324F0E00A9BB60 /* ProgressBar.swift in Sources */,
+				152BE0842F67A66C00CACBBC /* GlassPillSelector.swift in Sources */,
+				152BE0862F67A67000CACBBC /* ChartInteractionLayer.swift in Sources */,
+				152BE08A2F67A67200CACBBC /* NoDelayScrollView.swift in Sources */,
 				15E21AED2F33C11A00A9BB60 /* MainTabView.swift in Sources */,
+				152BE0822F67A66100CACBBC /* SmoothPath.swift in Sources */,
 				15FF6EDA2F31096B0005F482 /* GradientButton.swift in Sources */,
+				15FF6EDF2F3104500005F482 /* ConnectAccountCTAView.swift in Sources */,
 				15E21AE12F33BB9300A9BB60 /* SavingsTargetCard.swift in Sources */,
 				1571A1D82F3C2A2C0024A729 /* APIService.swift in Sources */,
 				12748F252F65CCEE00410D60 /* BudgetSetupView.swift in Sources */,
 				15FF6EE02F310A040005F482 /* Typography.swift in Sources */,
 				15E21AA62F3248F500A9BB60 /* JourneyView.swift in Sources */,
 				1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */,
-				153CA3182F34E952001ED98E /* NetWorthCard.swift in Sources */,
+				153CA3182F34E952001ED98E /* PortfolioCard.swift in Sources */,
+				153CA3212F34E960001ED98E /* DailyQuoteCard.swift in Sources */,
+				153CA3272F34E963001ED98F /* SavingsRateCard.swift in Sources */,
+				153CA32B2F34E965001ED990 /* BudgetPlanCard.swift in Sources */,
 				15E21AE32F33BBB600A9BB60 /* SavingsInputSheet.swift in Sources */,
+				15E21AF82F34010000A9BB71 /* TransactionDetailSheet.swift in Sources */,
+				15E21AFA2F34020000A9BB72 /* TransactionRow.swift in Sources */,
+				15E21AFC2F34030000A9BB74 /* AllTransactionsView.swift in Sources */,
 				153CA31A2F34EDEC001ED98E /* TopHeaderBar.swift in Sources */,
 				15E21AAF2F324F1F00A9BB60 /* MonthIndicator.swift in Sources */,
 				15E21AEF2F33C3F600A9BB60 /* IncomeCard.swift in Sources */,
@@ -642,14 +689,15 @@
 				12748F2F2F66B21000410D60 /* BS_LoadingView.swift in Sources */,
 				15A115992F3246460085ED9B /* mockdata.swift in Sources */,
 				15E21AF52F33F2BE00A9BB60 /* AssetAllocationCard.swift in Sources */,
+				15E21B142F33F33000A9BB80 /* AssetAllocationDetailView.swift in Sources */,
 				15E21AF32F33F2AD00A9BB60 /* AccountsCard.swift in Sources */,
+				15E21B102F33F31000A9BB70 /* AccountDetailView.swift in Sources */,
 				153CA32C2F3562AC001ED98E /* SavingsTargetDetailView2.swift in Sources */,
 				15ABCD012F36A00000AABB01 /* IncomeDetailView.swift in Sources */,
 				15ABCD032F36B00000AABB02 /* TotalIncomeDetailView.swift in Sources */,
 				1571A1DA2F3C2A5B0024A729 /* OnboardingModels.swift in Sources */,
 				15E21AD92F3394B100A9BB60 /* FlameIcon.swift in Sources */,
 				15E21AB32F3257B000A9BB60 /* CashflowView.swift in Sources */,
-				15E21AF72F33F2C600A9BB60 /* PortfolioCard.swift in Sources */,
 				12123E412F485B920011B385 /* PlaidLinkRepresentable.swift in Sources */,
 				12123E422F485B920011B385 /* PaywallSheet.swift in Sources */,
 				12123E432F485B920011B385 /* SettingsView.swift in Sources */,
@@ -849,9 +897,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SKDUW38P9T;
+				DEVELOPMENT_TEAM = 526LTP6Z7D;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Flamora-App-Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -863,7 +912,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.XL.fire.Flamora-app2";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.XL.fire.Flamora-app3";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -882,9 +931,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SKDUW38P9T;
+				DEVELOPMENT_TEAM = 526LTP6Z7D;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Flamora-App-Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -896,7 +946,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.XL.fire.Flamora-app2";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.XL.fire.Flamora-app3";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;

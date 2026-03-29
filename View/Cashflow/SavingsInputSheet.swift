@@ -21,18 +21,18 @@ struct SavingsInputSheet: View {
 
                 VStack(spacing: 24) {
                     Text("How much did you save this month?")
-                        .font(.system(size: 22, weight: .bold))
+                        .font(.detailTitle)
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
 
                     HStack(spacing: 6) {
                         Text("$")
-                            .font(.system(size: 40, weight: .bold))
+                            .font(.display)
                             .foregroundStyle(.white)
 
                         Text(inputText.isEmpty ? "0" : inputText)
-                            .font(.system(size: 40, weight: .bold))
+                            .font(.display)
                             .foregroundStyle(.white)
                     }
                     .padding(.vertical, 8)
@@ -106,7 +106,7 @@ struct SavingsInputSheet: View {
             inputText.append(number)
         }) {
             Text(number)
-                .font(.system(size: 28, weight: .semibold))
+                .font(.cardFigurePrimary)
                 .foregroundStyle(.white)
                 .frame(width: 72, height: 64)
         }
@@ -119,7 +119,7 @@ struct SavingsInputSheet: View {
             inputText.removeLast()
         }) {
             Image(systemName: "delete.left")
-                .font(.system(size: 22, weight: .semibold))
+                .font(.detailTitle)
                 .foregroundStyle(.white)
                 .frame(width: 72, height: 64)
         }

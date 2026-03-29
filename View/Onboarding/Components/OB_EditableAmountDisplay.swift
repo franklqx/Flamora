@@ -27,12 +27,12 @@ struct OB_EditableAmountDisplay: View {
         HStack(alignment: .firstTextBaseline, spacing: 2) {
             Spacer()
             Text(currencySymbol)
-                .font(.system(size: 32, weight: .bold))
+                .font(.h1)
                 .foregroundStyle(.white)
             ZStack {
                 // TextField 始终在视图树中，避免焦点丢失
                 TextField("", text: $editText)
-                    .font(.system(size: 48, weight: .bold).monospacedDigit())
+                    .font(.currencyHero.monospacedDigit())
                     .foregroundStyle(.white)
                     .keyboardType(.numberPad)
                     .focused($isFocused)
@@ -44,7 +44,7 @@ struct OB_EditableAmountDisplay: View {
 
                 if !isFocused {
                     Text(formattedValue)
-                        .font(.system(size: 48, weight: .bold).monospacedDigit())
+                        .font(.currencyHero.monospacedDigit())
                         .foregroundStyle(accentGradient)
                         .contentTransition(.numericText())
                 }

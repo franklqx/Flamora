@@ -32,7 +32,7 @@ struct OB_IntroView: View {
                             .frame(width: 44, height: 44)
                             .overlay(
                                 Image(systemName: "chart.line.uptrend.xyaxis")
-                                    .font(.system(size: 18, weight: .semibold))
+                                    .font(.h4)
                                     .foregroundStyle(.white)
                             )
 
@@ -104,7 +104,7 @@ private struct OBInfoPill: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: systemIcon)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.bodySemibold)
                 .foregroundStyle(.white)
                 .frame(width: 24, height: 24)
 

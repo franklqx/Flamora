@@ -49,7 +49,7 @@ struct OB_LifestyleView: View {
 
                         VStack(alignment: .leading, spacing: 4) {
                             Text("RETIREMENT LIFESTYLE")
-                                .font(.obStepLabel)
+                                .font(.cardRowMeta)
                                 .foregroundColor(AppColors.textTertiary)
                                 .tracking(0.8)
 
@@ -71,7 +71,7 @@ struct OB_LifestyleView: View {
                             } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: "plus")
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.footnoteSemibold)
                                         .foregroundColor(AppColors.textSecondary)
                                     Text("Set my own target")
                                         .font(.bodySmall)
@@ -176,7 +176,7 @@ struct OB_LifestyleView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(option.title)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.bodySemibold)
                         .foregroundStyle(.white)
 
                     HStack(spacing: 0) {
@@ -205,7 +205,7 @@ struct OB_LifestyleView: View {
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.lg)
-                    .stroke(isSelected ? LinearGradient(colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd], startPoint: .leading, endPoint: .trailing) : LinearGradient(colors: [Color.white.opacity(0.08)], startPoint: .leading, endPoint: .trailing), lineWidth: isSelected ? 1.5 : 1)
+                    .stroke(isSelected ? LinearGradient(colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd], startPoint: .leading, endPoint: .trailing) : LinearGradient(colors: [AppColors.overlayWhiteStroke], startPoint: .leading, endPoint: .trailing), lineWidth: isSelected ? 1.5 : 1)
             )
         }
         .buttonStyle(.plain)

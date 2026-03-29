@@ -23,11 +23,20 @@ struct JourneyView: View {
     @State private var quoteVisible: Bool = true
     private let data = MockData.journeyData
     var onFireTapped: (() -> Void)? = nil
+    var onInvestmentTapped: (() -> Void)? = nil
+    var onOpenCashflowDestination: ((CashflowJourneyDestination) -> Void)? = nil
     let bottomPadding: CGFloat
 
-    init(bottomPadding: CGFloat = 0, onFireTapped: (() -> Void)? = nil) {
+    init(
+        bottomPadding: CGFloat = 0,
+        onFireTapped: (() -> Void)? = nil,
+        onInvestmentTapped: (() -> Void)? = nil,
+        onOpenCashflowDestination: ((CashflowJourneyDestination) -> Void)? = nil
+    ) {
         self.bottomPadding = bottomPadding
         self.onFireTapped = onFireTapped
+        self.onInvestmentTapped = onInvestmentTapped
+        self.onOpenCashflowDestination = onOpenCashflowDestination
     }
 
     var body: some View {
@@ -37,10 +46,10 @@ struct JourneyView: View {
             GeometryReader { proxy in
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: AppSpacing.lg) {
-                        NetWorthCard(
-                            totalNetWorth: netWorthSummary.totalNetWorth,
-                            growthAmount: netWorthSummary.growthAmount,
-                            growthPercentage: netWorthSummary.growthPercentage
+                        PortfolioCard(
+                            portfolioBalance: netWorthSummary.totalNetWorth,
+                            gainAmount: netWorthSummary.growthAmount,
+                            gainPercentage: netWorthSummary.growthPercentage
                         )
 
                         if quoteVisible {
@@ -49,14 +58,17 @@ struct JourneyView: View {
 
                         VStack(alignment: .leading, spacing: AppSpacing.md) {
                             Text("Plan")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundStyle(.white)
+                                .font(.h4)
+                                .foregroundStyle(AppColors.textPrimary)
                                 .padding(.horizontal, AppSpacing.screenPadding)
 
                             VStack(spacing: AppSpacing.cardGap) {
-                                budgetCard
-                                passiveIncomeCard
-                                savingsRateCard
+                                BudgetPlanCard(apiBudget: apiBudget, daysLeft: data.budget.daysLeft) {
+                                    onOpenCashflowDestination?(.totalSpending)
+                                }
+                                SavingsRateCard(apiBudget: apiBudget) {
+                                    onOpenCashflowDestination?(.savingsOverview)
+                                }
                             }
                         }
                     }
@@ -76,40 +88,57 @@ struct JourneyView: View {
 private extension JourneyView {
     var dailyQuoteCard: some View {
         ZStack(alignment: .topTrailing) {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
                 Text("DAILY QUOTE")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(AppColors.dailyQuoteAccent.opacity(0.75))
-                    .tracking(1.2)
+                    .font(.cardHeader)
+                    .foregroundStyle(AppColors.textPrimary)
+                    .tracking(AppTypography.Tracking.cardHeader)
 
                 Text(dailyQuotes[quoteIndex])
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(.white)
+                    .font(.quoteBody)
+                    .foregroundStyle(AppColors.textPrimary)
                     .lineSpacing(4)
                     .fixedSize(horizontal: false, vertical: true)
 
-                HStack(spacing: 8) {
-                    HStack(spacing: 6) {
+                HStack(spacing: AppSpacing.sm) {
+                    HStack(spacing: AppSpacing.sm) {
                         ForEach(0..<dailyQuotes.count, id: \.self) { i in
                             Capsule()
-                                .fill(i == quoteIndex ? Color.white : Color.white.opacity(0.30))
+                                .fill(i == quoteIndex ? AppColors.textPrimary : AppColors.overlayWhiteForegroundSoft)
                                 .frame(width: i == quoteIndex ? 20 : 6, height: 3)
                                 .animation(.easeInOut(duration: 0.2), value: quoteIndex)
                         }
                     }
                     Text("\(quoteIndex + 1)/\(dailyQuotes.count)")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(Color.white.opacity(0.45))
+                        .font(.caption)
+                        .foregroundStyle(AppColors.textSecondary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.vertical, AppSpacing.cardPadding)
-            .background(AppColors.dailyQuoteBg)
+            .background(
+                GeometryReader { geo in
+                    ZStack {
+                        Image("AppBackground")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: geo.size.width, height: geo.size.height * 4.0)
+                            .offset(y: -geo.size.height * 3.0)
+                        LinearGradient(
+                            colors: [AppColors.overlayBlackSoft, AppColors.overlayBlackMid],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    }
+                }
+                .allowsHitTesting(false)
+            )
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.lg)
                     .stroke(AppColors.dailyQuoteAccent.opacity(0.20), lineWidth: 0.75)
+                    .allowsHitTesting(false)
             )
 
             Button {
@@ -118,182 +147,15 @@ private extension JourneyView {
                 }
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color.white.opacity(0.50))
+                    .font(.smallLabel)
+                    .foregroundStyle(AppColors.overlayWhiteOnPhoto)
                     .frame(width: 28, height: 28)
             }
             .buttonStyle(.plain)
-            .padding(.top, 14)
-            .padding(.trailing, 14)
+            .padding(.top, AppSpacing.sm + 2)
+            .padding(.trailing, AppSpacing.sm + 2)
         }
         .padding(.horizontal, AppSpacing.screenPadding)
-    }
-}
-
-// MARK: - Plan Cards
-
-private extension JourneyView {
-    var budgetCard: some View {
-        let totalSpent = (apiBudget.needsSpent ?? 0) + (apiBudget.wantsSpent ?? 0)
-        let totalBudget = apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget
-        let progress = totalBudget > 0 ? min(totalSpent / totalBudget, 1.0) : 0
-        let spentPercent = totalBudget > 0 ? Int(totalSpent / totalBudget * 100) : 0
-
-        return VStack(spacing: 0) {
-            cardHeader(title: "BUDGET IN \(apiBudget.month.uppercased())", hasChevron: true)
-
-            Rectangle()
-                .fill(AppColors.surfaceBorder)
-                .frame(height: 0.5)
-
-            VStack(spacing: AppSpacing.sm) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text(formatCurrency(totalSpent))
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(.white)
-                    Text("of \(formatCurrency(totalBudget))")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(AppColors.textTertiary)
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 13))
-                        .foregroundColor(AppColors.textTertiary)
-                    Spacer()
-                    Text("\(spentPercent)%")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(AppColors.textSecondary)
-                }
-
-                ProgressBar(progress: progress, color: AppColors.progressGreen, height: 4)
-            }
-            .padding(.horizontal, AppSpacing.cardPadding)
-            .padding(.vertical, AppSpacing.md)
-        }
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
-        )
-        .padding(.horizontal, AppSpacing.screenPadding)
-    }
-
-    var passiveIncomeCard: some View {
-        let income = data.passiveIncome
-        let progress = Double(income.percent) / 100.0
-
-        return VStack(spacing: 0) {
-            cardHeader(title: "SUSTAINABLE INCOME", hasChevron: true)
-
-            Rectangle()
-                .fill(AppColors.surfaceBorder)
-                .frame(height: 0.5)
-
-            VStack(spacing: AppSpacing.sm) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text(formatCurrency(income.projected))
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(.white)
-                    Text("of \(formatCurrency(income.target))")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(AppColors.textTertiary)
-                    Spacer()
-                    Text("\(income.percent)%")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(AppColors.textSecondary)
-                }
-
-                ProgressBar(progress: progress, color: AppColors.progressBlue, height: 4)
-            }
-            .padding(.horizontal, AppSpacing.cardPadding)
-            .padding(.vertical, AppSpacing.md)
-        }
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
-        )
-        .padding(.horizontal, AppSpacing.screenPadding)
-    }
-
-    var savingsRateCard: some View {
-        let savings = data.savingsRate
-        let values = savings.monthlySavings
-        let hasSavingsData = values.contains { $0 > 0 }
-
-        return VStack(spacing: 0) {
-            cardHeader(title: "MONTHLY SAVINGS", hasChevron: true)
-
-            Rectangle()
-                .fill(AppColors.surfaceBorder)
-                .frame(height: 0.5)
-
-            HStack(alignment: .bottom) {
-                VStack(alignment: .leading, spacing: 4) {
-                    if hasSavingsData {
-                        Text(formatCurrency(savings.savedThisMonth))
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundStyle(.white)
-                        Text("Saved This Month")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(AppColors.textSecondary)
-                    } else {
-                        Text("Record Your First Saving")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(AppColors.progressBlue)
-                    }
-                }
-                Spacer()
-                savingsStreakBars(values: values, hasData: hasSavingsData)
-            }
-            .padding(.horizontal, AppSpacing.cardPadding)
-            .padding(.vertical, AppSpacing.md)
-        }
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
-        )
-        .padding(.horizontal, AppSpacing.screenPadding)
-    }
-
-    func cardHeader(title: String, hasChevron: Bool = false) -> some View {
-        HStack(spacing: 6) {
-            Text(title)
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(AppColors.textTertiary)
-                .tracking(0.8)
-            if hasChevron {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundColor(AppColors.textTertiary)
-            }
-            Spacer()
-        }
-        .padding(.horizontal, AppSpacing.cardPadding)
-        .padding(.vertical, 12)
-    }
-
-    func savingsStreakBars(values: [Double], hasData: Bool) -> some View {
-        let barValues = values.isEmpty ? Array(repeating: 0.0, count: 6) : values
-        let maxValue = max(barValues.max() ?? 1, 1)
-        let palette: [Color] = [
-            Color(hex: "#2B3342"), Color(hex: "#3B4861"),
-            Color(hex: "#55698E"), AppColors.accentPurple.opacity(0.7),
-            AppColors.accentPurpleLight.opacity(0.85), AppColors.accentPurpleLight
-        ]
-
-        return HStack(alignment: .bottom, spacing: 6) {
-            ForEach(Array(barValues.enumerated()), id: \.offset) { index, value in
-                let normalized = hasData ? max(value / maxValue, 0) : 0
-                let height = hasData ? (14 + CGFloat(normalized) * 44) : 38
-                Capsule()
-                    .fill(hasData ? palette[min(index, palette.count - 1)] : AppColors.surfaceInput)
-                    .frame(width: 7, height: height)
-                    .opacity(hasData ? 1 : 0.55)
-            }
-        }
     }
 }
 
@@ -325,15 +187,6 @@ private extension JourneyView {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM"
         return f.string(from: Date())
-    }
-
-    func formatCurrency(_ value: Double) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.currencyCode = "USD"
-        f.maximumFractionDigits = 0
-        f.minimumFractionDigits = 0
-        return f.string(from: NSNumber(value: value)) ?? "$0"
     }
 }
 

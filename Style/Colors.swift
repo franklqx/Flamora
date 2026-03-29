@@ -65,11 +65,30 @@ struct AppColors {
     // MARK: - Accent
     static let accentPurple         = Color(hex: "#A78BFA")
     static let accentPurpleLight    = Color(hex: "#C4B5FD")
+    static let accentPurpleMid      = Color(hex: "#7C3AED")
+    static let accentPurpleDeep     = Color(hex: "#6D28D9")
+    static let accentPurpleFaint    = Color(hex: "#DDD6FE")
     static let accentBlue           = Color(hex: "#93C5FD")
     static let accentBlueBright     = Color(hex: "#60A5FA")
     static let accentPink           = Color(hex: "#F9A8D4")
     static let accentAmber          = Color(hex: "#FCD34D")
     static let accentGreen          = Color(hex: "#34D399")
+    /// 负向涨跌等（与 `error` 同色）
+    static let accentRed            = AppColors.error
+    static let accentGreenDeep      = Color(hex: "#059669")
+    static let accentGreenLight     = Color(hex: "#6EE7B7")
+    static let accentGreenFaint     = Color(hex: "#A7F3D0")
+
+    // MARK: - Chart Series Colors（深色背景专用图表色）
+    static let chartBlue    = Color(hex: "#2563EB")   // 深蓝 — Stocks / Needs
+    static let chartAmber   = Color(hex: "#D97706")   // 深琥珀 — Crypto / Bonds
+    /// Wants 分类（与 chartAmber 同色，语义别名）
+    static let chartGold    = chartAmber
+    static let chartRose    = Color(hex: "#DB2777")   // 深玫红 — Other
+    static let chartSteelBlue = Color(hex: "#6699CC") // Steel Blue — Stocks
+    static let chartSageGreen = Color(hex: "#71963C") // Sage Green — Cash
+    static let chartYellow    = Color(hex: "#F2D349") // Yellow — Crypto
+    static let chartCoral     = Color(hex: "#D99468") // Coral — Other
 
     // MARK: - Flame Toggle (blue-purple per reference design)
     static let gradientFlamePill: [Color] = [
@@ -84,6 +103,73 @@ struct AppColors {
     // MARK: - Glass Surface
     static let glassBorder         = Color.white.opacity(0.10)
     static let glassBackground     = Color.black.opacity(0.68)
+
+    // MARK: - Card Depth
+    static let cardShadow          = Color.black.opacity(0.40)
+    static let cardTopHighlight    = Color.white.opacity(0.06)
+
+    // MARK: - Glass Pill (time range selector)
+    static let glassPillFill       = Color.white.opacity(0.10)
+    static let glassPillStroke     = Color.white.opacity(0.15)
+
+    // MARK: - White / black overlays
+    // 9-tier canonical scale — prefer these over raw Color.white/black.opacity
+    //
+    //  overlayWhiteWash          0.04  — barely-there tracks, nested fills
+    //  cardTopHighlight          0.06  — hairline separators, card top edge  (alias kept below)
+    //  overlayWhiteStroke        0.08  — 1pt borders, subtle dividers
+    //  overlayWhiteMid           0.12  — glass pill backgrounds, soft fills
+    //  glassPillStroke           0.15  — glass pill stroke              (alias kept below)
+    //  overlayWhiteHigh          0.18  — glass card sheen, gradient stop
+    //  overlayWhiteEmphasisStroke 0.35 — prominent chrome stroke
+    //  overlayWhiteForegroundMuted 0.45 — muted foreground labels on glass
+    //  overlayWhiteOnGlass       0.75  — high-contrast text on glass
+
+    /// 0.04 — barely-there track / nested fill
+    static let overlayWhiteWash           = Color.white.opacity(0.04)
+    /// 0.08 — hairline 1pt borders, dividers
+    static let overlayWhiteStroke         = Color.white.opacity(0.08)
+    /// 0.12 — glass pill background, soft fills
+    static let overlayWhiteMid            = Color.white.opacity(0.12)
+    /// 0.18 — strong glass sheen / gradient stop
+    static let overlayWhiteHigh           = Color.white.opacity(0.18)
+    /// 0.35 — prominent chrome stroke / emphasis border
+    static let overlayWhiteEmphasisStroke = Color.white.opacity(0.35)
+    /// 0.40 — page-indicator / secondary dimmed control
+    static let overlayWhiteAt40           = Color.white.opacity(0.4)
+    /// 0.45 — muted white foreground (secondary copy on dark glass)
+    static let overlayWhiteForegroundMuted = Color.white.opacity(0.45)
+    /// 0.30 — tertiary white foreground
+    static let overlayWhiteForegroundSoft = Color.white.opacity(0.30)
+    /// 0.50 — controls on photo / bright backgrounds
+    static let overlayWhiteOnPhoto        = Color.white.opacity(0.50)
+    /// 0.60 — secondary labels on busy backgrounds (charts, roadmap)
+    static let overlayWhiteAt60           = Color.white.opacity(0.6)
+    /// 0.25 — dimmer tertiary label
+    static let overlayWhiteAt25           = Color.white.opacity(0.25)
+    /// 0.75 — high-contrast label on translucent surfaces
+    static let overlayWhiteOnGlass        = Color.white.opacity(0.75)
+
+    /// Soft black veil (gradients, quote card)
+    static let overlayBlackSoft           = Color.black.opacity(0.15)
+    /// Deeper black gradient stop (quote card, scrims)
+    static let overlayBlackMid            = Color.black.opacity(0.35)
+
+    // MARK: - Income Source Color Scales
+    static let activeIncomeScale: [Color] = [
+        accentGreenDeep,
+        success,
+        accentGreen,
+        accentGreenLight,
+        accentGreenFaint,
+    ]
+    static let passiveIncomeScale: [Color] = [
+        accentPurpleDeep,
+        accentPurpleMid,
+        accentPurple,
+        accentPurpleLight,
+        accentPurpleFaint,
+    ]
 }
 
 // MARK: - Gradient Wallpaper (Welcome / Onboarding 背景)

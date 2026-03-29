@@ -51,8 +51,8 @@ struct PaywallSheet: View {
                 dismiss()
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 28))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(.sheetCloseGlyph)
+                    .foregroundStyle(AppColors.overlayWhiteOnGlass)
                     .padding(16)
             }
         }

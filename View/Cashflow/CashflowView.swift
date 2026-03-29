@@ -7,21 +7,32 @@
 
 import SwiftUI
 
+/// Journey 等入口打开与 Cash Flow 相同的二级全屏页时使用（由 MainTabView 直接 present，不切 Tab）
+enum CashflowJourneyDestination: Equatable, Identifiable {
+    case totalSpending
+    case savingsOverview
+
+    var id: String {
+        switch self {
+        case .totalSpending: return "totalSpending"
+        case .savingsOverview: return "savingsOverview"
+        }
+    }
+}
+
 struct CashflowView: View {
     @Environment(PlaidManager.self) private var plaidManager
     @Environment(SubscriptionManager.self) private var subscriptionManager
 
     private let data = MockData.cashflowData
     @State private var apiBudget = MockData.apiMonthlyBudget
-    @State private var selectedMonthIndex = 0
-    @State private var monthDates: [Date] = []
-    @State private var hasInitializedMonths = false
     @State private var currentSavings: Double = MockData.apiMonthlyBudget.savingsActual ?? 0
     @State private var needsTotal: Double = MockData.apiMonthlyBudget.needsSpent ?? 0
     @State private var wantsTotal: Double = MockData.apiMonthlyBudget.wantsSpent ?? 0
     @State private var totalSpend: Double = (MockData.apiMonthlyBudget.needsSpent ?? 0) + (MockData.apiMonthlyBudget.wantsSpent ?? 0)
-    @State private var reviewTransactions: [Transaction] = MockData.cashflowData.toReview.transactions
-    @State private var reviewCount: Int = MockData.cashflowData.toReview.count
+    @State private var allTransactions: [Transaction] = MockData.allTransactions
+    @State private var selectedTransaction: Transaction? = nil
+    @State private var showAllTransactions = false
     @State private var showSavingsInput = false
     @State private var showSavingsSummary = false
     @State private var showTotalIncomeDetail = false
@@ -30,6 +41,10 @@ struct CashflowView: View {
     @State private var showTotalSpendingDetail = false
     @State private var showNeedsSpendingDetail = false
     @State private var showWantsSpendingDetail = false
+
+    private var currentMonthIndex: Int {
+        Calendar.current.component(.month, from: Date()) - 1
+    }
 
     private var spendingForDisplay: Spending {
         Spending(
@@ -44,57 +59,63 @@ struct CashflowView: View {
         if plaidManager.hasLinkedBank {
             connectedView
         } else {
-            CashflowCTAView()
+            ConnectAccountCTAView(
+                icon: "creditcard",
+                glowColor: AppColors.accentBlueBright,
+                iconGradient: [AppColors.accentBlueBright, AppColors.accentPurple],
+                title: "Track Your\nCashflow",
+                subtitle: "Connect your accounts to automatically\ntrack spending, savings, and budgets.",
+                features: [
+                    ("list.bullet.rectangle", "Auto transaction categorization"),
+                    ("chart.bar", "Monthly needs vs wants breakdown"),
+                    ("arrow.up.arrow.down", "To Review — flag unusual spending"),
+                    ("banknote", "Savings goal tracking")
+                ],
+                buttonLabel: "Connect to Accounts",
+                bottomPadding: 0
+            )
         }
     }
 
     var connectedView: some View {
-        NavigationStack {
-            ZStack {
-                Color.black.ignoresSafeArea()
+        ZStack {
+            Color.clear
 
-                GeometryReader { proxy in
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 16) {
-                            IncomeCard(
-                                income: data.income,
-                                monthDates: monthDates,
-                                selectedMonthIndex: selectedMonthIndex,
-                                onMonthSelected: { idx in selectedMonthIndex = idx },
-                                onCardTapped: { showTotalIncomeDetail = true },
-                                onActiveTapped: { showActiveIncomeDetail = true },
-                                onPassiveTapped: { showPassiveIncomeDetail = true }
-                            )
-                            .padding(.horizontal, AppSpacing.screenPadding)
+            GeometryReader { proxy in
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                        IncomeCard(
+                            income:          data.income,         // current month (mock)
+                            yearlyIncome:    MockData.yearlyIncome, // YTD (mock)
+                            onCardTapped:    { showTotalIncomeDetail = true },
+                            onActiveTapped:  { showActiveIncomeDetail = true },
+                            onPassiveTapped: { showPassiveIncomeDetail = true }
+                        )
+                        .padding(.horizontal, AppSpacing.screenPadding)
 
-                            SavingsTargetCard(
-                                currentAmount: $currentSavings,
-                                targetAmount: apiBudget.savingsBudget,
-                                onAdd: { showSavingsInput = true },
-                                onCardTap: { showSavingsSummary = true }
-                            )
-                            .padding(.horizontal, AppSpacing.screenPadding)
+                        SavingsTargetCard(
+                            currentAmount: $currentSavings,
+                            targetAmount: apiBudget.savingsBudget,
+                            onAdd: { showSavingsInput = true },
+                            onCardTap: { showSavingsSummary = true }
+                        )
+                        .padding(.horizontal, AppSpacing.screenPadding)
 
-                            BudgetCard(
-                                spending: spendingForDisplay,
-                                onCardTapped: { showTotalSpendingDetail = true },
-                                onNeedsTapped: { showNeedsSpendingDetail = true },
-                                onWantsTapped: { showWantsSpendingDetail = true }
-                            )
-                            .padding(.horizontal, AppSpacing.screenPadding)
+                        BudgetCard(
+                            spending: spendingForDisplay,
+                            onCardTapped: { showTotalSpendingDetail = true },
+                            onNeedsTapped: { showNeedsSpendingDetail = true },
+                            onWantsTapped: { showWantsSpendingDetail = true }
+                        )
+                        .padding(.horizontal, AppSpacing.screenPadding)
 
-                            toReviewSection
-                        }
-                        .frame(minHeight: proxy.size.height, alignment: .top)
-                        .padding(.top, AppSpacing.md)
-                        .padding(.bottom, AppSpacing.lg)
+                        transactionsSection
                     }
+                    .frame(minHeight: proxy.size.height, alignment: .top)
+                    .padding(.top, AppSpacing.md)
+                    .padding(.bottom, AppSpacing.lg)
                 }
             }
-        }
-        .background(Color.clear)
-        .onAppear {
-            initializeMonths()
         }
         .task {
             await loadCashflowData()
@@ -103,13 +124,13 @@ struct CashflowView: View {
             SavingsTargetDetailView2()
         }
         .fullScreenCover(isPresented: $showTotalIncomeDetail) {
-            TotalIncomeDetailView(data: MockData.totalIncomeDetail)
+            TotalIncomeDetailView(data: MockData.totalIncomeDetail, initialSelectedMonth: currentMonthIndex)
         }
         .fullScreenCover(isPresented: $showActiveIncomeDetail) {
-            IncomeDetailView(data: MockData.activeIncomeDetail)
+            IncomeDetailView(data: MockData.activeIncomeDetail, initialSelectedMonth: currentMonthIndex)
         }
         .fullScreenCover(isPresented: $showPassiveIncomeDetail) {
-            IncomeDetailView(data: MockData.passiveIncomeDetail)
+            IncomeDetailView(data: MockData.passiveIncomeDetail, initialSelectedMonth: currentMonthIndex)
         }
         .fullScreenCover(isPresented: $showTotalSpendingDetail) {
             TotalSpendingAnalysisDetailView(data: MockData.totalSpendingDetail)
@@ -127,6 +148,19 @@ struct CashflowView: View {
                 .presentationCornerRadius(28)
                 .presentationBackground(Color.black)
         }
+        .sheet(item: $selectedTransaction) { transaction in
+            TransactionDetailSheet(transaction: transaction) { updated in
+                updateTransaction(updated)
+            }
+            .ignoresSafeArea(.container, edges: .bottom)
+            .presentationDragIndicator(.visible)
+            .presentationDetents([.fraction(0.75)])
+            .presentationCornerRadius(28)
+            .presentationBackground(Color.black)
+        }
+        .fullScreenCover(isPresented: $showAllTransactions) {
+            AllTransactionsView(transactions: $allTransactions, onUpdate: updateTransaction)
+        }
     }
 }
 
@@ -135,29 +169,22 @@ struct CashflowView: View {
 private extension CashflowView {
     func loadCashflowData() async {
         let monthStr = apiMonthString(from: Date())
-        async let budgetTask = fetchBudget(month: monthStr)
-        async let txTask = fetchTransactions()
-        let (budget, txResponse) = await (budgetTask, txTask)
-        if let b = budget {
+        if let b = await fetchBudget(month: monthStr) {
             apiBudget = b
             currentSavings = b.savingsActual ?? 0
             needsTotal = b.needsSpent ?? 0
             wantsTotal = b.wantsSpent ?? 0
             totalSpend = (b.needsSpent ?? 0) + (b.wantsSpent ?? 0)
         }
-        if let tx = txResponse {
-            reviewTransactions = tx.transactions.map {
-                Transaction(id: $0.id, merchant: $0.merchant, amount: $0.amount, date: $0.date, pendingClassification: $0.pendingReview)
+        if let tx = try? await APIService.shared.getTransactions(page: 1, limit: 20) {
+            allTransactions = tx.transactions.map {
+                Transaction(id: $0.id, merchant: $0.merchant, amount: $0.amount, date: $0.date, time: nil, pendingClassification: $0.pendingReview, subcategory: nil, category: nil, note: nil)
             }
-            reviewCount = reviewTransactions.count
         }
     }
 
     private func fetchBudget(month: String) async -> APIMonthlyBudget? {
         try? await APIService.shared.getMonthlyBudget(month: month)
-    }
-    private func fetchTransactions() async -> APITransactionsResponse? {
-        try? await APIService.shared.getTransactions(page: 1, limit: 20, pendingReview: true)
     }
 
     func apiMonthString(from date: Date) -> String {
@@ -167,276 +194,62 @@ private extension CashflowView {
     }
 }
 
-// MARK: - Month Helpers
+// MARK: - Transactions
 
 private extension CashflowView {
-    func initializeMonths() {
-        guard !hasInitializedMonths else { return }
-        let calendar = Calendar.current
-        let now = Date()
-        let base = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
-        let offsets = -5...6
-        monthDates = offsets.compactMap { calendar.date(byAdding: .month, value: $0, to: base) }
-        selectedMonthIndex = 5
-        hasInitializedMonths = true
-    }
-}
-
-// MARK: - To Review
-
-private extension CashflowView {
-    var toReviewSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
+    var transactionsSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.cardGap) {
             HStack {
-                Text("TO REVIEW")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white)
+                Text("TRANSACTIONS")
+                    .font(.footnoteBold)
+                    .foregroundStyle(AppColors.textPrimary)
                     .tracking(0.6)
 
                 Spacer()
 
-                Text("\(reviewCount) LEFT")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(AppColors.textSecondary)
-                    .tracking(0.4)
+                Button(action: { showAllTransactions = true }) {
+                    Text("SEE ALL")
+                        .font(.smallLabel)
+                        .foregroundColor(AppColors.textSecondary)
+                        .tracking(0.4)
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, AppSpacing.screenPadding)
 
-            if reviewTransactions.isEmpty {
-                Text("All transactions reviewed")
-                    .font(.system(size: 14))
-                    .foregroundColor(AppColors.textTertiary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 20)
-            } else {
-                ForEach(reviewTransactions, id: \.id) { transaction in
-                    TransactionCard(
-                        transaction: transaction,
-                        onNeeds: { classify(transaction, as: .needs) },
-                        onWants: { classify(transaction, as: .wants) }
-                    )
-                    .padding(.horizontal, AppSpacing.screenPadding)
+            ForEach(allTransactions.sorted {
+                if $0.date != $1.date { return $0.date > $1.date }
+                return ($0.time ?? "") > ($1.time ?? "")
+            }.prefix(5)) { transaction in
+                TransactionRow(transaction: transaction) {
+                    selectedTransaction = transaction
                 }
+                .padding(.horizontal, AppSpacing.screenPadding)
             }
         }
         .padding(.top, 4)
     }
 
-    enum ReviewCategory { case needs; case wants }
+    func updateTransaction(_ updated: Transaction) {
+        guard let index = allTransactions.firstIndex(where: { $0.id == updated.id }) else { return }
+        let old = allTransactions[index]
 
-    func classify(_ transaction: Transaction, as category: ReviewCategory) {
-        if let index = reviewTransactions.firstIndex(where: { $0.id == transaction.id }) {
-            reviewTransactions.remove(at: index)
-            reviewCount = max(reviewCount - 1, 0)
-            totalSpend += transaction.amount
-            switch category {
-            case .needs: needsTotal += transaction.amount
-            case .wants: wantsTotal += transaction.amount
-            }
+        // Adjust running totals when category changes (category is derived from subcategory)
+        if old.category != updated.category {
+            if old.category == "needs"      { needsTotal -= old.amount }
+            else if old.category == "wants" { wantsTotal -= old.amount }
+            else                            { totalSpend += updated.amount }
+
+            if updated.category == "needs"      { needsTotal += updated.amount }
+            else if updated.category == "wants" { wantsTotal += updated.amount }
+            else                                { totalSpend -= updated.amount }
         }
+
+        allTransactions[index] = updated
     }
 }
 
-// MARK: - Transaction Card (line style per reference)
-
-private struct TransactionCard: View {
-    let transaction: Transaction
-    let onNeeds: () -> Void
-    let onWants: () -> Void
-
-    var body: some View {
-        HStack(spacing: 14) {
-            // Icon circle
-            ZStack {
-                Circle()
-                    .fill(AppColors.surfaceElevated)
-                    .frame(width: 40, height: 40)
-                    .overlay(Circle().stroke(AppColors.surfaceBorder, lineWidth: 0.75))
-                Image(systemName: "bag")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(AppColors.textSecondary)
-            }
-
-            // Merchant + date
-            VStack(alignment: .leading, spacing: 3) {
-                Text(transaction.merchant)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.white)
-                Text(formattedDate(transaction.date))
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(AppColors.textTertiary)
-            }
-
-            Spacer()
-
-            // Amount + category badge
-            VStack(alignment: .trailing, spacing: 6) {
-                Text(formattedAmount(transaction.amount))
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
-
-                HStack(spacing: 8) {
-                    categoryButton(title: "Needs", action: onNeeds)
-                    categoryButton(title: "Wants", action: onWants)
-                }
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
-        )
-    }
-
-    private func categoryButton(title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(AppColors.textSecondary)
-                .padding(.vertical, 5)
-                .padding(.horizontal, 12)
-                .background(Color.clear)
-                .overlay(
-                    Capsule()
-                        .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
-                )
-                .clipShape(Capsule())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func formattedDate(_ raw: String) -> String {
-        raw.replacingOccurrences(of: "-", with: " ")
-    }
-
-    private func formattedAmount(_ amount: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        formatter.maximumFractionDigits = 2
-        formatter.minimumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: -amount)) ?? "$0.00"
-    }
-}
-
-// MARK: - Cashflow CTA
-
-private struct CashflowCTAView: View {
-    @Environment(PlaidManager.self) private var plaidManager
-    @Environment(SubscriptionManager.self) private var subscriptionManager
-
-    var body: some View {
-        GeometryReader { proxy in
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: AppSpacing.lg) {
-                    Spacer().frame(height: AppSpacing.xl)
-
-                    ZStack {
-                        Circle()
-                            .fill(
-                                RadialGradient(
-                                    colors: [AppColors.accentBlue.opacity(0.15), Color.clear],
-                                    center: .center,
-                                    startRadius: 0,
-                                    endRadius: 80
-                                )
-                            )
-                            .frame(width: 160, height: 160)
-
-                        Image(systemName: "creditcard")
-                            .font(.system(size: 52))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [AppColors.accentBlueBright, AppColors.accentPurple],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                    }
-
-                    VStack(spacing: AppSpacing.sm) {
-                        Text("Track Your\nCashflow")
-                            .font(.system(size: 32, weight: .bold))
-                            .foregroundStyle(.white)
-                            .multilineTextAlignment(.center)
-
-                        Text("Connect your accounts to automatically\ntrack spending, savings, and budgets.")
-                            .font(.system(size: 15))
-                            .foregroundColor(AppColors.textSecondary)
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(4)
-                    }
-
-                    VStack(spacing: 12) {
-                        ForEach(features, id: \.0) { icon, text in
-                            HStack(spacing: 12) {
-                                Image(systemName: icon)
-                                    .font(.system(size: 16))
-                                    .foregroundColor(AppColors.accentBlueBright)
-                                    .frame(width: 24)
-                                Text(text)
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundStyle(.white)
-                                Spacer()
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 14)
-                            .background(AppColors.surface)
-                            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-                            .overlay(RoundedRectangle(cornerRadius: AppRadius.md).stroke(AppColors.surfaceBorder, lineWidth: 0.75))
-                        }
-                    }
-                    .padding(.horizontal, AppSpacing.screenPadding)
-
-                    Spacer(minLength: AppSpacing.xl)
-
-                    Button(action: {
-                        Task { await plaidManager.startLinkFlow() }
-                    }) {
-                        HStack(spacing: 8) {
-                            if plaidManager.isConnecting {
-                                ProgressView().tint(.black)
-                            } else {
-                                Text("Connect to Accounts")
-                                    .font(.system(size: 17, weight: .semibold))
-                                    .foregroundColor(.black)
-                                Image(systemName: "arrow.right")
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundColor(.black)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(
-                            LinearGradient(
-                                colors: AppColors.gradientFlamePill,
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
-                    }
-                    .disabled(plaidManager.isConnecting)
-                    .padding(.horizontal, AppSpacing.screenPadding)
-                    .padding(.bottom, 120)
-                }
-                .frame(minHeight: proxy.size.height, alignment: .top)
-                .padding(.bottom, AppSpacing.lg)
-                .padding(.top, AppSpacing.lg)
-            }
-        }
-    }
-
-    private let features: [(String, String)] = [
-        ("list.bullet.rectangle", "Auto transaction categorization"),
-        ("chart.bar", "Monthly needs vs wants breakdown"),
-        ("arrow.up.arrow.down", "To Review — flag unusual spending"),
-        ("banknote", "Savings goal tracking")
-    ]
-}
+// TransactionRow is defined in TransactionRow.swift
 
 #Preview {
     CashflowView()

@@ -107,7 +107,7 @@ struct OB_WelcomeView: View {
                 HStack(spacing: 8) {
                     ForEach(0..<slides.count, id: \.self) { i in
                         Capsule()
-                            .fill(i == currentSlide ? Color.white : Color.white.opacity(0.36))
+                            .fill(i == currentSlide ? Color.white : AppColors.overlayWhiteEmphasisStroke)
                             .frame(width: i == currentSlide ? 20 : 6, height: 6)
                             .animation(.easeInOut(duration: 0.2), value: currentSlide)
                     }
@@ -236,12 +236,12 @@ private struct WelcomeFireProgressCard: View {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top) {
                     Text("FIRE TIMELINE")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.miniLabel)
                         .foregroundColor(.white.opacity(0.70))
                         .tracking(1.2)
                     Spacer()
                     Image(systemName: "flame.fill")
-                        .font(.system(size: 14))
+                        .font(.bodySmall)
                         .foregroundColor(.white.opacity(0.70))
                 }
 
@@ -258,7 +258,7 @@ private struct WelcomeFireProgressCard: View {
                     Spacer()
                     ZStack {
                         Circle()
-                            .stroke(Color.white.opacity(0.15), lineWidth: 9)
+                            .stroke(AppColors.glassPillStroke, lineWidth: 9)
                             .frame(width: 118, height: 118)
                         Circle()
                             .trim(from: 0, to: trimEnd)
@@ -288,13 +288,13 @@ private struct WelcomeFireProgressCard: View {
                             .foregroundColor(.white.opacity(0.45))
                             .tracking(0.4)
                         Text("35")
-                            .font(.system(size: 15, weight: .bold))
+                            .font(.cardFigureSecondary)
                             .foregroundStyle(.white)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                     Divider()
-                        .background(Color.white.opacity(0.18))
+                        .background(AppColors.overlayWhiteHigh)
                         .frame(height: 28)
 
                     VStack(alignment: .trailing, spacing: 2) {
@@ -303,7 +303,7 @@ private struct WelcomeFireProgressCard: View {
                             .foregroundColor(.white.opacity(0.45))
                             .tracking(0.4)
                         Text("2,847")
-                            .font(.system(size: 15, weight: .bold))
+                            .font(.cardFigureSecondary)
                             .foregroundStyle(.white)
                     }
                     .frame(maxWidth: .infinity, alignment: .trailing)
@@ -361,7 +361,7 @@ private struct WelcomeBudgetCard: View {
                 )
 
                 Divider()
-                    .background(Color.white.opacity(0.15))
+                    .background(AppColors.glassPillStroke)
                     .padding(.vertical, 10)
 
                 budgetSection(
@@ -446,12 +446,12 @@ private struct WelcomeBudgetCard: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline) {
                 Text(name)
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.label)
                     .foregroundStyle(.white)
                     .tracking(0.5)
                 Spacer()
                 Text("$" + formattedNumber(amount))
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.h4)
                     .foregroundStyle(.white)
                     .monospacedDigit()
             }
@@ -481,11 +481,11 @@ private struct WelcomeBudgetCard: View {
                                 .font(.system(size: 11.5, weight: .medium))
                                 .foregroundStyle(.white)
                             Text(item.2)
-                                .font(.system(size: 9))
+                                .font(.miniLabel)
                                 .foregroundColor(.white.opacity(0.45))
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 2)
-                                .background(Color.white.opacity(0.12))
+                                .background(AppColors.overlayWhiteMid)
                                 .clipShape(Capsule())
                         }
                         .padding(.vertical, 1.5)
@@ -549,17 +549,17 @@ private struct WelcomeSavingsCard: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
                 Text("SAVING OVERVIEW")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(.miniLabel)
                     .foregroundColor(.white.opacity(0.65))
                     .tracking(0.8)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(formatted(displayAmount))
-                        .font(.system(size: 22, weight: .bold))
+                        .font(.detailTitle)
                         .foregroundStyle(.white)
                         .monospacedDigit()
                     Text("Total saved this year")
-                        .font(.system(size: 10))
+                        .font(.label)
                         .foregroundColor(.white.opacity(0.55))
                 }
 
@@ -601,12 +601,12 @@ private struct WelcomeSavingsCard: View {
                                     if isFuture {
                                         // Future month: small stub
                                         RoundedRectangle(cornerRadius: 2)
-                                            .fill(Color.white.opacity(0.18))
+                                            .fill(AppColors.overlayWhiteHigh)
                                             .frame(width: barW, height: 6)
                                     } else {
                                         // Active: white if at/above target, gray if below
                                         RoundedRectangle(cornerRadius: 3)
-                                            .fill(isAboveTarget ? Color.white : Color.white.opacity(0.35))
+                                            .fill(isAboveTarget ? Color.white : AppColors.overlayWhiteEmphasisStroke)
                                             .frame(width: barW, height: max(6, barAreaH * animH))
                                     }
                                     Text(pair.0)
@@ -623,7 +623,7 @@ private struct WelcomeSavingsCard: View {
 
                 HStack {
                     statItem(label: "TARGET RATE",   value: "20%",     trailing: false)
-                    Divider().background(Color.white.opacity(0.18)).frame(height: 28)
+                    Divider().background(AppColors.overlayWhiteHigh).frame(height: 28)
                     statItem(label: "TARGET SAVING", value: "$2,000",  trailing: true)
                 }
             }
@@ -645,7 +645,7 @@ private struct WelcomeSavingsCard: View {
                 .foregroundColor(.white.opacity(0.45))
                 .tracking(0.4)
             Text(value)
-                .font(.system(size: 15, weight: .bold))
+                .font(.cardFigureSecondary)
                 .foregroundStyle(.white)
         }
         .frame(maxWidth: .infinity, alignment: trailing ? .trailing : .leading)
@@ -718,16 +718,16 @@ private struct WelcomeNetWorthCard: View {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("TOTAL NET WORTH")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.miniLabel)
                         .foregroundColor(.white.opacity(0.65))
                         .tracking(0.8)
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(formatted(displayAmount))
-                            .font(.system(size: 24, weight: .bold))
+                            .font(.h2)
                             .foregroundStyle(.white)
                             .monospacedDigit()
                         Text("+13.8%")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.footnoteSemibold)
                             .foregroundColor(AppColors.accentGreen)
                             .opacity(displayAmount > 0 ? 1 : 0)
                     }
@@ -745,7 +745,7 @@ private struct WelcomeNetWorthCard: View {
                             let endX = geo.size.width
                             let endY = geo.size.height * 0.25
                             Circle()
-                                .fill(Color.white.opacity(pulse ? 0.0 : 0.35))
+                                .fill(pulse ? Color.clear : AppColors.overlayWhiteEmphasisStroke)
                                 .frame(width: 18, height: 18)
                                 .position(x: endX, y: endY)
                             Circle()
@@ -770,7 +770,7 @@ private struct WelcomeNetWorthCard: View {
                     }
                 }
                 .padding(4)
-                .background(Color.white.opacity(0.12))
+                .background(AppColors.overlayWhiteMid)
                 .clipShape(Capsule())
             }
         }

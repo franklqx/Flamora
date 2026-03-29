@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import CoreText
 import RevenueCat
+import UIKit
 
 @main
 struct Flamora_appApp: App {
@@ -18,7 +19,8 @@ struct Flamora_appApp: App {
 
     init() {
         Self.registerFonts()
-        UIWindow.appearance().backgroundColor = .clear
+        UIWindow.appearance().backgroundColor = UIColor.black
+        UIScrollView.appearance().delaysContentTouches = false
         SubscriptionManager.configure()
     }
 
