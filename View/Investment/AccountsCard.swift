@@ -83,7 +83,7 @@ private struct AccountRow: View {
     var body: some View {
         HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
             accountLogo
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(account.institution)
                     .font(.figureSecondarySemibold)
                     .foregroundStyle(AppColors.textPrimary)

@@ -62,7 +62,7 @@ struct BudgetCard: View {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(formatCurrency(spending.total))
                         .font(.cardFigurePrimary)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                     Text("/ \(formatCurrency(spending.budgetLimit))")
                         .font(.inlineLabel)
                         .foregroundColor(AppColors.textTertiary)
@@ -173,7 +173,7 @@ private struct BudgetRowItem: View {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(current)
                     .font(.cardFigureSecondary)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
                 Text("/ \(total)")
                     .font(.caption)
                     .fontWeight(.medium)

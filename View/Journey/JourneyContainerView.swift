@@ -26,145 +26,23 @@ struct JourneyContainerView: View {
                 onOpenCashflowDestination: onOpenCashflowDestination
             )
         } else {
-            JourneyCTAView(bottomPadding: bottomPadding)
+            ConnectAccountCTAView(
+                icon: "flame.fill",
+                glowColor: AppColors.accentPurple,
+                iconGradient: [AppColors.accentPurple, AppColors.accentPink],
+                title: "Build Your\nFIRE Plan",
+                subtitle: "Connect your accounts to see your real\nFIRE progress and net worth.",
+                features: [
+                    ("chart.line.uptrend.xyaxis", "Real-time FIRE progress tracking"),
+                    ("banknote", "Live net worth from all accounts"),
+                    ("calendar", "Monthly savings & budget trends"),
+                    ("sparkles", "AI-powered FIRE insights")
+                ],
+                buttonLabel: "Connect Accounts",
+                bottomPadding: bottomPadding
+            )
         }
     }
-}
-
-// MARK: - Journey 初始状态 CTA
-
-private struct JourneyCTAView: View {
-    let bottomPadding: CGFloat
-    @Environment(PlaidManager.self) private var plaidManager
-    @Environment(SubscriptionManager.self) private var subscriptionManager
-
-    var body: some View {
-        GeometryReader { proxy in
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: AppSpacing.lg) {
-                    Spacer().frame(height: AppSpacing.xl)
-
-                    // Hero icon
-                    ZStack {
-                        Circle()
-                            .fill(
-                                RadialGradient(
-                                    colors: [
-                                        AppColors.accentPurple.opacity(0.2),
-                                        Color.clear
-                                    ],
-                                    center: .center,
-                                    startRadius: 0,
-                                    endRadius: 80
-                                )
-                            )
-                            .frame(width: 160, height: 160)
-
-                        Image(systemName: "flame.fill")
-                            .font(.system(size: 56))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [AppColors.accentPurple, AppColors.accentPink],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                    }
-
-                    VStack(spacing: AppSpacing.sm) {
-                        Text("Build Your\nFIRE Plan")
-                            .font(.h1)
-                            .foregroundStyle(.white)
-                            .multilineTextAlignment(.center)
-
-                        Text("Connect your accounts to see your real\nFIRE progress and net worth.")
-                            .font(.supportingText)
-                            .foregroundColor(AppColors.textSecondary)
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(4)
-                    }
-
-                    // Feature chips
-                    VStack(spacing: 12) {
-                        ForEach(features, id: \.0) { icon, text in
-                            HStack(spacing: 12) {
-                                Image(systemName: icon)
-                                    .font(.bodyRegular)
-                                    .foregroundStyle(
-                                        LinearGradient(
-                                            colors: [AppColors.accentPurple, AppColors.accentPink],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-                                    .frame(width: 24)
-
-                                Text(text)
-                                    .font(.inlineLabel)
-                                    .foregroundStyle(.white)
-
-                                Spacer()
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 14)
-                            .background(AppColors.surface)
-                            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: AppRadius.md)
-                                    .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
-                            )
-                        }
-                    }
-                    .padding(.horizontal, AppSpacing.screenPadding)
-
-                    Spacer(minLength: AppSpacing.xl)
-
-                    // CTA Button
-                    Button(action: {
-                        Task {
-                            await plaidManager.startLinkFlow()
-                        }
-                    }) {
-                        HStack(spacing: 8) {
-                            if plaidManager.isConnecting {
-                                ProgressView().tint(.black)
-                            } else {
-                                Text("Connect Accounts")
-                                    .font(.statRowSemibold)
-                                    .foregroundColor(.black)
-                                Image(systemName: "arrow.right")
-                                    .font(.figureSecondarySemibold)
-                                    .foregroundColor(.black)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(
-                            LinearGradient(
-                                colors: AppColors.gradientFire,
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
-                    }
-                    .disabled(plaidManager.isConnecting)
-                    .padding(.horizontal, AppSpacing.screenPadding)
-                    .padding(.bottom, 120)
-                }
-                .frame(minHeight: proxy.size.height, alignment: .top)
-                .padding(.bottom, AppSpacing.lg)
-                .padding(.top, AppSpacing.lg)
-            }
-        }
-    }
-
-    private let features: [(String, String)] = [
-        ("chart.line.uptrend.xyaxis", "Real-time FIRE progress tracking"),
-        ("banknote", "Live net worth from all accounts"),
-        ("calendar", "Monthly savings & budget trends"),
-        ("sparkles", "AI-powered FIRE insights")
-    ]
 }
 
 // MARK: - Analysis Card

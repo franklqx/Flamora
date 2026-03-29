@@ -55,7 +55,16 @@
       "WebFetch(domain:palette.site)",
       "WebFetch(domain:colorkit.co)",
       "WebFetch(domain:pmc.ncbi.nlm.nih.gov)",
-      "WebFetch(domain:mypalettetool.com)"
+      "WebFetch(domain:mypalettetool.com)",
+      "Bash(gh repo:*)",
+      "Bash(gh api:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(bun --version)",
+      "Bash(git --version)",
+      "Bash(git clone:*)",
+      "Bash(./setup)",
+      "Skill(design-review)",
+      "Skill(design-review:*)"
     ]
   }
 }

@@ -152,7 +152,7 @@ struct PortfolioCard: View {
 
             HStack(alignment: .firstTextBaseline, spacing: 0) {
                 Text(formatCurrencyWhole(displayedValue))
-                    .font(.system(size: 34, weight: .semibold))
+                    .font(.portfolioHero)
                     .foregroundStyle(.white)
                     .contentTransition(.numericText())
                 Text(formatCurrencyCents(displayedValue))

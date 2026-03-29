@@ -56,6 +56,7 @@ extension Font {
     static var h2:          Font { appFont(AppTypography.h2,      .bold) }
     static var h3:          Font { appFont(AppTypography.h3,      .semibold) }
     static var h4:          Font { appFont(AppTypography.h4,      .semibold) }
+    static var portfolioHero: Font { appFont(34, .semibold) }
 
     // ── Body ──────────────────────────────────────────────────
     static var bodyRegular:       Font { appFont(AppTypography.body,      .regular) }
