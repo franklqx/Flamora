@@ -120,7 +120,6 @@ class PlaidManager {
             let response: ExchangeResponse = try await client.functions.invoke("exchange-public-token", options: options)
             if response.success {
                 hasLinkedBank = true
-                showBudgetSetup = true
                 connectedInstitutionName = response.data.institution_name ?? institutionName
                 print("🏦 [PlaidManager] ✅ Bank linked! institution=\(connectedInstitutionName ?? "?"), accounts=\(response.data.accounts_linked)")
             } else {
