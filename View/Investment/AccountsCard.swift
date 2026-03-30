@@ -7,6 +7,8 @@ import SwiftUI
 
 struct AccountsCard: View {
     let accounts: [Account]
+    var isConnected: Bool = true
+    var onAddAccount: (() -> Void)? = nil
     @State private var selectedAccount: Account?
 
     var body: some View {
@@ -28,28 +30,74 @@ struct AccountsCard: View {
                 .frame(height: 0.5)
                 .padding(.horizontal, AppSpacing.cardPadding)
 
-            // Account rows
-            ForEach(accounts.indices, id: \.self) { index in
-                Button(action: { selectedAccount = accounts[index] }) {
-                    AccountRow(account: accounts[index])
+            if isConnected {
+                // Account rows
+                ForEach(accounts.indices, id: \.self) { index in
+                    Button(action: { selectedAccount = accounts[index] }) {
+                        AccountRow(account: accounts[index])
+                    }
+                    .buttonStyle(.plain)
+
+                    if index < accounts.count - 1 {
+                        Rectangle()
+                            .fill(AppColors.surfaceBorder)
+                            .frame(height: 0.5)
+                            .padding(.horizontal, AppSpacing.cardPadding)
+                    }
+                }
+
+                // Add Account button
+                Rectangle()
+                    .fill(AppColors.surfaceBorder)
+                    .frame(height: 0.5)
+                    .padding(.horizontal, AppSpacing.cardPadding)
+
+                Button(action: { onAddAccount?() }) {
+                    HStack(spacing: AppSpacing.sm) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.bodyRegular)
+                            .foregroundStyle(AppColors.textPrimary)
+                        Text("Add Account")
+                            .font(.bodySemibold)
+                            .foregroundStyle(AppColors.textPrimary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, AppSpacing.md)
                 }
                 .buttonStyle(.plain)
-
-                if index < accounts.count - 1 {
-                    Rectangle()
-                        .fill(AppColors.surfaceBorder)
-                        .frame(height: 0.5)
-                        .padding(.horizontal, AppSpacing.cardPadding)
-                }
+            } else {
+                disconnectedContent
             }
+        }
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.xl)
+                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
+        )
+        .fullScreenCover(item: $selectedAccount) { account in
+            AccountDetailView(account: account)
+        }
+    }
 
-            // Add Account button
-            Rectangle()
-                .fill(AppColors.surfaceBorder)
-                .frame(height: 0.5)
-                .padding(.horizontal, AppSpacing.cardPadding)
+    private var disconnectedContent: some View {
+        VStack(spacing: AppSpacing.md) {
+            VStack(spacing: AppSpacing.xs) {
+                Image(systemName: "building.columns")
+                    .font(.h3)
+                    .foregroundStyle(AppColors.textTertiary.opacity(0.45))
+                Text("No accounts connected")
+                    .font(.figureSecondarySemibold)
+                    .foregroundStyle(AppColors.textTertiary)
+                Text("Connect your bank and investment accounts to see them here.")
+                    .font(.caption)
+                    .foregroundStyle(AppColors.textTertiary.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
 
-            Button(action: { /* TODO: add account flow */ }) {
+            Button(action: { onAddAccount?() }) {
                 HStack(spacing: AppSpacing.sm) {
                     Image(systemName: "plus.circle.fill")
                         .font(.bodyRegular)
@@ -63,15 +111,9 @@ struct AccountsCard: View {
             }
             .buttonStyle(.plain)
         }
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.xl)
-                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
-        )
-        .fullScreenCover(item: $selectedAccount) { account in
-            AccountDetailView(account: account)
-        }
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.top, AppSpacing.md)
+        .padding(.bottom, AppSpacing.xs)
     }
 }
 

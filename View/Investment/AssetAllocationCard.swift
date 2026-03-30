@@ -7,6 +7,7 @@ import SwiftUI
 
 struct AssetAllocationCard: View {
     let allocation: Allocation
+    var isConnected: Bool = true
     @State private var showDetail = false
 
     private var totalAmount: Double {
@@ -44,13 +45,15 @@ struct AssetAllocationCard: View {
                     .font(.cardHeader)
                     .foregroundColor(AppColors.textTertiary)
                     .tracking(AppTypography.Tracking.cardHeader)
-                Image(systemName: "chevron.right")
-                    .font(.miniLabel)
-                    .foregroundColor(AppColors.textTertiary)
+                if isConnected {
+                    Image(systemName: "chevron.right")
+                        .font(.miniLabel)
+                        .foregroundColor(AppColors.textTertiary)
+                }
                 Spacer()
             }
             .contentShape(Rectangle())
-            .onTapGesture { showDetail = true }
+            .onTapGesture { if isConnected { showDetail = true } }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.top, AppSpacing.cardPadding)
             .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
@@ -60,39 +63,42 @@ struct AssetAllocationCard: View {
                 .frame(height: 0.5)
                 .padding(.horizontal, AppSpacing.cardPadding)
 
-            // Chart + breakdown
-            HStack(spacing: 20) {
-                // Donut with center total
-                ZStack {
-                    DonutChart(segments: allocationSegments)
-                        .frame(width: 110, height: 110)
+            if isConnected {
+                // Chart + breakdown
+                HStack(spacing: 20) {
+                    ZStack {
+                        DonutChart(segments: allocationSegments)
+                            .frame(width: 110, height: 110)
 
-                    VStack(spacing: 1) {
-                        Text("TOTAL")
-                            .font(.miniLabel)
-                            .foregroundColor(AppColors.textTertiary)
-                            .tracking(AppTypography.Tracking.miniUppercase)
-                        Text(formatCompact(totalAmount))
-                            .font(.inlineFigureBold)
-                            .foregroundStyle(.white)
+                        VStack(spacing: 1) {
+                            Text("TOTAL")
+                                .font(.miniLabel)
+                                .foregroundColor(AppColors.textTertiary)
+                                .tracking(AppTypography.Tracking.miniUppercase)
+                            Text(formatCompact(totalAmount))
+                                .font(.inlineFigureBold)
+                                .foregroundStyle(AppColors.textPrimary)
+                        }
                     }
-                }
 
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(sortedRows.indices, id: \.self) { i in
-                        AllocationRow(
-                            title: sortedRows[i].title,
-                            percent: sortedRows[i].percent,
-                            amount: sortedRows[i].amount,
-                            color: sortedRows[i].color
-                        )
+                    VStack(alignment: .leading, spacing: 12) {
+                        ForEach(sortedRows.indices, id: \.self) { i in
+                            AllocationRow(
+                                title: sortedRows[i].title,
+                                percent: sortedRows[i].percent,
+                                amount: sortedRows[i].amount,
+                                color: sortedRows[i].color
+                            )
+                        }
                     }
-                }
 
-                Spacer()
+                    Spacer()
+                }
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.vertical, AppSpacing.cardPadding)
+            } else {
+                disconnectedContent
             }
-            .padding(.horizontal, AppSpacing.cardPadding)
-            .padding(.vertical, AppSpacing.cardPadding)
         }
         .background(AppColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
@@ -103,6 +109,54 @@ struct AssetAllocationCard: View {
         .fullScreenCover(isPresented: $showDetail) {
             AssetAllocationDetailView(allocation: allocation)
         }
+    }
+
+    private var disconnectedContent: some View {
+        HStack(spacing: 20) {
+            // Ghost donut
+            ZStack {
+                Circle()
+                    .stroke(AppColors.surfaceInput, lineWidth: 14)
+                    .frame(width: 110, height: 110)
+                    .opacity(0.35)
+
+                VStack(spacing: 1) {
+                    Text("TOTAL")
+                        .font(.miniLabel)
+                        .foregroundColor(AppColors.textTertiary)
+                        .tracking(AppTypography.Tracking.miniUppercase)
+                    Text("$—")
+                        .font(.inlineFigureBold)
+                        .foregroundStyle(AppColors.textTertiary)
+                }
+            }
+
+            // Ghost rows (locked placeholder)
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(["U.S. Stocks", "Crypto", "Cash"], id: \.self) { label in
+                    HStack(spacing: 8) {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .foregroundStyle(AppColors.textTertiary.opacity(0.45))
+                        Circle()
+                            .fill(AppColors.textTertiary.opacity(0.3))
+                            .frame(width: 8, height: 8)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(label)
+                                .font(.footnoteSemibold)
+                                .foregroundStyle(AppColors.textTertiary)
+                            Text("—% · $—")
+                                .font(.cardRowMeta)
+                                .foregroundColor(AppColors.textTertiary.opacity(0.5))
+                        }
+                    }
+                }
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.vertical, AppSpacing.cardPadding)
     }
 
     private func formatCompact(_ value: Double) -> String {
@@ -127,7 +181,7 @@ private struct AllocationRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.footnoteSemibold)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
                 Text("\(percent)% · \(formatCurrency(amount))")
                     .font(.cardRowMeta)
                     .foregroundColor(AppColors.textTertiary)
@@ -148,7 +202,6 @@ private struct DonutChart: View {
     let segments: [ChartSegment]
     var body: some View {
         ZStack {
-            // Background track
             Circle()
                 .stroke(AppColors.surfaceInput, lineWidth: 14)
 

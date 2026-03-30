@@ -8,6 +8,7 @@
 //  • GlassPillSelector to switch time ranges (1W / 1M / 3M / YTD / ALL)
 //  • Chart locked until 7 days after account link date
 //  • Shared between JourneyView and InvestmentView
+//  • isConnected=false → ghost UI + Connect Accounts CTA
 //
 
 import SwiftUI
@@ -46,6 +47,8 @@ struct PortfolioCard: View {
     let gainPercentage: Double
     /// First account link date. Defaults to 30 days ago so mock data shows the chart immediately.
     var accountLinkedDate: Date = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+    var isConnected: Bool = true
+    var onConnectTapped: (() -> Void)? = nil
     var onTap: (() -> Void)? = nil
 
     // State
@@ -84,25 +87,35 @@ struct PortfolioCard: View {
 
             headerSection
                 .padding(.horizontal, AppSpacing.cardPadding)
-                .padding(.top, 16)
-                .padding(.bottom, 12)
+                .padding(.top, AppSpacing.md)
+                .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
 
-            if hasEnoughData {
-                chartView
+            if isConnected {
+                if hasEnoughData {
+                    chartView
+                } else {
+                    noDataPlaceholder
+                        .frame(height: 120)
+                        .padding(.horizontal, AppSpacing.cardPadding)
+                }
+
+                GlassPillSelector(
+                    items: PortfolioTimeRange.allCases,
+                    selected: $selectedRange,
+                    label: { $0.label }
+                )
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.top, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.sm + AppSpacing.xs + AppSpacing.xs)
+
             } else {
-                noDataPlaceholder
-                    .frame(height: 120)
-                    .padding(.horizontal, AppSpacing.cardPadding)
-            }
+                ghostChartView
 
-            GlassPillSelector(
-                items: PortfolioTimeRange.allCases,
-                selected: $selectedRange,
-                label: { $0.label }
-            )
-            .padding(.horizontal, AppSpacing.cardPadding)
-            .padding(.top, 8)
-            .padding(.bottom, 14)
+                connectButton
+                    .padding(.horizontal, AppSpacing.cardPadding)
+                    .padding(.top, AppSpacing.sm)
+                    .padding(.bottom, AppSpacing.cardPadding)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AppColors.surface)
@@ -123,7 +136,7 @@ struct PortfolioCard: View {
                 )
                 .allowsHitTesting(false)
         )
-        .shadow(color: AppColors.cardShadow, radius: 16, x: 0, y: 8)
+        .shadow(color: AppColors.cardShadow, radius: AppSpacing.md, x: 0, y: AppSpacing.sm)
         .padding(.horizontal, AppSpacing.screenPadding)
         .onChange(of: selectedRange) { _ in
             hoveredIndex = nil
@@ -134,54 +147,97 @@ struct PortfolioCard: View {
     // MARK: Header
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-
-            HStack(spacing: 4) {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.xs) {
                 Text("PORTFOLIO")
                     .font(.cardHeader)
                     .foregroundColor(AppColors.textTertiary)
                     .tracking(AppTypography.Tracking.cardHeader)
-                if onTap != nil {
+                if onTap != nil && isConnected {
                     Image(systemName: "chevron.right")
                         .font(.miniLabel)
                         .foregroundColor(AppColors.textTertiary)
                 }
             }
             .contentShape(Rectangle())
-            .onTapGesture { onTap?() }
+            .onTapGesture { if isConnected { onTap?() } }
 
-            HStack(alignment: .firstTextBaseline, spacing: 0) {
-                Text(formatCurrencyWhole(displayedValue))
+            if isConnected {
+                HStack(alignment: .firstTextBaseline, spacing: 0) {
+                    Text(formatCurrencyWhole(displayedValue))
+                        .font(.portfolioHero)
+                        .foregroundStyle(AppColors.textPrimary)
+                        .contentTransition(.numericText())
+                    Text(formatCurrencyCents(displayedValue))
+                        .font(.h4)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                gainBadge
+            } else {
+                Text("$—")
                     .font(.portfolioHero)
-                    .foregroundStyle(.white)
-                    .contentTransition(.numericText())
-                Text(formatCurrencyCents(displayedValue))
-                    .font(.h4)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundStyle(AppColors.textTertiary)
+                Text("Connect accounts to see your net worth")
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.textTertiary)
             }
-
-            gainBadge
         }
         .animation(.easeInOut(duration: 0.15), value: hoveredIndex)
+    }
+
+    // MARK: Ghost chart（未连接时，低透明度占位）
+
+    private var ghostChartView: some View {
+        GeometryReader { geo in
+            chartCanvas(w: geo.size.width, h: geo.size.height)
+        }
+        .frame(height: 120)
+        .clipped()
+        .opacity(0.1)
+        .allowsHitTesting(false)
+    }
+
+    // MARK: Connect button
+
+    private var connectButton: some View {
+        Button(action: { onConnectTapped?() }) {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: "link")
+                    .font(.bodySemibold)
+                    .foregroundStyle(AppColors.textInverse)
+                Text("Connect Accounts")
+                    .font(.statRowSemibold)
+                    .foregroundStyle(AppColors.textInverse)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(
+                LinearGradient(
+                    colors: AppColors.gradientFlamePill,
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+        }
+        .buttonStyle(.plain)
     }
 
     private var gainBadge: some View {
         let (diff, pct) = displayedGain
         let up = diff >= 0
-        return HStack(spacing: 5) {
+        return HStack(spacing: AppSpacing.xs) {
             Image(systemName: up ? "arrow.up.right" : "arrow.down.right")
                 .font(.cardHeader)
             Text("\(up ? "+" : "")\(formatCurrencyCompact(diff))  (\(String(format: "%.2f", pct))%)")
                 .font(.footnoteRegular)
         }
         .foregroundColor(up ? AppColors.successAlt : AppColors.error)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
+        .padding(.horizontal, AppSpacing.sm + AppSpacing.xs)
+        .padding(.vertical, AppSpacing.sm)
         .background((up ? AppColors.successAlt : AppColors.error).opacity(0.14))
         .clipShape(Capsule())
     }
-
-    // MARK: Chart
 
     private var chartView: some View {
         GeometryReader { geo in
@@ -202,7 +258,7 @@ struct PortfolioCard: View {
         let vRange  = max(maxV - minV, 1.0)
         let steps   = max(n - 1, 1)
         let topPad: CGFloat = 22
-        let botPad: CGFloat = 4
+        let botPad: CGFloat = AppSpacing.xs
         let useH    = h - topPad - botPad
 
         let pts: [CGPoint] = vals.enumerated().map { i, v in
@@ -221,7 +277,7 @@ struct PortfolioCard: View {
                         startPoint: .top, endPoint: .bottom
                     ))
                 linePath(pts)
-                    .stroke(Color.white, lineWidth: 1.5)
+                    .stroke(AppColors.textPrimary, lineWidth: 1.5)
             }
 
             if let idx = hoveredIndex, pts.indices.contains(idx) {
@@ -233,11 +289,11 @@ struct PortfolioCard: View {
                     .font(.label)
                     .foregroundColor(AppColors.overlayWhiteOnGlass)
                     .fixedSize()
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, AppSpacing.sm - AppSpacing.xs)
+                    .padding(.vertical, AppSpacing.xs / 2)
                     .background(AppColors.overlayWhiteMid)
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
-                    .position(x: min(max(sx, 36), w - 36), y: topPad / 2 + 2)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm))
+                    .position(x: min(max(sx, AppSpacing.xl + AppSpacing.xs), w - AppSpacing.xl - AppSpacing.xs), y: topPad / 2 + AppSpacing.xs)
                     .transition(.opacity)
                     .animation(.easeInOut(duration: 0.1), value: hoveredIndex)
 
@@ -254,34 +310,34 @@ struct PortfolioCard: View {
                     .position(x: sx, y: sy)
 
                 Circle()
-                    .fill(Color.white)
+                    .fill(AppColors.textPrimary)
                     .frame(width: 9, height: 9)
                     .position(x: sx, y: sy)
             }
 
-            ChartInteractionLayer(
-                onDrag: { x, chartWidth in
-                    guard chartWidth > 0, n > 1 else { return }
-                    if !hapticFired {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        hapticFired = true
+            if isConnected {
+                ChartInteractionLayer(
+                    onDrag: { x, chartWidth in
+                        guard chartWidth > 0, n > 1 else { return }
+                        if !hapticFired {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            hapticFired = true
+                        }
+                        let fraction = max(0, min(x / chartWidth, 1.0))
+                        hoveredIndex = min(
+                            Int((fraction * CGFloat(n - 1)).rounded()),
+                            n - 1
+                        )
+                    },
+                    onRelease: {
+                        withAnimation(.easeOut(duration: 0.25)) { hoveredIndex = nil }
+                        hapticFired = false
                     }
-                    let fraction = max(0, min(x / chartWidth, 1.0))
-                    hoveredIndex = min(
-                        Int((fraction * CGFloat(n - 1)).rounded()),
-                        n - 1
-                    )
-                },
-                onRelease: {
-                    withAnimation(.easeOut(duration: 0.25)) { hoveredIndex = nil }
-                    hapticFired = false
-                }
-            )
-            .frame(width: w, height: h)
+                )
+                .frame(width: w, height: h)
+            }
         }
     }
-
-    // MARK: Path helpers
 
     private func linePath(_ pts: [CGPoint]) -> Path {
         guard pts.count > 1 else { return Path() }
@@ -315,12 +371,10 @@ struct PortfolioCard: View {
         return path
     }
 
-    // MARK: No-data placeholder
-
     private var noDataPlaceholder: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: AppSpacing.sm + AppSpacing.xs) {
             Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: 26))
+                .font(.navChevron)
                 .foregroundColor(AppColors.textTertiary.opacity(0.5))
             Text("Chart available after 7 days")
                 .font(.footnoteRegular)
@@ -425,14 +479,24 @@ struct PortfolioCard: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         ScrollView {
-            PortfolioCard(
-                portfolioBalance: 85240.0,
-                gainAmount: 3240.0,
-                gainPercentage: 3.95
-            )
-            .padding(.top, 24)
+            VStack(spacing: AppSpacing.cardPadding) {
+                PortfolioCard(
+                    portfolioBalance: 85240.0,
+                    gainAmount: 3240.0,
+                    gainPercentage: 3.95,
+                    isConnected: true
+                )
+                PortfolioCard(
+                    portfolioBalance: 0,
+                    gainAmount: 0,
+                    gainPercentage: 0,
+                    isConnected: false,
+                    onConnectTapped: {}
+                )
+            }
+            .padding(.top, AppSpacing.lg)
         }
     }
 }

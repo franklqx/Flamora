@@ -12,36 +12,16 @@ struct JourneyContainerView: View {
     var onFireTapped: () -> Void = {}
     var onInvestmentTapped: (() -> Void)? = nil
     var onOpenCashflowDestination: ((CashflowJourneyDestination) -> Void)? = nil
-    @Environment(PlaidManager.self) private var plaidManager
-    @Environment(SubscriptionManager.self) private var subscriptionManager
 
     private var bottomPadding: CGFloat { 0 }
 
     var body: some View {
-        if plaidManager.hasLinkedBank {
-            JourneyView(
-                bottomPadding: bottomPadding,
-                onFireTapped: onFireTapped,
-                onInvestmentTapped: onInvestmentTapped,
-                onOpenCashflowDestination: onOpenCashflowDestination
-            )
-        } else {
-            ConnectAccountCTAView(
-                icon: "flame.fill",
-                glowColor: AppColors.accentPurple,
-                iconGradient: [AppColors.accentPurple, AppColors.accentPink],
-                title: "Build Your\nFIRE Plan",
-                subtitle: "Connect your accounts to see your real\nFIRE progress and net worth.",
-                features: [
-                    ("chart.line.uptrend.xyaxis", "Real-time FIRE progress tracking"),
-                    ("banknote", "Live net worth from all accounts"),
-                    ("calendar", "Monthly savings & budget trends"),
-                    ("sparkles", "AI-powered FIRE insights")
-                ],
-                buttonLabel: "Connect Accounts",
-                bottomPadding: bottomPadding
-            )
-        }
+        JourneyView(
+            bottomPadding: bottomPadding,
+            onFireTapped: onFireTapped,
+            onInvestmentTapped: onInvestmentTapped,
+            onOpenCashflowDestination: onOpenCashflowDestination
+        )
     }
 }
 

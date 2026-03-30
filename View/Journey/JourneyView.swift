@@ -27,6 +27,8 @@ struct JourneyView: View {
     var onOpenCashflowDestination: ((CashflowJourneyDestination) -> Void)? = nil
     let bottomPadding: CGFloat
 
+    @Environment(PlaidManager.self) private var plaidManager
+
     init(
         bottomPadding: CGFloat = 0,
         onFireTapped: (() -> Void)? = nil,
@@ -49,7 +51,9 @@ struct JourneyView: View {
                         PortfolioCard(
                             portfolioBalance: netWorthSummary.totalNetWorth,
                             gainAmount: netWorthSummary.growthAmount,
-                            gainPercentage: netWorthSummary.growthPercentage
+                            gainPercentage: netWorthSummary.growthPercentage,
+                            isConnected: plaidManager.hasLinkedBank,
+                            onConnectTapped: { Task { await plaidManager.startLinkFlow() } }
                         )
 
                         if quoteVisible {
@@ -63,10 +67,16 @@ struct JourneyView: View {
                                 .padding(.horizontal, AppSpacing.screenPadding)
 
                             VStack(spacing: AppSpacing.cardGap) {
-                                BudgetPlanCard(apiBudget: apiBudget, daysLeft: data.budget.daysLeft) {
-                                    onOpenCashflowDestination?(.totalSpending)
-                                }
-                                SavingsRateCard(apiBudget: apiBudget) {
+                                BudgetPlanCard(
+                                    apiBudget: apiBudget,
+                                    daysLeft: data.budget.daysLeft,
+                                    onSetupBudget: { plaidManager.showBudgetSetup = true },
+                                    action: { onOpenCashflowDestination?(.totalSpending) }
+                                )
+                                SavingsRateCard(
+                                    apiBudget: apiBudget,
+                                    isConnected: plaidManager.hasLinkedBank
+                                ) {
                                     onOpenCashflowDestination?(.savingsOverview)
                                 }
                             }
@@ -192,4 +202,5 @@ private extension JourneyView {
 
 #Preview {
     JourneyView(onFireTapped: {})
+        .environment(PlaidManager.shared)
 }

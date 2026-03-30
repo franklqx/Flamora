@@ -21,8 +21,8 @@ enum CashflowJourneyDestination: Equatable, Identifiable {
 }
 
 struct CashflowView: View {
-    @Environment(PlaidManager.self) private var plaidManager
     @Environment(SubscriptionManager.self) private var subscriptionManager
+    @Environment(PlaidManager.self) private var plaidManager
 
     private let data = MockData.cashflowData
     @State private var apiBudget = MockData.apiMonthlyBudget
@@ -55,26 +55,12 @@ struct CashflowView: View {
         )
     }
 
+    private var hasBudget: Bool {
+        (apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget) > 0
+    }
+
     var body: some View {
-        if plaidManager.hasLinkedBank {
-            connectedView
-        } else {
-            ConnectAccountCTAView(
-                icon: "creditcard",
-                glowColor: AppColors.accentBlueBright,
-                iconGradient: [AppColors.accentBlueBright, AppColors.accentPurple],
-                title: "Track Your\nCashflow",
-                subtitle: "Connect your accounts to automatically\ntrack spending, savings, and budgets.",
-                features: [
-                    ("list.bullet.rectangle", "Auto transaction categorization"),
-                    ("chart.bar", "Monthly needs vs wants breakdown"),
-                    ("arrow.up.arrow.down", "To Review — flag unusual spending"),
-                    ("banknote", "Savings goal tracking")
-                ],
-                buttonLabel: "Connect to Accounts",
-                bottomPadding: 0
-            )
-        }
+        connectedView
     }
 
     var connectedView: some View {
@@ -85,17 +71,19 @@ struct CashflowView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: AppSpacing.lg) {
                         IncomeCard(
-                            income:          data.income,         // current month (mock)
-                            yearlyIncome:    MockData.yearlyIncome, // YTD (mock)
+                            income:          data.income,
+                            yearlyIncome:    MockData.yearlyIncome,
                             onCardTapped:    { showTotalIncomeDetail = true },
                             onActiveTapped:  { showActiveIncomeDetail = true },
-                            onPassiveTapped: { showPassiveIncomeDetail = true }
+                            onPassiveTapped: { showPassiveIncomeDetail = true },
+                            isConnected:     plaidManager.hasLinkedBank
                         )
                         .padding(.horizontal, AppSpacing.screenPadding)
 
                         SavingsTargetCard(
                             currentAmount: $currentSavings,
                             targetAmount: apiBudget.savingsBudget,
+                            isConnected: plaidManager.hasLinkedBank,
                             onAdd: { showSavingsInput = true },
                             onCardTap: { showSavingsSummary = true }
                         )
@@ -103,6 +91,9 @@ struct CashflowView: View {
 
                         BudgetCard(
                             spending: spendingForDisplay,
+                            isConnected: plaidManager.hasLinkedBank,
+                            hasBudget: hasBudget,
+                            onSetupBudget: { plaidManager.showBudgetSetup = true },
                             onCardTapped: { showTotalSpendingDetail = true },
                             onNeedsTapped: { showNeedsSpendingDetail = true },
                             onWantsTapped: { showWantsSpendingDetail = true }
@@ -207,24 +198,40 @@ private extension CashflowView {
 
                 Spacer()
 
-                Button(action: { showAllTransactions = true }) {
-                    Text("SEE ALL")
-                        .font(.smallLabel)
-                        .foregroundColor(AppColors.textSecondary)
-                        .tracking(0.4)
+                if plaidManager.hasLinkedBank {
+                    Button(action: { showAllTransactions = true }) {
+                        Text("SEE ALL")
+                            .font(.smallLabel)
+                            .foregroundColor(AppColors.textSecondary)
+                            .tracking(0.4)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
             .padding(.horizontal, AppSpacing.screenPadding)
 
-            ForEach(allTransactions.sorted {
-                if $0.date != $1.date { return $0.date > $1.date }
-                return ($0.time ?? "") > ($1.time ?? "")
-            }.prefix(5)) { transaction in
-                TransactionRow(transaction: transaction) {
-                    selectedTransaction = transaction
+            if plaidManager.hasLinkedBank {
+                ForEach(allTransactions.sorted {
+                    if $0.date != $1.date { return $0.date > $1.date }
+                    return ($0.time ?? "") > ($1.time ?? "")
+                }.prefix(5)) { transaction in
+                    TransactionRow(transaction: transaction) {
+                        selectedTransaction = transaction
+                    }
+                    .padding(.horizontal, AppSpacing.screenPadding)
                 }
+            } else {
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "lock.fill")
+                        .font(.footnoteRegular)
+                        .foregroundStyle(AppColors.textTertiary.opacity(0.45))
+                    Text("Connect accounts to see your transactions")
+                        .font(.footnoteRegular)
+                        .foregroundStyle(AppColors.textTertiary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, AppSpacing.screenPadding)
+                .padding(.vertical, AppSpacing.md)
             }
         }
         .padding(.top, 4)
@@ -253,6 +260,6 @@ private extension CashflowView {
 
 #Preview {
     CashflowView()
-        .environment(PlaidManager.shared)
         .environment(SubscriptionManager.shared)
+        .environment(PlaidManager.shared)
 }

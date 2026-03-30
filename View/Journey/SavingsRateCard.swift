@@ -7,6 +7,7 @@ import SwiftUI
 
 struct SavingsRateCard: View {
     let apiBudget: APIMonthlyBudget
+    var isConnected: Bool = true
     var action: (() -> Void)? = nil
 
     private var totalBudget: Double {
@@ -20,7 +21,7 @@ struct SavingsRateCard: View {
     private var targetAmount: Double { apiBudget.savingsBudget }
 
     var body: some View {
-        Button(action: { action?() }) {
+        Button(action: { if isConnected { action?() } }) {
             VStack(spacing: 0) {
                 // Header
                 HStack {
@@ -34,9 +35,11 @@ struct SavingsRateCard: View {
                             .font(.cardHeader)
                             .foregroundColor(AppColors.textTertiary)
                             .tracking(AppTypography.Tracking.cardHeader)
-                        Image(systemName: "chevron.right")
-                            .font(.miniLabel)
-                            .foregroundColor(AppColors.textTertiary)
+                        if isConnected {
+                            Image(systemName: "chevron.right")
+                                .font(.miniLabel)
+                                .foregroundColor(AppColors.textTertiary)
+                        }
                     }
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
@@ -49,25 +52,52 @@ struct SavingsRateCard: View {
                     .padding(.horizontal, AppSpacing.cardPadding)
 
                 // Content
-                HStack(alignment: .bottom, spacing: AppSpacing.md) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("\(actualPct)%")
-                            .font(.cardFigurePrimary)
-                            .foregroundStyle(AppColors.textPrimary)
-                        Text("Saved \(formatCurrency(savedAmount)) this month")
-                            .font(.footnoteRegular)
-                            .foregroundColor(AppColors.textTertiary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                if isConnected {
+                    HStack(alignment: .bottom, spacing: AppSpacing.md) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("\(actualPct)%")
+                                .font(.cardFigurePrimary)
+                                .foregroundStyle(AppColors.textPrimary)
+                            Text("Saved \(formatCurrency(savedAmount)) this month")
+                                .font(.footnoteRegular)
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                    GeometryReader { geo in
-                        miniChart(height: geo.size.height)
+                        GeometryReader { geo in
+                            miniChart(height: geo.size.height)
+                        }
+                        .frame(width: 110)
                     }
-                    .frame(width: 110)
+                    .padding(.horizontal, AppSpacing.cardPadding)
+                    .padding(.top, AppSpacing.md)
+                    .padding(.bottom, AppSpacing.cardPadding)
+                } else {
+                    HStack(alignment: .bottom, spacing: AppSpacing.md) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("—%")
+                                .font(.cardFigurePrimary)
+                                .foregroundStyle(AppColors.textTertiary)
+                            Text("Connect accounts to track savings rate")
+                                .font(.footnoteRegular)
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                        HStack(alignment: .bottom, spacing: AppSpacing.sm) {
+                            ForEach(0..<6, id: \.self) { _ in
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(AppColors.surfaceBorder)
+                                    .frame(width: 6, height: CGFloat.random(in: 8...32))
+                            }
+                        }
+                        .frame(width: 110)
+                        .opacity(0.35)
+                    }
+                    .padding(.horizontal, AppSpacing.cardPadding)
+                    .padding(.top, AppSpacing.md)
+                    .padding(.bottom, AppSpacing.cardPadding)
                 }
-                .padding(.horizontal, AppSpacing.cardPadding)
-                .padding(.top, AppSpacing.md)
-                .padding(.bottom, AppSpacing.cardPadding)
             }
             .background(AppColors.surface)
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))

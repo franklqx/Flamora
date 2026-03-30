@@ -7,6 +7,9 @@ import SwiftUI
 
 struct BudgetCard: View {
     let spending: Spending
+    var isConnected: Bool = true
+    var hasBudget: Bool = true
+    var onSetupBudget: (() -> Void)? = nil
     let onCardTapped: (() -> Void)?
     let onNeedsTapped: (() -> Void)?
     let onWantsTapped: (() -> Void)?
@@ -17,11 +20,17 @@ struct BudgetCard: View {
 
     init(
         spending: Spending,
+        isConnected: Bool = true,
+        hasBudget: Bool = true,
+        onSetupBudget: (() -> Void)? = nil,
         onCardTapped: (() -> Void)? = nil,
         onNeedsTapped: (() -> Void)? = nil,
         onWantsTapped: (() -> Void)? = nil
     ) {
         self.spending = spending
+        self.isConnected = isConnected
+        self.hasBudget = hasBudget
+        self.onSetupBudget = onSetupBudget
         self.onCardTapped = onCardTapped
         self.onNeedsTapped = onNeedsTapped
         self.onWantsTapped = onWantsTapped
@@ -29,72 +38,78 @@ struct BudgetCard: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
             HStack {
                 Text("TOTAL SPEND")
                     .font(.cardHeader)
                     .foregroundColor(AppColors.textTertiary)
                     .tracking(AppTypography.Tracking.cardHeader)
                 Spacer()
-                HStack(spacing: 3) {
+                HStack(spacing: AppSpacing.xs) {
                     Text(currentMonthLabel)
                         .font(.cardHeader)
                         .foregroundColor(AppColors.textTertiary)
                         .tracking(AppTypography.Tracking.cardHeader)
-                    Image(systemName: "chevron.right")
-                        .font(.miniLabel)
-                        .foregroundColor(AppColors.textTertiary)
+                    if isConnected && hasBudget {
+                        Image(systemName: "chevron.right")
+                            .font(.miniLabel)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
                 }
             }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.top, AppSpacing.cardPadding)
-            .padding(.bottom, 12)
+            .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
             .contentShape(Rectangle())
-            .onTapGesture { onCardTapped?() }
+            .onTapGesture {
+                if isConnected && hasBudget { onCardTapped?() }
+            }
 
             Rectangle()
                 .fill(AppColors.surfaceBorder)
                 .frame(height: 0.5)
                 .padding(.horizontal, AppSpacing.cardPadding)
 
-            // Amount + bar
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text(formatCurrency(spending.total))
-                        .font(.cardFigurePrimary)
-                        .foregroundStyle(AppColors.textPrimary)
-                    Text("/ \(formatCurrency(spending.budgetLimit))")
-                        .font(.inlineLabel)
-                        .foregroundColor(AppColors.textTertiary)
+            if !isConnected {
+                lockedEmptyState
+            } else if hasBudget {
+                VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
+                    HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                        Text(formatCurrency(spending.total))
+                            .font(.cardFigurePrimary)
+                            .foregroundStyle(AppColors.textPrimary)
+                        Text("/ \(formatCurrency(spending.budgetLimit))")
+                            .font(.inlineLabel)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                    segmentedBar
                 }
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.top, AppSpacing.md)
+                .contentShape(Rectangle())
+                .onTapGesture { onCardTapped?() }
 
-                segmentedBar
+                VStack(spacing: AppSpacing.sm + AppSpacing.xs) {
+                    BudgetRowItem(
+                        title: "Needs",
+                        current: formatCurrency(spending.needs),
+                        total: formatCurrency(apiBudget.needsBudget),
+                        color: needsColor,
+                        onTap: onNeedsTapped
+                    )
+                    BudgetRowItem(
+                        title: "Wants",
+                        current: formatCurrency(spending.wants),
+                        total: formatCurrency(apiBudget.wantsBudget),
+                        color: wantsColor,
+                        onTap: onWantsTapped
+                    )
+                }
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.top, AppSpacing.md)
+                .padding(.bottom, AppSpacing.cardPadding)
+            } else {
+                setupEmptyState
             }
-            .padding(.horizontal, AppSpacing.cardPadding)
-            .padding(.top, AppSpacing.md)
-            .contentShape(Rectangle())
-            .onTapGesture { onCardTapped?() }
-
-            // Breakdown rows
-            VStack(spacing: 12) {
-                BudgetRowItem(
-                    title: "Needs",
-                    current: formatCurrency(spending.needs),
-                    total: formatCurrency(apiBudget.needsBudget),
-                    color: needsColor,
-                    onTap: onNeedsTapped
-                )
-                BudgetRowItem(
-                    title: "Wants",
-                    current: formatCurrency(spending.wants),
-                    total: formatCurrency(apiBudget.wantsBudget),
-                    color: wantsColor,
-                    onTap: onWantsTapped
-                )
-            }
-            .padding(.horizontal, AppSpacing.cardPadding)
-            .padding(.top, 16)
-            .padding(.bottom, AppSpacing.cardPadding)
         }
         .background(AppColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
@@ -102,6 +117,63 @@ struct BudgetCard: View {
             RoundedRectangle(cornerRadius: AppRadius.lg)
                 .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
         )
+    }
+
+    private var lockedEmptyState: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
+                Text("$—")
+                    .font(.cardFigurePrimary)
+                    .foregroundStyle(AppColors.textTertiary)
+                Text("/ $—")
+                    .font(.inlineLabel)
+                    .foregroundColor(AppColors.textTertiary)
+            }
+            Text("Connect accounts to set up a budget")
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.textTertiary)
+            Capsule()
+                .fill(AppColors.progressTrack)
+                .frame(height: (AppSpacing.sm + AppSpacing.xs) / 2)
+        }
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.top, AppSpacing.md)
+        .padding(.bottom, AppSpacing.cardPadding)
+    }
+
+    private var setupEmptyState: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text("Build Your Plan")
+                    .font(.h3)
+                    .foregroundStyle(AppColors.textPrimary)
+                Text("Let AI analyze your spending and create a personalized budget.")
+                    .font(.bodySmall)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button(action: { onSetupBudget?() }) {
+                Text("Start Setup")
+                    .font(.statRowSemibold)
+                    .foregroundStyle(AppColors.textInverse)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(
+                        LinearGradient(
+                            colors: AppColors.gradientFlamePill,
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.top, AppSpacing.md)
+        .padding(.bottom, AppSpacing.cardPadding)
     }
 
     private var currentMonthLabel: String {
@@ -121,16 +193,16 @@ struct BudgetCard: View {
             let wWidth = max(0, safeW * CGFloat(wRatio))
 
             ZStack(alignment: .leading) {
-                Capsule().fill(AppColors.progressTrack).frame(height: 6)
+                Capsule().fill(AppColors.progressTrack).frame(height: (AppSpacing.sm + AppSpacing.xs) / 2)
                 HStack(spacing: 0) {
                     Rectangle().fill(needsColor).frame(width: nWidth)
                     Rectangle().fill(wantsColor).frame(width: wWidth)
                 }
                 .clipShape(Capsule())
-                .frame(height: 6)
+                .frame(height: (AppSpacing.sm + AppSpacing.xs) / 2)
             }
         }
-        .frame(height: 6)
+        .frame(height: (AppSpacing.sm + AppSpacing.xs) / 2)
     }
 
     private func formatCurrency(_ value: Double) -> String {
@@ -159,10 +231,10 @@ private struct BudgetRowItem: View {
 
     private var rowContent: some View {
         HStack {
-            HStack(spacing: 6) {
+            HStack(spacing: AppSpacing.sm) {
                 Circle()
                     .fill(color)
-                    .frame(width: 8, height: 8)
+                    .frame(width: AppSpacing.sm, height: AppSpacing.sm)
                 Text(title)
                     .font(.inlineLabel)
                     .foregroundColor(AppColors.textSecondary)
@@ -170,7 +242,7 @@ private struct BudgetRowItem: View {
 
             Spacer()
 
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
                 Text(current)
                     .font(.cardFigureSecondary)
                     .foregroundStyle(AppColors.textPrimary)
@@ -185,7 +257,7 @@ private struct BudgetRowItem: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         BudgetCard(spending: MockData.cashflowData.spending).padding()
     }
 }

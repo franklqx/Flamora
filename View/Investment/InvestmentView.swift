@@ -15,25 +15,7 @@ struct InvestmentView: View {
     @State private var apiNetWorth: APINetWorthSummary? = nil
 
     var body: some View {
-        if plaidManager.hasLinkedBank {
-            connectedView
-        } else {
-            ConnectAccountCTAView(
-                icon: "chart.pie.fill",
-                glowColor: AppColors.accentGreen,
-                iconGradient: [AppColors.accentGreenDeep, AppColors.chartBlue],
-                title: "Track Your\nInvestments",
-                subtitle: "Connect your brokerage and bank accounts\nto see your full portfolio in one place.",
-                features: [
-                    ("chart.line.uptrend.xyaxis", "Live portfolio performance"),
-                    ("building.columns.fill", "All accounts in one view"),
-                    ("chart.pie", "Asset allocation breakdown"),
-                    ("arrow.up.right", "Net worth growth tracking")
-                ],
-                buttonLabel: "Connect to Accounts",
-                bottomPadding: 0
-            )
-        }
+        connectedView
     }
 
     var connectedView: some View {
@@ -43,18 +25,28 @@ struct InvestmentView: View {
             GeometryReader { proxy in
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                        // 顶部第一张：投资页展示与 Journey 同风格的净资产卡片
                         PortfolioCard(
                             portfolioBalance: apiNetWorth?.totalNetWorth ?? 85240.0,
                             gainAmount: apiNetWorth?.growthAmount ?? 3240.0,
-                            gainPercentage: apiNetWorth?.growthPercentage ?? 3.95
+                            gainPercentage: apiNetWorth?.growthPercentage ?? 3.95,
+                            isConnected: plaidManager.hasLinkedBank,
+                            onConnectTapped: {
+                                Task { await plaidManager.startLinkFlow() }
+                            }
                         )
 
-                        AssetAllocationCard(allocation: data.allocation)
-                            .padding(.horizontal, AppSpacing.screenPadding)
+                        AssetAllocationCard(
+                            allocation: data.allocation,
+                            isConnected: plaidManager.hasLinkedBank
+                        )
+                        .padding(.horizontal, AppSpacing.screenPadding)
 
-                        AccountsCard(accounts: computedAccounts)
-                            .padding(.horizontal, AppSpacing.screenPadding)
+                        AccountsCard(
+                            accounts: computedAccounts,
+                            isConnected: plaidManager.hasLinkedBank,
+                            onAddAccount: { Task { await plaidManager.startLinkFlow() } }
+                        )
+                        .padding(.horizontal, AppSpacing.screenPadding)
                     }
                     .frame(minHeight: proxy.size.height, alignment: .top)
                     .padding(.top, AppSpacing.md)
@@ -79,6 +71,7 @@ private extension InvestmentView {
     private func fetchNetWorth() async -> APINetWorthSummary? {
         try? await APIService.shared.getNetWorthSummary()
     }
+
     var computedAccounts: [Account] {
         guard let nw = apiNetWorth, !nw.accounts.isEmpty else { return MockData.allAccounts }
         return nw.accounts.map {

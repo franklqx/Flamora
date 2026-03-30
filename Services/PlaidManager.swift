@@ -21,8 +21,8 @@ class PlaidManager {
 
     private init() {
         #if DEBUG
-        hasLinkedBank = true
-        connectedInstitutionName = "Chase Bank"
+        hasLinkedBank = false
+        connectedInstitutionName = nil
         #endif
     }
 

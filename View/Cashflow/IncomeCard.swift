@@ -24,6 +24,7 @@ struct IncomeCard: View {
     var onPassiveTapped: (() -> Void)? = nil
     /// Called when the period toggle changes — lets parent reload data
     var onPeriodChanged: ((Bool) -> Void)? = nil   // true = year, false = month
+    var isConnected: Bool = true
 
     // MARK: – Internal state
 
@@ -81,19 +82,23 @@ struct IncomeCard: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            donutSection
-                .padding(.top, AppSpacing.cardPadding)
-                .padding(.bottom, AppSpacing.xs)
+            if isConnected {
+                donutSection
+                    .padding(.top, AppSpacing.cardPadding)
+                    .padding(.bottom, AppSpacing.xs)
 
-            divider
+                divider
 
-            VStack(spacing: AppSpacing.xs) {
-                periodToggle
-                periodLabel
+                VStack(spacing: AppSpacing.xs) {
+                    periodToggle
+                    periodLabel
+                }
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.top, AppSpacing.md)
+                .padding(.bottom, AppSpacing.cardPadding)
+            } else {
+                disconnectedIncomePlaceholder
             }
-            .padding(.horizontal, AppSpacing.cardPadding)
-            .padding(.top, AppSpacing.md)
-            .padding(.bottom, AppSpacing.cardPadding)
         }
         .background(AppColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
@@ -101,6 +106,53 @@ struct IncomeCard: View {
             RoundedRectangle(cornerRadius: AppRadius.xl)
                 .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
         )
+    }
+
+    private var disconnectedIncomePlaceholder: some View {
+        VStack(spacing: 0) {
+            HStack { Spacer() }
+                .frame(height: 44)
+                .padding(.horizontal, AppSpacing.cardPadding)
+
+            ZStack {
+                Circle()
+                    .stroke(AppColors.progressTrack, lineWidth: ringWidth)
+                    .opacity(0.35)
+                    .frame(width: 200, height: 200)
+                VStack(spacing: AppSpacing.xs) {
+                    Text("Total Income")
+                        .font(.footnoteRegular)
+                        .foregroundColor(AppColors.textTertiary)
+                    Text("$—")
+                        .font(.cardFigurePrimary)
+                        .foregroundStyle(AppColors.textTertiary)
+                    Text("Connect accounts to see income")
+                        .font(.caption)
+                        .foregroundStyle(AppColors.textTertiary)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .frame(width: 200, height: 200)
+
+            HStack { Spacer() }
+                .frame(height: 44)
+                .padding(.horizontal, AppSpacing.cardPadding)
+
+            divider
+
+            VStack(spacing: AppSpacing.xs) {
+                periodToggle
+                    .opacity(0.35)
+                    .allowsHitTesting(false)
+                periodLabel
+                    .opacity(0.35)
+            }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.top, AppSpacing.md)
+            .padding(.bottom, AppSpacing.cardPadding)
+        }
+        .padding(.top, AppSpacing.cardPadding)
+        .padding(.bottom, AppSpacing.xs)
     }
 
     // MARK: – Donut section

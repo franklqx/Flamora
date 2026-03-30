@@ -10,6 +10,7 @@ import SwiftUI
 struct SavingsTargetCard: View {
     @Binding var currentAmount: Double
     var targetAmount: Double
+    var isConnected: Bool = true
     var onAdd: () -> Void
     var onCardTap: (() -> Void)? = nil
 
@@ -34,72 +35,97 @@ struct SavingsTargetCard: View {
                         .foregroundColor(AppColors.textTertiary)
                         .tracking(AppTypography.Tracking.cardHeader)
                     Spacer()
-                    HStack(spacing: 3) {
+                    HStack(spacing: AppSpacing.xs) {
                         Text(currentMonthLabel)
                             .font(.cardHeader)
                             .foregroundColor(AppColors.textTertiary)
                             .tracking(AppTypography.Tracking.cardHeader)
-                        Image(systemName: "chevron.right")
-                            .font(.miniLabel)
-                            .foregroundColor(AppColors.textTertiary)
+                        if isConnected {
+                            Image(systemName: "chevron.right")
+                                .font(.miniLabel)
+                                .foregroundColor(AppColors.textTertiary)
+                        }
                     }
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.top, AppSpacing.cardPadding)
-                .padding(.bottom, 12)
+                .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
 
                 Rectangle()
                     .fill(AppColors.surfaceBorder)
                     .frame(height: 0.5)
                     .padding(.horizontal, AppSpacing.cardPadding)
 
-                VStack(alignment: .leading, spacing: 0) {
-                    if currentAmount > 0 {
-                        HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            Text(formatCurrency(currentAmount))
-                                .font(.cardFigurePrimary)
-                                .foregroundStyle(.white)
-                            Text("/ \(formatCurrency(targetAmount))")
-                                .font(.bodyRegular)
-                                .fontWeight(.medium)
-                                .foregroundColor(AppColors.textTertiary)
-                        }
-                        .padding(.top, AppSpacing.md)
-                    } else {
-                        Text(formatCurrency(targetAmount))
-                            .font(.cardFigurePrimary)
-                            .foregroundStyle(.white)
-                            .padding(.top, AppSpacing.md)
-                    }
-
-                    if currentAmount > 0 {
-                        VStack(spacing: 10) {
-                            HStack {
-                                Text("CURRENT STATUS")
-                                    .font(.segmentLabel(selected: false))
-                                    .foregroundColor(AppColors.textTertiary)
-                                    .tracking(AppTypography.Tracking.miniUppercase)
-                                Spacer()
-                                Text("\(achievedPercent)% ACHIEVED")
-                                    .font(.segmentLabel(selected: true))
-                                    .foregroundStyle(.white)
-                                    .tracking(AppTypography.Tracking.miniUppercase)
+                Group {
+                    if isConnected {
+                        VStack(alignment: .leading, spacing: 0) {
+                            if currentAmount > 0 {
+                                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                                    Text(formatCurrency(currentAmount))
+                                        .font(.cardFigurePrimary)
+                                        .foregroundStyle(AppColors.textPrimary)
+                                    Text("/ \(formatCurrency(targetAmount))")
+                                        .font(.bodyRegular)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(AppColors.textTertiary)
+                                }
+                                .padding(.top, AppSpacing.md)
+                            } else {
+                                Text(formatCurrency(targetAmount))
+                                    .font(.cardFigurePrimary)
+                                    .foregroundStyle(AppColors.textPrimary)
+                                    .padding(.top, AppSpacing.md)
                             }
-                            .padding(.top, 14)
 
-                            progressBar
+                            if currentAmount > 0 {
+                                VStack(spacing: AppSpacing.sm + AppSpacing.xs) {
+                                    HStack {
+                                        Text("CURRENT STATUS")
+                                            .font(.segmentLabel(selected: false))
+                                            .foregroundColor(AppColors.textTertiary)
+                                            .tracking(AppTypography.Tracking.miniUppercase)
+                                        Spacer()
+                                        Text("\(achievedPercent)% ACHIEVED")
+                                            .font(.segmentLabel(selected: true))
+                                            .foregroundStyle(AppColors.textPrimary)
+                                            .tracking(AppTypography.Tracking.miniUppercase)
+                                    }
+                                    .padding(.top, AppSpacing.md - AppSpacing.xs)
+
+                                    progressBar
+                                }
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                            }
                         }
-                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    } else {
+                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                                Text("$—")
+                                    .font(.cardFigurePrimary)
+                                    .foregroundStyle(AppColors.textTertiary)
+                                Text("/ \(formatCurrency(targetAmount))")
+                                    .font(.bodyRegular)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(AppColors.textTertiary)
+                            }
+                            .padding(.top, AppSpacing.md)
+                            Text("Connect accounts to track savings")
+                                .font(.footnoteRegular)
+                                .foregroundStyle(AppColors.textTertiary)
+                            Capsule()
+                                .fill(AppColors.progressTrack)
+                                .frame(height: (AppSpacing.sm + AppSpacing.xs) / 2)
+                        }
                     }
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.bottom, AppSpacing.cardPadding)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
-                .onTapGesture { onCardTap?() }
+                .onTapGesture { if isConnected { onCardTap?() } }
             }
 
-            if currentAmount <= 0 {
+            if currentAmount <= 0 && isConnected {
                 Button(action: onAdd) {
                     ZStack {
                         Circle()
@@ -113,7 +139,7 @@ struct SavingsTargetCard: View {
                             .frame(width: 40, height: 40)
                         Image(systemName: "plus")
                             .font(.h4)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textInverse)
                     }
                 }
                 .buttonStyle(.plain)
