@@ -1,0 +1,7 @@
+# 忽略 Supabase Edge Functions 的本地密钥
+supabase/functions/.env
+
+# 忽略系统文件和依赖
+.DS_Store
+node_modules/
+.temp/
