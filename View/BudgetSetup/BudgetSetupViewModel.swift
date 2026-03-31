@@ -20,6 +20,7 @@ class BudgetSetupViewModel {
     // MARK: - Navigation
     
     enum Step: Int, CaseIterable {
+        case accountSelection = 0
         case loading = 1
         case diagnosis = 2
         case spendingBreakdown = 3
@@ -27,10 +28,29 @@ class BudgetSetupViewModel {
         case spendingPlan = 5
         case confirm = 6
     }
-    
-    var currentStep: Step = .loading
+
+    var currentStep: Step = .accountSelection
     var isNavigatingForward = true
-    
+
+    // MARK: - Step 0: Account Selection
+
+    var plaidAccounts: [PlaidAccountItem] = []
+    var selectedAccountIds: Set<String> = []
+    var isLoadingAccounts = false
+    var accountsError: String?
+
+    var hasTransactionAccounts: Bool {
+        plaidAccounts.contains { ["depository", "credit"].contains($0.type) }
+    }
+
+    var selectedTransactionAccountCount: Int {
+        plaidAccounts.filter { selectedAccountIds.contains($0.id) && ["depository", "credit"].contains($0.type) }.count
+    }
+
+    var canProceedFromAccountSelection: Bool {
+        selectedTransactionAccountCount > 0
+    }
+
     // MARK: - Step 1: Loading State
     
     var isLoadingProfile = true
@@ -212,7 +232,42 @@ class BudgetSetupViewModel {
     }
     
     // MARK: - API Calls
-    
+
+    func loadAccounts() async {
+        isLoadingAccounts = true
+        accountsError = nil
+        do {
+            let response = try await APIService.shared.getPlaidAccounts()
+            plaidAccounts = response.accounts
+
+            // 默认选中 depository 和 credit 类型
+            selectedAccountIds = Set(
+                response.accounts
+                    .filter { ["depository", "credit"].contains($0.type) }
+                    .map { $0.id }
+            )
+
+            isLoadingAccounts = false
+            print("✅ [BudgetSetup] loadAccounts success — \(response.totalAccounts) accounts")
+        } catch {
+            print("❌ [BudgetSetup] loadAccounts error: \(error)")
+            accountsError = "Failed to load your accounts."
+            isLoadingAccounts = false
+        }
+    }
+
+    func toggleAccount(_ accountId: String) {
+        if selectedAccountIds.contains(accountId) {
+            selectedAccountIds.remove(accountId)
+        } else {
+            selectedAccountIds.insert(accountId)
+        }
+    }
+
+    func refreshAccountsAfterNewConnection() async {
+        await loadAccounts()
+    }
+
     func loadInitialData() async {
         loadingError = nil
         
@@ -249,7 +304,11 @@ class BudgetSetupViewModel {
     
     private func loadSpendingStats() async {
         do {
-            let body = try JSONEncoder().encode(["months": 6])
+            var requestBody: [String: Any] = ["months": 6]
+            if !selectedAccountIds.isEmpty {
+                requestBody["account_ids"] = Array(selectedAccountIds)
+            }
+            let body = try JSONSerialization.data(withJSONObject: requestBody)
             let request = try await APIService.shared.authenticatedRequest(function: "calculate-spending-stats", body: body)
             let response: SpendingStatsResponse = try await APIService.shared.perform(request)
             spendingStats = response
@@ -263,6 +322,10 @@ class BudgetSetupViewModel {
             print("✅ [BudgetSetup] loadSpendingStats success — income: \(response.avgMonthlyIncome), savings rate: \(response.currentSavingsRate)%")
             print("   Fixed: $\(response.avgMonthlyFixed), Flexible: $\(response.avgMonthlyFlexible)")
             print("   Fixed items: \(response.fixedExpenses.count), Flexible categories: \(response.flexibleBreakdown.count)")
+            print("   monthlyBreakdown (\(response.monthlyBreakdown.count) months):")
+            for item in response.monthlyBreakdown {
+                print("     \(item.month): income=\(item.income), fixed=\(item.fixed), flexible=\(item.flexible), savings=\(item.savings)")
+            }
         } catch {
             print("❌ [BudgetSetup] loadSpendingStats error: \(error)")
             loadingError = "Failed to analyze your spending."
@@ -446,8 +509,15 @@ class BudgetSetupViewModel {
             
             let body = try JSONSerialization.data(withJSONObject: upsertBody)
             let request = try await APIService.shared.authenticatedRequest(function: "generate-monthly-budget", body: body)
-            let _ = try await URLSession.shared.data(for: request)
-            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode) else {
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                let body = String(data: data, encoding: .utf8) ?? ""
+                print("❌ [BudgetSetup] saveFinalBudget HTTP \(statusCode): \(body)")
+                throw APIError.httpError(statusCode)
+            }
+            print("✅ [BudgetSetup] saveFinalBudget success")
             isSaving = false
             return true
         } catch {
@@ -474,7 +544,7 @@ class BudgetSetupViewModel {
             targetRaw -= 1
         }
         guard let previous = Step(rawValue: targetRaw),
-              previous.rawValue >= Step.diagnosis.rawValue else { return }
+              previous.rawValue >= Step.accountSelection.rawValue else { return }
         isNavigatingForward = false
         withAnimation(.easeOut(duration: 0.3)) {
             currentStep = previous

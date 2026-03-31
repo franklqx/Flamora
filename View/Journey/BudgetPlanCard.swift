@@ -27,7 +27,9 @@ struct BudgetPlanCard: View {
     private var hasLinkedBank: Bool { plaidManager.hasLinkedBank }
 
     private var hasBudget: Bool {
-        (apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget) > 0
+        hasLinkedBank
+        && (apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget) > 0
+        && apiBudget.selectedPlan != nil
     }
 
     private var spent: Double {
@@ -51,9 +53,7 @@ struct BudgetPlanCard: View {
                 .frame(height: 0.5)
                 .padding(.horizontal, AppSpacing.cardPadding)
 
-            if !hasLinkedBank {
-                lockedContent
-            } else if !hasBudget {
+            if !hasBudget {
                 setupContent
             } else {
                 connectedContent
@@ -98,45 +98,7 @@ struct BudgetPlanCard: View {
         }
     }
 
-    // MARK: - State 1: 未连接（锁定）
-
-    private var lockedContent: some View {
-        VStack(spacing: AppSpacing.sm) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: AppSpacing.xs / 2) {
-                    HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
-                        Text("$—")
-                            .font(.cardFigurePrimary)
-                            .foregroundStyle(AppColors.textTertiary)
-                        Text("left")
-                            .font(.inlineLabel)
-                            .foregroundColor(AppColors.textTertiary)
-                    }
-                    Text("Connect accounts to set up a budget")
-                        .font(.footnoteRegular)
-                        .foregroundColor(AppColors.textTertiary)
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: AppSpacing.xs / 2) {
-                    Image(systemName: "lock.fill")
-                        .font(.h3)
-                        .foregroundStyle(AppColors.textTertiary)
-                    Text("days left")
-                        .font(.footnoteRegular)
-                        .foregroundColor(AppColors.textTertiary)
-                }
-            }
-
-            Capsule()
-                .fill(AppColors.progressTrack)
-                .frame(height: Self.progressBarHeight)
-        }
-        .padding(.horizontal, AppSpacing.cardPadding)
-        .padding(.top, AppSpacing.md)
-        .padding(.bottom, AppSpacing.cardPadding)
-    }
-
-    // MARK: - State 2: 已连接无预算（Build Your Plan）
+    // MARK: - State 1: 无预算（Build Your Plan）
 
     private var setupContent: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {

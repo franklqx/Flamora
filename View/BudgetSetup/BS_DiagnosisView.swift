@@ -144,6 +144,7 @@ struct BS_DiagnosisView: View {
         let barValues = chartValues(for: selectedTab, breakdowns: breakdowns)
         let average = barValues.isEmpty ? 0 : barValues.reduce(0, +) / Double(barValues.count)
         let maxVal = max(barValues.max() ?? 1, 1)
+        let _ = { print("📊 [Chart] tab=\(selectedTab), breakdowns=\(breakdowns.count), barValues=\(barValues), maxVal=\(maxVal)") }()
         
         return VStack(alignment: .leading, spacing: 12) {
             if barValues.isEmpty {

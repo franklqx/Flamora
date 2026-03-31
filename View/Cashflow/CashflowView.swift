@@ -25,12 +25,12 @@ struct CashflowView: View {
     @Environment(PlaidManager.self) private var plaidManager
 
     private let data = MockData.cashflowData
-    @State private var apiBudget = MockData.apiMonthlyBudget
-    @State private var currentSavings: Double = MockData.apiMonthlyBudget.savingsActual ?? 0
-    @State private var needsTotal: Double = MockData.apiMonthlyBudget.needsSpent ?? 0
-    @State private var wantsTotal: Double = MockData.apiMonthlyBudget.wantsSpent ?? 0
-    @State private var totalSpend: Double = (MockData.apiMonthlyBudget.needsSpent ?? 0) + (MockData.apiMonthlyBudget.wantsSpent ?? 0)
-    @State private var allTransactions: [Transaction] = MockData.allTransactions
+    @State private var apiBudget = APIMonthlyBudget.empty
+    @State private var currentSavings: Double = 0
+    @State private var needsTotal: Double = 0
+    @State private var wantsTotal: Double = 0
+    @State private var totalSpend: Double = 0
+    @State private var allTransactions: [Transaction] = []
     @State private var selectedTransaction: Transaction? = nil
     @State private var showAllTransactions = false
     @State private var showSavingsInput = false
@@ -110,6 +110,12 @@ struct CashflowView: View {
         }
         .task {
             await loadCashflowData()
+        }
+        .onChange(of: plaidManager.lastConnectionTime) { _, _ in
+            Task { await loadCashflowData() }
+        }
+        .onChange(of: plaidManager.hasLinkedBank) { _, _ in
+            Task { await loadCashflowData() }
         }
         .fullScreenCover(isPresented: $showSavingsSummary) {
             SavingsTargetDetailView2()

@@ -779,7 +779,24 @@ struct APIMonthlyBudget: Codable {
     let needsRatio: Double
     let wantsRatio: Double
     let savingsRatio: Double
+    let selectedPlan: String?
     let isCustom: Bool
+
+    static let empty = APIMonthlyBudget(
+        budgetId: "",
+        month: "",
+        needsBudget: 0,
+        wantsBudget: 0,
+        savingsBudget: 0,
+        needsSpent: nil,
+        wantsSpent: nil,
+        savingsActual: nil,
+        needsRatio: 0,
+        wantsRatio: 0,
+        savingsRatio: 0,
+        selectedPlan: nil,
+        isCustom: false
+    )
 }
 
 /// 对应后端 GET /user-profile
@@ -813,42 +830,47 @@ struct APIUserProfile: Codable {
 
 /// 对应后端 GET /net-worth-summary
 struct APINetWorthSummary: Codable {
+    // No explicit CodingKeys — let .convertFromSnakeCase handle snake_case → camelCase
     let totalNetWorth: Double
-    let previousNetWorth: Double
-    let growthAmount: Double
-    let growthPercentage: Double
+    let previousNetWorth: Double?   // null when no Plaid connection
+    let growthAmount: Double?       // null when no Plaid connection
+    let growthPercentage: Double?   // null when no Plaid connection
     let asOfDate: String
     let breakdown: NetWorthBreakdown
     let accounts: [APIAccount]
 
-    enum CodingKeys: String, CodingKey {
-        case totalNetWorth = "total_net_worth"
-        case previousNetWorth = "previous_net_worth"
-        case growthAmount = "growth_amount"
-        case growthPercentage = "growth_percentage"
-        case asOfDate = "as_of_date"
-        case breakdown
-        case accounts
+    struct NetWorthBreakdown: Codable {
+        // Matches backend: { investment_total, depository_total, credit_total, loan_total }
+        let investmentTotal: Double?
+        let depositoryTotal: Double?
+        let creditTotal: Double?
+        let loanTotal: Double?
     }
 
-    struct NetWorthBreakdown: Codable {
-        let assets: Double
-        let liabilities: Double
-    }
+    static let empty = APINetWorthSummary(
+        totalNetWorth: 0,
+        previousNetWorth: nil,
+        growthAmount: nil,
+        growthPercentage: nil,
+        asOfDate: "",
+        breakdown: NetWorthBreakdown(investmentTotal: nil, depositoryTotal: nil, creditTotal: nil, loanTotal: nil),
+        accounts: []
+    )
 }
 
 struct APIAccount: Codable {
-    let accountId: String
+    // Matches backend accounts array: { name, type, subtype, balance, mask, institution }
+    // No explicit CodingKeys — let .convertFromSnakeCase handle it
     let name: String
     let type: String
-    let balance: Double
+    let subtype: String?
+    let balance: Double?    // null for some account types
+    let mask: String?
     let institution: String
-    let logoUrl: String?
 
-    enum CodingKeys: String, CodingKey {
-        case accountId = "account_id"
-        case name, type, balance, institution, logoUrl
-    }
+    // Computed compatibility shims for existing UI code
+    var accountId: String { name }
+    var logoUrl: String? { nil }
 }
 
 // MARK: - 🔥 Backend API Mock Data
@@ -1060,6 +1082,7 @@ extension MockData {
         needsRatio: 50.00,
         wantsRatio: 25.00,
         savingsRatio: 25.00,
+        selectedPlan: nil,
         isCustom: false
     )
 
@@ -1086,25 +1109,27 @@ extension MockData {
         growthPercentage: 4.12,
         asOfDate: "2026-03-24",
         breakdown: APINetWorthSummary.NetWorthBreakdown(
-            assets: 250000.00,
-            liabilities: 41760.00
+            investmentTotal: 150000.00,
+            depositoryTotal: 100000.00,
+            creditTotal: 5000.00,
+            loanTotal: 36760.00
         ),
         accounts: [
             APIAccount(
-                accountId: "mock-account-1",
                 name: "Fidelity 401(k)",
                 type: "investment",
+                subtype: "401k",
                 balance: 150000.00,
-                institution: "Fidelity",
-                logoUrl: nil
+                mask: "1234",
+                institution: "Fidelity"
             ),
             APIAccount(
-                accountId: "mock-account-2",
                 name: "Chase Checking",
-                type: "cash",
+                type: "depository",
+                subtype: "checking",
                 balance: 25000.00,
-                institution: "Chase",
-                logoUrl: nil
+                mask: "5678",
+                institution: "Chase"
             )
         ]
     )

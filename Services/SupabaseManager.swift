@@ -48,7 +48,7 @@ class SupabaseManager {
             isAuthenticated = session != nil
 
             switch event {
-            case .signedIn:
+            case .signedIn, .initialSession:
                 if let userId = session?.user.id.uuidString {
                     Task { await SubscriptionManager.shared.loginUser(userId: userId) }
                     Task { await PlaidManager.shared.loadStatus() }

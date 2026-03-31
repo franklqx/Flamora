@@ -91,7 +91,11 @@ struct MainTabView: View {
         .fullScreenCover(isPresented: Binding(
             get: { plaidManager.showBudgetSetup },
             set: { plaidManager.showBudgetSetup = $0 }
-        )) {
+        ), onDismiss: {
+            print("📍 [Flow] fullScreenCover dismissed")
+            // Budget Setup 关闭后更新时间戳，触发 JourneyView 重新加载数据
+            plaidManager.lastConnectionTime = Date()
+        }) {
             BudgetSetupView()
         }
         .sheet(isPresented: $showSettings) {

@@ -219,9 +219,13 @@ struct BS_ConfirmView: View {
 
             VStack(spacing: 0) {
                 Button {
+                    print("📍 [Flow] Start My Journey tapped")
                     Task {
                         let success = await viewModel.saveFinalBudget()
-                        if success { onComplete() }
+                        if success {
+                            print("📍 [Flow] saveFinalBudget done, will dismiss")
+                            onComplete()
+                        }
                     }
                 } label: {
                     HStack(spacing: 8) {

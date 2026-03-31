@@ -17,6 +17,9 @@ struct BudgetSetupView: View {
             Color.black.ignoresSafeArea()
             
             switch viewModel.currentStep {
+            case .accountSelection:
+                BS_AccountSelectionView(viewModel: viewModel)
+
             case .loading:
                 BS_LoadingView(viewModel: viewModel) {
                     viewModel.goToStep(.diagnosis)

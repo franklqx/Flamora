@@ -11,6 +11,14 @@ import Foundation
 
 extension APIService {
 
+    // MARK: - Account Selection (Step 0)
+
+    /// Fetch user's connected Plaid accounts
+    func getPlaidAccounts() async throws -> PlaidAccountsResponse {
+        let request = try await authenticatedRequest(function: "get-plaid-accounts")
+        return try await perform(request)
+    }
+
     // MARK: - Step 1: Loading
 
     /// Fetch user profile for budget setup context

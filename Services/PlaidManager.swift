@@ -17,20 +17,13 @@ class PlaidManager {
     var isConnecting: Bool = false
     var connectedInstitutionName: String? = nil
     var showBudgetSetup: Bool = false
+    var lastConnectionTime: Date? = nil
     private var client: SupabaseClient { SupabaseManager.shared.client }
 
-    private init() {
-        #if DEBUG
-        hasLinkedBank = false
-        connectedInstitutionName = nil
-        #endif
-    }
+    private init() {}
 
     // MARK: - 从 user-profile 加载银行连接状态
     func loadStatus() async {
-        #if DEBUG
-        return  // mock 模式：跳过真实 API 调用
-        #endif
         print("🏦 [PlaidManager] loadStatus() called")
         do {
             let session = try await client.auth.session
@@ -94,6 +87,14 @@ class PlaidManager {
             if case .httpError(let code, let data) = error {
                 let body = String(data: data, encoding: .utf8) ?? "non-UTF8 (\(data.count) bytes)"
                 print("🏦 [PlaidManager] ❌ HTTP \(code) body: \(body)")
+
+                // 如果后端返回 403 PREMIUM_REQUIRED，触发 Paywall
+                if code == 403 {
+                    await MainActor.run {
+                        SubscriptionManager.shared.showPaywall = true
+                    }
+                    return
+                }
             }
         } catch {
             print("🏦 [PlaidManager] ❌ startLinkFlow error: \(error)")
@@ -121,6 +122,7 @@ class PlaidManager {
             if response.success {
                 hasLinkedBank = true
                 connectedInstitutionName = response.data.institution_name ?? institutionName
+                lastConnectionTime = Date()
                 print("🏦 [PlaidManager] ✅ Bank linked! institution=\(connectedInstitutionName ?? "?"), accounts=\(response.data.accounts_linked)")
             } else {
                 print("🏦 [PlaidManager] ❌ exchangePublicToken: success=false in response")

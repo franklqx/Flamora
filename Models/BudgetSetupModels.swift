@@ -332,6 +332,27 @@ struct MonthlyBreakdownForDiagnosis: Encodable {
     let total: Double
 }
 
+// MARK: - get-plaid-accounts Response
+
+struct PlaidAccountsResponse: Codable {
+    let accounts: [PlaidAccountItem]
+    let totalAccounts: Int
+    let hasTransactionAccounts: Bool
+}
+
+struct PlaidAccountItem: Codable, Identifiable {
+    let id: String
+    let accountId: String
+    let name: String
+    let officialName: String?
+    let type: String
+    let subtype: String?
+    let mask: String?
+    let balanceCurrent: Double?
+    let institutionName: String?
+    let hasTransactions: Bool
+}
+
 // MARK: - get-user-profile Response (unchanged from V1)
 
 struct UserProfileForBudget: Codable {

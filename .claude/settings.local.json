@@ -64,7 +64,10 @@
       "Bash(git clone:*)",
       "Bash(./setup)",
       "Skill(design-review)",
-      "Skill(design-review:*)"
+      "Skill(design-review:*)",
+      "Bash(supabase status:*)",
+      "Bash(supabase functions deploy:*)",
+      "Bash(cd ~/Desktop/Fire cursor)"
     ]
   }
 }

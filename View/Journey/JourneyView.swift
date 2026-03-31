@@ -16,8 +16,8 @@ private let dailyQuotes: [String] = [
 ]
 
 struct JourneyView: View {
-    @State private var netWorthSummary = MockData.apiNetWorthSummary
-    @State private var apiBudget = MockData.apiMonthlyBudget
+    @State private var netWorthSummary = APINetWorthSummary.empty
+    @State private var apiBudget = APIMonthlyBudget.empty
     @State private var fireGoal: APIFireGoal? = nil
     @State private var quoteIndex: Int = 0
     @State private var quoteVisible: Bool = true
@@ -28,6 +28,7 @@ struct JourneyView: View {
     let bottomPadding: CGFloat
 
     @Environment(PlaidManager.self) private var plaidManager
+    @Environment(SubscriptionManager.self) private var subscriptionManager
 
     init(
         bottomPadding: CGFloat = 0,
@@ -50,10 +51,16 @@ struct JourneyView: View {
                     VStack(spacing: AppSpacing.lg) {
                         PortfolioCard(
                             portfolioBalance: netWorthSummary.totalNetWorth,
-                            gainAmount: netWorthSummary.growthAmount,
-                            gainPercentage: netWorthSummary.growthPercentage,
-                            isConnected: plaidManager.hasLinkedBank,
-                            onConnectTapped: { Task { await plaidManager.startLinkFlow() } }
+                            gainAmount: netWorthSummary.growthAmount ?? 0,
+                            gainPercentage: netWorthSummary.growthPercentage ?? 0,
+                            isConnected: hasInvestmentAccounts,
+                            onConnectTapped: {
+                                guard subscriptionManager.isPremium else {
+                                    subscriptionManager.showPaywall = true
+                                    return
+                                }
+                                Task { await plaidManager.startLinkFlow() }
+                            }
                         )
 
                         if quoteVisible {
@@ -73,11 +80,13 @@ struct JourneyView: View {
                                     onSetupBudget: { plaidManager.showBudgetSetup = true },
                                     action: { onOpenCashflowDestination?(.totalSpending) }
                                 )
-                                SavingsRateCard(
-                                    apiBudget: apiBudget,
-                                    isConnected: plaidManager.hasLinkedBank
-                                ) {
-                                    onOpenCashflowDestination?(.savingsOverview)
+                                if hasBudgetData {
+                                    SavingsRateCard(
+                                        apiBudget: apiBudget,
+                                        isConnected: true
+                                    ) {
+                                        onOpenCashflowDestination?(.savingsOverview)
+                                    }
                                 }
                             }
                         }
@@ -90,6 +99,14 @@ struct JourneyView: View {
         }
         .animation(nil, value: bottomPadding)
         .task { await loadData() }
+        .onChange(of: plaidManager.lastConnectionTime) { _, _ in
+            print("📍 [Flow] lastConnectionTime changed")
+            Task { await loadData() }
+        }
+        .onChange(of: plaidManager.hasLinkedBank) { _, _ in
+            print("📍 [Flow] hasLinkedBank changed → \(plaidManager.hasLinkedBank)")
+            Task { await loadData() }
+        }
     }
 }
 
@@ -172,19 +189,62 @@ private extension JourneyView {
 // MARK: - Data Loading
 
 private extension JourneyView {
+    var hasInvestmentAccounts: Bool {
+        netWorthSummary.accounts.contains { $0.type == "investment" }
+    }
+
+    var hasBudgetData: Bool {
+        plaidManager.hasLinkedBank
+        && (apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget) > 0
+        && apiBudget.selectedPlan != nil
+    }
+
     func loadData() async {
+        print("📍 [Flow] loadData started — hasLinkedBank=\(plaidManager.hasLinkedBank)")
         let monthStr = currentMonthString
         async let nwTask = fetchNetWorth()
-        async let budgetTask = fetchBudget(month: monthStr)
         async let fireTask = fetchFireGoal()
+
+        guard plaidManager.hasLinkedBank else {
+            let (nw, fire) = await (nwTask, fireTask)
+            if let nw {
+                netWorthSummary = nw
+                print("📍 [Flow] net worth loaded (no bank) — accounts: \(nw.accounts.count)")
+            } else {
+                print("📍 [Flow] ❌ net worth fetch returned nil (no bank)")
+            }
+            apiBudget = .empty
+            fireGoal = fire
+            print("📍 [Flow] loadData skipped budget fetch — hasLinkedBank=false")
+            return
+        }
+
+        async let budgetTask = fetchBudget(month: monthStr)
         let (nw, budget, fire) = await (nwTask, budgetTask, fireTask)
-        if let nw { netWorthSummary = nw }
-        if let budget { apiBudget = budget }
+        if let nw {
+            netWorthSummary = nw
+            let hasInv = nw.accounts.contains { $0.type == "investment" }
+            print("📍 [Flow] net worth loaded — accounts: \(nw.accounts.count), total: \(nw.totalNetWorth), hasInvestment: \(hasInv)")
+        } else {
+            print("📍 [Flow] ❌ net worth fetch returned nil")
+        }
+        if let budget {
+            apiBudget = budget
+            print("📍 [Flow] budget loaded — selectedPlan=\(budget.selectedPlan ?? "nil"), needs=\(budget.needsBudget), wants=\(budget.wantsBudget), savings=\(budget.savingsBudget)")
+        } else {
+            print("📍 [Flow] budget fetch returned nil (no budget in DB for \(monthStr))")
+        }
         fireGoal = fire
+        print("📍 [Flow] hasBudgetData=\(hasBudgetData), hasLinkedBank=\(plaidManager.hasLinkedBank)")
     }
 
     private func fetchNetWorth() async -> APINetWorthSummary? {
-        try? await APIService.shared.getNetWorthSummary()
+        do {
+            return try await APIService.shared.getNetWorthSummary()
+        } catch {
+            print("📍 [Flow] ❌ fetchNetWorth error: \(error)")
+            return nil
+        }
     }
     private func fetchBudget(month: String) async -> APIMonthlyBudget? {
         try? await APIService.shared.getMonthlyBudget(month: month)
@@ -203,4 +263,5 @@ private extension JourneyView {
 #Preview {
     JourneyView(onFireTapped: {})
         .environment(PlaidManager.shared)
+        .environment(SubscriptionManager.shared)
 }

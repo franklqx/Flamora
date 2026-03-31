@@ -79,7 +79,7 @@ private extension InvestmentView {
                 id: $0.accountId,
                 institution: $0.institution,
                 accountType: accountTypeFromAPI($0.type),
-                balance: $0.balance,
+                balance: $0.balance ?? 0,
                 connected: true,
                 logoUrl: $0.logoUrl
             )
