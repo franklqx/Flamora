@@ -8,6 +8,8 @@ import SwiftUI
 struct AssetAllocationCard: View {
     let allocation: Allocation
     var isConnected: Bool = true
+    var holdingsPayload: APIInvestmentHoldingsPayload? = nil
+    var cashBankAccounts: [Account] = []
     @State private var showDetail = false
 
     private var totalAmount: Double {
@@ -107,7 +109,11 @@ struct AssetAllocationCard: View {
                 .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
         )
         .fullScreenCover(isPresented: $showDetail) {
-            AssetAllocationDetailView(allocation: allocation)
+            AssetAllocationDetailView(
+                allocation: allocation,
+                holdingsPayload: holdingsPayload,
+                cashBankAccounts: cashBankAccounts
+            )
         }
     }
 

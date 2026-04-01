@@ -14,7 +14,7 @@ struct BudgetSetupView: View {
     
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
             
             switch viewModel.currentStep {
             case .accountSelection:

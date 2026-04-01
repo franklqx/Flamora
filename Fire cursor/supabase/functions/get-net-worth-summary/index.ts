@@ -52,10 +52,19 @@ serve(async (req) => {
     if (profile.has_linked_bank) {
       // ✅ 已连接 Plaid：从真实账户数据计算
 
-      // 获取所有 Plaid 账户
+      // 获取所有 Plaid 账户（列名与 exchange-public-token / plaid_accounts 表一致：balance_current）
       const { data: accounts, error: accountsError } = await supabase
         .from('plaid_accounts')
-        .select('account_id, name, type, subtype, current_balance, mask, institution_name')
+        .select(`
+          id,
+          account_id,
+          name,
+          type,
+          subtype,
+          balance_current,
+          mask,
+          plaid_items ( institution_name )
+        `)
         .eq('user_id', user.id)
 
       if (accountsError) {
@@ -64,22 +73,24 @@ serve(async (req) => {
 
       const accountList = accounts || []
 
+      const bal = (a: { balance_current?: number | null }) => a.balance_current ?? 0
+
       // 按类型汇总
       const investmentTotal = accountList
         .filter(a => a.type === 'investment')
-        .reduce((sum, a) => sum + (a.current_balance || 0), 0)
+        .reduce((sum, a) => sum + bal(a), 0)
 
       const depositoryTotal = accountList
         .filter(a => a.type === 'depository')
-        .reduce((sum, a) => sum + (a.current_balance || 0), 0)
+        .reduce((sum, a) => sum + bal(a), 0)
 
       const creditTotal = accountList
         .filter(a => a.type === 'credit')
-        .reduce((sum, a) => sum + (a.current_balance || 0), 0)
+        .reduce((sum, a) => sum + bal(a), 0)
 
       const loanTotal = accountList
         .filter(a => a.type === 'loan')
-        .reduce((sum, a) => sum + (a.current_balance || 0), 0)
+        .reduce((sum, a) => sum + bal(a), 0)
 
       const totalNetWorth = depositoryTotal + investmentTotal - creditTotal - loanTotal
 
@@ -92,8 +103,8 @@ serve(async (req) => {
         .from('net_worth_history')
         .select('total_net_worth')
         .eq('user_id', user.id)
-        .lte('recorded_date', lastMonthStr)
-        .order('recorded_date', { ascending: false })
+        .lte('date', lastMonthStr)
+        .order('date', { ascending: false })
         .limit(1)
         .single()
 
@@ -131,14 +142,22 @@ serve(async (req) => {
               loan_total: loanTotal,
             },
             fire_progress_percentage: fireProgressPercentage,
-            accounts: accountList.map(a => ({
-              name: a.name,
-              type: a.type,
-              subtype: a.subtype,
-              balance: a.current_balance,
-              mask: a.mask,
-              institution: a.institution_name,
-            })),
+            // id 必须为字符串且不可省略：JSON.stringify 会丢弃 undefined，客户端会报 Key 'id' not found
+            accounts: accountList.map((a: any) => {
+              const rowId = a.id != null && String(a.id) !== ''
+                ? String(a.id)
+                : (a.account_id != null ? String(a.account_id) : '')
+              return {
+                id: rowId,
+                account_id: a.account_id ?? null,
+                name: a.name ?? '',
+                type: a.type ?? 'depository',
+                subtype: a.subtype ?? null,
+                balance: a.balance_current ?? null,
+                mask: a.mask ?? null,
+                institution: a.plaid_items?.institution_name ?? '',
+              }
+            }),
             data_source: 'plaid',
           },
         }),

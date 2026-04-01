@@ -19,6 +19,8 @@ private struct AllocDetailItem: Identifiable {
 
 struct AssetAllocationDetailView: View {
     let allocation: Allocation
+    var holdingsPayload: APIInvestmentHoldingsPayload? = nil
+    var cashBankAccounts: [Account] = []
     @Environment(\.dismiss) private var dismiss
     @State private var dragOffset: CGFloat = 0
     @State private var expandedIds: Set<String> = []
@@ -73,6 +75,8 @@ struct AssetAllocationDetailView: View {
                             ForEach(sortedItems) { item in
                                 AllocDetailRow(
                                     item: item,
+                                    holdings: InvestmentAllocationBuilder.holdings(for: item.id, payload: holdingsPayload),
+                                    cashAccounts: item.id == "cash" ? cashBankAccounts : [],
                                     isExpanded: expandedIds.contains(item.id)
                                 ) {
                                     withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -173,6 +177,8 @@ private struct AllocDonutSegment: Shape {
 
 private struct AllocDetailRow: View {
     let item: AllocDetailItem
+    let holdings: [Holding]
+    let cashAccounts: [Account]
     let isExpanded: Bool
     let onTap: () -> Void
 
@@ -228,9 +234,6 @@ private struct AllocDetailRow: View {
 
     @ViewBuilder
     private var expandedContent: some View {
-        let holdings = holdingsForItem
-        let accounts = accountsForItem
-
         if !holdings.isEmpty {
             VStack(spacing: 0) {
                 ForEach(holdings.indices, id: \.self) { i in
@@ -277,12 +280,12 @@ private struct AllocDetailRow: View {
                 }
                 .padding(.bottom, AppSpacing.sm)
             }
-        } else if !accounts.isEmpty {
+        } else if !cashAccounts.isEmpty {
             VStack(spacing: 0) {
-                ForEach(accounts.indices, id: \.self) { i in
+                ForEach(cashAccounts.indices, id: \.self) { i in
                     HStack(spacing: AppSpacing.md) {
                         Group {
-                            if let urlStr = accounts[i].logoUrl, let url = URL(string: urlStr) {
+                            if let urlStr = cashAccounts[i].logoUrl, let url = URL(string: urlStr) {
                                 AsyncImage(url: url) { phase in
                                     switch phase {
                                     case .success(let image):
@@ -297,18 +300,18 @@ private struct AllocDetailRow: View {
                                 fallbackBankIcon
                             }
                         }
-                        Text(accounts[i].institution)
+                        Text(cashAccounts[i].institution)
                             .font(.bodySmall)
                             .foregroundStyle(AppColors.textPrimary)
                         Spacer()
-                        Text(formatCurrency(accounts[i].balance))
+                        Text(formatCurrency(cashAccounts[i].balance))
                             .font(.inlineFigureBold)
                             .foregroundStyle(AppColors.textPrimary)
                     }
                     .padding(.horizontal, AppSpacing.cardPadding)
                     .padding(.vertical, AppSpacing.sm)
 
-                    if i < accounts.count - 1 {
+                    if i < cashAccounts.count - 1 {
                         Rectangle()
                             .fill(AppColors.surfaceBorder)
                             .frame(height: 0.5)
@@ -322,15 +325,6 @@ private struct AllocDetailRow: View {
                 .font(.footnoteRegular)
                 .foregroundColor(AppColors.textTertiary)
                 .padding(AppSpacing.cardPadding)
-        }
-    }
-
-    private var holdingsForItem: [Holding] {
-        switch item.id {
-        case "stocks": return MockData.holdings.filter { ["VTI","AAPL","MSFT","VOO","QQQ"].contains($0.symbol) }
-        case "crypto": return MockData.holdings.filter { ["BTC","ETH"].contains($0.symbol) }
-        case "other":  return MockData.holdings.filter { $0.accountId == "other" }
-        default: return []
         }
     }
 
@@ -355,10 +349,6 @@ private struct AllocDetailRow: View {
                 .font(.caption)
                 .foregroundColor(AppColors.textTertiary)
         }
-    }
-
-    private var accountsForItem: [Account] {
-        item.id == "cash" ? MockData.bankAccounts : []
     }
 
     private func sharesLabel(_ shares: Double) -> String {

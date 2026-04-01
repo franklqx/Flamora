@@ -43,7 +43,7 @@ struct FlameTogglePill: View {
 
                 FlameIcon(
                     size: 17,
-                    color: isOn ? .white : AppColors.textTertiary
+                    color: isOn ? AppColors.textPrimary : AppColors.textTertiary
                 )
             }
         }
@@ -53,7 +53,7 @@ struct FlameTogglePill: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         VStack(spacing: 24) {
             FlameTogglePill(isOn: false, action: {})
             FlameTogglePill(isOn: true, action: {})

@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+/// 模拟器高级假设（与后端用户画像解耦；非 MockData）。
+private enum SimulatorAdvancedDefaults {
+    static let inflationRate: Double = 3.0
+    static let forecastGrowthRate: Double = 7.0
+}
+
 struct SimulatorSettings {
     var age: Int
     var monthlyIncome: Double
@@ -37,8 +43,8 @@ struct SimulatorSettings {
             monthlyContribution: profile.monthlyIncome - profile.currentMonthlyExpenses,
             expectedBudget: profile.currentMonthlyExpenses,
             currentInvestment: fireGoal.currentNetWorth,
-            inflation: MockData.simulatorData.advancedSettings.inflationRate,
-            growthRate: MockData.simulatorData.advancedSettings.forecastGrowthRate
+            inflation: SimulatorAdvancedDefaults.inflationRate,
+            growthRate: SimulatorAdvancedDefaults.forecastGrowthRate
         )
     }
 }
@@ -153,7 +159,7 @@ private extension SimulatorView {
         return HStack(spacing: 6) {
             Text("FIRE by age")
                 .font(.cardFigurePrimary)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
 
             Text("\(fireAge)")
                 .font(.cardFigurePrimary)
@@ -198,7 +204,7 @@ private extension SimulatorView {
                     .fill(AppColors.surfaceElevated)
                     .frame(width: 140, height: 140)
                     .overlay(
-                        FlameIcon(size: 64, color: .white)
+                        FlameIcon(size: 64, color: AppColors.textPrimary)
                     )
                     .shadow(color: AppColors.brandSecondary.opacity(0.25), radius: 30)
                     .scaleEffect(isPulsing ? 1.06 : 0.94)
@@ -210,7 +216,7 @@ private extension SimulatorView {
             VStack(spacing: 8) {
                 Text("Simulating your future…")
                     .font(.detailTitle)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
 
                 Text("ANALYZING CONTRIBUTION PATTERNS…")
                     .font(.footnoteSemibold)
@@ -251,11 +257,11 @@ private extension SimulatorView {
         VStack(alignment: .leading, spacing: 8) {
             Text("You will reach financial")
                 .font(.cardFigurePrimary)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
 
             Text("independence at age \(computedFireCalculation.fireAge)")
                 .font(.cardFigurePrimary)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
 
             Text("Detailed FIRE progress analysis")
                 .font(.supportingText)
@@ -293,7 +299,7 @@ private extension SimulatorView {
                     )
 
                     Circle()
-                        .stroke(Color.white, lineWidth: 3)
+                        .stroke(AppColors.textPrimary, lineWidth: 3)
                         .frame(width: 14, height: 14)
                         .position(x: width * 0.55, y: height * 0.35)
 
@@ -315,7 +321,7 @@ private extension SimulatorView {
 
                 Text("Age \(computedFireCalculation.fireAge) (FIRE)")
                     .font(.footnoteSemibold)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 6)
                     .background(AppColors.surfaceElevated)
@@ -361,7 +367,7 @@ private extension SimulatorView {
 
             Text(value)
                 .font(.h3)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
 
             Text(subvalue)
                 .font(.bodySmallSemibold)
@@ -389,7 +395,7 @@ private struct SimulatorEditProfileView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 24) {
@@ -446,7 +452,7 @@ private extension SimulatorEditProfileView {
     var titleSection: some View {
         Text("Edit your Profile")
             .font(.largeTitle.bold())
-            .foregroundStyle(.white)
+            .foregroundStyle(AppColors.textPrimary)
             .padding(.top, 8)
     }
 
@@ -489,7 +495,7 @@ private extension SimulatorEditProfileView {
                 HStack {
                     Text("Advanced settings")
                         .font(.body.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
 
                     Spacer()
 
@@ -563,7 +569,7 @@ private struct SettingRow: View {
                 HStack(spacing: 6) {
                     Text(value)
                         .font(.body.bold())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
 
                     if !unit.isEmpty {
                         Text(unit)
@@ -651,7 +657,7 @@ private struct SettingEditorSheet: View {
             VStack(alignment: .leading, spacing: 16) {
                 Text(field.title)
                     .font(.statRowSemibold)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
 
                 HStack {
                     TextField("Enter value", text: $inputValue)
@@ -668,7 +674,7 @@ private struct SettingEditorSheet: View {
                 Spacer()
             }
             .padding(24)
-            .background(Color.black)
+            .background(AppColors.backgroundPrimary)
             .navigationTitle("Edit")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -828,7 +834,7 @@ private struct CircularProgressView: View {
 
             Text(percentText)
                 .font(.h1)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
 
             Text("ACHIEVED")
                 .font(.miniLabel)

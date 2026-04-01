@@ -45,16 +45,17 @@ struct OB_LoadingView: View {
                         .opacity(showIcon ? 1 : 0)
 
                     Image(systemName: "sparkle")
-                        .font(.system(size: 32, weight: .light))
+                        .font(.h1)
+                        .fontWeight(.light)
                         .foregroundColor(AppColors.textPrimary)
                         .rotationEffect(.degrees(rotation))
                         .opacity(showIcon ? 1 : 0)
                 }
 
-                Spacer().frame(height: 48)
+                Spacer().frame(height: AppSpacing.xxl)
 
                 // Steps
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: AppSpacing.md + AppSpacing.xs) {
                     stepRow(text: steps[0], state: step1)
                     stepRow(text: steps[1], state: step2)
                     stepRow(text: steps[2], state: step3)
@@ -71,7 +72,7 @@ struct OB_LoadingView: View {
                             .frame(height: 3)
 
                         Capsule()
-                            .fill(Color.white)
+                            .fill(AppColors.textPrimary)
                             .frame(width: geo.size.width * barProgress, height: 3)
                     }
                 }
@@ -85,7 +86,7 @@ struct OB_LoadingView: View {
 
     @ViewBuilder
     private func stepRow(text: String, state: StepState) -> some View {
-        HStack(spacing: 14) {
+        HStack(spacing: AppSpacing.md) {
             Group {
                 switch state {
                 case .waiting:

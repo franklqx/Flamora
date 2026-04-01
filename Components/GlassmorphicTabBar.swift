@@ -77,7 +77,7 @@ private struct GlassTabButton: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         VStack {
             Spacer()
             GlassmorphicTabBar(

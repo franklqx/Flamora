@@ -125,4 +125,10 @@ extension Font {
         Font(UIFont(name: "PlayfairDisplayRoman-SemiBold", size: 24)
              ?? UIFont.systemFont(ofSize: 24, weight: .semibold))
     }
+
+    /// Welcome carousel hero — serif, 42pt regular (not routed through appFont)
+    static var obWelcomeTitle: Font {
+        Font(UIFont(name: "PlayfairDisplayRoman-Regular", size: 42)
+             ?? UIFont.systemFont(ofSize: 42, weight: .regular))
+    }
 }

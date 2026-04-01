@@ -6,17 +6,17 @@
 //  Active Income  →  AppColors.accentGreenDeep  (large arc)
 //  Passive Income →  AppColors.accentPurpleMid (small arc)
 //
-//  NOTE: Uses mock data today. When bank accounts are linked,
-//  replace `income` (monthly) and `yearlyIncome` with API responses.
+//  Monthly / YTD values come from `CashflowView` → `get-spending-summary` (total_income).
+//  Active vs passive split pending dedicated income API (roadmap 2A).
 //
 
 import SwiftUI
 
 struct IncomeCard: View {
 
-    /// Current month income (mock → will come from API after bank link)
+    /// Current month income (from spending summary `total_income`).
     let income: Income
-    /// Current year-to-date income (mock → will come from API after bank link)
+    /// YTD income (sum of monthly summaries); nil falls back to `income` in UI.
     var yearlyIncome: Income? = nil
 
     var onCardTapped:    (() -> Void)? = nil
@@ -167,7 +167,7 @@ struct IncomeCard: View {
                     VStack(alignment: .trailing, spacing: 3) {
                         Text(formatAmount(displayed.passive))
                             .font(.bodySemibold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                         HStack(spacing: 5) {
                             Circle()
                                 .fill(passiveColor)
@@ -194,7 +194,7 @@ struct IncomeCard: View {
                             .foregroundColor(AppColors.textTertiary)
                         Text(formatAmount(displayed.total))
                             .font(.cardFigurePrimary)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                         Text(centerSubLabel)
                             .font(.caption)
                             .foregroundColor(AppColors.textTertiary)
@@ -212,7 +212,7 @@ struct IncomeCard: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(formatAmount(displayed.active))
                             .font(.bodySemibold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                         HStack(spacing: 5) {
                             Circle()
                                 .fill(activeColor)

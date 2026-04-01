@@ -31,7 +31,7 @@ struct OB_SpendingView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -39,10 +39,10 @@ struct OB_SpendingView: View {
 
                     Spacer().frame(height: AppSpacing.sm)
 
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Text("How much do you typically spend per month?")
                             .font(.obQuestion)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                         Text("Include rent, groceries, entertainment, etc.")
                             .font(.bodySmall)
                             .foregroundColor(AppColors.textSecondary)
@@ -82,7 +82,7 @@ struct OB_SpendingView: View {
             // Sticky CTA（与 AgeView 一致）
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), Color.black],
+                    colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
                     startPoint: .top, endPoint: .bottom
                 )
                 .frame(height: 28)
@@ -93,7 +93,7 @@ struct OB_SpendingView: View {
                 })
             }
             .padding(.bottom, 16)
-            .background(Color.black)
+            .background(AppColors.backgroundPrimary)
             .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -198,7 +198,7 @@ struct OB_SpendingView: View {
     }
 
     private static let _sliderSetup: Void = {
-        UISlider.appearance().thumbTintColor = .white
+        UISlider.appearance().thumbTintColor = AppColors.uiSliderThumbTint
         UISlider.appearance().minimumTrackTintColor = .clear
         UISlider.appearance().maximumTrackTintColor = .clear
     }()
@@ -209,18 +209,18 @@ struct OB_SpendingView: View {
         let rate = max(0, savingsRate)
         let monthlySavings = max(0, income - spendingValue)
 
-        return VStack(spacing: 16) {
+        return VStack(spacing: AppSpacing.md) {
             // 大数字：saving rate
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
                 Spacer()
                 Text("\(rate)")
-                    .font(.system(size: 56, weight: .bold).monospacedDigit())
+                    .font(.currencyHero.monospacedDigit())
                     .foregroundStyle(accentGradient)
                     .contentTransition(.numericText())
                     .animation(.spring(response: 0.3), value: rate)
                 Text("%")
                     .font(.cardFigurePrimary)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
                 Spacer()
             }
 
@@ -231,32 +231,34 @@ struct OB_SpendingView: View {
 
             // Income − Spending = Saved 分解
             HStack(spacing: 0) {
-                VStack(spacing: 4) {
+                VStack(spacing: AppSpacing.xs) {
                     Text("Income")
                         .font(.caption)
                         .foregroundColor(AppColors.textTertiary)
                     Text("\(data.currencySymbol)\(formattedAmount(income))")
                         .font(.bodySmall)
                         .fontWeight(.medium)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                 }
                 Spacer()
                 Text("−")
-                    .font(.system(size: 18, weight: .light))
+                    .font(.h4)
+                    .fontWeight(.light)
                     .foregroundColor(AppColors.textTertiary)
                 Spacer()
-                VStack(spacing: 4) {
+                VStack(spacing: AppSpacing.xs) {
                     Text("Spending")
                         .font(.caption)
                         .foregroundColor(AppColors.textTertiary)
                     Text("\(data.currencySymbol)\(formattedAmount(spendingValue))")
                         .font(.bodySmall)
                         .fontWeight(.medium)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                 }
                 Spacer()
                 Text("=")
-                    .font(.system(size: 18, weight: .light))
+                    .font(.h4)
+                    .fontWeight(.light)
                     .foregroundColor(AppColors.textTertiary)
                 Spacer()
                 VStack(spacing: 4) {
@@ -271,7 +273,7 @@ struct OB_SpendingView: View {
             }
 
             // 鼓励语
-            HStack(spacing: 6) {
+            HStack(spacing: AppSpacing.sm) {
                 Image(systemName: "sparkle")
                     .font(.caption)
                     .foregroundStyle(accentGradient)
@@ -282,8 +284,8 @@ struct OB_SpendingView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 20)
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.vertical, AppSpacing.cardPadding)
         .background(AppColors.surface.opacity(0.6))
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
         .overlay(
@@ -323,7 +325,7 @@ struct OB_SpendingView: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_SpendingView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

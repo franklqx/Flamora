@@ -202,7 +202,7 @@ class APIService {
         return try await perform(request)
     }
 
-    func getInvestmentHoldings() async throws -> APIHoldingsResponse {
+    func getInvestmentHoldings() async throws -> APIInvestmentHoldingsPayload {
         let request = try await authenticatedRequest(function: "get-investment-holdings")
         return try await perform(request)
     }
@@ -237,40 +237,126 @@ enum APIError: Error, LocalizedError {
 
 // MARK: - New API Response Models
 
+/// 与 Edge Function `get-spending-summary` 返回的 `data` 对齐。
 struct APISpendingSummary: Codable {
     let month: String
-    let needsSpent: Double
-    let wantsSpent: Double
-    let totalSpent: Double
+    let totalSpending: Double
+    let totalIncome: Double
+    let needs: APISpendingCategoryBucket
+    let wants: APISpendingCategoryBucket
+    let savings: APISpendingSavingsBucket
 }
 
+struct APISpendingCategoryBucket: Codable {
+    let total: Double
+    let percentage: Double
+    let budget: Double?
+    let remaining: Double?
+    let overBudget: Bool
+    let subcategories: [APISpendingSubcategory]
+}
+
+struct APISpendingSubcategory: Codable {
+    let subcategory: String
+    let amount: Double
+    let percentage: Double
+}
+
+struct APISpendingSavingsBucket: Codable {
+    let budget: Double?
+}
+
+/// 与 Edge Function `get-transactions` 返回的 `data` 对齐（见 `Fire cursor/supabase/functions/get-transactions/index.ts`）。
 struct APITransactionsResponse: Codable {
     let transactions: [APITransaction]
-    let total: Int
+    let pagination: APITransactionsPagination
+    let pendingReviewCount: Int
+}
+
+struct APITransactionsPagination: Codable {
     let page: Int
     let limit: Int
+    let total: Int
+    let totalPages: Int
+    let hasMore: Bool
 }
 
+/// `transactions` 表行（`select('*')`）；展示名优先 `merchant_name`，否则 `name`。
 struct APITransaction: Codable {
     let id: String
-    let merchant: String
+    let merchantName: String?
+    let name: String?
     let amount: Double
     let date: String
-    let pendingReview: Bool
+    let pendingReview: Bool?
+    let flamoraCategory: String?
+    let flamoraSubcategory: String?
+    /// 与 `plaid_accounts.id` 一致。
+    let plaidAccountId: String?
+
+    /// 列表/行展示用商户名
+    var merchantDisplay: String {
+        let m = merchantName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let m, !m.isEmpty { return m }
+        let n = name?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let n, !n.isEmpty { return n }
+        return "Transaction"
+    }
 }
 
-struct APIHoldingsResponse: Codable {
-    let holdings: [APIHolding]
+extension Transaction {
+    init(from api: APITransaction) {
+        self.init(
+            id: api.id,
+            merchant: api.merchantDisplay,
+            amount: api.amount,
+            date: api.date,
+            time: nil,
+            pendingClassification: api.pendingReview ?? false,
+            subcategory: api.flamoraSubcategory,
+            category: api.flamoraCategory,
+            note: nil,
+            accountId: api.plaidAccountId
+        )
+    }
+}
+
+/// 与 Edge Function `get-investment-holdings` 的 `data` 对齐。
+struct APIInvestmentHoldingsPayload: Codable {
+    let summary: APIInvestmentHoldingsSummary
+    let typeBreakdown: [APIInvestmentTypeBreakdownRow]
+    let holdings: [APIInvestmentHoldingRow]
+}
+
+struct APIInvestmentHoldingsSummary: Codable {
     let totalValue: Double
+    let totalCostBasis: Double?
+    let totalGainLoss: Double?
+    let totalGainLossPct: Double?
+    let holdingsCount: Int
 }
 
-struct APIHolding: Codable {
-    let id: String
-    let name: String
-    let symbol: String?
-    let value: Double
+struct APIInvestmentTypeBreakdownRow: Codable {
     let type: String
-    let institution: String
+    let value: Double
+    let percentage: Double
+}
+
+struct APIInvestmentHoldingRow: Codable {
+    let id: String
+    /// 与 `plaid_accounts.id` 一致，用于与账户、交易关联。
+    let plaidAccountId: String?
+    let name: String
+    let ticker: String?
+    let type: String?
+    let quantity: Double?
+    let price: Double?
+    let value: Double?
+    let costBasis: Double?
+    let gainLoss: Double?
+    let gainLossPct: Double?
+    let accountName: String?
+    let accountMask: String?
 }
 
 struct APIAvgSpending: Codable {

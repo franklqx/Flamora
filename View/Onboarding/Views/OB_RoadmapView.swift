@@ -66,7 +66,7 @@ struct OB_RoadmapView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollViewReader { proxy in
                 ScrollView(showsIndicators: false) {
@@ -142,30 +142,30 @@ struct OB_RoadmapView: View {
                 case .cannotSave:
                     HStack(spacing: 0) {
                         Text("At your current pace, financial freedom is ")
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                         Text("out of reach")
                             .foregroundStyle(brandGradient)
                         Text(".")
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                     }
                 default:
                     if data.isFreedomAgeCapped {
                         HStack(spacing: 0) {
                             Text("You will reach financial independence at age ")
-                                .foregroundStyle(.white)
+                                .foregroundStyle(AppColors.textPrimary)
                             Text("\(data.displayFreedomAge)+")
                                 .foregroundStyle(brandGradient)
                             Text(".")
-                                .foregroundStyle(.white)
+                                .foregroundStyle(AppColors.textPrimary)
                         }
                     } else {
                         HStack(spacing: 0) {
                             Text("You will reach financial independence at age ")
-                                .foregroundStyle(.white)
+                                .foregroundStyle(AppColors.textPrimary)
                             Text("\(data.freedomAge)")
                                 .foregroundStyle(brandGradient)
                             Text(".")
-                                .foregroundStyle(.white)
+                                .foregroundStyle(AppColors.textPrimary)
                         }
                     }
                 }
@@ -195,43 +195,43 @@ struct OB_RoadmapView: View {
                 case .cannotSave:
                     HStack(spacing: 0) {
                         Text("Start investing ")
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                         Text("\(formatCurrency(data.suggestedExtraInvestment))/mo")
                             .foregroundStyle(brandGradient)
                         Text(", you could be free by ")
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                         Text("\(data.optimizedFreedomAge)")
                             .foregroundStyle(brandGradient)
                         Text(".")
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                     }
                 default:
                     if data.yearsSaved == 0 {
                         HStack(spacing: 0) {
                             Text("With Flamora, you'll build ")
-                                .foregroundStyle(.white)
+                                .foregroundStyle(AppColors.textPrimary)
                             Text("+\(formatCompact(data.extraPortfolioValue)) more")
                                 .foregroundStyle(brandGradient)
                             Text(" by age ")
-                                .foregroundStyle(.white)
+                                .foregroundStyle(AppColors.textPrimary)
                             Text("\(data.optimizedFreedomAge)")
                                 .foregroundStyle(brandGradient)
                             Text(".")
-                                .foregroundStyle(.white)
+                                .foregroundStyle(AppColors.textPrimary)
                         }
                     } else {
                         let yearText = data.yearsSaved == 1 ? "1 year sooner" : "\(data.yearsSaved) years sooner"
                         HStack(spacing: 0) {
                             Text("With Flamora, you'll be free by ")
-                                .foregroundStyle(.white)
+                                .foregroundStyle(AppColors.textPrimary)
                             Text("\(data.optimizedFreedomAge)")
                                 .foregroundStyle(brandGradient)
                             Text(" — that's ")
-                                .foregroundStyle(.white)
+                                .foregroundStyle(AppColors.textPrimary)
                             Text(yearText)
                                 .foregroundStyle(brandGradient)
                             Text(".")
-                                .foregroundStyle(.white)
+                                .foregroundStyle(AppColors.textPrimary)
                         }
                     }
                 }
@@ -401,7 +401,7 @@ struct OB_RoadmapView: View {
                 .frame(minHeight: 22, alignment: .bottom)
             Text(value)
                 .font(.detailTitle)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
         }
@@ -473,7 +473,7 @@ struct OB_RoadmapView: View {
                     if showYearsSavedBadge && data.daysSaved > 0 {
                         Text(" \u{2193}\(data.daysSaved) days")
                             .font(.footnoteSemibold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                             .transition(.opacity)
                             .padding(.leading, 8)
                     }
@@ -493,12 +493,12 @@ struct OB_RoadmapView: View {
                     if isCannotSave {
                         Text(" \u{2191}\(Int(data.optimizedSavingsRate))%")
                             .font(.footnoteSemibold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                             .padding(.leading, 8)
                     } else if rateIncrease > 0 {
                         Text(" \u{2191}\(Int(rateIncrease))%")
                             .font(.footnoteSemibold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                             .padding(.leading, 8)
                     }
                 }
@@ -550,7 +550,7 @@ struct OB_RoadmapView: View {
     private var stickyBottomCTA: some View {
         VStack(spacing: 0) {
             LinearGradient(
-                colors: [Color.black.opacity(0), Color.black],
+                colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -576,7 +576,7 @@ struct OB_RoadmapView: View {
                     } label: {
                         Text("Get My Real Numbers \u{2192}")
                             .font(.figureSecondarySemibold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                             .frame(maxWidth: .infinity)
                             .frame(height: 56)
                             .background(
@@ -593,13 +593,13 @@ struct OB_RoadmapView: View {
                 }
 
                 Text(showRevealedCTA ? "Connect accounts for live tracking" : "Unlock your optimized roadmap")
-                    .font(.system(size: 11))
+                    .font(.cardRowMeta)
                     .foregroundColor(AppColors.overlayWhiteForegroundSoft)
                     .animation(.easeOut(duration: 0.5), value: showRevealedCTA)
             }
             .padding(.horizontal, AppSpacing.screenPadding)
-            .padding(.bottom, 16)
-            .background(Color.black)
+            .padding(.bottom, AppSpacing.md)
+            .background(AppColors.backgroundPrimary)
             .ignoresSafeArea(edges: .bottom)
         }
     }
@@ -607,11 +607,11 @@ struct OB_RoadmapView: View {
     // MARK: - Info Sheet
 
     private var infoSheet: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
             Text("How this is calculated")
                 .font(.h4)
-                .foregroundStyle(.white)
-                .padding(.bottom, 4)
+                .foregroundStyle(AppColors.textPrimary)
+                .padding(.bottom, AppSpacing.xs)
 
             infoRow(label: "Annual return", value: "9%")
             infoRow(label: "Monthly savings", value: formatCurrency(data.monthlySavings))
@@ -621,14 +621,14 @@ struct OB_RoadmapView: View {
             Divider().background(AppColors.cardTopHighlight)
 
             Text("Based on the historical nominal return of the S&P 500 (~10% annually since 1957), adjusted for estimated fees. Projections assume consistent contributions. Actual results vary with market conditions. Past performance does not guarantee future results.")
-                .font(.system(size: 11))
+                .font(.cardRowMeta)
                 .foregroundColor(AppColors.overlayWhiteForegroundSoft)
                 .lineSpacing(3)
         }
-        .padding(24)
+        .padding(AppSpacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .presentationDetents([.medium])
-        .presentationBackground(Color(white: 0.12))
+        .presentationBackground(AppColors.surface)
     }
 
     @ViewBuilder
@@ -640,7 +640,7 @@ struct OB_RoadmapView: View {
             Spacer()
             Text(value)
                 .font(.inlineFigureBold)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
         }
     }
 
@@ -805,7 +805,7 @@ struct OB_RoadmapView: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_RoadmapView(data: OnboardingData(), onNext: {}, onBackToLifestyle: {}, backAction: .constant(nil))
     }
 }

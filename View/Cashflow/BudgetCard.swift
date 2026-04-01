@@ -7,19 +7,21 @@ import SwiftUI
 
 struct BudgetCard: View {
     let spending: Spending
+    /// 与父视图已加载的 `APIMonthlyBudget` 一致（阶段 0 / 路线图 0.1），避免 Needs/Wants 上限锁死在 MockData。
+    let apiBudget: APIMonthlyBudget
     var isConnected: Bool = true
     var hasBudget: Bool = true
     var onSetupBudget: (() -> Void)? = nil
     let onCardTapped: (() -> Void)?
     let onNeedsTapped: (() -> Void)?
     let onWantsTapped: (() -> Void)?
-    private let apiBudget = MockData.apiMonthlyBudget
 
     private var needsColor: Color { AppColors.chartBlue }
     private var wantsColor: Color { AppColors.chartAmber }
 
     init(
         spending: Spending,
+        apiBudget: APIMonthlyBudget,
         isConnected: Bool = true,
         hasBudget: Bool = true,
         onSetupBudget: (() -> Void)? = nil,
@@ -28,6 +30,7 @@ struct BudgetCard: View {
         onWantsTapped: (() -> Void)? = nil
     ) {
         self.spending = spending
+        self.apiBudget = apiBudget
         self.isConnected = isConnected
         self.hasBudget = hasBudget
         self.onSetupBudget = onSetupBudget
@@ -258,6 +261,6 @@ private struct BudgetRowItem: View {
 #Preview {
     ZStack {
         AppColors.backgroundPrimary.ignoresSafeArea()
-        BudgetCard(spending: MockData.cashflowData.spending).padding()
+        BudgetCard(spending: MockData.cashflowData.spending, apiBudget: MockData.apiMonthlyBudget).padding()
     }
 }

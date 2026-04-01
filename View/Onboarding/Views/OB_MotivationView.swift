@@ -15,7 +15,7 @@ struct OB_MotivationView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -37,7 +37,7 @@ struct OB_MotivationView: View {
 
                     Text("What does financial freedom look like to you?")
                         .font(.obQuestion)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
 
                     Spacer().frame(height: 8)
 
@@ -74,7 +74,7 @@ struct OB_MotivationView: View {
             // Sticky CTA
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), Color.black],
+                    colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -83,7 +83,7 @@ struct OB_MotivationView: View {
                 OB_PrimaryButton(isValid: isValid, action: onNext)
             }
             .padding(.bottom, 16)
-            .background(Color.black)
+            .background(AppColors.backgroundPrimary)
             .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -119,7 +119,7 @@ struct MotivationCard: View {
 
                     Image(systemName: option.icon)
                         .font(.bodyRegular)
-                        .foregroundColor(isSelected ? .black : AppColors.textSecondary)
+                        .foregroundColor(isSelected ? AppColors.textInverse : AppColors.textSecondary)
                 }
                 .frame(width: 36, height: 36)
 
@@ -127,7 +127,7 @@ struct MotivationCard: View {
                     Text(option.title)
                         .font(.bodyRegular)
                         .fontWeight(.semibold)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
 
@@ -150,15 +150,15 @@ struct MotivationCard: View {
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .font(.system(size: 22))
+                            .font(.detailTitle)
                     } else {
                         Color.clear
                     }
                 }
                 .frame(width: 28, height: 28)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.md)
             .background(
                 isSelected
                     ? AppColors.surface.opacity(0.9)
@@ -181,7 +181,7 @@ struct MotivationCard: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         let data = OnboardingData()
         let _ = { data.userName = "Alex" }()
         OB_MotivationView(data: data, onNext: {}, onBack: {})

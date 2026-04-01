@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct AppColors {
     // MARK: - Brand
@@ -170,6 +171,9 @@ struct AppColors {
         accentPurpleLight,
         accentPurpleFaint,
     ]
+
+    /// UIKit 控件（如 `UISlider`）thumb tint，与 `textPrimary`（#FFFFFF）一致。
+    static let uiSliderThumbTint: UIColor = UIColor(red: 1, green: 1, blue: 1, alpha: 1)
 }
 
 // MARK: - Gradient Wallpaper (Welcome / Onboarding 背景)

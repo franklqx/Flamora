@@ -9,10 +9,10 @@ import SwiftUI
 
 struct InvestmentView: View {
     @Environment(PlaidManager.self) private var plaidManager
-    @Environment(SubscriptionManager.self) private var subscriptionManager
 
-    private let data = MockData.investmentData
     @State private var apiNetWorth: APINetWorthSummary? = nil
+    /// 来自 `get-investment-holdings`；断连或未拉取成功时为 nil。
+    @State private var apiHoldingsPayload: APIInvestmentHoldingsPayload?
 
     var body: some View {
         connectedView
@@ -26,9 +26,9 @@ struct InvestmentView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: AppSpacing.lg) {
                         PortfolioCard(
-                            portfolioBalance: apiNetWorth?.totalNetWorth ?? 85240.0,
-                            gainAmount: apiNetWorth?.growthAmount ?? 3240.0,
-                            gainPercentage: apiNetWorth?.growthPercentage ?? 3.95,
+                            portfolioBalance: portfolioBalanceDisplay,
+                            gainAmount: apiNetWorth?.growthAmount ?? 0,
+                            gainPercentage: apiNetWorth?.growthPercentage ?? 0,
                             isConnected: plaidManager.hasLinkedBank,
                             onConnectTapped: {
                                 Task { await plaidManager.startLinkFlow() }
@@ -36,8 +36,10 @@ struct InvestmentView: View {
                         )
 
                         AssetAllocationCard(
-                            allocation: data.allocation,
-                            isConnected: plaidManager.hasLinkedBank
+                            allocation: displayAllocation,
+                            isConnected: plaidManager.hasLinkedBank,
+                            holdingsPayload: apiHoldingsPayload,
+                            cashBankAccounts: cashBankAccounts
                         )
                         .padding(.horizontal, AppSpacing.screenPadding)
 
@@ -54,50 +56,81 @@ struct InvestmentView: View {
                 }
             }
         }
+        .onAppear {
+            if apiNetWorth == nil {
+                apiNetWorth = TabContentCache.shared.investmentNetWorth
+            }
+        }
         .task {
             await loadInvestmentData()
+        }
+        .onChange(of: plaidManager.hasLinkedBank) { _, _ in
+            Task { await loadInvestmentData() }
         }
     }
 }
 
 // MARK: - Data Loading & Computed Data
 private extension InvestmentView {
+    /// Investment Tab 主数字优先用净资产里的「投资账户」合计，与持仓 API 一致。
+    var portfolioBalanceDisplay: Double {
+        guard let nw = apiNetWorth else { return 0 }
+        if let inv = nw.breakdown.investmentTotal, inv > 0 {
+            return inv
+        }
+        return nw.totalNetWorth
+    }
+
+    /// 未连接：零占位；已连接：用 `get-investment-holdings` 聚合；拉取失败：零占位。
+    var displayAllocation: Allocation {
+        guard plaidManager.hasLinkedBank else {
+            return InvestmentAllocationBuilder.zeroAllocation
+        }
+        guard let p = apiHoldingsPayload else {
+            return InvestmentAllocationBuilder.zeroAllocation
+        }
+        return InvestmentAllocationBuilder.allocation(from: p)
+    }
+
+    var cashBankAccounts: [Account] {
+        computedAccounts.filter { $0.accountType == .bank }
+    }
+
     func loadInvestmentData() async {
-        apiNetWorth = await fetchNetWorth()
+        guard plaidManager.hasLinkedBank else {
+            apiNetWorth = nil
+            apiHoldingsPayload = nil
+            TabContentCache.shared.setInvestmentNetWorth(nil)
+            return
+        }
+        let nw = await fetchNetWorth()
+        apiNetWorth = nw
+        TabContentCache.shared.setInvestmentNetWorth(nw)
+        apiHoldingsPayload = await fetchHoldingsPayload()
+    }
+
+    private func fetchHoldingsPayload() async -> APIInvestmentHoldingsPayload? {
+        try? await APIService.shared.getInvestmentHoldings()
     }
 
     // async let + try? 组合会触发 Swift runtime crash (swift_task_dealloc)
     // 将 try? 包裹在独立函数中避免此问题
     private func fetchNetWorth() async -> APINetWorthSummary? {
-        try? await APIService.shared.getNetWorthSummary()
+        do {
+            return try await APIService.shared.getNetWorthSummary()
+        } catch {
+            print("❌ [InvestmentView] getNetWorthSummary decode/network: \(error)")
+            return nil
+        }
     }
 
     var computedAccounts: [Account] {
-        guard let nw = apiNetWorth, !nw.accounts.isEmpty else { return MockData.allAccounts }
-        return nw.accounts.map {
-            Account(
-                id: $0.accountId,
-                institution: $0.institution,
-                accountType: accountTypeFromAPI($0.type),
-                balance: $0.balance ?? 0,
-                connected: true,
-                logoUrl: $0.logoUrl
-            )
-        }
-    }
-
-    private func accountTypeFromAPI(_ type: String) -> AccountType {
-        let t = type.lowercased()
-        if t.contains("crypto") { return .crypto }
-        if t.contains("cash") || t.contains("checking") || t.contains("savings") || t == "bank" {
-            return .bank
-        }
-        return .brokerage
+        guard let nw = apiNetWorth, !nw.accounts.isEmpty else { return [] }
+        return nw.accounts.map { Account.fromNetWorthAccount($0) }
     }
 }
 
 #Preview {
     InvestmentView()
         .environment(PlaidManager.shared)
-        .environment(SubscriptionManager.shared)
 }

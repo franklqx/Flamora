@@ -20,7 +20,7 @@ struct OB_MicroInsightCard: View {
             Group {
                 if let sys = systemImage {
                     Image(systemName: sys)
-                        .font(.system(size: 20))
+                        .font(.categoryRowIcon)
                         .foregroundStyle(LinearGradient(
                             colors: [AppColors.gradientEnd, AppColors.gradientMiddle, AppColors.gradientStart],
                             startPoint: .leading,
@@ -28,7 +28,7 @@ struct OB_MicroInsightCard: View {
                         ))
                 } else {
                     Text(emoji)
-                        .font(.system(size: 24))
+                        .font(.h2)
                 }
             }
 
@@ -43,8 +43,8 @@ struct OB_MicroInsightCard: View {
         .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AppColors.backgroundCard)
-        .cornerRadius(AppRadius.md)
-        .offset(y: isVisible ? 0 : 20)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+        .offset(y: isVisible ? 0 : AppSpacing.md + AppSpacing.xs)
         .opacity(isVisible ? 1 : 0)
         .onAppear {
             withAnimation(.easeOut(duration: 0.3)) {

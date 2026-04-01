@@ -10,17 +10,20 @@ import SwiftUI
 
 struct TransactionDetailSheet: View {
     let transaction: Transaction
+    /// 来自 `get-net-worth-summary` 等真实账户列表，用于匹配 `transaction.accountId`。
+    var linkedAccounts: [Account] = []
     let onSave: (Transaction) -> Void
 
     @State private var selectedSubcategory: String?
     @State private var noteText: String
     @Environment(\.dismiss) private var dismiss
 
-    private let needsCategories = MockData.transactionCategories.filter { $0.parent == "needs" }
-    private let wantsCategories = MockData.transactionCategories.filter { $0.parent == "wants" }
+    private var needsCategories: [TransactionCategory] { TransactionCategoryCatalog.needsCategories }
+    private var wantsCategories: [TransactionCategory] { TransactionCategoryCatalog.wantsCategories }
 
-    init(transaction: Transaction, onSave: @escaping (Transaction) -> Void) {
+    init(transaction: Transaction, linkedAccounts: [Account] = [], onSave: @escaping (Transaction) -> Void) {
         self.transaction = transaction
+        self.linkedAccounts = linkedAccounts
         self.onSave = onSave
         _selectedSubcategory = State(initialValue: transaction.subcategory)
         _noteText = State(initialValue: transaction.note ?? "")
@@ -45,7 +48,7 @@ struct TransactionDetailSheet: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(transaction.merchant)
                             .font(.h3)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                         Text(dateTimeLabel)
                             .font(.inlineLabel)
                             .foregroundColor(AppColors.textTertiary)
@@ -70,7 +73,7 @@ struct TransactionDetailSheet: View {
                 // MARK: Amount
                 Text(formattedAmount(transaction.amount))
                     .font(.h1)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
                     .padding(.top, AppSpacing.sm)
                     .padding(.horizontal, AppSpacing.cardPadding)
 
@@ -131,7 +134,7 @@ struct TransactionDetailSheet: View {
 
                     TextField("Add a note...", text: $noteText)
                         .font(.inlineLabel)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                         .tint(AppColors.accentPurple)
                         .padding(.vertical, AppSpacing.sm)
                         .overlay(
@@ -148,10 +151,10 @@ struct TransactionDetailSheet: View {
                 Button(action: save) {
                     Text("Done")
                         .font(.sheetPrimaryButton)
-                        .foregroundStyle(.black)
+                        .foregroundStyle(AppColors.textInverse)
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .background(.white)
+                        .background(AppColors.textPrimary)
                         .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
                 }
                 .buttonStyle(.plain)
@@ -190,10 +193,10 @@ struct TransactionDetailSheet: View {
             HStack(spacing: 6) {
                 Image(systemName: cat.icon)
                     .font(.caption)
-                    .foregroundColor(isSelected ? .white : AppColors.textSecondary)
+                    .foregroundColor(isSelected ? AppColors.textPrimary : AppColors.textSecondary)
                 Text(cat.name)
                     .font(.bodySmall)
-                    .foregroundColor(isSelected ? .white : AppColors.textSecondary)
+                    .foregroundColor(isSelected ? AppColors.textPrimary : AppColors.textSecondary)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -213,12 +216,12 @@ struct TransactionDetailSheet: View {
 
     private var transactionAccount: Account? {
         guard let accountId = transaction.accountId else { return nil }
-        return MockData.allAccounts.first { $0.id == accountId }
+        return linkedAccounts.first { $0.id == accountId }
     }
 
     private var currentIcon: String {
         if let sub = selectedSubcategory,
-           let cat = MockData.transactionCategories.first(where: { $0.name == sub }) {
+           let cat = TransactionCategoryCatalog.all.first(where: { $0.name == sub }) {
             return cat.icon
         }
         return merchantIcon(for: transaction.merchant)
@@ -235,7 +238,7 @@ struct TransactionDetailSheet: View {
     private func save() {
         var updated = transaction
         updated.subcategory = selectedSubcategory
-        updated.category = selectedSubcategory.flatMap { MockData.categoryParent(for: $0) }
+        updated.category = selectedSubcategory.flatMap { TransactionCategoryCatalog.parent(for: $0) }
         updated.note = noteText.isEmpty ? nil : noteText
         onSave(updated)
         dismiss()

@@ -15,7 +15,7 @@ struct OB_SnapshotProgress: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Financial Snapshot \(current)/\(total)")
                 .font(.label)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
                 .tracking(0.8)
                 .frame(maxWidth: .infinity, alignment: .trailing)
 

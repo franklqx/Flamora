@@ -581,6 +581,58 @@ struct MockData {
 
 ---
 
+## `GET /get-spending-summary`
+
+**Edge Function：** `get-spending-summary`  
+**Query 参数：**
+
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| `month` | 否 | `YYYY-MM`，默认当前月 |
+
+**成功时 `data` 结构（snake_case，iOS 经 `convertFromSnakeCase` 解码）：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `month` | string | 目标月 `YYYY-MM` |
+| `total_spending` | number | needs + wants 支出合计 |
+| `total_income` | number | 当月 `flamora_category === income` 的 \|amount\| 合计 |
+| `needs` | object | `total`, `percentage`, `budget`, `remaining`, `over_budget`, `subcategories[]` |
+| `wants` | object | 同上 |
+| `savings` | object | `budget`（当月预算中的储蓄目标，可能为 null） |
+
+`subcategories[]` 每项：`subcategory`, `amount`, `percentage`（占 `total_spending` 的比例）。
+
+---
+
+## `GET /get-transactions`
+
+**Edge Function：** `get-transactions`  
+**Query 参数：**
+
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| `page` | 否 | 默认 `1` |
+| `limit` | 否 | 默认 `50`，最大 `100` |
+| `category` | 否 | `needs` / `wants` / `income` / `transfer` → 过滤 `flamora_category` |
+| `subcategory` | 否 | 过滤 `flamora_subcategory` |
+| `start_date` | 否 | `YYYY-MM-DD` |
+| `end_date` | 否 | `YYYY-MM-DD` |
+| `pending_review` | 否 | `true` / `false` |
+| `search` | 否 | 对 `merchant_name`、`name` 的 ilike |
+
+**成功时 `data` 结构：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `transactions` | array | `transactions` 表行（`select('*')`），含 `plaid_account_id` 等列 |
+| `pagination` | object | `page`, `limit`, `total`, `total_pages`, `has_more` |
+| `pending_review_count` | number | 当前用户待审核笔数 |
+
+**交易行与 iOS `APITransaction` 对齐字段示例：** `id`, `merchant_name`, `name`, `amount`, `date`, `pending_review`, `flamora_category`, `flamora_subcategory`, `plaid_account_id`（与 `plaid_accounts.id` 对应）。
+
+---
+
 ## ✅ API 状态追踪
 
 | API 端点 | 状态 | 负责人 | 完成日期 |
@@ -592,6 +644,8 @@ struct MockData {
 | `GET /monthly-budget` | ✅ 已完成 | 后端 | 2026-02-06 |
 | `GET /user-profile` | ✅ 已完成 | 后端 | 2026-02-06 |
 | `GET /net-worth-summary` | ✅ 已完成 | 后端 | 2026-02-06 |
+| `GET /get-spending-summary` | ✅ 已完成 | 后端 | 2026-03 |
+| `GET /get-transactions` | ✅ 已完成 | 后端 | 2026-03 |
 | `POST /create-user-profile` | ⬜ 待开发 | 后端 | Week 4 |
 
 ---

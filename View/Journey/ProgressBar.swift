@@ -47,5 +47,5 @@ struct ProgressBar: View {
         ProgressBar(progress: 0.25, color: AppColors.progressPurple)
     }
     .padding()
-    .background(Color.black)
+    .background(AppColors.backgroundPrimary)
 }

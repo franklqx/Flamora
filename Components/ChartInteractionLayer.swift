@@ -91,7 +91,7 @@ struct ChartInteractionLayer: UIViewRepresentable {
 #if DEBUG
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
 
         ChartInteractionLayer(
             onDrag: { _, _ in },

@@ -22,31 +22,31 @@ struct BS_ConfirmView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color(hex: "0A0A0C").ignoresSafeArea()
+            AppColors.backgroundSecondary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 20) {
-                    Spacer().frame(height: 60)
+                VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                    Spacer().frame(height: AppSpacing.xxl + AppSpacing.sm + AppSpacing.xs)
 
                     headerSection
-                        .padding(.horizontal, 26)
+                        .padding(.horizontal, AppSpacing.lg)
 
                     if let plan = viewModel.spendingPlan, let selected = viewModel.selectedPlan {
                         budgetSummaryRing(plan: plan, selectedPlan: selected)
-                            .padding(.horizontal, 26)
+                            .padding(.horizontal, AppSpacing.lg)
 
                         planDetailsCard(plan: plan, selectedPlan: selected)
-                            .padding(.horizontal, 26)
+                            .padding(.horizontal, AppSpacing.lg)
 
                         tipCard
-                            .padding(.horizontal, 26)
+                            .padding(.horizontal, AppSpacing.lg)
                     }
 
-                    Spacer().frame(height: 140)
+                    Spacer().frame(height: AppSpacing.tabBarReserve + AppSpacing.md + AppSpacing.md + AppSpacing.sm)
                 }
             }
             .opacity(showContent ? 1 : 0)
-            .offset(y: showContent ? 0 : 20)
+            .offset(y: showContent ? 0 : AppSpacing.md)
             .onAppear {
                 withAnimation(.easeOut(duration: 0.6)) { showContent = true }
                 withAnimation(.easeOut(duration: 1.2).delay(0.3)) { ringProgress = 1.0 }
@@ -59,89 +59,90 @@ struct BS_ConfirmView: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Button { viewModel.goBack() } label: {
-                HStack(spacing: 4) {
+                HStack(spacing: AppSpacing.xs) {
                     Image(systemName: "chevron.left")
                     Text("Back")
                 }
-                .font(.system(size: 14))
-                .foregroundStyle(Color(hex: "ABABAB"))
+                .font(.bodySmall)
+                .foregroundStyle(AppColors.textSecondary)
             }
-            .padding(.bottom, 8)
+            .padding(.bottom, AppSpacing.sm)
 
             Text("Your Plan")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(Color(hex: "F2F0ED"))
+                .font(.cardFigurePrimary)
+                .foregroundStyle(AppColors.textPrimary)
         }
     }
 
     // MARK: - Budget Summary Ring
 
     private func budgetSummaryRing(plan: SpendingPlanResponse, selectedPlan: PlanDetail) -> some View {
+        // `fixedBudget` / `flexibleBudget` 为 API 字段名；UI 展示为 Needs / Wants。
         let budgetTotal = plan.fixedBudget.total + plan.flexibleBudget.total
-        let fixedFrac = budgetTotal > 0 ? plan.fixedBudget.total / budgetTotal : 0.5
+        let needsShare = budgetTotal > 0 ? plan.fixedBudget.total / budgetTotal : 0.5
 
-        return VStack(spacing: 20) {
+        return VStack(spacing: AppSpacing.lg) {
             ZStack {
                 // Background track
                 Circle()
-                    .stroke(Color.white.opacity(0.05), lineWidth: 20)
+                    .stroke(AppColors.overlayWhiteWash, lineWidth: 20)
                     .frame(width: 200, height: 200)
 
-                // Fixed arc (purple) with round caps
+                // Needs arc (purple) with round caps
                 Circle()
-                    .trim(from: 0, to: fixedFrac * ringProgress)
+                    .trim(from: 0, to: needsShare * ringProgress)
                     .stroke(purpleColor, style: StrokeStyle(lineWidth: 20, lineCap: .round))
                     .frame(width: 200, height: 200)
                     .rotationEffect(.degrees(-90))
 
-                // Flexible arc (teal) with round caps
+                // Wants arc (teal) with round caps
                 Circle()
-                    .trim(from: fixedFrac * ringProgress, to: ringProgress)
+                    .trim(from: needsShare * ringProgress, to: ringProgress)
                     .stroke(tealColor, style: StrokeStyle(lineWidth: 20, lineCap: .round))
                     .frame(width: 200, height: 200)
                     .rotationEffect(.degrees(-90))
 
-                VStack(spacing: 4) {
+                VStack(spacing: AppSpacing.xs) {
                     Text("MONTHLY BUDGET")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.cardHeader)
                         .tracking(0.8)
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(AppColors.overlayWhiteOnPhoto)
                     Text("$\(formattedInt(selectedPlan.monthlySpend))")
-                        .font(.system(size: 30, weight: .bold))
-                        .foregroundStyle(Color(hex: "F2F0ED"))
+                        .font(.h1)
+                        .foregroundStyle(AppColors.textPrimary)
                         .monospacedDigit()
                 }
             }
 
             // Legend — side by side
-            HStack(spacing: 32) {
-                legendItem(color: purpleColor, label: "Fixed", amount: plan.fixedBudget.total)
-                legendItem(color: tealColor, label: "Flexible", amount: plan.flexibleBudget.total)
+            HStack(spacing: AppSpacing.xl) {
+                legendItem(color: purpleColor, label: "Needs", amount: plan.fixedBudget.total)
+                legendItem(color: tealColor, label: "Wants", amount: plan.flexibleBudget.total)
             }
         }
-        .padding(24)
+        .padding(AppSpacing.lg)
         .frame(maxWidth: .infinity)
-        .background(Color.white.opacity(0.03))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .background(AppColors.overlayWhiteWash)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.card)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
         )
     }
 
     @ViewBuilder
     private func legendItem(color: Color, label: String, amount: Double) -> some View {
-        HStack(spacing: 8) {
-            Circle().fill(color).frame(width: 8, height: 8)
+        HStack(spacing: AppSpacing.sm) {
+            Circle().fill(color).frame(width: AppSpacing.sm, height: AppSpacing.sm)
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color(hex: "ABABAB"))
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.textSecondary)
                 Text("$\(formattedInt(amount))")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Color(hex: "F2F0ED"))
+                    .font(.statRowSemibold)
+                    .foregroundStyle(AppColors.textPrimary)
                     .monospacedDigit()
             }
         }
@@ -163,50 +164,50 @@ struct BS_ConfirmView: View {
             ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
                 if index > 0 {
                     Rectangle()
-                        .fill(Color.white.opacity(0.05))
+                        .fill(AppColors.overlayWhiteWash)
                         .frame(height: 1)
                 }
                 HStack {
                     Text(row.label)
-                        .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.45))
+                        .font(.bodySmall)
+                        .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
                     Spacer()
                     Text(row.value)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(row.isRate ? goldColor : Color(hex: "F2F0ED"))
+                        .font(.bodySmallSemibold)
+                        .foregroundStyle(row.isRate ? goldColor : AppColors.textPrimary)
                         .monospacedDigit()
                 }
-                .padding(.vertical, 12)
-                .padding(.horizontal, 16)
+                .padding(.vertical, AppSpacing.sm + AppSpacing.xs)
+                .padding(.horizontal, AppSpacing.md)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.03))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .background(AppColors.overlayWhiteWash)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.card)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
         )
     }
 
     // MARK: - Tip Card
 
     private var tipCard: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: AppSpacing.sm + AppSpacing.xs) {
             Text("\u{1F4A1}")
-                .font(.system(size: 16))
+                .font(.bodyRegular)
             Text("You can adjust your budget anytime in Settings.")
-                .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.35))
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
                 .lineSpacing(3)
         }
-        .padding(16)
+        .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.03))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .background(AppColors.overlayWhiteWash)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
         )
     }
 
@@ -214,8 +215,8 @@ struct BS_ConfirmView: View {
 
     private var stickyBottomCTA: some View {
         VStack(spacing: 0) {
-            LinearGradient(colors: [Color(hex: "0A0A0C").opacity(0), Color(hex: "0A0A0C")], startPoint: .top, endPoint: .bottom)
-                .frame(height: 28)
+            LinearGradient(colors: [AppColors.backgroundSecondary.opacity(0), AppColors.backgroundSecondary], startPoint: .top, endPoint: .bottom)
+                .frame(height: AppRadius.button)
 
             VStack(spacing: 0) {
                 Button {
@@ -223,39 +224,40 @@ struct BS_ConfirmView: View {
                     Task {
                         let success = await viewModel.saveFinalBudget()
                         if success {
+                            UserDefaults.standard.set(true, forKey: FlamoraStorageKey.budgetSetupCompleted)
                             print("📍 [Flow] saveFinalBudget done, will dismiss")
                             onComplete()
                         }
                     }
                 } label: {
-                    HStack(spacing: 8) {
+                    HStack(spacing: AppSpacing.sm) {
                         if viewModel.isSaving {
-                            ProgressView().tint(.white)
+                            ProgressView().tint(AppColors.textPrimary)
                         }
                         Text(viewModel.isSaving ? "Saving..." : "Start My Journey")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.figureSecondarySemibold)
                     }
-                    .foregroundStyle(.black)
+                    .foregroundStyle(AppColors.textInverse)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
                     .background(
                         LinearGradient(colors: gradientColors, startPoint: .topLeading, endPoint: .bottomTrailing)
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: Color(hex: "E88BC4").opacity(0.25), radius: 16, y: 8)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
+                    .shadow(color: Color(hex: "E88BC4").opacity(0.25), radius: AppSpacing.md, y: AppSpacing.sm)
                 }
                 .disabled(viewModel.isSaving)
 
                 if let error = viewModel.saveError {
                     Text(error)
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color(hex: "F56B6B"))
-                        .padding(.top, 8)
+                        .font(.caption)
+                        .foregroundStyle(AppColors.error)
+                        .padding(.top, AppSpacing.sm)
                 }
             }
-            .padding(.horizontal, 26)
-            .padding(.bottom, 16)
-            .background(Color(hex: "0A0A0C"))
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.bottom, AppSpacing.md)
+            .background(AppColors.backgroundSecondary)
         }
     }
 

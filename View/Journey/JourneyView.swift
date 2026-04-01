@@ -19,9 +19,10 @@ struct JourneyView: View {
     @State private var netWorthSummary = APINetWorthSummary.empty
     @State private var apiBudget = APIMonthlyBudget.empty
     @State private var fireGoal: APIFireGoal? = nil
+    /// 已连接银行时由 `get-spending-summary` 推导的当年各月储蓄，供 `SavingsRateCard` 迷你图；nil 时迷你图为空柱。
+    @State private var savingsByYearForChart: [Int: [Double?]]?
     @State private var quoteIndex: Int = 0
     @State private var quoteVisible: Bool = true
-    private let data = MockData.journeyData
     var onFireTapped: (() -> Void)? = nil
     var onInvestmentTapped: (() -> Void)? = nil
     var onOpenCashflowDestination: ((CashflowJourneyDestination) -> Void)? = nil
@@ -29,6 +30,7 @@ struct JourneyView: View {
 
     @Environment(PlaidManager.self) private var plaidManager
     @Environment(SubscriptionManager.self) private var subscriptionManager
+    @AppStorage(FlamoraStorageKey.budgetSetupCompleted) private var budgetSetupCompleted: Bool = false
 
     init(
         bottomPadding: CGFloat = 0,
@@ -53,7 +55,7 @@ struct JourneyView: View {
                             portfolioBalance: netWorthSummary.totalNetWorth,
                             gainAmount: netWorthSummary.growthAmount ?? 0,
                             gainPercentage: netWorthSummary.growthPercentage ?? 0,
-                            isConnected: hasInvestmentAccounts,
+                            isConnected: plaidManager.hasLinkedBank,
                             onConnectTapped: {
                                 guard subscriptionManager.isPremium else {
                                     subscriptionManager.showPaywall = true
@@ -76,13 +78,14 @@ struct JourneyView: View {
                             VStack(spacing: AppSpacing.cardGap) {
                                 BudgetPlanCard(
                                     apiBudget: apiBudget,
-                                    daysLeft: data.budget.daysLeft,
+                                    daysLeft: daysLeftInCurrentMonth,
                                     onSetupBudget: { plaidManager.showBudgetSetup = true },
                                     action: { onOpenCashflowDestination?(.totalSpending) }
                                 )
                                 if hasBudgetData {
                                     SavingsRateCard(
                                         apiBudget: apiBudget,
+                                        savingsByYearLookup: savingsByYearForChart,
                                         isConnected: true
                                     ) {
                                         onOpenCashflowDestination?(.savingsOverview)
@@ -107,6 +110,19 @@ struct JourneyView: View {
             print("📍 [Flow] hasLinkedBank changed → \(plaidManager.hasLinkedBank)")
             Task { await loadData() }
         }
+    }
+}
+
+// MARK: - Calendar helpers
+
+private extension JourneyView {
+    /// 当月剩余天数（含今日），替代 MockData 固定值（阶段 0 / 路线图 0.4）。
+    var daysLeftInCurrentMonth: Int {
+        let cal = Calendar.current
+        let now = Date()
+        guard let range = cal.range(of: .day, in: .month, for: now) else { return 0 }
+        let day = cal.component(.day, from: now)
+        return range.count - day + 1
     }
 }
 
@@ -189,12 +205,9 @@ private extension JourneyView {
 // MARK: - Data Loading
 
 private extension JourneyView {
-    var hasInvestmentAccounts: Bool {
-        netWorthSummary.accounts.contains { $0.type == "investment" }
-    }
-
     var hasBudgetData: Bool {
-        plaidManager.hasLinkedBank
+        budgetSetupCompleted
+        && plaidManager.hasLinkedBank
         && (apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget) > 0
         && apiBudget.selectedPlan != nil
     }
@@ -215,12 +228,14 @@ private extension JourneyView {
             }
             apiBudget = .empty
             fireGoal = fire
+            savingsByYearForChart = nil
             print("📍 [Flow] loadData skipped budget fetch — hasLinkedBank=false")
             return
         }
 
         async let budgetTask = fetchBudget(month: monthStr)
-        let (nw, budget, fire) = await (nwTask, budgetTask, fireTask)
+        async let savingsChartTask = fetchSavingsByYearForMiniChart()
+        let (nw, budget, fire, savingsLookup) = await (nwTask, budgetTask, fireTask, savingsChartTask)
         if let nw {
             netWorthSummary = nw
             let hasInv = nw.accounts.contains { $0.type == "investment" }
@@ -230,12 +245,24 @@ private extension JourneyView {
         }
         if let budget {
             apiBudget = budget
+            FlamoraStorageKey.migrateBudgetSetupIfNeeded(budget: budget, hasLinkedBank: true)
             print("📍 [Flow] budget loaded — selectedPlan=\(budget.selectedPlan ?? "nil"), needs=\(budget.needsBudget), wants=\(budget.wantsBudget), savings=\(budget.savingsBudget)")
         } else {
             print("📍 [Flow] budget fetch returned nil (no budget in DB for \(monthStr))")
         }
         fireGoal = fire
+        savingsByYearForChart = savingsLookup
         print("📍 [Flow] hasBudgetData=\(hasBudgetData), hasLinkedBank=\(plaidManager.hasLinkedBank)")
+    }
+
+    /// 与 Cash Flow 同源：多月份 `get-spending-summary` → 每月 max(0, income − spending)。
+    private func fetchSavingsByYearForMiniChart() async -> [Int: [Double?]]? {
+        let cal = Calendar.current
+        let year = cal.component(.year, from: Date())
+        let through = cal.component(.month, from: Date())
+        let summaries = await CashflowAPICharts.fetchMonthlySummaries(year: year, throughMonth: through)
+        guard !summaries.isEmpty else { return nil }
+        return CashflowAPICharts.savingsMonthlyAmountsByYear(summaries: summaries, year: year)
     }
 
     private func fetchNetWorth() async -> APINetWorthSummary? {

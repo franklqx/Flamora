@@ -36,7 +36,7 @@ struct ConnectAccountCTAView: View {
                             .frame(width: 160, height: 160)
 
                         Image(systemName: icon)
-                            .font(.system(size: 52))
+                            .font(.currencyHero)
                             .foregroundStyle(LinearGradient(
                                 colors: iconGradient,
                                 startPoint: .topLeading,
@@ -82,16 +82,16 @@ struct ConnectAccountCTAView: View {
                     Spacer(minLength: AppSpacing.xl)
 
                     Button(action: { Task { await plaidManager.startLinkFlow() } }) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: AppSpacing.sm) {
                             if plaidManager.isConnecting {
-                                ProgressView().tint(.black)
+                                ProgressView().tint(AppColors.textInverse)
                             } else {
                                 Text(buttonLabel)
                                     .font(.statRowSemibold)
-                                    .foregroundColor(.black)
+                                    .foregroundColor(AppColors.textInverse)
                                 Image(systemName: "arrow.right")
                                     .font(.figureSecondarySemibold)
-                                    .foregroundColor(.black)
+                                    .foregroundColor(AppColors.textInverse)
                             }
                         }
                         .frame(maxWidth: .infinity)

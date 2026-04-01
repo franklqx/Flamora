@@ -18,6 +18,7 @@ struct OB_SplashView: View {
         GeometryReader { geo in
             let width = geo.size.width
             let fontSize = min(34, max(20, width * 0.07))
+            let letterScale = fontSize / AppTypography.h1
             let letterSpacing = min(12, max(4, width * 0.03))
 
             ZStack {
@@ -26,7 +27,9 @@ struct OB_SplashView: View {
                 HStack(spacing: letterSpacing) {
                     ForEach(0..<letters.count, id: \.self) { index in
                         Text(letters[index])
-                            .font(.system(size: fontSize, weight: .light))
+                            .font(.h1)
+                            .fontWeight(.light)
+                            .scaleEffect(letterScale)
                             .foregroundColor(AppColors.textPrimary)
                             .opacity(letterOpacities[index])
                     }

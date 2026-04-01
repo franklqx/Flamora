@@ -598,24 +598,11 @@ struct MockData {
         ]
     )
 
-    // MARK: Transaction Categories (single source of truth — swap with API later)
-    static let transactionCategories: [TransactionCategory] = [
-        // Needs
-        TransactionCategory(id: "rent",     name: "Rent & Housing",  icon: "house.fill",       parent: "needs"),
-        TransactionCategory(id: "grocery",  name: "Groceries",       icon: "cart.fill",         parent: "needs"),
-        TransactionCategory(id: "utility",  name: "Utilities",       icon: "bolt.fill",         parent: "needs"),
-        TransactionCategory(id: "transit",  name: "Transportation",  icon: "car.fill",          parent: "needs"),
-        TransactionCategory(id: "health",   name: "Health & Fitness",icon: "cross.case.fill",   parent: "needs"),
-        // Wants
-        TransactionCategory(id: "dining",   name: "Dining & Social", icon: "fork.knife",        parent: "wants"),
-        TransactionCategory(id: "shopping", name: "Shopping",        icon: "bag.fill",          parent: "wants"),
-        TransactionCategory(id: "subs",     name: "Subscriptions",   icon: "play.tv.fill",      parent: "wants"),
-        TransactionCategory(id: "travel",   name: "Travel",          icon: "airplane",          parent: "wants"),
-        TransactionCategory(id: "hobbies",  name: "Hobbies & Leisure",icon: "paintpalette.fill",parent: "wants"),
-    ]
+    /// 与 `TransactionCategoryCatalog.all` 同步；保留别名供旧代码引用。
+    static let transactionCategories: [TransactionCategory] = TransactionCategoryCatalog.all
 
     static func categoryParent(for subcategory: String) -> String? {
-        transactionCategories.first(where: { $0.name == subcategory })?.parent
+        TransactionCategoryCatalog.parent(for: subcategory)
     }
 
     // MARK: All Transactions Mock Data
@@ -859,18 +846,64 @@ struct APINetWorthSummary: Codable {
 }
 
 struct APIAccount: Codable {
-    // Matches backend accounts array: { name, type, subtype, balance, mask, institution }
-    // No explicit CodingKeys — let .convertFromSnakeCase handle it
+    /// `plaid_accounts.id`（UUID）；若 JSON 省略 `id` 则回退解码 `account_id`（Plaid 账户 id）。
+    let id: String
     let name: String
     let type: String
     let subtype: String?
     let balance: Double?    // null for some account types
     let mask: String?
-    let institution: String
+    /// `get-net-worth-summary` 在 `plaid_items` 未关联到时可返回 null，必须为可选否则整包解码失败、金额全为 0。
+    let institution: String?
 
-    // Computed compatibility shims for existing UI code
-    var accountId: String { name }
     var logoUrl: String? { nil }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, type, subtype, balance, mask, institution
+        case accountId = "account_id"
+    }
+
+    init(id: String, name: String, type: String, subtype: String?, balance: Double?, mask: String?, institution: String?) {
+        self.id = id
+        self.name = name
+        self.type = type
+        self.subtype = subtype
+        self.balance = balance
+        self.mask = mask
+        self.institution = institution
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let idOpt = try c.decodeIfPresent(String.self, forKey: .id)
+        let accountIdOpt = try c.decodeIfPresent(String.self, forKey: .accountId)
+        let resolvedId: String
+        if let s = idOpt, !s.isEmpty {
+            resolvedId = s
+        } else if let s = accountIdOpt, !s.isEmpty {
+            resolvedId = s
+        } else {
+            resolvedId = ""
+        }
+        id = resolvedId
+        name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
+        type = try c.decodeIfPresent(String.self, forKey: .type) ?? "depository"
+        subtype = try c.decodeIfPresent(String.self, forKey: .subtype)
+        balance = try c.decodeIfPresent(Double.self, forKey: .balance)
+        mask = try c.decodeIfPresent(String.self, forKey: .mask)
+        institution = try c.decodeIfPresent(String.self, forKey: .institution)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(name, forKey: .name)
+        try c.encode(type, forKey: .type)
+        try c.encodeIfPresent(subtype, forKey: .subtype)
+        try c.encodeIfPresent(balance, forKey: .balance)
+        try c.encodeIfPresent(mask, forKey: .mask)
+        try c.encodeIfPresent(institution, forKey: .institution)
+    }
 }
 
 // MARK: - 🔥 Backend API Mock Data
@@ -1116,6 +1149,7 @@ extension MockData {
         ),
         accounts: [
             APIAccount(
+                id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1",
                 name: "Fidelity 401(k)",
                 type: "investment",
                 subtype: "401k",
@@ -1124,6 +1158,7 @@ extension MockData {
                 institution: "Fidelity"
             ),
             APIAccount(
+                id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2",
                 name: "Chase Checking",
                 type: "depository",
                 subtype: "checking",

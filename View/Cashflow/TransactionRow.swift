@@ -30,7 +30,7 @@ struct TransactionRow: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(transaction.merchant)
                         .font(.figureSecondarySemibold)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                     Text(dateTimeLabel)
                         .font(.caption)
                         .foregroundColor(AppColors.textTertiary)
@@ -42,7 +42,7 @@ struct TransactionRow: View {
                 VStack(alignment: .trailing, spacing: 6) {
                     Text(formattedAmount(transaction.amount))
                         .font(.cardFigureSecondary)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                     categoryBadge
                 }
             }
@@ -80,7 +80,7 @@ struct TransactionRow: View {
 
     private var badgeStyle: (String, Color, Color, Bool) {
         if let sub = transaction.subcategory {
-            let parent = MockData.categoryParent(for: sub)
+            let parent = TransactionCategoryCatalog.parent(for: sub)
             let color = parent == "needs" ? AppColors.chartBlue : AppColors.chartGold
             return (sub, color.opacity(0.2), color, false)
         }
@@ -104,7 +104,7 @@ struct TransactionRow: View {
 
     private var categoryIcon: String {
         if let sub = transaction.subcategory,
-           let cat = MockData.transactionCategories.first(where: { $0.name == sub }) {
+           let cat = TransactionCategoryCatalog.all.first(where: { $0.name == sub }) {
             return cat.icon
         }
         return merchantIcon(for: transaction.merchant)

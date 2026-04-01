@@ -23,6 +23,7 @@ class SupabaseManager {
             supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZueWFsZnBtb3B2b3N3Y2Nld2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxODg2ODgsImV4cCI6MjA4NTc2NDY4OH0.LWeaM9vRRoh0i-lUcMRV0BjTZHKVDvI8XGWRIcJajG4",
             options: .init(
                 auth: .init(
+                    redirectToURL: URL(string: "com.flamora.app://auth-callback"),
                     emitLocalSessionAsInitialSession: true
                 )
             )
@@ -78,6 +79,20 @@ class SupabaseManager {
         let userId = session.user.id.uuidString
         Task { await SubscriptionManager.shared.loginUser(userId: userId) }
         Task { await PlaidManager.shared.loadStatus() }
+    }
+
+    // MARK: - OAuth（Apple / Google 需在 Dashboard 启用；redirect URL 与 Info.plist URL Types 一致）
+
+    /// 使用内置 `ASWebAuthenticationSession` 完成 OAuth（PKCE）。
+    @discardableResult
+    func signInWithOAuth(provider: Provider) async throws -> Session {
+        let session = try await client.auth.signInWithOAuth(provider: provider)
+        currentUser = session.user
+        isAuthenticated = true
+        let userId = session.user.id.uuidString
+        Task { await SubscriptionManager.shared.loginUser(userId: userId) }
+        Task { await PlaidManager.shared.loadStatus() }
+        return session
     }
 
     // MARK: - 退出登录

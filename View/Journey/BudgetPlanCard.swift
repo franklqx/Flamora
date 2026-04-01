@@ -12,6 +12,7 @@ struct BudgetPlanCard: View {
     var action: (() -> Void)? = nil
 
     @Environment(PlaidManager.self) private var plaidManager
+    @AppStorage(FlamoraStorageKey.budgetSetupCompleted) private var budgetSetupCompleted: Bool = false
 
     private static let setupSteps: [(String, String)] = [
         ("link", "Link\nAccounts"),
@@ -27,7 +28,8 @@ struct BudgetPlanCard: View {
     private var hasLinkedBank: Bool { plaidManager.hasLinkedBank }
 
     private var hasBudget: Bool {
-        hasLinkedBank
+        budgetSetupCompleted
+        && hasLinkedBank
         && (apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget) > 0
         && apiBudget.selectedPlan != nil
     }

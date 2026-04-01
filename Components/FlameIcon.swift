@@ -16,7 +16,7 @@ struct FlameIcon: View {
 
     init(
         size: CGFloat = 20,
-        color: Color = .white,
+        color: Color = AppColors.textPrimary,
         shadowColor: Color? = nil,
         shadowRadius: CGFloat = 0,
         shadowY: CGFloat = 0
@@ -46,8 +46,8 @@ struct FlameIcon: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
 
-        FlameIcon(size: 48, color: .white, shadowColor: .black.opacity(0.5), shadowRadius: 10, shadowY: 6)
+        FlameIcon(size: 48, color: AppColors.textPrimary, shadowColor: AppColors.cardShadow, shadowRadius: 10, shadowY: 6)
     }
 }

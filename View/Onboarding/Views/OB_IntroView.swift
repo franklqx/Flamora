@@ -13,7 +13,7 @@ struct OB_IntroView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -33,7 +33,7 @@ struct OB_IntroView: View {
                             .overlay(
                                 Image(systemName: "chart.line.uptrend.xyaxis")
                                     .font(.h4)
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(AppColors.textPrimary)
                             )
 
                         Spacer()
@@ -44,7 +44,7 @@ struct OB_IntroView: View {
                     // 标题
                     Text("Let's build your freedom plan")
                         .font(.obQuestion)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Spacer().frame(height: 12)
@@ -77,7 +77,7 @@ struct OB_IntroView: View {
             // CTA
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), Color.black],
+                    colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -86,7 +86,7 @@ struct OB_IntroView: View {
                 OB_PrimaryButton(title: "Let's Do This", action: onNext)
             }
             .padding(.bottom, 16)
-            .background(Color.black)
+            .background(AppColors.backgroundPrimary)
             .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -105,12 +105,12 @@ private struct OBInfoPill: View {
         HStack(spacing: 10) {
             Image(systemName: systemIcon)
                 .font(.bodySemibold)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
                 .frame(width: 24, height: 24)
 
             Text(title)
                 .font(.bodySmall)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
 
             Spacer()
         }
@@ -132,7 +132,7 @@ private struct OBInfoPill: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_IntroView(onNext: {}, onBack: {})
     }
 }

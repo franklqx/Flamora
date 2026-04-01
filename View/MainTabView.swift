@@ -106,9 +106,13 @@ struct MainTabView: View {
         .fullScreenCover(item: $journeyCashflowSecondary) { destination in
             switch destination {
             case .totalSpending:
-                TotalSpendingAnalysisDetailView(data: MockData.totalSpendingDetail)
+                TotalSpendingAnalysisDetailView(
+                    data: .empty,
+                    needsDetailData: .emptyNeeds,
+                    wantsDetailData: .emptyWants
+                )
             case .savingsOverview:
-                SavingsTargetDetailView2()
+                SavingsTargetDetailView2Container()
             }
         }
     }

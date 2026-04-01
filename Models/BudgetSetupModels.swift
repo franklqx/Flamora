@@ -13,6 +13,8 @@
 //  Request structs (Encodable only) DO have explicit CodingKeys because
 //  JSONEncoder has no keyEncodingStrategy set, so snake_case must be specified.
 //
+//  Terminology: UI 与日志使用 Needs / Wants；模型属性名仍与后端一致（fixed / flexible 等）。
+//
 
 import Foundation
 

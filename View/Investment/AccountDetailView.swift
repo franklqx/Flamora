@@ -10,14 +10,12 @@ struct AccountDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedPeriod: ChartPeriod = .oneMonth
     @State private var selectedTransaction: Transaction?
-    @State private var transactions: [Transaction]
+    @State private var transactions: [Transaction] = []
+    @State private var apiHoldings: [Holding] = []
     @State private var dragOffset: CGFloat = 0
 
     init(account: Account) {
         self.account = account
-        _transactions = State(initialValue:
-            MockData.allTransactions.filter { $0.accountId == account.id }
-        )
     }
 
     enum ChartPeriod: String, CaseIterable {
@@ -27,12 +25,10 @@ struct AccountDetailView: View {
         case oneYear      = "1Y"
     }
 
-    private var holdings: [Holding] {
-        MockData.holdings.filter { $0.accountId == account.id }
-    }
+    private var holdings: [Holding] { apiHoldings }
 
+    /// 尚无账户级净值历史 API：用当前余额生成简短趋势线占位。
     private var filteredSnapshots: [BalanceSnapshot] {
-        let all = MockData.accountBalanceHistory[account.id] ?? []
         let cal = Calendar.current
         let now = Date()
         let cutoff: Date
@@ -42,8 +38,11 @@ struct AccountDetailView: View {
         case .threeMonths: cutoff = cal.date(byAdding: .month,      value: -3,  to: now) ?? now
         case .oneYear:     cutoff = cal.date(byAdding: .year,       value: -1,  to: now) ?? now
         }
-        let filtered = all.filter { $0.date >= cutoff }
-        return filtered.count >= 2 ? filtered : Array(all.suffix(2))
+        let startBal = max(account.balance * 0.995, 0.01)
+        return [
+            BalanceSnapshot(id: "trend-a", accountId: account.id, date: cutoff, balance: startBal),
+            BalanceSnapshot(id: "trend-b", accountId: account.id, date: now, balance: account.balance)
+        ]
     }
 
     private var performancePercent: Double? {
@@ -79,6 +78,9 @@ struct AccountDetailView: View {
             .background(AppColors.backgroundPrimary)
         }
         .preferredColorScheme(.dark)
+        .task {
+            await loadAccountData()
+        }
         .offset(y: dragOffset)
         .simultaneousGesture(
             DragGesture()
@@ -98,7 +100,7 @@ struct AccountDetailView: View {
                 }
         )
         .sheet(item: $selectedTransaction) { txn in
-            TransactionDetailSheet(transaction: txn) { updated in
+            TransactionDetailSheet(transaction: txn, linkedAccounts: [account]) { updated in
                 if let idx = transactions.firstIndex(where: { $0.id == updated.id }) {
                     transactions[idx] = updated
                 }
@@ -350,19 +352,31 @@ struct AccountDetailView: View {
 
     // MARK: - Helpers
 
-    private var lastUpdatedLabel: String {
-        guard let date = MockData.accountLastUpdated[account.id] else { return "Updated recently" }
-        return timeAgo(from: date)
+    private var lastUpdatedLabel: String { "Updated recently" }
+
+    private func loadAccountData() async {
+        async let holdingsTask = loadHoldingsForAccount()
+        async let txTask = loadTransactionsForAccount()
+        let (h, t) = await (holdingsTask, txTask)
+        await MainActor.run {
+            apiHoldings = h
+            transactions = t
+        }
     }
 
-    private func timeAgo(from date: Date) -> String {
-        let seconds = Int(Date().timeIntervalSince(date))
-        if seconds < 60               { return "Updated just now" }
-        let minutes = seconds / 60
-        if minutes < 60               { return "Updated \(minutes) min ago" }
-        let hours = minutes / 60
-        if hours < 24                 { return "Updated \(hours)h ago" }
-        return "Updated \(hours / 24)d ago"
+    private func loadHoldingsForAccount() async -> [Holding] {
+        guard let payload = try? await APIService.shared.getInvestmentHoldings() else { return [] }
+        return payload.holdings
+            .filter { $0.plaidAccountId == account.id }
+            .map { InvestmentAllocationBuilder.holding(from: $0) }
+            .sorted { $0.totalValue > $1.totalValue }
+    }
+
+    private func loadTransactionsForAccount() async -> [Transaction] {
+        guard let response = try? await APIService.shared.getTransactions(page: 1, limit: 100) else { return [] }
+        return response.transactions
+            .filter { $0.plaidAccountId == account.id }
+            .map { Transaction(from: $0) }
     }
 
     private var accentColor: Color {
@@ -431,7 +445,7 @@ private struct AccountLineChart: View {
                         p.closeSubpath()
                     }
                     .fill(LinearGradient(
-                        colors: [accentColor.opacity(0.25), Color.black.opacity(0)],
+                        colors: [accentColor.opacity(0.25), Color.clear],
                         startPoint: .top, endPoint: .bottom
                     ))
 

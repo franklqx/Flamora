@@ -21,7 +21,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.black.ignoresSafeArea()
+                AppColors.backgroundPrimary.ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 24) {
@@ -40,7 +40,7 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                         .fontWeight(.semibold)
                 }
             }
@@ -153,7 +153,7 @@ private extension SettingsView {
                             title: "Restore Purchases",
                             trailing: {
                                 isRestoringPurchases
-                                    ? AnyView(ProgressView().tint(.white).scaleEffect(0.8))
+                                    ? AnyView(ProgressView().tint(AppColors.textPrimary).scaleEffect(0.8))
                                     : AnyView(EmptyView())
                             }
                         )
@@ -192,7 +192,7 @@ private extension SettingsView {
                             title: "Disconnect Bank",
                             trailing: {
                                 isDisconnecting
-                                    ? AnyView(ProgressView().tint(.white).scaleEffect(0.8))
+                                    ? AnyView(ProgressView().tint(AppColors.textPrimary).scaleEffect(0.8))
                                     : AnyView(EmptyView())
                             }
                         )
@@ -286,7 +286,7 @@ private extension SettingsView {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.supportingText)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
                     .lineLimit(1)
 
                 if let subtitle {

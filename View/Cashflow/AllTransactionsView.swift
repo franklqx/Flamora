@@ -9,6 +9,7 @@ import SwiftUI
 
 struct AllTransactionsView: View {
     @Binding var transactions: [Transaction]
+    var linkedAccounts: [Account] = []
     let onUpdate: (Transaction) -> Void
 
     @State private var filter: String = "all"   // "all" | "needs" | "wants"
@@ -25,7 +26,7 @@ struct AllTransactionsView: View {
                 HStack {
                     Text("Transactions")
                         .font(.h2)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
 
                     Spacer()
 
@@ -102,7 +103,7 @@ struct AllTransactionsView: View {
         )
         .preferredColorScheme(.dark)
         .sheet(item: $selectedTransaction) { transaction in
-            TransactionDetailSheet(transaction: transaction) { updated in
+            TransactionDetailSheet(transaction: transaction, linkedAccounts: linkedAccounts) { updated in
                 updateLocal(updated)
                 onUpdate(updated)
             }
@@ -110,7 +111,7 @@ struct AllTransactionsView: View {
             .presentationDragIndicator(.visible)
             .presentationDetents([.fraction(0.75)])
             .presentationCornerRadius(28)
-            .presentationBackground(Color.black)
+            .presentationBackground(AppColors.backgroundPrimary)
         }
     }
 
@@ -122,7 +123,7 @@ struct AllTransactionsView: View {
         Button(action: { filter = value }) {
             Text(label)
                 .font(.inlineLabel)
-                .foregroundColor(isSelected ? .white : AppColors.textSecondary)
+                .foregroundColor(isSelected ? AppColors.textPrimary : AppColors.textSecondary)
                 .padding(.vertical, AppSpacing.sm)
                 .padding(.horizontal, AppSpacing.md)
                 .background(isSelected ? AppColors.surfaceElevated : Color.clear)

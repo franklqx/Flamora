@@ -26,6 +26,8 @@
 		1571A1D82F3C2A2C0024A729 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1571A1D62F3C2A2C0024A729 /* APIService.swift */; };
 		1571A1DA2F3C2A5B0024A729 /* OnboardingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1571A1D92F3C2A5B0024A729 /* OnboardingModels.swift */; };
 		15A115992F3246460085ED9B /* mockdata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A115972F3246460085ED9B /* mockdata.swift */; };
+		CD11E0042F90000000000001 /* Account+API.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11E0032F90000000000001 /* Account+API.swift */; };
+		CD11E0062F90000000000001 /* CashflowDetailEmptyStates.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11E0052F90000000000001 /* CashflowDetailEmptyStates.swift */; };
 		15ABCD012F36A00000AABB01 /* IncomeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15ABCD002F36A00000AABB01 /* IncomeDetailView.swift */; };
 		15ABCD032F36B00000AABB02 /* TotalIncomeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15ABCD022F36B00000AABB02 /* TotalIncomeDetailView.swift */; };
 		15E21AA62F3248F500A9BB60 /* JourneyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AA32F3248F500A9BB60 /* JourneyView.swift */; };
@@ -92,6 +94,8 @@
 		1571A1D62F3C2A2C0024A729 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
 		1571A1D92F3C2A5B0024A729 /* OnboardingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingModels.swift; sourceTree = "<group>"; };
 		15A115972F3246460085ED9B /* mockdata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mockdata.swift; sourceTree = "<group>"; };
+		CD11E0032F90000000000001 /* Account+API.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Account+API.swift"; sourceTree = "<group>"; };
+		CD11E0052F90000000000001 /* CashflowDetailEmptyStates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowDetailEmptyStates.swift; sourceTree = "<group>"; };
 		15ABCD002F36A00000AABB01 /* IncomeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomeDetailView.swift; sourceTree = "<group>"; };
 		15ABCD022F36B00000AABB02 /* TotalIncomeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotalIncomeDetailView.swift; sourceTree = "<group>"; };
 		15E21AA32F3248F500A9BB60 /* JourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyView.swift; sourceTree = "<group>"; };
@@ -225,6 +229,8 @@
 		15A115982F3246460085ED9B /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				CD11E0032F90000000000001 /* Account+API.swift */,
+				CD11E0052F90000000000001 /* CashflowDetailEmptyStates.swift */,
 				1571A1D92F3C2A5B0024A729 /* OnboardingModels.swift */,
 				15A115972F3246460085ED9B /* mockdata.swift */,
 			);
@@ -489,6 +495,8 @@
 				15E21AB12F32548A00A9BB60 /* SimulatorView.swift in Sources */,
 				15E21ADD2F33973100A9BB60 /* FlameTogglePill.swift in Sources */,
 				15A115992F3246460085ED9B /* mockdata.swift in Sources */,
+				CD11E0042F90000000000001 /* Account+API.swift in Sources */,
+				CD11E0062F90000000000001 /* CashflowDetailEmptyStates.swift in Sources */,
 				15E21AF52F33F2BE00A9BB60 /* AssetAllocationCard.swift in Sources */,
 				15E21AF32F33F2AD00A9BB60 /* AccountsCard.swift in Sources */,
 				153CA32C2F3562AC001ED98E /* SavingsTargetDetailView2.swift in Sources */,

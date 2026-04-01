@@ -83,7 +83,7 @@ struct IncomeDetailView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 24) {
@@ -138,14 +138,14 @@ private extension IncomeDetailView {
             HStack(alignment: .firstTextBaseline) {
                 Text(data.title)
                     .font(.cardFigurePrimary)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
 
                 Spacer()
 
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
                         .font(.bodySmallSemibold)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                         .padding(.top, 2)
                 }
                 .buttonStyle(.plain)
@@ -154,7 +154,7 @@ private extension IncomeDetailView {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(formatCurrency(selectedTotal))
                     .font(.h1)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
 
                 Text("earned in \(selectedMonthLabel)")
                     .font(.bodyRegular)
@@ -254,7 +254,7 @@ private extension IncomeDetailView {
 
             Text(monthLabels[index])
                 .font(.segmentLabel(selected: isSelected))
-                .foregroundColor(isSelected ? .white : Color(hex: "#9CA3AF"))
+                .foregroundColor(isSelected ? AppColors.textPrimary : Color(hex: "#9CA3AF"))
         }
         .frame(maxWidth: .infinity)
     }
@@ -294,7 +294,7 @@ private extension IncomeDetailView {
         return VStack(alignment: .leading, spacing: 16) {
             Text("Sources")
                 .font(.detailTitle)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
 
             VStack(spacing: 12) {
                 ForEach(selectedSources) { source in
@@ -330,7 +330,7 @@ private extension IncomeDetailView {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(source.name)
                             .font(.bodySemibold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
 
                         Text("\(source.account) · \(source.type.displayName)")
                             .font(.footnoteRegular)
@@ -342,7 +342,7 @@ private extension IncomeDetailView {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(formatCurrency(source.amount))
                             .font(.bodySemibold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
 
                         Text("\(Int(source.percentage.rounded()))%")
                             .font(.footnoteRegular)
@@ -715,7 +715,7 @@ struct SpendingAnalysisDetailView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 24) {
@@ -1126,7 +1126,7 @@ private struct SpendingCategoryTransactionsDetailView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 22) {
@@ -1168,7 +1168,7 @@ private extension SpendingCategoryTransactionsDetailView {
         Button(action: { dismiss() }) {
             Image(systemName: "chevron.left")
                 .font(.navChevron)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
                 .padding(.vertical, 8)
         }
         .buttonStyle(.plain)
@@ -1178,11 +1178,11 @@ private extension SpendingCategoryTransactionsDetailView {
         VStack(alignment: .leading, spacing: 8) {
             Text(category.name)
                 .font(.cardFigurePrimary)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
 
             Text(formatCurrency(category.amount))
                 .font(.currencyHero)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
 
             Text("Total spend in \(monthLabel)")
                 .font(.bodyRegular)
@@ -1219,7 +1219,7 @@ private extension SpendingCategoryTransactionsDetailView {
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.merchant)
                     .font(.bodySemibold)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
 
                 Text(item.subtitle)
                     .font(.footnoteRegular)
@@ -1230,7 +1230,7 @@ private extension SpendingCategoryTransactionsDetailView {
 
             Text(formatCurrency(item.amount))
                 .font(.bodySemibold)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
                 .padding(.top, 2)
         }
         .padding(.vertical, 14)
@@ -1258,6 +1258,8 @@ private extension SpendingCategoryTransactionsDetailView {
 
 struct TotalSpendingAnalysisDetailView: View {
     let data: TotalSpendingDetailData
+    let needsDetailData: SpendingDetailData
+    let wantsDetailData: SpendingDetailData
 
     @Environment(\.dismiss) private var dismiss
     @State private var dragOffset: CGFloat = 0
@@ -1272,8 +1274,14 @@ struct TotalSpendingAnalysisDetailView: View {
     private var needsColor: Color { AppColors.chartBlue }
     private var wantsColor: Color { AppColors.chartAmber }
 
-    init(data: TotalSpendingDetailData) {
+    init(
+        data: TotalSpendingDetailData,
+        needsDetailData: SpendingDetailData = .emptyNeeds,
+        wantsDetailData: SpendingDetailData = .emptyWants
+    ) {
         self.data = data
+        self.needsDetailData = needsDetailData
+        self.wantsDetailData = wantsDetailData
         let latest = data.availableYears.last ?? 2026
         let trend = data.trendsByYear[latest] ?? []
         _selectedYear = State(initialValue: latest)
@@ -1322,7 +1330,7 @@ struct TotalSpendingAnalysisDetailView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 24) {
@@ -1357,10 +1365,10 @@ struct TotalSpendingAnalysisDetailView: View {
                 }
         )
         .fullScreenCover(isPresented: $showNeedsDetail) {
-            SpendingAnalysisDetailView(data: MockData.needsSpendingDetail)
+            SpendingAnalysisDetailView(data: needsDetailData)
         }
         .fullScreenCover(isPresented: $showWantsDetail) {
-            SpendingAnalysisDetailView(data: MockData.wantsSpendingDetail)
+            SpendingAnalysisDetailView(data: wantsDetailData)
         }
     }
 }

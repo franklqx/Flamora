@@ -7,6 +7,8 @@ import SwiftUI
 
 struct SavingsRateCard: View {
     let apiBudget: APIMonthlyBudget
+    /// 若提供（例如 Home 已拉取当年 summary），迷你图按年+月查储蓄；否则六根柱均为空（无假数据）。
+    var savingsByYearLookup: [Int: [Double?]]? = nil
     var isConnected: Bool = true
     var action: (() -> Void)? = nil
 
@@ -141,11 +143,12 @@ struct SavingsRateCard: View {
         let currentYear = calendar.component(.year, from: now)
         let currentMonth = calendar.component(.month, from: now) - 1
 
+        let lookup = savingsByYearLookup ?? [:]
         return (0..<6).map { offset in
             var month = currentMonth - (5 - offset)
             var year = currentYear
             if month < 0 { month += 12; year -= 1 }
-            let amount = MockData.savingsByYear[year]?[month]
+            let amount = lookup[year]?[month]
             return (amount, (amount ?? 0) >= targetAmount)
         }
     }
@@ -182,7 +185,7 @@ struct SavingsRateCard: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
-        SavingsRateCard(apiBudget: MockData.apiMonthlyBudget)
+        AppColors.backgroundPrimary.ignoresSafeArea()
+        SavingsRateCard(apiBudget: .empty, savingsByYearLookup: nil)
     }
 }

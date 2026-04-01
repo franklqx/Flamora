@@ -56,13 +56,13 @@ struct OB_SocialProofView: View {
                                 )
                                 .frame(width: 140, height: 160)
                                 .overlay {
-                                    VStack(spacing: 6) {
+                                    VStack(spacing: AppSpacing.sm) {
                                         Text("3x")
-                                            .font(.system(size: 42, weight: .bold))
-                                            .foregroundColor(.black)
+                                            .font(.display)
+                                            .foregroundColor(AppColors.textInverse)
                                         Text("more confidence\nin your freedom")
                                             .font(.footnoteRegular)
-                                            .foregroundColor(.black)
+                                            .foregroundColor(AppColors.textInverse)
                                             .multilineTextAlignment(.center)
                                     }
                                     .opacity(showRightCard ? 1 : 0)
@@ -78,7 +78,7 @@ struct OB_SocialProofView: View {
                                 )
                                 .animation(.spring(response: 0.6, dampingFraction: 0.75), value: showRightCard)
 
-                            Text("WITH \(Text("FLAMORA").font(.caption.italic()).foregroundStyle(.white))")
+                            Text("WITH \(Text("FLAMORA").font(.caption.italic()).foregroundStyle(AppColors.textPrimary))")
                                 .font(.caption)
                                 .foregroundColor(AppColors.textTertiary)
                                 .opacity(showLabels ? 1 : 0)

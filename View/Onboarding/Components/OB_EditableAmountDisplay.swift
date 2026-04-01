@@ -28,12 +28,12 @@ struct OB_EditableAmountDisplay: View {
             Spacer()
             Text(currencySymbol)
                 .font(.h1)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
             ZStack {
                 // TextField 始终在视图树中，避免焦点丢失
                 TextField("", text: $editText)
                     .font(.currencyHero.monospacedDigit())
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
                     .keyboardType(.numberPad)
                     .focused($isFocused)
                     .multilineTextAlignment(.center)
@@ -57,7 +57,8 @@ struct OB_EditableAmountDisplay: View {
             }
             if !suffix.isEmpty {
                 Text(suffix)
-                    .font(.system(size: 20, weight: .regular))
+                    .font(.h3)
+                    .fontWeight(.regular)
                     .foregroundColor(AppColors.textTertiary)
             }
             Spacer()

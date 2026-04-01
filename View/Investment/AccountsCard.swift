@@ -187,20 +187,7 @@ private struct AccountRow: View {
         }
     }
 
-    private var lastUpdatedLabel: String {
-        guard let date = MockData.accountLastUpdated[account.id] else { return "Updated recently" }
-        return timeAgo(from: date)
-    }
-
-    private func timeAgo(from date: Date) -> String {
-        let seconds = Int(Date().timeIntervalSince(date))
-        if seconds < 60               { return "Updated just now" }
-        let minutes = seconds / 60
-        if minutes < 60               { return "Updated \(minutes) min ago" }
-        let hours = minutes / 60
-        if hours < 24                 { return "Updated \(hours)h ago" }
-        return "Updated \(hours / 24)d ago"
-    }
+    private var lastUpdatedLabel: String { "Updated recently" }
 
     private func formatCurrency(_ value: Double) -> String {
         let f = NumberFormatter()

@@ -19,7 +19,7 @@ struct Flamora_appApp: App {
 
     init() {
         Self.registerFonts()
-        UIWindow.appearance().backgroundColor = UIColor.black
+        UIWindow.appearance().backgroundColor = UIColor(AppColors.backgroundPrimary)
         UIScrollView.appearance().delaysContentTouches = false
         SubscriptionManager.configure()
     }

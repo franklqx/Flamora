@@ -8,8 +8,10 @@
 import SwiftUI
 
 struct SavingsTargetDetailView2: View {
-    private let targetRate: Double = MockData.apiMonthlyBudget.savingsRatio / 100.0
-    private let targetAmount: Double = MockData.apiMonthlyBudget.savingsBudget
+    /// API 储蓄比例（百分比，如 25 表示 25%）。
+    private let savingsRatioPercent: Double
+    private let targetRate: Double
+    private let targetAmount: Double
 
     @Environment(\.dismiss) private var dismiss
 
@@ -24,9 +26,17 @@ struct SavingsTargetDetailView2: View {
     private let months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
     private let monthsShort = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
 
-    init() {
-        let byYear = MockData.savingsByYear
-        let latest = byYear.keys.sorted().last ?? 2026
+    /// 阶段 0 / 路线图 0.2：目标与序列由调用方传入；年度月度序列在阶段 2 可换为 API。
+    init(
+        savingsRatioPercent: Double,
+        savingsBudgetTarget: Double,
+        monthlyAmountsByYear: [Int: [Double?]]
+    ) {
+        self.savingsRatioPercent = savingsRatioPercent
+        self.targetRate = savingsRatioPercent / 100.0
+        self.targetAmount = savingsBudgetTarget
+        let byYear = monthlyAmountsByYear
+        let latest = byYear.keys.sorted().last ?? Calendar.current.component(.year, from: Date())
         _selectedYear = State(initialValue: latest)
         _monthlyAmountsByYear = State(initialValue: byYear)
     }
@@ -55,22 +65,22 @@ struct SavingsTargetDetailView2: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: AppSpacing.md) {
                     // Header
                     HStack(alignment: .firstTextBaseline) {
                         Text("Saving overview")
                             .font(.cardFigurePrimary)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
 
                         Spacer()
 
                         Button(action: { dismiss() }) {
                             Image(systemName: "xmark")
                                 .font(.bodySmallSemibold)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(AppColors.textPrimary)
                                 .padding(.top, 2)
                         }
                         .buttonStyle(.plain)
@@ -78,10 +88,10 @@ struct SavingsTargetDetailView2: View {
                     .padding(.bottom, -4)
 
                     // Total saved
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Text(formatMoney(annualSaved))
                             .font(.display)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
 
                         Text("Total saved this year")
                             .font(.supportingText)
@@ -89,7 +99,7 @@ struct SavingsTargetDetailView2: View {
                     }
 
                     // Chart section with year picker
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: AppSpacing.md) {
                         HStack {
                             Text("ANNUAL TREND")
                                 .font(.cardHeader)
@@ -108,29 +118,29 @@ struct SavingsTargetDetailView2: View {
                     .padding(.top, AppSpacing.sm)
 
                     // Target info
-                    HStack(spacing: 30) {
-                        VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: AppSpacing.xl) {
+                        VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
                             Text("TARGET SAVING RATE")
                                 .font(.cardHeader)
                                 .foregroundColor(AppColors.textTertiary)
 
-                            Text("\(Int(MockData.apiMonthlyBudget.savingsRatio))%")
-                                .font(.system(size: 26, weight: .bold))
-                                .foregroundStyle(.white)
+                            Text("\(Int(savingsRatioPercent))%")
+                                .font(.detailTitle)
+                                .foregroundStyle(AppColors.textPrimary)
                         }
 
                         Divider()
                             .frame(height: 50)
                             .background(AppColors.surfaceBorder)
 
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
                             Text("TARGET SAVING")
                                 .font(.cardHeader)
                                 .foregroundColor(AppColors.textTertiary)
 
                             Text(formatMoney(targetAmount))
-                                .font(.system(size: 26, weight: .bold))
-                                .foregroundStyle(.white)
+                                .font(.detailTitle)
+                                .foregroundStyle(AppColors.textPrimary)
                         }
 
                         Spacer()
@@ -138,12 +148,12 @@ struct SavingsTargetDetailView2: View {
                     .padding(.vertical, AppSpacing.sm)
 
                     // Monthly milestones
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: AppSpacing.md) {
                         Text("MONTHLY MILESTONES")
                             .font(.smallLabel)
                             .foregroundColor(AppColors.textTertiary)
 
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.sm + AppSpacing.xs) {
                             ForEach(0..<12) { index in
                                 monthCard(index: index)
                             }
@@ -153,7 +163,7 @@ struct SavingsTargetDetailView2: View {
                 }
                 .padding(.horizontal, AppSpacing.screenPadding)
                 .padding(.top, AppSpacing.screenPadding)
-                .padding(.bottom, 100)
+                .padding(.bottom, AppSpacing.tabBarReserve + AppSpacing.md)
             }
         }
         .preferredColorScheme(.dark)
@@ -181,15 +191,15 @@ struct SavingsTargetDetailView2: View {
             SavingsInputSheet(amount: $editingAmount)
                 .ignoresSafeArea(.container, edges: .bottom)
                 .presentationDragIndicator(.visible)
-                .presentationCornerRadius(28)
-                .presentationBackground(Color.black)
+                .presentationCornerRadius(AppRadius.button)
+                .presentationBackground(AppColors.backgroundPrimary)
         }
     }
 
     // MARK: - Year Picker
 
     private var yearPicker: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
             Button { navigateYear(-1) } label: {
                 Image(systemName: "chevron.left")
                     .font(.footnoteRegular)
@@ -232,7 +242,7 @@ struct SavingsTargetDetailView2: View {
                 .stroke(style: StrokeStyle(lineWidth: 1, dash: [5, 5]))
                 .foregroundColor(AppColors.textTertiary)
 
-                HStack(alignment: .bottom, spacing: 8) {
+                HStack(alignment: .bottom, spacing: AppSpacing.sm) {
                     ForEach(0..<12) { index in
                         barView(index: index, maxHeight: barAreaHeight)
                     }
@@ -261,8 +271,8 @@ struct SavingsTargetDetailView2: View {
         let height = calculateHeight(amount: amount, maxHeight: maxHeight)
         let isTarget = (amount ?? 0) >= targetAmount
 
-        return VStack(spacing: 10) {
-            RoundedRectangle(cornerRadius: 6)
+        return VStack(spacing: AppSpacing.sm + AppSpacing.xs) {
+            RoundedRectangle(cornerRadius: AppRadius.sm)
                 .fill(barColor(amount: amount, isTarget: isTarget))
                 .frame(height: height)
 
@@ -284,23 +294,23 @@ struct SavingsTargetDetailView2: View {
                 let xPosition = step * (CGFloat(index) + 0.5)
                 let yPosition = max(18, geometry.size.height - barHeight - 40)
 
-                VStack(spacing: 6) {
+                VStack(spacing: AppSpacing.sm) {
                     Text(months[index])
                         .font(.label)
                         .foregroundColor(AppColors.textSecondary)
 
                     Text(amount == nil ? "--" : formatMoney(amount ?? 0))
                         .font(.smallLabel)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                 }
-                .padding(.vertical, 8)
-                .padding(.horizontal, 10)
+                .padding(.vertical, AppSpacing.sm)
+                .padding(.horizontal, AppSpacing.sm + AppSpacing.xs)
                 .background(AppColors.surface)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10)
+                    RoundedRectangle(cornerRadius: AppRadius.md)
                         .stroke(AppColors.surfaceBorder, lineWidth: 1)
                 )
-                .cornerRadius(10)
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                 .position(x: xPosition, y: yPosition)
             }
         }
@@ -351,7 +361,7 @@ struct SavingsTargetDetailView2: View {
         let isTarget = (amount ?? 0) >= targetAmount
         let hasData = amount != nil
 
-        return VStack(alignment: .leading, spacing: 10) {
+        return VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
             HStack {
                 Text(months[index])
                     .font(.smallLabel)
@@ -367,23 +377,23 @@ struct SavingsTargetDetailView2: View {
             if let amount = amount {
                 Text("\(formatMoney(amount)) / \(formatMoney(targetAmount))")
                     .font(.bodySmallSemibold)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
             } else {
                 Text("-- / \(formatMoney(targetAmount))")
                     .font(.bodySmallSemibold)
                     .foregroundColor(AppColors.textTertiary)
             }
         }
-        .padding(14)
+        .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AppColors.surface)
-        .cornerRadius(16)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: AppRadius.card)
                 .stroke(hasData ? AppColors.surfaceBorder : AppColors.surfaceBorder.opacity(0.5), lineWidth: 1)
         )
         .opacity(hasData ? 1.0 : 0.7)
-        .contentShape(RoundedRectangle(cornerRadius: 16))
+        .contentShape(RoundedRectangle(cornerRadius: AppRadius.card))
         .onTapGesture {
             beginEditMonth(index: index)
         }
@@ -396,7 +406,7 @@ struct SavingsTargetDetailView2: View {
             endPoint: .bottom
         )
         .mask(
-            FlameIcon(size: 16, color: .white)
+            FlameIcon(size: 16, color: AppColors.textPrimary)
         )
         .frame(width: 16, height: 16)
     }
@@ -430,5 +440,53 @@ struct SavingsTargetDetailView2: View {
 }
 
 #Preview {
-    SavingsTargetDetailView2()
+    SavingsTargetDetailView2(
+        savingsRatioPercent: MockData.apiMonthlyBudget.savingsRatio,
+        savingsBudgetTarget: MockData.apiMonthlyBudget.savingsBudget,
+        monthlyAmountsByYear: MockData.savingsByYear
+    )
+}
+
+/// Home → Plan → 储蓄全屏：无父级传入 `apiBudget` 时在内部拉取当月预算（与 `CashflowView` 显式传入二选一）。
+struct SavingsTargetDetailView2Container: View {
+    @Environment(PlaidManager.self) private var plaidManager
+    @State private var apiBudget = APIMonthlyBudget.empty
+    @State private var monthlyAmountsByYear: [Int: [Double?]] = CashflowDetailEmptyStates.savingsMonthlyAmountsEmptyCurrentYear()
+
+    var body: some View {
+        SavingsTargetDetailView2(
+            savingsRatioPercent: apiBudget.savingsRatio,
+            savingsBudgetTarget: apiBudget.savingsBudget,
+            monthlyAmountsByYear: monthlyAmountsByYear
+        )
+        .task {
+            await loadBudgetAndSavingsSeries()
+        }
+    }
+
+    private func loadBudgetAndSavingsSeries() async {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM"
+        let month = f.string(from: Date())
+        async let budgetResult = try? await APIService.shared.getMonthlyBudget(month: month)
+        async let savingsSeries = loadSavingsByYearFromAPI()
+        let (b, series) = await (budgetResult, savingsSeries)
+        if let b { apiBudget = b }
+        if let series {
+            monthlyAmountsByYear = series
+        } else {
+            monthlyAmountsByYear = CashflowDetailEmptyStates.savingsMonthlyAmountsEmptyCurrentYear()
+        }
+    }
+
+    /// 已连接银行时用多月份 `get-spending-summary` 推导每月储蓄；否则为当年全 nil 序列（非 Mock）。
+    private func loadSavingsByYearFromAPI() async -> [Int: [Double?]]? {
+        guard plaidManager.hasLinkedBank else { return nil }
+        let cal = Calendar.current
+        let year = cal.component(.year, from: Date())
+        let through = cal.component(.month, from: Date())
+        let summaries = await CashflowAPICharts.fetchMonthlySummaries(year: year, throughMonth: through)
+        guard !summaries.isEmpty else { return nil }
+        return CashflowAPICharts.savingsMonthlyAmountsByYear(summaries: summaries, year: year)
+    }
 }

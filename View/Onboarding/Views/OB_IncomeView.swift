@@ -22,7 +22,7 @@ struct OB_IncomeView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -33,7 +33,7 @@ struct OB_IncomeView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("What's your monthly income?")
                             .font(.obQuestion)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                         Text("A rough estimate is fine")
                             .font(.bodySmall)
                             .foregroundColor(AppColors.textSecondary)
@@ -70,7 +70,7 @@ struct OB_IncomeView: View {
             // Sticky CTA（与 AgeView 一致）
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), Color.black],
+                    colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
                     startPoint: .top, endPoint: .bottom
                 )
                 .frame(height: 28)
@@ -81,7 +81,7 @@ struct OB_IncomeView: View {
                 })
             }
             .padding(.bottom, 16)
-            .background(Color.black)
+            .background(AppColors.backgroundPrimary)
             .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -186,7 +186,7 @@ struct OB_IncomeView: View {
     }
 
     private static let _sliderSetup: Void = {
-        UISlider.appearance().thumbTintColor = .white
+        UISlider.appearance().thumbTintColor = AppColors.uiSliderThumbTint
         UISlider.appearance().minimumTrackTintColor = .clear
         UISlider.appearance().maximumTrackTintColor = .clear
     }()
@@ -218,7 +218,7 @@ struct OB_IncomeView: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_IncomeView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

@@ -39,7 +39,7 @@ struct MonthIndicator: View {
 
     private var circleBackground: Color {
         switch status {
-        case .success: return .white
+        case .success: return AppColors.textPrimary
         case .failed:  return AppColors.surfaceElevated
         case .pending: return AppColors.surfaceInput
         }
@@ -59,7 +59,7 @@ struct MonthIndicator: View {
             case .success:
                 Image(systemName: "checkmark")
                     .font(.h4)
-                    .foregroundColor(.black)
+                    .foregroundColor(AppColors.textInverse)
             case .failed:
                 Image(systemName: "xmark")
                     .font(.h4)
@@ -74,7 +74,7 @@ struct MonthIndicator: View {
 
     private var labelColor: Color {
         switch status {
-        case .pending: return .white
+        case .pending: return AppColors.textPrimary
         default:       return AppColors.textSecondary
         }
     }
@@ -88,5 +88,5 @@ struct MonthIndicator: View {
         MonthIndicator(month: "Nov", status: .pending)
     }
     .padding()
-    .background(Color.black)
+    .background(AppColors.backgroundPrimary)
 }

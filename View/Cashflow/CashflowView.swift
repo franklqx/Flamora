@@ -23,14 +23,20 @@ enum CashflowJourneyDestination: Equatable, Identifiable {
 struct CashflowView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(PlaidManager.self) private var plaidManager
+    @AppStorage(FlamoraStorageKey.budgetSetupCompleted) private var budgetSetupCompleted: Bool = false
 
-    private let data = MockData.cashflowData
     @State private var apiBudget = APIMonthlyBudget.empty
+    /// 当月收入（来自 `get-spending-summary.total_income`；active/passive 尚无拆分时与 total 对齐）。
+    @State private var incomeMonthDisplay = Income(total: 0, active: 0, passive: 0, sources: [])
+    /// 本年累计收入（多个月 `get-spending-summary` 汇总）；无银行连接时为 nil。
+    @State private var incomeYearDisplay: Income?
     @State private var currentSavings: Double = 0
     @State private var needsTotal: Double = 0
     @State private var wantsTotal: Double = 0
     @State private var totalSpend: Double = 0
     @State private var allTransactions: [Transaction] = []
+    /// 与 `transaction.accountId` 匹配，供交易详情 Sheet 展示账户行。
+    @State private var linkedAccounts: [Account] = []
     @State private var selectedTransaction: Transaction? = nil
     @State private var showAllTransactions = false
     @State private var showSavingsInput = false
@@ -41,6 +47,16 @@ struct CashflowView: View {
     @State private var showTotalSpendingDetail = false
     @State private var showNeedsSpendingDetail = false
     @State private var showWantsSpendingDetail = false
+
+    /// 已连接银行时由多月份 `get-spending-summary` 构建；未连接或拉取失败时为 nil，详情页使用空数据（非 Mock）。
+    @State private var cashflowSpendingTotalDetail: TotalSpendingDetailData?
+    @State private var cashflowNeedsDetail: SpendingDetailData?
+    @State private var cashflowWantsDetail: SpendingDetailData?
+    @State private var cashflowTotalIncomeDetail: TotalIncomeDetailData?
+    @State private var cashflowActiveIncomeDetail: IncomeDetailData?
+    @State private var cashflowPassiveIncomeDetail: IncomeDetailData?
+    /// 已连接且拉到 summary 时为当年各月储蓄序列；否则 nil → 储蓄全屏用当年全 nil 序列。
+    @State private var cashflowSavingsByYear: [Int: [Double?]]?
 
     private var currentMonthIndex: Int {
         Calendar.current.component(.month, from: Date()) - 1
@@ -56,7 +72,8 @@ struct CashflowView: View {
     }
 
     private var hasBudget: Bool {
-        (apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget) > 0
+        budgetSetupCompleted
+        && (apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget) > 0
     }
 
     var body: some View {
@@ -71,8 +88,8 @@ struct CashflowView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: AppSpacing.lg) {
                         IncomeCard(
-                            income:          data.income,
-                            yearlyIncome:    MockData.yearlyIncome,
+                            income:          incomeMonthDisplay,
+                            yearlyIncome:    incomeYearDisplay,
                             onCardTapped:    { showTotalIncomeDetail = true },
                             onActiveTapped:  { showActiveIncomeDetail = true },
                             onPassiveTapped: { showPassiveIncomeDetail = true },
@@ -91,6 +108,7 @@ struct CashflowView: View {
 
                         BudgetCard(
                             spending: spendingForDisplay,
+                            apiBudget: apiBudget,
                             isConnected: plaidManager.hasLinkedBank,
                             hasBudget: hasBudget,
                             onSetupBudget: { plaidManager.showBudgetSetup = true },
@@ -118,45 +136,62 @@ struct CashflowView: View {
             Task { await loadCashflowData() }
         }
         .fullScreenCover(isPresented: $showSavingsSummary) {
-            SavingsTargetDetailView2()
+            SavingsTargetDetailView2(
+                savingsRatioPercent: apiBudget.savingsRatio,
+                savingsBudgetTarget: apiBudget.savingsBudget,
+                monthlyAmountsByYear: cashflowSavingsByYear ?? CashflowDetailEmptyStates.savingsMonthlyAmountsEmptyCurrentYear()
+            )
         }
         .fullScreenCover(isPresented: $showTotalIncomeDetail) {
-            TotalIncomeDetailView(data: MockData.totalIncomeDetail, initialSelectedMonth: currentMonthIndex)
+            TotalIncomeDetailView(
+                data: cashflowTotalIncomeDetail ?? .empty,
+                initialSelectedMonth: currentMonthIndex
+            )
         }
         .fullScreenCover(isPresented: $showActiveIncomeDetail) {
-            IncomeDetailView(data: MockData.activeIncomeDetail, initialSelectedMonth: currentMonthIndex)
+            IncomeDetailView(
+                data: cashflowActiveIncomeDetail ?? .emptyActiveIncome,
+                initialSelectedMonth: currentMonthIndex
+            )
         }
         .fullScreenCover(isPresented: $showPassiveIncomeDetail) {
-            IncomeDetailView(data: MockData.passiveIncomeDetail, initialSelectedMonth: currentMonthIndex)
+            IncomeDetailView(
+                data: cashflowPassiveIncomeDetail ?? .emptyPassiveIncome,
+                initialSelectedMonth: currentMonthIndex
+            )
         }
         .fullScreenCover(isPresented: $showTotalSpendingDetail) {
-            TotalSpendingAnalysisDetailView(data: MockData.totalSpendingDetail)
+            TotalSpendingAnalysisDetailView(
+                data: cashflowSpendingTotalDetail ?? .empty,
+                needsDetailData: cashflowNeedsDetail ?? .emptyNeeds,
+                wantsDetailData: cashflowWantsDetail ?? .emptyWants
+            )
         }
         .fullScreenCover(isPresented: $showNeedsSpendingDetail) {
-            SpendingAnalysisDetailView(data: MockData.needsSpendingDetail)
+            SpendingAnalysisDetailView(data: cashflowNeedsDetail ?? .emptyNeeds)
         }
         .fullScreenCover(isPresented: $showWantsSpendingDetail) {
-            SpendingAnalysisDetailView(data: MockData.wantsSpendingDetail)
+            SpendingAnalysisDetailView(data: cashflowWantsDetail ?? .emptyWants)
         }
         .sheet(isPresented: $showSavingsInput) {
             SavingsInputSheet(amount: $currentSavings)
                 .ignoresSafeArea(.container, edges: .bottom)
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(28)
-                .presentationBackground(Color.black)
+                .presentationBackground(AppColors.backgroundPrimary)
         }
         .sheet(item: $selectedTransaction) { transaction in
-            TransactionDetailSheet(transaction: transaction) { updated in
+            TransactionDetailSheet(transaction: transaction, linkedAccounts: linkedAccounts) { updated in
                 updateTransaction(updated)
             }
             .ignoresSafeArea(.container, edges: .bottom)
             .presentationDragIndicator(.visible)
             .presentationDetents([.fraction(0.75)])
             .presentationCornerRadius(28)
-            .presentationBackground(Color.black)
+            .presentationBackground(AppColors.backgroundPrimary)
         }
         .fullScreenCover(isPresented: $showAllTransactions) {
-            AllTransactionsView(transactions: $allTransactions, onUpdate: updateTransaction)
+            AllTransactionsView(transactions: $allTransactions, linkedAccounts: linkedAccounts, onUpdate: updateTransaction)
         }
     }
 }
@@ -166,17 +201,80 @@ struct CashflowView: View {
 private extension CashflowView {
     func loadCashflowData() async {
         let monthStr = apiMonthString(from: Date())
+
+        if !plaidManager.hasLinkedBank {
+            apiBudget = .empty
+            currentSavings = 0
+            needsTotal = 0
+            wantsTotal = 0
+            totalSpend = 0
+            incomeMonthDisplay = Income(total: 0, active: 0, passive: 0, sources: [])
+            incomeYearDisplay = nil
+            cashflowSpendingTotalDetail = nil
+            cashflowNeedsDetail = nil
+            cashflowWantsDetail = nil
+            cashflowTotalIncomeDetail = nil
+            cashflowActiveIncomeDetail = nil
+            cashflowPassiveIncomeDetail = nil
+            cashflowSavingsByYear = nil
+            allTransactions = []
+            linkedAccounts = []
+            return
+        }
+
         if let b = await fetchBudget(month: monthStr) {
             apiBudget = b
+            FlamoraStorageKey.migrateBudgetSetupIfNeeded(budget: b, hasLinkedBank: true)
             currentSavings = b.savingsActual ?? 0
             needsTotal = b.needsSpent ?? 0
             wantsTotal = b.wantsSpent ?? 0
             totalSpend = (b.needsSpent ?? 0) + (b.wantsSpent ?? 0)
         }
+
+        let cal = Calendar.current
+        let year = cal.component(.year, from: Date())
+        let through = cal.component(.month, from: Date())
+        let summaries = await CashflowAPICharts.fetchMonthlySummaries(year: year, throughMonth: through)
+
+        if let cur = summaries[through - 1] {
+            needsTotal = cur.needs.total
+            wantsTotal = cur.wants.total
+            totalSpend = cur.totalSpending
+            let inc = cur.totalIncome
+            incomeMonthDisplay = Income(total: inc, active: inc, passive: 0, sources: [])
+            let ytd = summaries.values.reduce(0) { $0 + $1.totalIncome }
+            incomeYearDisplay = Income(total: ytd, active: ytd, passive: 0, sources: [])
+        } else {
+            incomeMonthDisplay = Income(total: 0, active: 0, passive: 0, sources: [])
+            incomeYearDisplay = nil
+        }
+
+        if !summaries.isEmpty {
+            cashflowSpendingTotalDetail = CashflowAPICharts.totalSpendingDetail(summaries: summaries, year: year)
+            cashflowNeedsDetail = CashflowAPICharts.needsSpendingDetail(summaries: summaries, year: year)
+            cashflowWantsDetail = CashflowAPICharts.wantsSpendingDetail(summaries: summaries, year: year)
+            cashflowTotalIncomeDetail = CashflowAPICharts.totalIncomeDetail(summaries: summaries, year: year)
+            cashflowActiveIncomeDetail = CashflowAPICharts.activeIncomeDetail(summaries: summaries, year: year)
+            cashflowPassiveIncomeDetail = CashflowAPICharts.passiveIncomeDetail(summaries: summaries, year: year)
+            cashflowSavingsByYear = CashflowAPICharts.savingsMonthlyAmountsByYear(summaries: summaries, year: year)
+        } else {
+            cashflowSpendingTotalDetail = nil
+            cashflowNeedsDetail = nil
+            cashflowWantsDetail = nil
+            cashflowTotalIncomeDetail = nil
+            cashflowActiveIncomeDetail = nil
+            cashflowPassiveIncomeDetail = nil
+            cashflowSavingsByYear = nil
+        }
+
         if let tx = try? await APIService.shared.getTransactions(page: 1, limit: 20) {
-            allTransactions = tx.transactions.map {
-                Transaction(id: $0.id, merchant: $0.merchant, amount: $0.amount, date: $0.date, time: nil, pendingClassification: $0.pendingReview, subcategory: nil, category: nil, note: nil)
-            }
+            allTransactions = tx.transactions.map { Transaction(from: $0) }
+        }
+
+        if let nw = try? await APIService.shared.getNetWorthSummary() {
+            linkedAccounts = nw.accounts.map { Account.fromNetWorthAccount($0) }
+        } else {
+            linkedAccounts = []
         }
     }
 

@@ -20,7 +20,7 @@ struct OB_AgeView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -31,10 +31,10 @@ struct OB_AgeView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Great, \(data.userName.isEmpty ? "Friend" : data.userName)!")
                             .font(.obQuestion)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                         Text("Let's crunch your numbers")
                             .font(.obQuestion)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                     }
 
                     Spacer().frame(height: AppSpacing.xl)
@@ -67,7 +67,7 @@ struct OB_AgeView: View {
             // Sticky CTA
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), Color.black],
+                    colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
                     startPoint: .top, endPoint: .bottom
                 )
                 .frame(height: 28)
@@ -75,7 +75,7 @@ struct OB_AgeView: View {
                 OB_PrimaryButton(title: "Next", action: onNext)
             }
             .padding(.bottom, 16)
-            .background(Color.black)
+            .background(AppColors.backgroundPrimary)
             .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -100,11 +100,11 @@ struct OB_AgeView: View {
     // MARK: - 年龄玻璃卡片
 
     private var ageGlassCard: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: AppSpacing.md) {
             HStack(alignment: .firstTextBaseline, spacing: 0) {
                 Spacer()
                 Text("\(Int(data.age))")
-                    .font(.system(size: 64, weight: .bold).monospacedDigit())
+                    .font(.currencyHero.monospacedDigit())
                     .foregroundStyle(accentGradient)
                     .contentTransition(.numericText())
                     .fixedSize(horizontal: true, vertical: true)
@@ -197,7 +197,7 @@ struct OB_AgeView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(data.country)
                         .font(.bodyRegular)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                     Text("\(data.currencyCode) \(data.currencySymbol)")
                         .font(.bodySmall)
                         .foregroundColor(AppColors.textSecondary)
@@ -231,7 +231,7 @@ struct OB_AgeView: View {
     }
 
     private static let _sliderSetup: Void = {
-        UISlider.appearance().thumbTintColor = .white
+        UISlider.appearance().thumbTintColor = AppColors.uiSliderThumbTint
         UISlider.appearance().minimumTrackTintColor = .clear
         UISlider.appearance().maximumTrackTintColor = .clear
     }()
@@ -284,7 +284,7 @@ private struct OB_CurrencyPickerSheet: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_AgeView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

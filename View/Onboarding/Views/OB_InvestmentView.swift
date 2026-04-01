@@ -26,7 +26,7 @@ struct OB_InvestmentView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -37,7 +37,7 @@ struct OB_InvestmentView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("What's your total investment portfolio value?")
                             .font(.obQuestion)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                         Text("Including stocks, bonds, retirement (401k, IRA), crypto, etc.")
                             .font(.bodySmall)
                             .foregroundColor(AppColors.textSecondary)
@@ -69,7 +69,7 @@ struct OB_InvestmentView: View {
             // Sticky CTA（与 AgeView 一致）
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), Color.black],
+                    colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
                     startPoint: .top, endPoint: .bottom
                 )
                 .frame(height: 28)
@@ -80,7 +80,7 @@ struct OB_InvestmentView: View {
                 })
             }
             .padding(.bottom, 16)
-            .background(Color.black)
+            .background(AppColors.backgroundPrimary)
             .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -181,7 +181,7 @@ struct OB_InvestmentView: View {
     }
 
     private static let _sliderSetup: Void = {
-        UISlider.appearance().thumbTintColor = .white
+        UISlider.appearance().thumbTintColor = AppColors.uiSliderThumbTint
         UISlider.appearance().minimumTrackTintColor = .clear
         UISlider.appearance().maximumTrackTintColor = .clear
     }()
@@ -232,7 +232,7 @@ struct OB_InvestmentView: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_InvestmentView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

@@ -26,7 +26,7 @@ struct BS_LoadingView: View {
     }
 
     var body: some View {
-        VStack(spacing: 48) {
+        VStack(spacing: AppSpacing.xxl) {
             Spacer()
 
             // Dual-ring spinner
@@ -38,7 +38,7 @@ struct BS_LoadingView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(hex: "0A0A0C").ignoresSafeArea())
+        .background(AppColors.backgroundSecondary.ignoresSafeArea())
         .onAppear {
             startSpinnerAnimation()
             startChecklistAnimation()
@@ -77,55 +77,55 @@ struct BS_LoadingView: View {
     // MARK: - Checklist
 
     private var checklistSection: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: AppSpacing.lg) {
             checklistRow(number: 1, label: "Understanding your cashflow", state: step1State)
             checklistRow(number: 2, label: "Refining spending patterns", state: step2State)
             checklistRow(number: 3, label: "Synthesizing AI insights", state: step3State)
         }
-        .padding(.horizontal, 50)
+        .padding(.horizontal, AppSpacing.xl + AppSpacing.lg)
     }
 
     @ViewBuilder
     private func checklistRow(number: Int, label: String, state: ChecklistState) -> some View {
-        HStack(spacing: 14) {
+        HStack(spacing: AppSpacing.md) {
             // Step indicator
             ZStack {
                 switch state {
                 case .pending:
                     Circle()
-                        .stroke(Color.white.opacity(0.15), lineWidth: 1.5)
-                        .frame(width: 28, height: 28)
+                        .stroke(AppColors.overlayWhiteAt25, lineWidth: 1.5)
+                        .frame(width: AppRadius.button, height: AppRadius.button)
                     Text("\(number)")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.2))
+                        .font(.smallLabel)
+                        .foregroundStyle(AppColors.overlayWhiteAt25)
 
                 case .active:
                     Circle()
                         .stroke(Color(hex: "F5C842").opacity(0.6), lineWidth: 1.5)
-                        .frame(width: 28, height: 28)
+                        .frame(width: AppRadius.button, height: AppRadius.button)
                     // Pulsing gold dot
                     Circle()
                         .fill(Color(hex: "F5C842"))
-                        .frame(width: 8, height: 8)
+                        .frame(width: AppSpacing.sm, height: AppSpacing.sm)
                         .modifier(PulseModifier())
 
                 case .done:
                     Circle()
                         .fill(Color(hex: "5DDEC0"))
-                        .frame(width: 28, height: 28)
+                        .frame(width: AppRadius.button, height: AppRadius.button)
                     Image(systemName: "checkmark")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.black)
+                        .font(.smallLabel)
+                        .foregroundStyle(AppColors.textInverse)
                 }
             }
             .animation(.easeOut(duration: 0.3), value: state == .done)
 
             Text(label)
-                .font(.system(size: 14, weight: state == .active ? .semibold : .regular))
+                .font(state == .active ? .bodySmallSemibold : .bodySmall)
                 .foregroundStyle(
-                    state == .pending ? .white.opacity(0.25) :
-                    state == .active ? .white.opacity(0.9) :
-                    .white.opacity(0.5)
+                    state == .pending ? AppColors.overlayWhiteAt25 :
+                    state == .active ? AppColors.overlayWhiteOnGlass :
+                    AppColors.overlayWhiteOnPhoto
                 )
                 .animation(.easeOut(duration: 0.3), value: state == .active)
         }

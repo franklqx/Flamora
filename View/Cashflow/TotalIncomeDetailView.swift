@@ -76,7 +76,7 @@ struct TotalIncomeDetailView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 24) {
@@ -124,14 +124,14 @@ private extension TotalIncomeDetailView {
             HStack(alignment: .firstTextBaseline) {
                 Text(data.title)
                     .font(.cardFigurePrimary)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
 
                 Spacer()
 
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
                         .font(.bodySmallSemibold)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                         .padding(.top, 2)
                 }
                 .buttonStyle(.plain)
@@ -140,7 +140,7 @@ private extension TotalIncomeDetailView {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(formatCurrency(selectedTotal))
                     .font(.h1)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
 
                 Text("earned in \(selectedMonthLabel)")
                     .font(.bodyRegular)
@@ -241,7 +241,7 @@ private extension TotalIncomeDetailView {
 
             Text(monthLabels[index])
                 .font(.segmentLabel(selected: isSelected))
-                .foregroundColor(isSelected ? .white : AppColors.textSecondary)
+                .foregroundColor(isSelected ? AppColors.textPrimary : AppColors.textSecondary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -278,7 +278,7 @@ private extension TotalIncomeDetailView {
         VStack(alignment: .leading, spacing: 16) {
             Text("Sources")
                 .font(.detailTitle)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
 
             if let monthData = selectedMonthData {
                 VStack(spacing: 12) {
@@ -324,7 +324,7 @@ private extension TotalIncomeDetailView {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(name)
                             .font(.bodySemibold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
 
                         Text("\(selectedMonthLabel) \(selectedYear)")
                             .font(.footnoteRegular)
@@ -336,7 +336,7 @@ private extension TotalIncomeDetailView {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(formatCurrency(amount))
                             .font(.bodySemibold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
 
                         HStack(spacing: 4) {
                             Text("\(Int(percentage.rounded()))%")

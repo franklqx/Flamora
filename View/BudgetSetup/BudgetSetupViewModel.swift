@@ -5,7 +5,7 @@
 //  V2 ViewModel for Budget Setup flow
 //  - Step 1: Loading (calculate-spending-stats + AI diagnosis)
 //  - Step 2: Financial Snapshot (income/expenses/savings + AI insights)
-//  - Step 3: Spending Breakdown (fixed vs flexible donut chart)
+//  - Step 3: Spending Breakdown（Needs vs Wants；API 仍为 fixed/flexible 字段）
 //  - Step 4: Choose your path (generate-plans → 3 plans + baseline)
 //  - Step 5: Spending plan (ring chart + optional category budgets)
 //  - Step 6: Confirm & save
@@ -124,7 +124,7 @@ class BudgetSetupViewModel {
     var spendingPlan: SpendingPlanResponse?
     var isLoadingSpendingPlan = false
     
-    // Editable flexible amounts (user can adjust in Step 5)
+    // Editable Wants 分项金额（API `flexibleBudget`；用户可在后续步骤调整）
     var editedFlexibleAmounts: [String: Double] = [:]
 
     // Optional per-category budgets (user opts in per category in Step 5)
@@ -160,6 +160,8 @@ class BudgetSetupViewModel {
     
     var isSaving = false
     var saveError: String?
+    /// 生成 spending plan（进确认页前）失败时的说明，供 Choose Path 提示。
+    var spendingPlanError: String?
     
     // MARK: - Currency Helper
     
@@ -320,11 +322,11 @@ class BudgetSetupViewModel {
             
             isLoadingStats = false
             print("✅ [BudgetSetup] loadSpendingStats success — income: \(response.avgMonthlyIncome), savings rate: \(response.currentSavingsRate)%")
-            print("   Fixed: $\(response.avgMonthlyFixed), Flexible: $\(response.avgMonthlyFlexible)")
-            print("   Fixed items: \(response.fixedExpenses.count), Flexible categories: \(response.flexibleBreakdown.count)")
+            print("   Needs (avg_monthly_fixed): $\(response.avgMonthlyFixed), Wants (avg_monthly_flexible): $\(response.avgMonthlyFlexible)")
+            print("   Needs line items: \(response.fixedExpenses.count), Wants categories: \(response.flexibleBreakdown.count)")
             print("   monthlyBreakdown (\(response.monthlyBreakdown.count) months):")
             for item in response.monthlyBreakdown {
-                print("     \(item.month): income=\(item.income), fixed=\(item.fixed), flexible=\(item.flexible), savings=\(item.savings)")
+                print("     \(item.month): income=\(item.income), needs=\(item.fixed), wants=\(item.flexible), savings=\(item.savings)")
             }
         } catch {
             print("❌ [BudgetSetup] loadSpendingStats error: \(error)")
@@ -407,11 +409,17 @@ class BudgetSetupViewModel {
     }
     
     func loadSpendingPlan() async {
-        guard let stats = spendingStats, let plan = selectedPlan else { return }
-        
+        spendingPlanError = nil
         isLoadingSpendingPlan = true
+        defer { isLoadingSpendingPlan = false }
+
+        guard let stats = spendingStats, let plan = selectedPlan else {
+            spendingPlanError = "Missing spending data or plan. Go back and try again."
+            return
+        }
+
         editedFlexibleAmounts = [:]  // Reset edits
-        
+
         do {
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd"
@@ -449,13 +457,12 @@ class BudgetSetupViewModel {
             let request = try await APIService.shared.authenticatedRequest(function: "generate-spending-plan", body: body)
             let response: SpendingPlanResponse = try await APIService.shared.perform(request)
             spendingPlan = response
-            
-            isLoadingSpendingPlan = false
+
             print("✅ [BudgetSetup] loadSpendingPlan success")
-            print("   Savings: $\(response.totalSavings), Fixed: $\(response.fixedBudget.total), Flexible: $\(response.flexibleBudget.total)")
+            print("   Savings: $\(response.totalSavings), Needs budget: $\(response.fixedBudget.total), Wants budget: $\(response.flexibleBudget.total)")
         } catch {
             print("❌ [BudgetSetup] loadSpendingPlan error: \(error)")
-            isLoadingSpendingPlan = false
+            spendingPlanError = "Couldn’t build your spending plan. Check your connection and try again."
         }
     }
     
@@ -486,7 +493,8 @@ class BudgetSetupViewModel {
             let firstOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: Date()))!
             let monthString = dateFormatter.string(from: firstOfMonth)
             
-            // Build upsert body directly
+            // Build upsert body directly.
+            // UI 使用 Needs/Wants；`plan.fixedBudget` / `flexibleBudget` 与 API 字段名仍对应 needs/wants 预算（阶段 1 / 路线图 1.4）。
             var upsertBody: [String: Any] = [
                 "month": monthString,
                 "needs_ratio": fixedRatio,

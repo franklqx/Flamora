@@ -16,7 +16,7 @@ struct OB_NameView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
                 .onTapGesture { isFocused = false }
 
             VStack(alignment: .leading, spacing: 0) {
@@ -37,7 +37,7 @@ struct OB_NameView: View {
                         .overlay(
                             Image(systemName: "person.crop.circle")
                                 .font(.h4)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(AppColors.textPrimary)
                         )
                     Spacer()
                 }
@@ -48,7 +48,7 @@ struct OB_NameView: View {
 
                 Text("What should we call you?")
                     .font(.obQuestion)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
                     .allowsHitTesting(false)
 
                 Spacer().frame(height: 10)
@@ -65,7 +65,7 @@ struct OB_NameView: View {
                 TextField("", text: $data.userName,
                           prompt: Text("Your name").foregroundColor(AppColors.textTertiary))
                     .font(.bodyRegular)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
                     .textContentType(.givenName)
                     .focused($isFocused)
                     .padding(.horizontal, 20)
@@ -104,7 +104,7 @@ struct OB_NameView: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_NameView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

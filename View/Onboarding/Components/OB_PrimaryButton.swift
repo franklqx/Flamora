@@ -23,10 +23,10 @@ struct OB_PrimaryButton: View {
             Text(title)
                 .font(.bodyRegular)
                 .fontWeight(.semibold)
-                .foregroundColor(isValid ? .black : AppColors.textTertiary)
+                .foregroundColor(isValid ? AppColors.textInverse : AppColors.textTertiary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
-                .background(isValid ? Color.white : AppColors.backgroundCard)
+                .background(isValid ? AppColors.textPrimary : AppColors.backgroundCard)
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
         }
         .disabled(!isValid)

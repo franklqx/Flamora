@@ -56,16 +56,16 @@ struct AppCard<Content: View>: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
-        VStack(spacing: 16) {
+        AppColors.backgroundPrimary.ignoresSafeArea()
+        VStack(spacing: AppSpacing.cardGap) {
             Text("A sample card")
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
                 .appCard()
 
             AppCard {
                 VStack(alignment: .leading) {
                     Text("Another card")
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                     Text("With subtitle")
                         .foregroundColor(AppColors.textSecondary)
                 }

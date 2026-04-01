@@ -21,14 +21,14 @@ struct BS_ChoosePathView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color(hex: "0A0A0C").ignoresSafeArea()
+            AppColors.backgroundSecondary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 20) {
-                    Spacer().frame(height: 60)
+                VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                    Spacer().frame(height: AppSpacing.xxl + AppSpacing.sm + AppSpacing.xs)
 
                     headerSection
-                        .padding(.horizontal, 26)
+                        .padding(.horizontal, AppSpacing.lg)
 
                     if viewModel.isLoadingPlans {
                         loadingSection
@@ -36,78 +36,86 @@ struct BS_ChoosePathView: View {
                         // Plan cards
                         planCard(plan: plans.plans.steady, name: "Steady", type: .steady,
                                  difficulty: 1, difficultyLabel: "Easy", difficultyColor: Color(hex: "5DDEC0"))
-                            .padding(.horizontal, 26)
+                            .padding(.horizontal, AppSpacing.lg)
 
                         planCard(plan: plans.plans.recommended, name: "Recommended", type: .recommended,
                                  difficulty: 2, difficultyLabel: "Moderate", difficultyColor: goldColor,
                                  showBestFit: true)
-                            .padding(.horizontal, 26)
+                            .padding(.horizontal, AppSpacing.lg)
 
                         planCard(plan: plans.plans.accelerate, name: "Accelerate", type: .accelerate,
                                  difficulty: 3, difficultyLabel: "Ambitious", difficultyColor: Color(hex: "F59E42"))
-                            .padding(.horizontal, 26)
+                            .padding(.horizontal, AppSpacing.lg)
 
                         // Custom option
                         customPlanToggle
-                            .padding(.horizontal, 26)
+                            .padding(.horizontal, AppSpacing.lg)
 
                         if showCustom {
                             customPlanSection
-                                .padding(.horizontal, 26)
+                                .padding(.horizontal, AppSpacing.lg)
                         }
 
                         // Disclaimer
                         assumptionsNote
-                            .padding(.horizontal, 26)
+                            .padding(.horizontal, AppSpacing.lg)
                     }
 
-                    Spacer().frame(height: 140)
+                    Spacer().frame(height: AppSpacing.tabBarReserve + AppSpacing.md + AppSpacing.md + AppSpacing.sm)
                 }
             }
             .opacity(showContent ? 1 : 0)
-            .offset(y: showContent ? 0 : 20)
+            .offset(y: showContent ? 0 : AppSpacing.md)
             .onAppear {
                 withAnimation(.easeOut(duration: 0.5)) { showContent = true }
             }
 
             stickyBottomCTA
         }
+        .alert("Couldn’t continue", isPresented: Binding(
+            get: { viewModel.spendingPlanError != nil },
+            set: { if !$0 { viewModel.spendingPlanError = nil } }
+        )) {
+            Button("OK", role: .cancel) { viewModel.spendingPlanError = nil }
+        } message: {
+            Text(viewModel.spendingPlanError ?? "")
+        }
     }
 
     // MARK: - Header
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Button { viewModel.goBack() } label: {
-                HStack(spacing: 4) {
+                HStack(spacing: AppSpacing.xs) {
                     Image(systemName: "chevron.left")
                     Text("Back")
                 }
-                .font(.system(size: 14))
-                .foregroundStyle(Color(hex: "ABABAB"))
+                .font(.bodySmall)
+                .foregroundStyle(AppColors.textSecondary)
             }
-            .padding(.bottom, 8)
+            .padding(.bottom, AppSpacing.sm)
 
             Text("Pick Your Plan")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(Color(hex: "F2F0ED"))
+                .font(.cardFigurePrimary)
+                .foregroundStyle(AppColors.textPrimary)
 
             Group {
                 let avgExpense = viewModel.spendingStats?.avgMonthlyExpenses ?? 0
                 if avgExpense > 0 {
                     Text("Choose how much to spend each month. You currently spend ")
-                        .foregroundStyle(Color(hex: "ABABAB"))
+                        .foregroundStyle(AppColors.textSecondary)
                     + Text("$\(formattedInt(avgExpense))/mo")
                         .fontWeight(.semibold)
-                        .foregroundStyle(.white.opacity(0.75))
+                        .foregroundStyle(AppColors.overlayWhiteOnGlass)
                     + Text(" on average.")
-                        .foregroundStyle(Color(hex: "ABABAB"))
+                        .foregroundStyle(AppColors.textSecondary)
                 } else {
                     Text("Choose how much to spend each month.")
-                        .foregroundStyle(Color(hex: "ABABAB"))
+                        .foregroundStyle(AppColors.textSecondary)
                 }
             }
-            .font(.system(size: 14))
+            .font(.bodySmall)
             .lineSpacing(3)
         }
     }
@@ -115,15 +123,15 @@ struct BS_ChoosePathView: View {
     // MARK: - Loading
 
     private var loadingSection: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: AppSpacing.md) {
             ProgressView()
-                .tint(.white.opacity(0.5))
+                .tint(AppColors.overlayWhiteOnPhoto)
             Text("Generating your plans...")
-                .font(.system(size: 13))
-                .foregroundStyle(Color(hex: "ABABAB"))
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.textSecondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 60)
+        .padding(.top, AppSpacing.xxl + AppSpacing.sm + AppSpacing.xs)
     }
 
     // MARK: - Plan Card
@@ -141,36 +149,37 @@ struct BS_ChoosePathView: View {
                 showCustom = false
             }
         } label: {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: AppSpacing.cardGap) {
                 // Header row: name + difficulty + radio
                 HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        HStack(spacing: AppSpacing.sm) {
                             Text(name)
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundStyle(Color(hex: "F2F0ED"))
+                                .font(.h3)
+                                .foregroundStyle(AppColors.textPrimary)
 
                             if showBestFit {
                                 Text("BEST FIT")
-                                    .font(.system(size: 9, weight: .bold))
-                                    .foregroundStyle(.black)
-                                    .padding(.horizontal, 6)
+                                    .font(.miniLabel)
+                                    .foregroundStyle(AppColors.textInverse)
+                                    .padding(.horizontal, AppSpacing.sm - 2)
                                     .padding(.vertical, 2)
                                     .background(goldColor)
-                                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                                    .clipShape(RoundedRectangle(cornerRadius: AppSpacing.xs))
                             }
                         }
 
                         // Difficulty dots
-                        HStack(spacing: 4) {
+                        HStack(spacing: AppSpacing.xs) {
                             ForEach(0..<3) { i in
                                 Circle()
-                                    .fill(i < difficulty ? Color.white : Color.white.opacity(0.3))
+                                    .fill(i < difficulty ? AppColors.textPrimary : AppColors.overlayWhiteForegroundSoft)
                                     .frame(width: 7, height: 7)
                             }
                             Text(difficultyLabel)
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(.white)
+                                .font(.cardRowMeta)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(AppColors.textPrimary)
                                 .padding(.leading, 2)
                         }
                     }
@@ -180,15 +189,16 @@ struct BS_ChoosePathView: View {
                     // Radio button
                     ZStack {
                         Circle()
-                            .stroke(isSelected ? Color.white : Color.white.opacity(0.2), lineWidth: 2)
-                            .frame(width: 24, height: 24)
+                            .stroke(isSelected ? AppColors.textPrimary : AppColors.overlayWhiteStroke, lineWidth: 2)
+                            .frame(width: AppSpacing.lg, height: AppSpacing.lg)
                         if isSelected {
                             Circle()
-                                .fill(Color.white)
-                                .frame(width: 24, height: 24)
+                                .fill(AppColors.textPrimary)
+                                .frame(width: AppSpacing.lg, height: AppSpacing.lg)
                             Image(systemName: "checkmark")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(.black)
+                                .font(.cardRowMeta)
+                                .fontWeight(.bold)
+                                .foregroundStyle(AppColors.textInverse)
                         }
                     }
                 }
@@ -196,27 +206,27 @@ struct BS_ChoosePathView: View {
                 // Hero Budget/Mo number
                 VStack(spacing: 2) {
                     Text("MONTHLY BUDGET")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.cardHeader)
                         .tracking(1.5)
-                        .foregroundStyle(.white.opacity(0.35))
+                        .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
                     Text("$\(formattedInt(plan.monthlySpend))")
-                        .font(.system(size: 40, weight: .bold))
-                        .foregroundStyle(Color(hex: "F2F0ED"))
+                        .font(.display)
+                        .foregroundStyle(AppColors.textPrimary)
                         .monospacedDigit()
                         .accessibilityLabel("Monthly budget \(formattedInt(plan.monthlySpend)) dollars")
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
+                .padding(.vertical, AppSpacing.sm)
 
                 // Secondary stats row
                 HStack(spacing: 0) {
                     statColumnSmall(label: "SAVE/MO", value: "$\(formattedInt(plan.monthlySave))")
-                    Rectangle().fill(Color.white.opacity(0.06)).frame(width: 1, height: 24)
+                    Rectangle().fill(AppColors.overlayWhiteStroke).frame(width: 1, height: AppSpacing.lg)
                     statColumnSmall(label: "RATE", value: formattedPct(plan.savingsRate))
                 }
-                .padding(.vertical, 8)
-                .background(Color.black.opacity(0.3))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .padding(.vertical, AppSpacing.sm)
+                .background(AppColors.backgroundPrimary.opacity(0.3))
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
 
                 // Growth tip card (only when selected)
                 if isSelected {
@@ -224,14 +234,14 @@ struct BS_ChoosePathView: View {
                         .transition(.opacity.combined(with: .offset(y: 4)))
                 }
             }
-            .padding(16)
-            .background(isSelected ? Color.white.opacity(0.08) : Color(hex: "161619"))
-            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .padding(AppSpacing.md)
+            .background(isSelected ? AppColors.overlayWhiteMid : AppColors.surfaceElevated)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(
-                RoundedRectangle(cornerRadius: 18)
-                    .stroke(Color.white, lineWidth: isSelected ? 2 : 0)
+                RoundedRectangle(cornerRadius: AppRadius.lg)
+                    .stroke(AppColors.textPrimary, lineWidth: isSelected ? 2 : 0)
             )
-            .shadow(color: isSelected ? Color.white.opacity(0.05) : .clear, radius: 12, y: 4)
+            .shadow(color: isSelected ? AppColors.overlayWhiteWash : .clear, radius: AppSpacing.sm + AppSpacing.xs, y: AppSpacing.xs)
         }
         .buttonStyle(.plain)
     }
@@ -240,12 +250,12 @@ struct BS_ChoosePathView: View {
     private func statColumn(label: String, value: String) -> some View {
         VStack(spacing: 3) {
             Text(label)
-                .font(.system(size: 9, weight: .semibold))
+                .font(.miniLabel)
                 .tracking(0.5)
-                .foregroundStyle(Color(hex: "8E8E93"))
+                .foregroundStyle(AppColors.textTertiary)
             Text(value)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(Color(hex: "F2F0ED"))
+                .font(.figureSecondarySemibold)
+                .foregroundStyle(AppColors.textPrimary)
                 .monospacedDigit()
         }
         .frame(maxWidth: .infinity)
@@ -255,12 +265,12 @@ struct BS_ChoosePathView: View {
     private func statColumnSmall(label: String, value: String) -> some View {
         VStack(spacing: 2) {
             Text(label)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.label)
                 .tracking(0.8)
-                .foregroundStyle(.white.opacity(0.35))
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
             Text(value)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color(hex: "F2F0ED"))
+                .font(.bodySemibold)
+                .foregroundStyle(AppColors.textPrimary)
                 .monospacedDigit()
         }
         .frame(maxWidth: .infinity)
@@ -289,12 +299,13 @@ struct BS_ChoosePathView: View {
             }
         }()
 
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.sm - 2) {
                 Text("✨")
-                    .font(.system(size: 12))
+                    .font(.caption)
                 Text("YOUR POTENTIAL GROWTH")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.cardRowMeta)
+                    .fontWeight(.semibold)
                     .tracking(0.6)
                     .foregroundStyle(greenLabel)
             }
@@ -303,21 +314,21 @@ struct BS_ChoosePathView: View {
                 .fontWeight(.bold)
                 .foregroundStyle(saveColor)
             + Text(" invested at 8% annual return, grows to ")
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(AppColors.overlayWhiteOnGlass)
             + Text("$\(formattedCompact(g10y))")
                 .fontWeight(.bold)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
             + Text(" in 10 years.")
-                .foregroundStyle(.white.opacity(0.8)))
-            .font(.system(size: 14))
+                .foregroundStyle(AppColors.overlayWhiteOnGlass))
+            .font(.bodySmall)
             .lineSpacing(3)
 
             Text(subText)
-                .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.5))
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.overlayWhiteOnPhoto)
                 .lineSpacing(3)
         }
-        .padding(14)
+        .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             LinearGradient(
@@ -329,9 +340,9 @@ struct BS_ChoosePathView: View {
                 endPoint: .bottomTrailing
             )
         )
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: AppRadius.md)
                 .stroke(Color(red: 52/255, green: 180/255, blue: 100/255).opacity(0.2), lineWidth: 1)
         )
     }
@@ -353,20 +364,20 @@ struct BS_ChoosePathView: View {
         } label: {
             HStack {
                 Text(showCustom ? "Custom budget" : "Or set a custom amount")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(.bodySmallSemibold)
+                    .foregroundStyle(AppColors.overlayWhiteAt60)
                 Spacer()
                 Image(systemName: showCustom ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color(hex: "8E8E93"))
+                    .font(.caption)
+                    .foregroundStyle(AppColors.textTertiary)
             }
-            .padding(16)
-            .background(Color(hex: "161619"))
-            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .padding(AppSpacing.md)
+            .background(AppColors.surfaceElevated)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(
-                RoundedRectangle(cornerRadius: 18)
+                RoundedRectangle(cornerRadius: AppRadius.lg)
                     .stroke(
-                        viewModel.selectedPlanType == .custom ? Color.white : Color(hex: "2A2A30"),
+                        viewModel.selectedPlanType == .custom ? AppColors.textPrimary : AppColors.borderLight,
                         lineWidth: viewModel.selectedPlanType == .custom ? 2 : 1
                     )
             )
@@ -377,7 +388,8 @@ struct BS_ChoosePathView: View {
     private var customPlanSection: some View {
         let income = viewModel.spendingStats?.avgMonthlyIncome ?? viewModel.monthlyIncome
         let avgExpense = viewModel.spendingStats?.avgMonthlyExpenses ?? income * 0.8
-        let fixedExpense = viewModel.spendingStats?.avgMonthlyFixed ?? avgExpense * 0.5
+        // 月均必需支出下限（API avg_monthly_fixed）；用于自定义预算危险区判断
+        let monthlyNeedsBaseline = viewModel.spendingStats?.avgMonthlyFixed ?? avgExpense * 0.5
         let sliderMin: Double = 10_000
         let sliderMax = max((avgExpense * 1.2 / 500).rounded() * 500, sliderMin + 500)
         let budget = customBudgetAmount > 0 ? customBudgetAmount : sliderMin
@@ -387,50 +399,50 @@ struct BS_ChoosePathView: View {
 
         // Determine zone
         let zone: CustomZone = {
-            if budget <= fixedExpense { return .danger }
-            if budget <= fixedExpense * 1.4 { return .warning }
+            if budget <= monthlyNeedsBaseline { return .danger }
+            if budget <= monthlyNeedsBaseline * 1.4 { return .warning }
             if budget < avgExpense * 0.7 { return .ambitious }
             return .healthy
         }()
 
-        return VStack(spacing: 16) {
+        return VStack(spacing: AppSpacing.md) {
             // Budget display
-            VStack(spacing: 6) {
+            VStack(spacing: AppSpacing.sm - 2) {
                 Text("MONTHLY BUDGET")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.cardHeader)
                     .tracking(1.5)
-                    .foregroundStyle(.white.opacity(0.35))
+                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
 
                 Text("$\(formattedInt(budget))")
-                    .font(.system(size: 44, weight: .bold))
-                    .foregroundStyle(zone == .danger ? Color(hex: "EF4444") : Color(hex: "F2F0ED"))
+                    .font(.currencyHero)
+                    .foregroundStyle(zone == .danger ? AppColors.error : AppColors.textPrimary)
                     .monospacedDigit()
                     .animation(.easeOut(duration: 0.15), value: customBudgetAmount)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 4)
+            .padding(.vertical, AppSpacing.xs)
 
             // Slider
             Slider(value: $customBudgetAmount, in: sliderMin...sliderMax, step: 500)
-                .tint(.white.opacity(0.6))
+                .tint(AppColors.overlayWhiteAt60)
                 .accessibilityLabel("Monthly budget slider")
                 .accessibilityValue("$\(formattedInt(budget))")
 
             HStack {
-                Text("$\(formattedCompact(sliderMin))").font(.system(size: 11)).foregroundStyle(Color(hex: "8E8E93"))
+                Text("$\(formattedCompact(sliderMin))").font(.cardRowMeta).foregroundStyle(AppColors.textTertiary)
                 Spacer()
-                Text("$\(formattedCompact(sliderMax))").font(.system(size: 11)).foregroundStyle(Color(hex: "8E8E93"))
+                Text("$\(formattedCompact(sliderMax))").font(.cardRowMeta).foregroundStyle(AppColors.textTertiary)
             }
 
             // Stats row
             HStack(spacing: 0) {
                 statColumnSmall(label: "SAVE/MO", value: "$\(formattedInt(monthlySave))")
-                Rectangle().fill(Color.white.opacity(0.06)).frame(width: 1, height: 24)
+                Rectangle().fill(AppColors.overlayWhiteStroke).frame(width: 1, height: AppSpacing.lg)
                 statColumnSmall(label: "RATE", value: formattedPct(savingsRate))
             }
-            .padding(.vertical, 10)
-            .background(Color.black.opacity(0.3))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .padding(.vertical, AppSpacing.sm + AppSpacing.xs)
+            .background(AppColors.backgroundPrimary.opacity(0.3))
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
             .animation(.easeOut(duration: 0.15), value: customBudgetAmount)
 
             // Zone feedback card
@@ -438,12 +450,12 @@ struct BS_ChoosePathView: View {
                 .transition(.opacity.combined(with: .offset(y: 4)))
                 .animation(.easeOut(duration: 0.25), value: zone)
         }
-        .padding(16)
-        .background(Color.white.opacity(0.03))
-        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .padding(AppSpacing.md)
+        .background(AppColors.overlayWhiteWash)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
         .overlay(
-            RoundedRectangle(cornerRadius: 18)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
         )
         .transition(.opacity.combined(with: .move(edge: .top)))
         .onAppear {
@@ -484,9 +496,9 @@ struct BS_ChoosePathView: View {
         let bodyText: String = {
             switch zone {
             case .danger:
-                return "This budget is below your fixed expenses of $\(formattedInt(viewModel.spendingStats?.avgMonthlyFixed ?? 0))/mo and isn't achievable."
+                return "This budget is below your needs (essential spending) of $\(formattedInt(viewModel.spendingStats?.avgMonthlyFixed ?? 0))/mo and isn't achievable."
             case .warning:
-                return "This leaves very little buffer above your fixed expenses. You'd need to cut most flexible spending."
+                return "This leaves very little buffer above your needs. You'd need to cut most wants spending."
             case .ambitious:
                 return "You're spending less than 70% of your average. This is doable with discipline and a clear plan."
             case .healthy:
@@ -494,32 +506,33 @@ struct BS_ChoosePathView: View {
             }
         }()
 
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Text(config.icon).font(.system(size: 12))
+        VStack(alignment: .leading, spacing: AppSpacing.sm - 2) {
+            HStack(spacing: AppSpacing.sm - 2) {
+                Text(config.icon).font(.caption)
                 Text(config.label)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.cardRowMeta)
+                    .fontWeight(.semibold)
                     .tracking(0.6)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(AppColors.overlayWhiteOnGlass)
             }
             Text(bodyText)
-                .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.5))
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.overlayWhiteOnPhoto)
                 .lineSpacing(3)
         }
-        .padding(12)
+        .padding(AppSpacing.sm + AppSpacing.xs)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(LinearGradient(colors: config.bg, startPoint: .topLeading, endPoint: .bottomTrailing))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(config.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.md).stroke(config.border, lineWidth: 1))
     }
 
     // MARK: - Assumptions Note
 
     private var assumptionsNote: some View {
         Text("Growth projections assume 8% annual return (5.5% after inflation) based on S&P 500 historical performance.")
-            .font(.system(size: 11))
-            .foregroundStyle(Color(hex: "8E8E93"))
+            .font(.cardRowMeta)
+            .foregroundStyle(AppColors.textTertiary)
             .lineSpacing(3)
     }
 
@@ -527,28 +540,41 @@ struct BS_ChoosePathView: View {
 
     private var stickyBottomCTA: some View {
         VStack(spacing: 0) {
-            LinearGradient(colors: [Color(hex: "0A0A0C").opacity(0), Color(hex: "0A0A0C")], startPoint: .top, endPoint: .bottom)
-                .frame(height: 28)
+            LinearGradient(colors: [AppColors.backgroundSecondary.opacity(0), AppColors.backgroundSecondary], startPoint: .top, endPoint: .bottom)
+                .frame(height: AppRadius.button)
 
             Button {
-                Task { await viewModel.loadSpendingPlan() }
-                viewModel.goToStep(.confirm)
+                // 必须先等 generate-spending-plan 完成再进确认页，否则 spendingPlan 为 nil，saveFinalBudget 会静默失败。
+                Task {
+                    await viewModel.loadSpendingPlan()
+                    guard viewModel.spendingPlan != nil else { return }
+                    await MainActor.run {
+                        viewModel.goToStep(.confirm)
+                    }
+                }
             } label: {
-                Text("Continue")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.black)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
+                Group {
+                    if viewModel.isLoadingSpendingPlan {
+                        ProgressView()
+                            .tint(AppColors.textInverse)
+                    } else {
+                        Text("Continue")
+                            .font(.figureSecondarySemibold)
+                    }
+                }
+                .foregroundStyle(AppColors.textInverse)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
                     .background(
                         LinearGradient(colors: gradientColors, startPoint: .leading, endPoint: .trailing)
-                            .opacity(viewModel.selectedPlan != nil && !viewModel.isLoadingPlans ? 1 : 0.4)
+                            .opacity(viewModel.selectedPlan != nil && !viewModel.isLoadingPlans && !viewModel.isLoadingSpendingPlan ? 1 : 0.4)
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
             }
-            .disabled(viewModel.selectedPlan == nil || viewModel.isLoadingPlans)
-            .padding(.horizontal, 26)
-            .padding(.bottom, 16)
-            .background(Color(hex: "0A0A0C"))
+            .disabled(viewModel.selectedPlan == nil || viewModel.isLoadingPlans || viewModel.isLoadingSpendingPlan)
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.bottom, AppSpacing.md)
+            .background(AppColors.backgroundSecondary)
         }
     }
 

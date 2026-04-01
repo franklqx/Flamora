@@ -25,6 +25,8 @@ struct AppSpacing {
 struct AppRadius {
     static let sm: CGFloat = 8
     static let md: CGFloat = 12
+    /// 卡片、里程碑格等（与 CLAUDE 示例一致）
+    static let card: CGFloat = 16
     static let lg: CGFloat = 20
     static let xl: CGFloat = 24
     static let button: CGFloat = 28

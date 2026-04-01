@@ -327,7 +327,7 @@ struct OB_BarChartView: View {
                     bottomTrailingRadius: 0,
                     topTrailingRadius: barCornerRadius
                 )
-                .fill(Color.white.opacity(grayOpacity))
+                .fill(AppColors.textPrimary.opacity(grayOpacity))
                 .frame(width: grayWidth, height: max(2, currentH * curProgress))
             } else {
                 Color.clear.frame(width: grayWidth, height: 2)
@@ -448,7 +448,7 @@ struct OB_BarChartView: View {
                 } else {
                     Text(formatCompactValue(currentVal))
                         .font(.footnoteSemibold)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                 }
             }
             .padding(.horizontal, 12)
@@ -483,25 +483,28 @@ struct OB_BarChartView: View {
     private var xAxisRow: some View {
         HStack {
             Text("Today")
-                .font(.system(size: 12, weight: .light))
+                .font(.caption)
+                .fontWeight(.light)
                 .foregroundColor(AppColors.overlayWhiteAt60)
 
             Spacer()
 
             if showOptimizedBars {
                 Text("\(optimizedFireYear)")
-                    .font(.system(size: 12, weight: .light))
+                    .font(.caption)
+                    .fontWeight(.light)
                     .foregroundColor(Color(hex: "FCA5A5"))
                     .transition(.opacity)
             } else {
                 Text("\(currentFireYear)")
-                    .font(.system(size: 12, weight: .light))
+                    .font(.caption)
+                    .fontWeight(.light)
                     .foregroundColor(AppColors.overlayWhiteAt60)
                     .transition(.opacity)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.top, 10)
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.top, AppSpacing.sm + AppSpacing.xs)
         .frame(height: 36)
         .animation(.easeOut(duration: 0.5), value: showOptimizedBars)
     }

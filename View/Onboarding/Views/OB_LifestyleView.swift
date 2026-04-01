@@ -39,7 +39,7 @@ struct OB_LifestyleView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("What kind of retirement life do you want?")
                                 .font(.obQuestion)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(AppColors.textPrimary)
                             Text("Choose your target lifestyle in retirement")
                                 .font(.bodySmall)
                                 .foregroundColor(AppColors.textSecondary)
@@ -89,7 +89,7 @@ struct OB_LifestyleView: View {
                                     .foregroundColor(AppColors.textTertiary)
                                 TextField("Monthly amount", text: $customAmountText)
                                     .font(.h4)
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(AppColors.textPrimary)
                                     .keyboardType(.numberPad)
                                     .focused($isCustomInputFocused)
                                 Text("/mo")
@@ -125,7 +125,7 @@ struct OB_LifestyleView: View {
             // 底部 CTA — 和 ScrollView 同级，键盘弹出时自动上移
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), Color.black],
+                    colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
                     startPoint: .top, endPoint: .bottom
                 )
                 .frame(height: 28)
@@ -141,10 +141,10 @@ struct OB_LifestyleView: View {
                 })
             }
             .padding(.bottom, 16)
-            .background(Color.black)
+            .background(AppColors.backgroundPrimary)
             .ignoresSafeArea(edges: .bottom)
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(AppColors.backgroundPrimary.ignoresSafeArea())
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
@@ -177,7 +177,7 @@ struct OB_LifestyleView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(option.title)
                         .font(.bodySemibold)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
 
                     HStack(spacing: 0) {
                         Text(option.subtitle)
@@ -192,7 +192,7 @@ struct OB_LifestyleView: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle")
-                        .font(.system(size: 22))
+                        .font(.detailTitle)
                         .foregroundStyle(LinearGradient(
                             colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd],
                             startPoint: .leading,
@@ -223,7 +223,7 @@ struct OB_LifestyleView: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_LifestyleView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

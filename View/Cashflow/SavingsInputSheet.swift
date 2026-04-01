@@ -17,23 +17,23 @@ struct SavingsInputSheet: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                Color.black.ignoresSafeArea()
+                AppColors.backgroundPrimary.ignoresSafeArea()
 
                 VStack(spacing: 24) {
                     Text("How much did you save this month?")
                         .font(.detailTitle)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
 
                     HStack(spacing: 6) {
                         Text("$")
                             .font(.display)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
 
                         Text(inputText.isEmpty ? "0" : inputText)
                             .font(.display)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                     }
                     .padding(.vertical, 8)
 
@@ -107,7 +107,7 @@ struct SavingsInputSheet: View {
         }) {
             Text(number)
                 .font(.cardFigurePrimary)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
                 .frame(width: 72, height: 64)
         }
         .buttonStyle(.plain)
@@ -120,7 +120,7 @@ struct SavingsInputSheet: View {
         }) {
             Image(systemName: "delete.left")
                 .font(.detailTitle)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
                 .frame(width: 72, height: 64)
         }
         .buttonStyle(.plain)

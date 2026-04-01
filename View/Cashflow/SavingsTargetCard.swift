@@ -198,7 +198,7 @@ struct SavingsTargetCard: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         SavingsTargetCard(currentAmount: .constant(2100), targetAmount: 2000, onAdd: {}).padding()
     }
 }

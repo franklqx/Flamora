@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Supabase
 
 struct OB_SignInView: View {
     let data: OnboardingData
@@ -25,7 +26,7 @@ struct OB_SignInView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // MARK: - Top Bar
@@ -40,7 +41,7 @@ struct OB_SignInView: View {
                 }
                 .padding(.horizontal, AppSpacing.md)
 
-                Spacer().frame(height: 40)
+                Spacer().frame(height: AppSpacing.xl + AppSpacing.sm)
 
                 // MARK: - Title
                 Text("Join The Journey\nTo Freedom")
@@ -49,50 +50,51 @@ struct OB_SignInView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, AppSpacing.lg)
 
-                Spacer().frame(height: 40)
+                Spacer().frame(height: AppSpacing.xl + AppSpacing.sm)
 
                 // MARK: - Social Sign-In
-                VStack(spacing: 12) {
-                    // Apple
+                VStack(spacing: AppSpacing.sm + AppSpacing.xs) {
+                    // Apple（OAuth；需在 Supabase Auth 启用 Apple 并在 Dashboard 配置 redirect）
                     Button {
-                        // TODO: Apple Sign In via Supabase
+                        Task { await signInWithOAuth(provider: .apple) }
                     } label: {
-                        HStack(spacing: 12) {
+                        HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
                             Image(systemName: "apple.logo")
-                                .font(.system(size: 20))
-                                .foregroundColor(.black)
+                                .font(.h3)
+                                .foregroundColor(AppColors.textInverse)
                             Text("Sign in with Apple")
                                 .font(.bodyRegular)
-                                .foregroundColor(.black)
+                                .foregroundColor(AppColors.textInverse)
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
-                        .background(Color.white)
-                        .cornerRadius(12)
+                        .background(AppColors.textPrimary)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                     }
 
-                    // Google
+                    // Google（OAuth；需在 Supabase Auth 启用 Google）
                     Button {
-                        // TODO: Google Sign In via Supabase
+                        Task { await signInWithOAuth(provider: .google) }
                     } label: {
-                        HStack(spacing: 12) {
+                        HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
                             Text("G")
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
+                                .font(.h3)
+                                .fontWeight(.bold)
                                 .foregroundColor(Color(hex: "#4285F4"))
                             Text("Sign in with Google")
                                 .font(.bodyRegular)
-                                .foregroundColor(.black)
+                                .foregroundColor(AppColors.textInverse)
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
-                        .background(Color.white)
-                        .cornerRadius(12)
+                        .background(AppColors.textPrimary)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, AppSpacing.lg)
 
                 // MARK: - Divider
-                HStack(spacing: 12) {
+                HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
                     Rectangle()
                         .fill(AppColors.borderDefault)
                         .frame(height: 1)
@@ -104,11 +106,11 @@ struct OB_SignInView: View {
                         .fill(AppColors.borderDefault)
                         .frame(height: 1)
                 }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 24)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, AppSpacing.lg)
 
                 // MARK: - Email & Password
-                VStack(spacing: 12) {
+                VStack(spacing: AppSpacing.sm + AppSpacing.xs) {
                     TextField("",
                         text: $email,
                         prompt: Text("Email address").foregroundColor(AppColors.textTertiary))
@@ -132,15 +134,15 @@ struct OB_SignInView: View {
                         .cornerRadius(AppRadius.md)
                         .foregroundColor(AppColors.textPrimary)
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, AppSpacing.lg)
 
                 // Error message
                 if !errorMessage.isEmpty {
                     Text(errorMessage)
                         .font(.caption)
                         .foregroundColor(AppColors.error)
-                        .padding(.horizontal, 24)
-                        .padding(.top, 8)
+                        .padding(.horizontal, AppSpacing.lg)
+                        .padding(.top, AppSpacing.sm)
                 }
 
                 // Toggle sign up / sign in
@@ -154,7 +156,7 @@ struct OB_SignInView: View {
                         .font(.bodySmall)
                         .foregroundColor(AppColors.textSecondary)
                 }
-                .padding(.top, 12)
+                .padding(.top, AppSpacing.sm + AppSpacing.xs)
 
                 Spacer()
 
@@ -177,16 +179,34 @@ struct OB_SignInView: View {
                             .underline()
                     }
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
+                    .padding(.horizontal, AppSpacing.xl + AppSpacing.sm)
                     .padding(.bottom, AppSpacing.lg)
                 }
-                .padding(.bottom, 16)
+                .padding(.bottom, AppSpacing.md)
             }
         }
         .onTapGesture { focusedField = nil }
     }
 
     // MARK: - Auth Handler
+
+    private func signInWithOAuth(provider: Provider) async {
+        isLoading = true
+        errorMessage = ""
+        do {
+            _ = try await supabase.signInWithOAuth(provider: provider)
+            await MainActor.run {
+                data.email = supabase.currentUser?.email ?? data.email
+                data.userId = supabase.currentUserId ?? ""
+                onNext()
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = error.localizedDescription
+            }
+        }
+        await MainActor.run { isLoading = false }
+    }
 
     private func handleAuth() {
         isLoading = true

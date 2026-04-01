@@ -58,7 +58,7 @@ struct OB_OnboardingHeader: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         VStack {
             OB_OnboardingHeader(onBack: {}, current: 3, total: 10)
             Spacer()

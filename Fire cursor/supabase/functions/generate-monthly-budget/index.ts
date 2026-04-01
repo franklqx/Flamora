@@ -91,7 +91,17 @@ serve(async (req) => {
     }
 
     const monthlyIncome = profile.monthly_income || 0
-    if (monthlyIncome <= 0) {
+    // Budget Setup 已算出 needs/wants/savings 金额时，不应因 user_profiles.monthly_income 未填而拒绝保存。
+    const setupBudgetSum =
+      (body.needs_budget ?? 0) + (body.wants_budget ?? 0) + (body.savings_budget ?? 0)
+    const hasSetupBudgetAmounts =
+      body.source === 'setup' &&
+      body.needs_budget !== undefined &&
+      body.wants_budget !== undefined &&
+      body.savings_budget !== undefined &&
+      setupBudgetSum > 0
+
+    if (monthlyIncome <= 0 && !hasSetupBudgetAmounts) {
       return new Response(
         JSON.stringify({ success: false, error: { code: 'NO_INCOME', message: 'Monthly income must be greater than 0' } }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

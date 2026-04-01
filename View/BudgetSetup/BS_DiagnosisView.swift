@@ -4,7 +4,7 @@
 //
 //  Budget Setup — Step 2: Your Financial Snapshot
 //  V2: Shows income/savings/expenses stat cards, interactive bar chart,
-//  and AI insights. Fixed/Flexible breakdown moved to Step 3.
+//  and AI insights. Needs/Wants breakdown moved to Step 3.
 //
 
 import SwiftUI
@@ -25,35 +25,35 @@ struct BS_DiagnosisView: View {
     
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
             
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Spacer().frame(height: 60)
+                    Spacer().frame(height: AppSpacing.xxl + AppSpacing.sm + AppSpacing.xs)
 
                     headerSection
-                        .padding(.horizontal, 26)
-                        .padding(.bottom, 24)
+                        .padding(.horizontal, AppSpacing.lg)
+                        .padding(.bottom, AppSpacing.lg)
 
                     metricTabCards
-                        .padding(.horizontal, 26)
-                        .padding(.bottom, 16)
+                        .padding(.horizontal, AppSpacing.lg)
+                        .padding(.bottom, AppSpacing.md)
                         .opacity(showMetrics ? 1 : 0)
-                        .offset(y: showMetrics ? 0 : 10)
+                        .offset(y: showMetrics ? 0 : AppSpacing.sm + AppSpacing.xs)
                     
                     barChartSection
-                        .padding(.horizontal, 26)
-                        .padding(.bottom, 16)
+                        .padding(.horizontal, AppSpacing.lg)
+                        .padding(.bottom, AppSpacing.md)
                         .opacity(showChart ? 1 : 0)
-                        .offset(y: showChart ? 0 : 10)
+                        .offset(y: showChart ? 0 : AppSpacing.sm + AppSpacing.xs)
 
                     aiInsightsSection
-                        .padding(.horizontal, 26)
-                        .padding(.bottom, 16)
+                        .padding(.horizontal, AppSpacing.lg)
+                        .padding(.bottom, AppSpacing.md)
                         .opacity(showInsights ? 1 : 0)
-                        .offset(y: showInsights ? 0 : 10)
+                        .offset(y: showInsights ? 0 : AppSpacing.sm + AppSpacing.xs)
                     
-                    Spacer().frame(height: 140)
+                    Spacer().frame(height: AppSpacing.tabBarReserve + AppSpacing.md + AppSpacing.md + AppSpacing.sm)
                 }
             }
             
@@ -72,15 +72,15 @@ struct BS_DiagnosisView: View {
     // MARK: - Header
     
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Your Financial Snapshot")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(.white)
+                .font(.cardFigurePrimary)
+                .foregroundStyle(AppColors.textPrimary)
             
             if let stats = viewModel.spendingStats {
                 Text("Based on \(stats.totalTransactions) transactions over \(stats.monthsAnalyzed) months.")
-                    .font(.system(size: 14))
-                    .foregroundStyle(Color(hex: "ABABAB"))
+                    .font(.bodySmall)
+                    .foregroundStyle(AppColors.textSecondary)
                     .lineSpacing(3)
             }
         }
@@ -97,7 +97,7 @@ struct BS_DiagnosisView: View {
         let avgExpenses = breakdowns.map { $0.fixed + $0.flexible }.reduce(0, +) / n
         let avgSavings  = breakdowns.map { max(0, $0.savings) }.reduce(0, +) / n
 
-        return HStack(spacing: 10) {
+        return HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
             metricCard(tab: .income,   label: "AVG INCOME",   value: avgIncome)
             metricCard(tab: .expenses, label: "AVG EXPENSES", value: avgExpenses)
             metricCard(tab: .savings,  label: "AVG SAVINGS",  value: avgSavings)
@@ -110,26 +110,26 @@ struct BS_DiagnosisView: View {
         let isNegative = value < 0
         
         Button { selectedTab = tab } label: {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 Text(label)
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.miniLabel)
                     .tracking(0.08 * 9)
-                    .foregroundStyle(Color.white.opacity(0.35))
+                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
 
                 Text("\(isNegative ? "-" : "")$\(formatted(abs(value)))")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(isNegative ? Color(hex: "EF4444") : .white)
+                    .font(.sheetPrimaryButton)
+                    .foregroundStyle(isNegative ? AppColors.error : AppColors.textPrimary)
                     .minimumScaleFactor(0.7)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
-            .background(isSelected ? Color.white.opacity(0.08) : Color.white.opacity(0.03))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .padding(AppSpacing.sm + AppSpacing.xs)
+            .background(isSelected ? AppColors.overlayWhiteMid : AppColors.overlayWhiteWash)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
             .overlay(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: AppRadius.md)
                     .stroke(
-                        isSelected ? Color.white.opacity(0.15) : Color.white.opacity(0.06),
+                        isSelected ? AppColors.overlayWhiteAt25 : AppColors.overlayWhiteStroke,
                         lineWidth: 1
                     )
             )
@@ -146,12 +146,12 @@ struct BS_DiagnosisView: View {
         let maxVal = max(barValues.max() ?? 1, 1)
         let _ = { print("📊 [Chart] tab=\(selectedTab), breakdowns=\(breakdowns.count), barValues=\(barValues), maxVal=\(maxVal)") }()
         
-        return VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
             if barValues.isEmpty {
-                VStack(spacing: 8) {
+                VStack(spacing: AppSpacing.sm) {
                     Text("No data yet")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Color(hex: "ABABAB"))
+                        .font(.footnoteRegular)
+                        .foregroundStyle(AppColors.textSecondary)
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 160)
@@ -159,7 +159,7 @@ struct BS_DiagnosisView: View {
                 GeometryReader { geo in
                     let chartHeight = geo.size.height
                     let barCount = barValues.count
-                    let spacing: CGFloat = 12
+                    let spacing: CGFloat = AppSpacing.sm + AppSpacing.xs
                     let totalSpacing = spacing * CGFloat(max(1, barCount) - 1)
                     let fullBarWidth = barCount > 0 ? (geo.size.width - totalSpacing) / CGFloat(barCount) : 0
                     let barWidth = fullBarWidth * 0.7  // 30% narrower
@@ -172,13 +172,13 @@ struct BS_DiagnosisView: View {
                                 path.addLine(to: CGPoint(x: geo.size.width, y: avgY))
                             }
                             .stroke(style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                            .foregroundStyle(.white.opacity(0.15))
+                            .foregroundStyle(AppColors.overlayWhiteAt25)
                         }
 
                         if average > 0 {
                             Text("avg $\(formatted(average))")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.white.opacity(0.3))
+                                .font(.cardRowMeta)
+                                .foregroundStyle(AppColors.overlayWhiteForegroundSoft)
                                 .frame(maxWidth: .infinity, alignment: .trailing)
                                 .frame(maxHeight: .infinity, alignment: .top)
                         }
@@ -186,8 +186,8 @@ struct BS_DiagnosisView: View {
                         HStack(alignment: .bottom, spacing: spacing) {
                             ForEach(Array(barValues.enumerated()), id: \.offset) { _, value in
                                 let normalizedHeight = (value / maxVal) * chartHeight * 0.85
-                                UnevenRoundedRectangle(topLeadingRadius: 4, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 4)
-                                    .fill(Color.white.opacity(0.15))
+                                UnevenRoundedRectangle(topLeadingRadius: AppSpacing.xs, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: AppSpacing.xs)
+                                    .fill(AppColors.overlayWhiteMid)
                                     .frame(width: barWidth, height: max(6, normalizedHeight))
                             }
                         }
@@ -201,19 +201,19 @@ struct BS_DiagnosisView: View {
                 HStack {
                     ForEach(Array(labels.enumerated()), id: \.offset) { _, label in
                         Text(label)
-                            .font(.system(size: 11))
-                            .foregroundStyle(.white.opacity(0.3))
+                            .font(.cardRowMeta)
+                            .foregroundStyle(AppColors.overlayWhiteForegroundSoft)
                             .frame(maxWidth: .infinity)
                     }
                 }
             }
         }
-        .padding(16)
-        .background(Color.white.opacity(0.03))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .padding(AppSpacing.md)
+        .background(AppColors.overlayWhiteWash)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
         )
     }
     
@@ -233,12 +233,12 @@ struct BS_DiagnosisView: View {
     private var aiInsightsSection: some View {
         let insights = viewModel.diagnosis?.aiDiagnosis.insights ?? []
         
-        return VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
             Text("AI INSIGHTS")
-                .font(.system(size: 10, weight: .semibold))
+                .font(.label)
                 .tracking(1.0)
-                .foregroundStyle(.white.opacity(0.3))
-                .padding(.bottom, 4)
+                .foregroundStyle(AppColors.overlayWhiteForegroundSoft)
+                .padding(.bottom, AppSpacing.xs)
             
             ForEach(Array(insights.enumerated()), id: \.element.id) { index, insight in
                 insightCard(insight: insight)
@@ -248,23 +248,23 @@ struct BS_DiagnosisView: View {
     
     @ViewBuilder
     private func insightCard(insight: DiagnosisInsight) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text(insight.title)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.white)
+                .font(.figureSecondarySemibold)
+                .foregroundStyle(AppColors.textPrimary)
 
             Text(insight.description)
-                .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.5))
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.overlayWhiteOnPhoto)
                 .lineSpacing(4)
         }
-        .padding(14)
+        .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.03))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .background(AppColors.overlayWhiteWash)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(insight.type) insight: \(insight.title). \(insight.description)")
@@ -274,25 +274,25 @@ struct BS_DiagnosisView: View {
     
     private var stickyBottomCTA: some View {
         VStack(spacing: 0) {
-            LinearGradient(colors: [Color.black.opacity(0), Color.black], startPoint: .top, endPoint: .bottom)
-                .frame(height: 28)
+            LinearGradient(colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary], startPoint: .top, endPoint: .bottom)
+                .frame(height: AppRadius.button)
             
             Button {
                 viewModel.goToStep(.spendingBreakdown)
             } label: {
                 Text("Continue")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.black)
+                    .font(.figureSecondarySemibold)
+                    .foregroundStyle(AppColors.textInverse)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
                     .background(
                         LinearGradient(colors: gradientColors, startPoint: .leading, endPoint: .trailing)
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 100))
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.full))
             }
-            .padding(.horizontal, 26)
-            .padding(.bottom, 16)
-            .background(Color.black)
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.bottom, AppSpacing.md)
+            .background(AppColors.backgroundPrimary)
         }
     }
     

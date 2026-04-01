@@ -51,13 +51,13 @@ struct AnalysisCard: View {
 
             Text(title)
                 .font(.supportingText)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
 
             Spacer()
 
             Text(value)
                 .font(.h4)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
         }
         .padding(AppSpacing.md)
         .background(AppColors.surface)

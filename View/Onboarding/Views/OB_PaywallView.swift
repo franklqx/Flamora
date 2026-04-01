@@ -34,7 +34,7 @@ struct OB_PaywallView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // Header
@@ -67,7 +67,7 @@ struct OB_PaywallView: View {
 
                         Text("Flamora Pro")
                             .font(.h1)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
 
                         Text("Your complete toolkit for Financial Independence")
                             .font(.bodyRegular)
@@ -79,7 +79,7 @@ struct OB_PaywallView: View {
                             .foregroundColor(AppColors.success)
                     }
                     .opacity(appear ? 1 : 0)
-                    .offset(y: appear ? 0 : 20)
+                    .offset(y: appear ? 0 : AppSpacing.md + AppSpacing.xs)
                     .animation(.easeOut(duration: 0.5).delay(0.1), value: appear)
 
                     Spacer().frame(height: AppSpacing.lg)
@@ -98,7 +98,7 @@ struct OB_PaywallView: View {
 
                                 Text(feature)
                                     .font(.bodySmall)
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(AppColors.textPrimary)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.8)
 
@@ -119,7 +119,7 @@ struct OB_PaywallView: View {
                             .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
                     )
                     .opacity(appear ? 1 : 0)
-                    .offset(y: appear ? 0 : 20)
+                    .offset(y: appear ? 0 : AppSpacing.md + AppSpacing.xs)
                     .animation(.easeOut(duration: 0.5).delay(0.3), value: appear)
 
                     Spacer().frame(height: AppSpacing.lg)
@@ -128,9 +128,9 @@ struct OB_PaywallView: View {
                     Button {
                         // Already selected — noop
                     } label: {
-                        HStack(spacing: 14) {
+                        HStack(spacing: AppSpacing.md) {
                             Image(systemName: "checkmark.circle")
-                                .font(.system(size: 22))
+                                .font(.detailTitle)
                                 .foregroundStyle(
                                     LinearGradient(
                                         colors: AppColors.gradientFire,
@@ -142,7 +142,7 @@ struct OB_PaywallView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Yearly")
                                     .font(.h4)
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(AppColors.textPrimary)
 
                                 Text("$6.67/mo")
                                     .font(.caption)
@@ -154,7 +154,7 @@ struct OB_PaywallView: View {
                             HStack(alignment: .firstTextBaseline, spacing: 2) {
                                 Text("$79.99")
                                     .font(.h3)
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(AppColors.textPrimary)
                                 Text("/year")
                                     .font(.caption)
                                     .foregroundColor(AppColors.textSecondary)
@@ -162,7 +162,7 @@ struct OB_PaywallView: View {
 
                             Text("BEST VALUE")
                                 .font(.label)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(AppColors.textPrimary)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
                                 .background(
@@ -192,7 +192,7 @@ struct OB_PaywallView: View {
                     }
                     .buttonStyle(.plain)
                     .opacity(appear ? 1 : 0)
-                    .offset(y: appear ? 0 : 20)
+                    .offset(y: appear ? 0 : AppSpacing.md + AppSpacing.xs)
                     .animation(.easeOut(duration: 0.5).delay(0.5), value: appear)
 
                     Spacer().frame(height: 200)
@@ -204,7 +204,7 @@ struct OB_PaywallView: View {
             // Sticky CTA（与 AgeView 一致）
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), Color.black],
+                    colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
                     startPoint: .top, endPoint: .bottom
                 )
                 .frame(height: 28)
@@ -238,7 +238,7 @@ struct OB_PaywallView: View {
                 }
                 .padding(.horizontal, AppSpacing.screenPadding)
                 .padding(.bottom, 16)
-                .background(Color.black)
+                .background(AppColors.backgroundPrimary)
                 .ignoresSafeArea(edges: .bottom)
             }
             .opacity(appear ? 1 : 0)
@@ -305,7 +305,7 @@ struct OB_PaywallView: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_PaywallView(data: OnboardingData(), onBack: {}, onComplete: {})
             .environment(SubscriptionManager.shared)
     }

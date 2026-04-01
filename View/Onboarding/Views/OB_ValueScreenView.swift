@@ -14,7 +14,7 @@ struct OB_ValueScreenView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -34,22 +34,22 @@ struct OB_ValueScreenView: View {
                 }
                 .padding(.horizontal, AppSpacing.screenPadding)
                 .padding(.bottom, AppSpacing.md)
-                .padding(.bottom, 120) // 为底部固定按钮留出空间
+                .padding(.bottom, AppSpacing.tabBarReserve + AppSpacing.xl + AppSpacing.xs) // 为底部固定按钮留出空间
             }
 
             // 固定在屏幕最下方的 CTA
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), Color.black],
+                    colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary],
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .frame(height: 28)
+                .frame(height: AppRadius.button)
 
                 OB_PrimaryButton(title: "Continue", action: onNext)
             }
-            .padding(.bottom, 16)
-            .background(Color.black)
+            .padding(.bottom, AppSpacing.md)
+            .background(AppColors.backgroundPrimary)
             .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -97,9 +97,9 @@ private struct ValueMoneyTrackingContent: View {
                                     .font(.supportingText)
                                     .foregroundColor(AppColors.textPrimary)
                             }
-                            .padding(.vertical, 10)
+                            .padding(.vertical, AppSpacing.sm + AppSpacing.xs)
                             .opacity(index < visibleRows ? 1 : 0)
-                            .offset(y: index < visibleRows ? 0 : 12)
+                            .offset(y: index < visibleRows ? 0 : AppSpacing.sm + AppSpacing.xs)
                             .animation(
                                 .easeOut(duration: 0.25),
                                 value: visibleRows
@@ -110,9 +110,9 @@ private struct ValueMoneyTrackingContent: View {
                             }
                         }
                     }
-                    .padding(20)
+                    .padding(AppSpacing.cardPadding)
                     .background(AppColors.backgroundCard)
-                    .cornerRadius(12)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                     .transition(
                         .asymmetric(
                             insertion: .identity,
@@ -123,14 +123,14 @@ private struct ValueMoneyTrackingContent: View {
 
                 // Phase 2 & 3: Donut chart + categories
                 if phase >= 2 {
-                    VStack(spacing: 20) {
+                    VStack(spacing: AppSpacing.md + AppSpacing.sm - AppSpacing.xs) {
                         // Donut chart (Needs 62% / Wants 38%)
                         ZStack {
                             Circle()
                                 .trim(from: 0, to: 0.62)
                                 .stroke(
                                     AppColors.accentPurple,
-                                    style: StrokeStyle(lineWidth: 16, lineCap: .round)
+                                    style: StrokeStyle(lineWidth: AppSpacing.md, lineCap: .round)
                                 )
                                 .rotationEffect(.degrees(-90))
 
@@ -138,11 +138,11 @@ private struct ValueMoneyTrackingContent: View {
                                 .trim(from: 0.63, to: 1.0)
                                 .stroke(
                                     AppColors.accentBlue,
-                                    style: StrokeStyle(lineWidth: 16, lineCap: .round)
+                                    style: StrokeStyle(lineWidth: AppSpacing.md, lineCap: .round)
                                 )
                                 .rotationEffect(.degrees(-90))
 
-                            VStack(spacing: 2) {
+                            VStack(spacing: AppSpacing.xs / 2) {
                                 Text("TOTAL")
                                     .font(.label)
                                     .foregroundColor(AppColors.textTertiary)
@@ -159,7 +159,7 @@ private struct ValueMoneyTrackingContent: View {
 
                         // Phase 3: Category cards
                         if phase >= 3 {
-                            VStack(spacing: 10) {
+                            VStack(spacing: AppSpacing.sm + AppSpacing.xs) {
                                 // Needs card
                                 categoryCard(
                                     color: AppColors.accentPurple,
@@ -197,9 +197,9 @@ private struct ValueMoneyTrackingContent: View {
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
                     }
-                    .padding(20)
+                    .padding(AppSpacing.cardPadding)
                     .background(AppColors.backgroundCard)
-                    .cornerRadius(12)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                 }
             }
 
@@ -226,7 +226,7 @@ private struct ValueMoneyTrackingContent: View {
         VStack(spacing: 0) {
             // Header row
             Button(action: onTap) {
-                HStack(spacing: 10) {
+                HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
                     Circle().fill(color).frame(width: 10, height: 10)
                     Text(title)
                         .font(.supportingText)
@@ -240,8 +240,8 @@ private struct ValueMoneyTrackingContent: View {
                         .foregroundColor(AppColors.textTertiary)
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 }
-                .padding(.vertical, 12)
-                .padding(.horizontal, 14)
+                .padding(.vertical, AppSpacing.sm + AppSpacing.xs)
+                .padding(.horizontal, AppSpacing.sm + AppSpacing.xs + AppSpacing.xs)
             }
             .buttonStyle(.plain)
 
@@ -249,10 +249,10 @@ private struct ValueMoneyTrackingContent: View {
             if isExpanded {
                 VStack(spacing: 0) {
                     ForEach(0..<items.count, id: \.self) { i in
-                        HStack(spacing: 10) {
+                        HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
                             Image(systemName: items[i].icon)
                                 .font(.bodyRegular)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(AppColors.textPrimary)
                                 .frame(width: 20)
                             Text(items[i].category)
                                 .font(.footnoteRegular)
@@ -262,13 +262,13 @@ private struct ValueMoneyTrackingContent: View {
                                 .font(.footnoteSemibold)
                                 .foregroundColor(AppColors.textSecondary)
                         }
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 14)
+                        .padding(.vertical, AppSpacing.sm)
+                        .padding(.horizontal, AppSpacing.sm + AppSpacing.xs + AppSpacing.xs)
 
                         if i < items.count - 1 {
                             Divider()
                                 .overlay(AppColors.borderDefault.opacity(0.3))
-                                .padding(.leading, 44)
+                                .padding(.leading, AppSpacing.md + AppSpacing.md + AppSpacing.xs + AppSpacing.xs + AppSpacing.xs)
                         }
                     }
                 }
@@ -276,7 +276,7 @@ private struct ValueMoneyTrackingContent: View {
             }
         }
         .background(AppColors.backgroundCardHover)
-        .cornerRadius(10)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
     }
 
     // MARK: - Animation Sequence
@@ -312,7 +312,7 @@ private struct ValueMoneyTrackingContent: View {
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.lg)
     }
-    .background(Color.black)
+    .background(AppColors.backgroundPrimary)
 }
 
 // MARK: - pain_saving
@@ -333,11 +333,11 @@ private struct ValueSavingContent: View {
                 .minimumScaleFactor(0.7)
 
             // Preview card
-            VStack(spacing: 16) {
+            VStack(spacing: AppSpacing.cardGap) {
                 HStack {
-                    HStack(spacing: 6) {
+                    HStack(spacing: AppSpacing.sm) {
                         Text("✦")
-                            .font(.system(size: 10))
+                            .font(.label)
                         Text("MONTHLY TRACKING")
                             .font(.label)
                             .tracking(1)
@@ -347,17 +347,17 @@ private struct ValueSavingContent: View {
                     Text("2026")
                         .font(.cardRowMeta)
                         .foregroundColor(AppColors.textSecondary)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, AppSpacing.sm + AppSpacing.xs + AppSpacing.xs)
+                        .padding(.vertical, AppSpacing.xs)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 6)
+                            RoundedRectangle(cornerRadius: AppRadius.sm)
                                 .stroke(AppColors.borderDefault, lineWidth: 1)
                         )
                 }
 
                 // 4x3 month grid
-                let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 4)
-                LazyVGrid(columns: columns, spacing: 10) {
+                let columns = Array(repeating: GridItem(.flexible(), spacing: AppSpacing.sm + AppSpacing.xs), count: 4)
+                LazyVGrid(columns: columns, spacing: AppSpacing.sm + AppSpacing.xs) {
                     ForEach(0..<12, id: \.self) { index in
                         monthCell(index: index)
                             .opacity(showCells ? 1 : 0)
@@ -374,10 +374,10 @@ private struct ValueSavingContent: View {
 
                 // Bottom stats
                 HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        HStack(spacing: AppSpacing.xs) {
                             Text("✦")
-                                .font(.system(size: 8))
+                                .font(.miniLabel)
                             Text("SAVING RATE")
                                 .font(.miniLabel)
                         }
@@ -387,10 +387,10 @@ private struct ValueSavingContent: View {
                             .foregroundColor(AppColors.textPrimary)
                     }
                     Spacer()
-                    VStack(alignment: .trailing, spacing: 4) {
-                        HStack(spacing: 4) {
+                    VStack(alignment: .trailing, spacing: AppSpacing.xs) {
+                        HStack(spacing: AppSpacing.xs) {
                             Text("✦")
-                                .font(.system(size: 8))
+                                .font(.miniLabel)
                             Text("TARGET SAVING")
                                 .font(.miniLabel)
                         }
@@ -401,9 +401,9 @@ private struct ValueSavingContent: View {
                     }
                 }
             }
-            .padding(20)
+            .padding(AppSpacing.cardPadding)
             .background(AppColors.backgroundCard)
-            .cornerRadius(16)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
 
             Text("Consistency beats perfection. Track your monthly milestones throughout 2026.")
                 .font(.bodySmall)
@@ -425,9 +425,9 @@ private struct ValueSavingContent: View {
         let startPt = UnitPoint(x: 0.5 + 0.5 * cos(angle.radians), y: 0.5 + 0.5 * sin(angle.radians))
         let endPt = UnitPoint(x: 0.5 - 0.5 * cos(angle.radians), y: 0.5 - 0.5 * sin(angle.radians))
 
-        VStack(spacing: 4) {
+        VStack(spacing: AppSpacing.xs) {
             ZStack {
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: AppRadius.md)
                     .fill(
                         isCompleted
                             ? AnyShapeStyle(LinearGradient(
@@ -440,8 +440,9 @@ private struct ValueSavingContent: View {
                     .frame(height: 52)
 
                 Image(systemName: isCompleted ? "checkmark" : "plus")
-                    .font(.system(size: isCompleted ? 16 : 18, weight: .medium))
-                    .foregroundColor(isCompleted ? .white : AppColors.textTertiary)
+                    .font(isCompleted ? .bodyRegular : .h4)
+                    .fontWeight(.medium)
+                    .foregroundColor(isCompleted ? AppColors.textPrimary : AppColors.textTertiary)
             }
 
             Text(months[index])
@@ -457,7 +458,7 @@ private struct ValueSavingContent: View {
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.lg)
     }
-    .background(Color.black)
+    .background(AppColors.backgroundPrimary)
 }
 
 // MARK: - pain_investing
@@ -473,32 +474,33 @@ private struct ValueInvestingContent: View {
                 .foregroundColor(AppColors.textPrimary)
 
             // Preview card
-            VStack(spacing: 16) {
+            VStack(spacing: AppSpacing.cardGap) {
                 // Chart with cost-of-waiting badge overlay
                 ZStack(alignment: .topTrailing) {
                     CompoundGrowthChart(drawProgress: drawProgress)
                         .frame(height: 160)
 
                     // Cost of waiting badge — slides in from right after curves finish
-                    VStack(spacing: 2) {
+                    VStack(spacing: AppSpacing.xs / 2) {
                         Text("COST OF WAITING")
-                            .font(.system(size: 8, weight: .bold))
+                            .font(.miniLabel)
+                            .fontWeight(.bold)
                             .foregroundColor(AppColors.textTertiary)
                             .tracking(0.5)
                         Text("$213,000")
                             .font(.bodySemibold)
                             .foregroundColor(AppColors.textPrimary)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, AppSpacing.sm + AppSpacing.xs)
+                    .padding(.vertical, AppSpacing.sm)
                     .background(AppColors.backgroundCardHover)
-                    .cornerRadius(8)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: AppRadius.sm)
                             .stroke(AppColors.borderDefault, lineWidth: 1)
                     )
                     .opacity(showCostBadge ? 1 : 0)
-                    .offset(x: showCostBadge ? 0 : 20)
+                    .offset(x: showCostBadge ? 0 : AppSpacing.md + AppSpacing.xs)
                 }
 
                 Text("Investing $300/month")
@@ -510,8 +512,8 @@ private struct ValueInvestingContent: View {
 
                 // Legend
                 HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 6) {
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
                             Circle().fill(AppColors.gradientStart).frame(width: 8, height: 8)
                             Text("Start now")
                                 .font(.caption)
@@ -522,8 +524,8 @@ private struct ValueInvestingContent: View {
                             .foregroundColor(AppColors.textPrimary)
                     }
                     Spacer()
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 6) {
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
                             Circle().fill(AppColors.textTertiary).frame(width: 8, height: 8)
                             Text("Wait 5 yrs")
                                 .font(.caption)
@@ -535,9 +537,9 @@ private struct ValueInvestingContent: View {
                     }
                 }
             }
-            .padding(20)
+            .padding(AppSpacing.cardPadding)
             .background(AppColors.backgroundCard)
-            .cornerRadius(16)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
 
             Text("Even small contributions grow dramatically with time. Flamora helps you find that extra $100-300/month hiding in your spending.")
                 .font(.bodySmall)
@@ -698,7 +700,7 @@ private struct CompoundGrowthChart: View {
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.lg)
     }
-    .background(Color.black)
+    .background(AppColors.backgroundPrimary)
 }
 
 // MARK: - pain_fire
@@ -751,7 +753,7 @@ private struct ValueFireContent: View {
     @ViewBuilder
     private func timelineRow(index: Int, isLit: Bool) -> some View {
         VStack(spacing: 0) {
-            HStack(alignment: .center, spacing: 16) {
+            HStack(alignment: .center, spacing: AppSpacing.md) {
                 // Left: circle icon
                 ZStack {
                     Circle()
@@ -767,13 +769,13 @@ private struct ValueFireContent: View {
                         .frame(width: 48, height: 48)
 
                     Image(systemName: steps[index].icon)
-                        .font(.system(size: 18))
-                        .foregroundColor(isLit ? .white : AppColors.textTertiary)
+                        .font(.chromeIconMedium)
+                        .foregroundColor(isLit ? AppColors.textPrimary : AppColors.textTertiary)
                 }
 
                 // Right: text centered to icon
                 Text(steps[index].text)
-                    .font(.system(size: 16, weight: isLit ? .semibold : .regular))
+                    .font(isLit ? .bodySemibold : .bodyRegular)
                     .foregroundColor(isLit ? AppColors.textPrimary : AppColors.textTertiary)
 
                 Spacer()
@@ -785,7 +787,7 @@ private struct ValueFireContent: View {
                     .fill(AppColors.borderDefault)
                     .frame(width: 1, height: 24)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading, 24)
+                    .padding(.leading, AppSpacing.lg)
             }
         }
     }
@@ -797,12 +799,12 @@ private struct ValueFireContent: View {
             .padding(.horizontal, AppSpacing.sm)
             .padding(.bottom, AppSpacing.sm)
     }
-    .background(Color.black)
+    .background(AppColors.backgroundPrimary)
 }
 
 #Preview("Value Screen (full)") {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_ValueScreenView(data: OnboardingData(), onNext: {}, onBack: {})
         VStack {
             OB_OnboardingHeader(onBack: {}, current: 5, total: 10)

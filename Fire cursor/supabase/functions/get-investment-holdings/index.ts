@@ -46,6 +46,7 @@ serve(async (req) => {
       .from('investment_holdings')
       .select(`
         id,
+        plaid_account_id,
         quantity,
         cost_basis,
         institution_price,
@@ -94,6 +95,7 @@ serve(async (req) => {
 
       return {
         id: h.id,
+        plaid_account_id: h.plaid_account_id,
         // 证券信息
         name: security.name || 'Unknown',
         ticker: security.ticker_symbol || null,

@@ -23,7 +23,7 @@ struct OB_PainPointsView: View {
 
                     Text("What's your biggest financial challenge right now?")
                         .font(.obQuestion)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Spacer().frame(height: 8)
@@ -61,7 +61,7 @@ struct OB_PainPointsView: View {
             // Sticky CTA
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), Color.black],
+                    colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -70,11 +70,11 @@ struct OB_PainPointsView: View {
                 OB_PrimaryButton(isValid: isValid, action: onNext)
             }
             .padding(.bottom, 16)
-            .background(Color.black)
+            .background(AppColors.backgroundPrimary)
             .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color.black)
+        .background(AppColors.backgroundPrimary)
     }
 
     private var isValid: Bool {
@@ -106,8 +106,8 @@ private struct ChallengeCard: View {
                         .frame(width: 36, height: 36)
 
                     Image(systemName: option.icon)
-                        .font(.system(size: 17))
-                        .foregroundColor(isSelected ? .black : AppColors.textSecondary)
+                        .font(.fieldBodyMedium)
+                        .foregroundColor(isSelected ? AppColors.textInverse : AppColors.textSecondary)
                 }
                 .frame(width: 36, height: 36)
 
@@ -115,7 +115,7 @@ private struct ChallengeCard: View {
                     Text(option.title)
                         .font(.bodyRegular)
                         .fontWeight(.semibold)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
 
@@ -171,7 +171,7 @@ private struct ChallengeCard: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         OB_PainPointsView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

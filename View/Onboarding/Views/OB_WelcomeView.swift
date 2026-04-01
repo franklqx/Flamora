@@ -49,7 +49,7 @@ struct OB_WelcomeView: View {
 
             // Subtle bottom vignette for CTA legibility
             LinearGradient(
-                colors: [Color.clear, Color.black.opacity(0.22)],
+                colors: [Color.clear, AppColors.backgroundPrimary.opacity(0.22)],
                 startPoint: UnitPoint(x: 0.5, y: 0.55),
                 endPoint: .bottom
             )
@@ -62,28 +62,28 @@ struct OB_WelcomeView: View {
                 Image("FlameIcon")
                     .resizable()
                     .renderingMode(.template)
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.textPrimary)
                     .frame(width: 56, height: 56)
-                    .padding(.top, 44)
+                    .padding(.top, AppSpacing.xxl - AppSpacing.xs)
 
                 // Slide headline
-                VStack(spacing: 6) {
+                VStack(spacing: AppSpacing.sm) {
                     Text(slides[currentSlide].title)
-                        .font(.system(size: 42, weight: .regular, design: .serif))
-                        .fontWeight(.regular)
-                        .foregroundStyle(.white)
+                        .font(.obWelcomeTitle)
+                        .foregroundStyle(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
-                        .lineSpacing(4)
+                        .lineSpacing(AppSpacing.xs)
                     Text(slides[currentSlide].subtitle)
-                        .font(.system(size: 17, weight: .regular))
-                        .foregroundColor(.white.opacity(0.8))
+                        .font(.fieldBodyMedium)
+                        .fontWeight(.regular)
+                        .foregroundColor(AppColors.overlayWhiteOnGlass)
                         .multilineTextAlignment(.center)
                 }
-                .padding(.horizontal, 32)
-                .padding(.top, 18)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.md + AppSpacing.xs + AppSpacing.xs)
                 .animation(.easeInOut(duration: 0.25), value: currentSlide)
 
-                Spacer().frame(height: 28)
+                Spacer().frame(height: AppSpacing.lg + AppSpacing.xs)
 
                 // Slide card
                 Group {
@@ -99,22 +99,25 @@ struct OB_WelcomeView: View {
                     removal:   .move(edge: slideDirection > 0 ? .leading  : .trailing).combined(with: .opacity)
                 ))
                 .id(currentSlide)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.cardPadding)
 
-                Spacer(minLength: 18)
+                Spacer(minLength: AppSpacing.md + AppSpacing.xs + AppSpacing.xs)
 
                 // Page indicator dots
-                HStack(spacing: 8) {
+                HStack(spacing: AppSpacing.sm) {
                     ForEach(0..<slides.count, id: \.self) { i in
                         Capsule()
-                            .fill(i == currentSlide ? Color.white : AppColors.overlayWhiteEmphasisStroke)
-                            .frame(width: i == currentSlide ? 20 : 6, height: 6)
+                            .fill(i == currentSlide ? AppColors.textPrimary : AppColors.overlayWhiteEmphasisStroke)
+                            .frame(
+                                width: i == currentSlide ? AppSpacing.cardPadding : AppSpacing.sm - AppSpacing.xs / 2,
+                                height: AppSpacing.sm - AppSpacing.xs / 2
+                            )
                             .animation(.easeInOut(duration: 0.2), value: currentSlide)
                     }
                 }
-                .padding(.bottom, 20)
+                .padding(.bottom, AppSpacing.cardPadding)
 
-                Spacer().frame(height: 64)
+                Spacer().frame(height: AppSpacing.xxl + AppSpacing.sm + AppSpacing.sm)
             }
 
             // ── Tap + swipe overlay (excludes CTA area) ─────────────
@@ -138,7 +141,7 @@ struct OB_WelcomeView: View {
                         }
                 )
             }
-            .padding(.bottom, 56 + 48 + 26 + 38)
+            .padding(.bottom, AppSpacing.xxl + AppSpacing.xxl + AppSpacing.xl + AppSpacing.md + AppSpacing.md + AppSpacing.sm)
 
             // Get Started CTA
             OB_PrimaryButton(title: "Get Started", action: onNext)
@@ -199,21 +202,21 @@ private struct GlassCard<Content: View>: View {
 
     var body: some View {
         content()
-            .padding(.horizontal, 20)
-            .padding(.vertical, 18)
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.vertical, AppSpacing.md + AppSpacing.xs + AppSpacing.xs)
             .frame(minHeight: 260)
             .background(
-                RoundedRectangle(cornerRadius: 24)
+                RoundedRectangle(cornerRadius: AppRadius.xl)
                     .fill(.ultraThinMaterial)
                     .opacity(0.4)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 24)
+                        RoundedRectangle(cornerRadius: AppRadius.xl)
                             .stroke(
                                 LinearGradient(
                                     colors: [
-                                        .white.opacity(0.8),
-                                        .white.opacity(0.4),
-                                        .white.opacity(0.0)
+                                        AppColors.overlayWhiteOnGlass,
+                                        AppColors.overlayWhiteAt60,
+                                        Color.clear
                                     ],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
@@ -222,7 +225,7 @@ private struct GlassCard<Content: View>: View {
                             )
                     )
             )
-            .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 6)
+            .shadow(color: AppColors.backgroundPrimary.opacity(0.15), radius: AppRadius.md, x: 0, y: AppSpacing.sm - AppSpacing.xs / 2)
     }
 }
 
@@ -237,22 +240,23 @@ private struct WelcomeFireProgressCard: View {
                 HStack(alignment: .top) {
                     Text("FIRE TIMELINE")
                         .font(.miniLabel)
-                        .foregroundColor(.white.opacity(0.70))
+                        .foregroundColor(AppColors.overlayWhiteOnGlass)
                         .tracking(1.2)
                     Spacer()
                     Image(systemName: "flame.fill")
                         .font(.bodySmall)
-                        .foregroundColor(.white.opacity(0.70))
+                        .foregroundColor(AppColors.overlayWhiteOnGlass)
                 }
 
-                Spacer().frame(height: 14)
+                Spacer().frame(height: AppSpacing.sm + AppSpacing.xs + AppSpacing.xs - AppSpacing.xs / 2)
 
                 Text("Financial freedom is within reach")
-                    .font(.system(size: 17, weight: .regular))
-                    .foregroundStyle(.white)
+                    .font(.fieldBodyMedium)
+                    .fontWeight(.regular)
+                    .foregroundStyle(AppColors.textPrimary)
                     .lineSpacing(3)
 
-                Spacer().frame(height: 20)
+                Spacer().frame(height: AppSpacing.cardPadding)
 
                 HStack {
                     Spacer()
@@ -262,49 +266,50 @@ private struct WelcomeFireProgressCard: View {
                             .frame(width: 118, height: 118)
                         Circle()
                             .trim(from: 0, to: trimEnd)
-                            .stroke(Color.white, style: StrokeStyle(lineWidth: 9, lineCap: .round))
+                            .stroke(AppColors.textPrimary, style: StrokeStyle(lineWidth: 9, lineCap: .round))
                             .frame(width: 118, height: 118)
                             .rotationEffect(.degrees(-90))
-                        VStack(spacing: 2) {
+                        VStack(spacing: AppSpacing.xs / 2) {
                             Text("67%")
-                                .font(.system(size: 26, weight: .bold))
-                                .foregroundStyle(.white)
+                                .font(.h2)
+                                .foregroundStyle(AppColors.textPrimary)
                             Text("ACHIEVED")
-                                .font(.system(size: 7, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.58))
+                                .font(.miniLabel)
+                                .scaleEffect(7 / 9)
+                                .foregroundColor(AppColors.overlayWhiteOnPhoto)
                                 .tracking(0.6)
                         }
                     }
                     Spacer()
                 }
 
-                Spacer().frame(height: 16)
+                Spacer().frame(height: AppSpacing.md)
 
                 // Bottom stats
                 HStack {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: AppSpacing.xs / 2) {
                         Text("RETIRE AGE")
-                            .font(.system(size: 8, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.45))
+                            .font(.miniLabel)
+                            .foregroundColor(AppColors.overlayWhiteForegroundMuted)
                             .tracking(0.4)
                         Text("35")
                             .font(.cardFigureSecondary)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                     Divider()
                         .background(AppColors.overlayWhiteHigh)
-                        .frame(height: 28)
+                        .frame(height: AppSpacing.lg + AppSpacing.xs)
 
-                    VStack(alignment: .trailing, spacing: 2) {
+                    VStack(alignment: .trailing, spacing: AppSpacing.xs / 2) {
                         Text("DAYS TO GO")
-                            .font(.system(size: 8, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.45))
+                            .font(.miniLabel)
+                            .foregroundColor(AppColors.overlayWhiteForegroundMuted)
                             .tracking(0.4)
                         Text("2,847")
                             .font(.cardFigureSecondary)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                     }
                     .frame(maxWidth: .infinity, alignment: .trailing)
                 }
@@ -342,14 +347,14 @@ private struct WelcomeBudgetCard: View {
     var body: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 5) {
-                    Circle().fill(Color.green).frame(width: 6, height: 6)
+                HStack(spacing: AppSpacing.xs) {
+                    Circle().fill(AppColors.success).frame(width: AppSpacing.sm - AppSpacing.xs / 2, height: AppSpacing.sm - AppSpacing.xs / 2)
                     Text("AUTO-CATEGORIZED · THIS MONTH")
-                        .font(.system(size: 8, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.65))
+                        .font(.miniLabel)
+                        .foregroundColor(AppColors.overlayWhiteOnPhoto)
                         .tracking(0.3)
                 }
-                .padding(.bottom, 12)
+                .padding(.bottom, AppSpacing.sm + AppSpacing.xs + AppSpacing.xs)
 
                 budgetSection(
                     name: "NEEDS",
@@ -362,7 +367,7 @@ private struct WelcomeBudgetCard: View {
 
                 Divider()
                     .background(AppColors.glassPillStroke)
-                    .padding(.vertical, 10)
+                    .padding(.vertical, AppSpacing.sm + AppSpacing.xs + AppSpacing.xs)
 
                 budgetSection(
                     name: "WANTS",
@@ -443,54 +448,54 @@ private struct WelcomeBudgetCard: View {
     @ViewBuilder
     private func budgetSection(name: String, amount: Int, pct: String, progress: CGFloat,
                                items: [(String, String, String)], subcategoryIndices: [Int]) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
             HStack(alignment: .firstTextBaseline) {
                 Text(name)
                     .font(.label)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
                     .tracking(0.5)
                 Spacer()
                 Text("$" + formattedNumber(amount))
                     .font(.h4)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textPrimary)
                     .monospacedDigit()
             }
             GeometryReader { g in
                 Capsule()
-                    .fill(Color.white)
-                    .frame(width: g.size.width * progress, height: 2)
+                    .fill(AppColors.textPrimary)
+                    .frame(width: g.size.width * progress, height: AppSpacing.xs / 2)
             }
-            .frame(height: 2)
+            .frame(height: AppSpacing.xs / 2)
 
             Text(pct)
-                .font(.system(size: 8))
-                .foregroundColor(.white.opacity(0.48))
+                .font(.miniLabel)
+                .foregroundColor(AppColors.overlayWhiteForegroundMuted)
                 .opacity(showPercentages ? 1 : 0)
-                .padding(.bottom, 4)
+                .padding(.bottom, AppSpacing.xs)
 
             VStack(spacing: 0) {
                 if showSubcategories {
                     ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                         let globalIndex = subcategoryIndices[index]
-                        HStack(spacing: 4) {
+                        HStack(spacing: AppSpacing.xs) {
                             Text(item.0)
-                                .font(.system(size: 11.5))
-                                .foregroundColor(.white.opacity(0.82))
+                                .font(.cardRowMeta)
+                                .foregroundColor(AppColors.overlayWhiteOnGlass)
                             Spacer()
                             Text(item.1)
-                                .font(.system(size: 11.5, weight: .medium))
-                                .foregroundStyle(.white)
+                                .font(.inlineLabel)
+                                .foregroundStyle(AppColors.textPrimary)
                             Text(item.2)
                                 .font(.miniLabel)
-                                .foregroundColor(.white.opacity(0.45))
-                                .padding(.horizontal, 5)
-                                .padding(.vertical, 2)
+                                .foregroundColor(AppColors.overlayWhiteForegroundMuted)
+                                .padding(.horizontal, AppSpacing.xs + AppSpacing.xs + AppSpacing.xs + AppSpacing.xs + AppSpacing.xs - AppSpacing.md)
+                                .padding(.vertical, AppSpacing.xs / 2)
                                 .background(AppColors.overlayWhiteMid)
                                 .clipShape(Capsule())
                         }
-                        .padding(.vertical, 1.5)
+                        .padding(.vertical, AppSpacing.xs / 2 + AppSpacing.xs / 4)
                         .opacity(subcategoryVisible[globalIndex] ? 1 : 0)
-                        .offset(x: subcategoryVisible[globalIndex] ? 0 : -20)
+                        .offset(x: subcategoryVisible[globalIndex] ? 0 : -AppSpacing.cardPadding)
                     }
                 }
             }
@@ -547,26 +552,26 @@ private struct WelcomeSavingsCard: View {
 
     var body: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs + AppSpacing.xs) {
                 Text("SAVING OVERVIEW")
                     .font(.miniLabel)
-                    .foregroundColor(.white.opacity(0.65))
+                    .foregroundColor(AppColors.overlayWhiteOnPhoto)
                     .tracking(0.8)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: AppSpacing.xs / 2) {
                     Text(formatted(displayAmount))
                         .font(.detailTitle)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textPrimary)
                         .monospacedDigit()
                     Text("Total saved this year")
                         .font(.label)
-                        .foregroundColor(.white.opacity(0.55))
+                        .foregroundColor(AppColors.overlayWhiteOnGlass)
                 }
 
                 GeometryReader { geo in
                     let n = months.count
-                    let gap: CGFloat = 3
-                    let labelH: CGFloat = 12
+                    let gap: CGFloat = AppSpacing.xs
+                    let labelH: CGFloat = AppSpacing.sm + AppSpacing.xs + AppSpacing.xs
                     let barAreaH = geo.size.height - labelH
                     let barW = (geo.size.width - gap * CGFloat(n - 1)) / CGFloat(n)
                     // Y offset from top where a "target-height" bar's top sits
@@ -578,16 +583,20 @@ private struct WelcomeSavingsCard: View {
                             p.move(to: CGPoint(x: 0, y: targetY))
                             p.addLine(to: CGPoint(x: geo.size.width, y: targetY))
                         }
-                        .stroke(style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
-                        .foregroundColor(.white.opacity(0.32))
+                        .stroke(style: StrokeStyle(lineWidth: 1, dash: [
+                            AppSpacing.xs,
+                            AppSpacing.xs - AppSpacing.xs / 2 + AppSpacing.xs / 4
+                        ]))
+                        .foregroundColor(AppColors.overlayWhiteForegroundSoft)
 
                         // "TARGET" label above right end of line
                         Text("TARGET")
-                            .font(.system(size: 6, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.45))
+                            .font(.miniLabel)
+                            .scaleEffect(6 / 9)
+                            .foregroundColor(AppColors.overlayWhiteForegroundMuted)
                             .tracking(0.3)
                             .frame(maxWidth: .infinity, alignment: .trailing)
-                            .offset(y: targetY - 9)
+                            .offset(y: targetY - (AppSpacing.sm + AppSpacing.xs + AppSpacing.xs - AppSpacing.xs / 2))
 
                         // Bars
                         HStack(alignment: .bottom, spacing: gap) {
@@ -597,21 +606,22 @@ private struct WelcomeSavingsCard: View {
                                 let isFuture = val == 0
                                 let isAboveTarget = val >= targetRatio
 
-                                VStack(spacing: 3) {
+                                VStack(spacing: AppSpacing.xs) {
                                     if isFuture {
                                         // Future month: small stub
-                                        RoundedRectangle(cornerRadius: 2)
+                                        RoundedRectangle(cornerRadius: AppSpacing.xs / 2)
                                             .fill(AppColors.overlayWhiteHigh)
-                                            .frame(width: barW, height: 6)
+                                            .frame(width: barW, height: AppSpacing.sm - AppSpacing.xs / 2)
                                     } else {
                                         // Active: white if at/above target, gray if below
-                                        RoundedRectangle(cornerRadius: 3)
-                                            .fill(isAboveTarget ? Color.white : AppColors.overlayWhiteEmphasisStroke)
-                                            .frame(width: barW, height: max(6, barAreaH * animH))
+                                        RoundedRectangle(cornerRadius: AppSpacing.xs)
+                                            .fill(isAboveTarget ? AppColors.textPrimary : AppColors.overlayWhiteEmphasisStroke)
+                                            .frame(width: barW, height: max(AppSpacing.sm - AppSpacing.xs / 2, barAreaH * animH))
                                     }
                                     Text(pair.0)
-                                        .font(.system(size: 6))
-                                        .foregroundColor(.white.opacity(0.40))
+                                        .font(.miniLabel)
+                                        .scaleEffect(6 / 9)
+                                        .foregroundColor(AppColors.overlayWhiteAt40)
                                         .frame(width: barW)
                                 }
                             }
@@ -619,11 +629,11 @@ private struct WelcomeSavingsCard: View {
                         .frame(width: geo.size.width, height: geo.size.height, alignment: .bottom)
                     }
                 }
-                .frame(height: 80)
+                .frame(height: AppSpacing.xxl + AppSpacing.sm + AppSpacing.sm)
 
                 HStack {
                     statItem(label: "TARGET RATE",   value: "20%",     trailing: false)
-                    Divider().background(AppColors.overlayWhiteHigh).frame(height: 28)
+                    Divider().background(AppColors.overlayWhiteHigh).frame(height: AppSpacing.lg + AppSpacing.xs)
                     statItem(label: "TARGET SAVING", value: "$2,000",  trailing: true)
                 }
             }
@@ -639,14 +649,14 @@ private struct WelcomeSavingsCard: View {
 
     @ViewBuilder
     private func statItem(label: String, value: String, trailing: Bool) -> some View {
-        VStack(alignment: trailing ? .trailing : .leading, spacing: 2) {
+        VStack(alignment: trailing ? .trailing : .leading, spacing: AppSpacing.xs / 2) {
             Text(label)
-                .font(.system(size: 8, weight: .semibold))
-                .foregroundColor(.white.opacity(0.45))
+                .font(.miniLabel)
+                .foregroundColor(AppColors.overlayWhiteForegroundMuted)
                 .tracking(0.4)
             Text(value)
                 .font(.cardFigureSecondary)
-                .foregroundStyle(.white)
+                .foregroundStyle(AppColors.textPrimary)
         }
         .frame(maxWidth: .infinity, alignment: trailing ? .trailing : .leading)
     }
@@ -715,16 +725,16 @@ private struct WelcomeNetWorthCard: View {
 
     var body: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     Text("TOTAL NET WORTH")
                         .font(.miniLabel)
-                        .foregroundColor(.white.opacity(0.65))
+                        .foregroundColor(AppColors.overlayWhiteOnPhoto)
                         .tracking(0.8)
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
                         Text(formatted(displayAmount))
                             .font(.h2)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textPrimary)
                             .monospacedDigit()
                         Text("+13.8%")
                             .font(.footnoteSemibold)
@@ -738,7 +748,7 @@ private struct WelcomeNetWorthCard: View {
                         // 折线描绘动画
                         NetWorthLineShape()
                             .trim(from: 0, to: trimEnd)
-                            .stroke(Color.white, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                            .stroke(AppColors.textPrimary, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
 
                         // 末端脉冲光点 (曲线终点 y=0.25)
                         if showDot {
@@ -746,30 +756,30 @@ private struct WelcomeNetWorthCard: View {
                             let endY = geo.size.height * 0.25
                             Circle()
                                 .fill(pulse ? Color.clear : AppColors.overlayWhiteEmphasisStroke)
-                                .frame(width: 18, height: 18)
+                                .frame(width: AppSpacing.md + AppSpacing.xs + AppSpacing.xs, height: AppSpacing.md + AppSpacing.xs + AppSpacing.xs)
                                 .position(x: endX, y: endY)
                             Circle()
-                                .fill(Color.white)
-                                .frame(width: 6, height: 6)
+                                .fill(AppColors.textPrimary)
+                                .frame(width: AppSpacing.sm - AppSpacing.xs / 2, height: AppSpacing.sm - AppSpacing.xs / 2)
                                 .position(x: endX, y: endY)
                         }
                     }
                 }
-                .frame(height: 70)
+                .frame(height: AppSpacing.xxl + AppSpacing.md + AppSpacing.xs + AppSpacing.xs)
 
                 HStack(spacing: 0) {
                     ForEach(["1W","1M","3M","YTD","ALL"], id: \.self) { period in
                         let selected = period == "1M"
                         Text(period)
-                            .font(.system(size: 10, weight: selected ? .semibold : .regular))
-                            .foregroundColor(selected ? .black : .white.opacity(0.55))
+                            .font(.barMonthTick(selected: selected))
+                            .foregroundColor(selected ? AppColors.textInverse : AppColors.overlayWhiteOnGlass)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 8)
-                            .background(selected ? Color.white : Color.clear)
+                            .padding(.vertical, AppSpacing.sm)
+                            .background(selected ? AppColors.textPrimary : Color.clear)
                             .clipShape(Capsule())
                     }
                 }
-                .padding(4)
+                .padding(AppSpacing.xs)
                 .background(AppColors.overlayWhiteMid)
                 .clipShape(Capsule())
             }

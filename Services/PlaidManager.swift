@@ -146,6 +146,8 @@ class PlaidManager {
             let _: DisconnectResponse = try await client.functions.invoke("disconnect-bank", options: options)
             hasLinkedBank = false
             connectedInstitutionName = nil
+            UserDefaults.standard.set(false, forKey: FlamoraStorageKey.budgetSetupCompleted)
+            TabContentCache.shared.clearAfterBankDisconnect()
         } catch {
             print("PlaidManager.disconnectBank error: \(error)")
         }
@@ -201,5 +203,20 @@ struct ExchangeResponse: Decodable {
         let institution_name: String?
         let accounts_linked: Int
         let has_investments: Bool
+    }
+}
+
+// MARK: - UserDefaults keys
+
+enum FlamoraStorageKey {
+    static let budgetSetupCompleted = "flamoraBudgetSetupCompleted"
+
+    /// 旧版未写入该标记但后端已有预算时，首次启动视为已完成，避免老用户被挡在「Build Your Plan」外。
+    static func migrateBudgetSetupIfNeeded(budget: APIMonthlyBudget?, hasLinkedBank: Bool) {
+        guard UserDefaults.standard.object(forKey: budgetSetupCompleted) == nil else { return }
+        guard hasLinkedBank, let b = budget,
+              (b.needsBudget + b.wantsBudget + b.savingsBudget) > 0,
+              b.selectedPlan != nil else { return }
+        UserDefaults.standard.set(true, forKey: budgetSetupCompleted)
     }
 }
