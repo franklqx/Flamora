@@ -66,10 +66,18 @@ serve(async (req) => {
       )
     }
 
-    const points = (rows || []).map((r: any) => ({
+    let points = (rows || []).map((r: any) => ({
       date: r.date,
       value: r.investment_total ?? r.total_net_worth ?? 0,
     }))
+
+    // 只有一个快照时，复制为两点 flat line，保证图表能正常渲染而不是空白
+    if (points.length === 1) {
+      const p = points[0]
+      const d = new Date(p.date + 'T00:00:00Z')
+      d.setDate(d.getDate() - 1)
+      points = [{ date: d.toISOString().slice(0, 10), value: p.value }, p]
+    }
 
     return new Response(
       JSON.stringify({ success: true, data: { points, range } }),

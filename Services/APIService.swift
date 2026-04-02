@@ -360,14 +360,30 @@ struct APIInvestmentHoldingsPayload: Codable {
     let summary: APIInvestmentHoldingsSummary
     let typeBreakdown: [APIInvestmentTypeBreakdownRow]
     let holdings: [APIInvestmentHoldingRow]
+    let accounts: [APIInvestmentAccount]?
 }
 
 struct APIInvestmentHoldingsSummary: Codable {
     let totalValue: Double
+    /// 账户 balance_current 总和（包含未投资现金），是 Portfolio 主数字的正确来源。
+    let totalAccountValue: Double?
+    let totalHoldingsValue: Double?
+    /// 账户总值 - 持仓市值，即券商内尚未买入任何证券的现金。
+    let uninvestedCashValue: Double?
     let totalCostBasis: Double?
     let totalGainLoss: Double?
     let totalGainLossPct: Double?
     let holdingsCount: Int
+}
+
+/// 单个 investment account 的余额与持仓拆分。
+struct APIInvestmentAccount: Codable {
+    let id: String
+    let name: String
+    let mask: String?
+    let balanceCurrent: Double
+    let holdingsValue: Double
+    let uninvestedCashValue: Double
 }
 
 struct APIInvestmentTypeBreakdownRow: Codable {

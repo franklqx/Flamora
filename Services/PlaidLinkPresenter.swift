@@ -23,7 +23,7 @@ final class PlaidLinkPresenter {
     /// 必须在 Main Thread 调用。
     func present(
         token: String,
-        onSuccess: @escaping (String, String, String) -> Void,
+        onSuccess: @escaping (String, String, String, [String]) -> Void,
         onDismiss: @escaping () -> Void
     ) {
         assert(Thread.isMainThread, "PlaidLinkPresenter.present() must be called on main thread")
@@ -58,10 +58,11 @@ final class PlaidLinkPresenter {
                 let publicToken  = linkSuccess.publicToken
                 let institutionId   = linkSuccess.metadata.institution.id
                 let institutionName = linkSuccess.metadata.institution.name
-                print("🔗 [PlaidLinkPresenter] ✅ onSuccess — \(institutionName) (\(institutionId))")
+                let selectedAccountIds = linkSuccess.metadata.accounts.map { $0.id }
+                print("🔗 [PlaidLinkPresenter] ✅ onSuccess — \(institutionName) (\(institutionId)), selected accounts: \(selectedAccountIds)")
                 DispatchQueue.main.async {
                     self?.tearDown {
-                        onSuccess(publicToken, institutionId, institutionName)
+                        onSuccess(publicToken, institutionId, institutionName, selectedAccountIds)
                     }
                 }
             }

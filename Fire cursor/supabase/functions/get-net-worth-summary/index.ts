@@ -52,7 +52,7 @@ serve(async (req) => {
     if (profile.has_linked_bank) {
       // ✅ 已连接 Plaid：从真实账户数据计算
 
-      // 获取所有 Plaid 账户（列名与 exchange-public-token / plaid_accounts 表一致：balance_current）
+      // 获取所有活跃 Plaid 账户（is_active=true 确保只汇总用户在 Link 里勾选的账户）
       const { data: accounts, error: accountsError } = await supabase
         .from('plaid_accounts')
         .select(`
@@ -66,6 +66,7 @@ serve(async (req) => {
           plaid_items ( institution_name )
         `)
         .eq('user_id', user.id)
+        .eq('is_active', true)
 
       if (accountsError) {
         console.error('Error fetching accounts:', accountsError)

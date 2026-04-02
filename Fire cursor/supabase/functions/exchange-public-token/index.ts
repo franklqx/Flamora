@@ -10,6 +10,7 @@ interface ExchangeRequest {
     institution_id: string
     name: string
   }
+  selected_account_ids?: string[]
 }
 
 // ============================================================
@@ -320,6 +321,9 @@ serve(async (req) => {
     // ============================================================
     console.log(`[exchange] Step 5: Storing ${accountsData.accounts.length} accounts`)
 
+    // 只将用户在 Plaid Link 中勾选的账户标记为 active；空数组表示客户端未传，默认全部激活
+    const selectedAccountIds: string[] = body.selected_account_ids ?? []
+
     const accountRecords = accountsData.accounts.map((account: any) => ({
       plaid_item_id: plaidItem.id,
       user_id: user.id,
@@ -333,7 +337,7 @@ serve(async (req) => {
       balance_current: account.balances?.current,
       balance_limit: account.balances?.limit,
       iso_currency_code: account.balances?.iso_currency_code || 'USD',
-      is_active: true,
+      is_active: selectedAccountIds.length === 0 || selectedAccountIds.includes(account.account_id),
     }))
 
     const { error: accountsInsertError } = await supabase
@@ -527,21 +531,21 @@ serve(async (req) => {
     }
 
     // ============================================================
-    // 11. 更新净资产 + 用户档案
+    // 11. 更新净资产 + 用户档案（只汇总 is_active 账户，与 handle-plaid-webhook 保持一致）
     // ============================================================
     console.log('[exchange] Step 8: Updating net worth')
 
-    const investmentTotal = accountsData.accounts
-      ?.filter((a: any) => a.type === 'investment')
-      .reduce((sum: number, a: any) => sum + (a.balances?.current || 0), 0) || 0
+    const investmentTotal = accountRecords
+      .filter((r: any) => r.is_active && r.type === 'investment')
+      .reduce((sum: number, r: any) => sum + (r.balance_current || 0), 0)
 
-    const depositoryTotal = accountsData.accounts
-      ?.filter((a: any) => a.type === 'depository')
-      .reduce((sum: number, a: any) => sum + (a.balances?.current || 0), 0) || 0
+    const depositoryTotal = accountRecords
+      .filter((r: any) => r.is_active && r.type === 'depository')
+      .reduce((sum: number, r: any) => sum + (r.balance_current || 0), 0)
 
-    const creditTotal = accountsData.accounts
-      ?.filter((a: any) => a.type === 'credit')
-      .reduce((sum: number, a: any) => sum + (a.balances?.current || 0), 0) || 0
+    const creditTotal = accountRecords
+      .filter((r: any) => r.is_active && r.type === 'credit')
+      .reduce((sum: number, r: any) => sum + (r.balance_current || 0), 0)
 
     const totalNetWorth = investmentTotal + depositoryTotal - creditTotal
 

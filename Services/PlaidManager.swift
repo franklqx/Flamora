@@ -69,11 +69,12 @@ class PlaidManager {
             await MainActor.run {
                 PlaidLinkPresenter.shared.present(
                     token: linkToken,
-                    onSuccess: { [weak self] publicToken, institutionId, institutionName in
+                    onSuccess: { [weak self] publicToken, institutionId, institutionName, selectedAccountIds in
                         Task { await self?.exchangePublicToken(
                             publicToken: publicToken,
                             institutionId: institutionId,
-                            institutionName: institutionName
+                            institutionName: institutionName,
+                            selectedAccountIds: selectedAccountIds
                         )}
                     },
                     onDismiss: {}
@@ -104,15 +105,17 @@ class PlaidManager {
     }
 
     // MARK: - Step 3: 交换 public token
-    func exchangePublicToken(publicToken: String, institutionId: String, institutionName: String) async {
+    func exchangePublicToken(publicToken: String, institutionId: String, institutionName: String, selectedAccountIds: [String] = []) async {
         print("🏦 [PlaidManager] ── exchangePublicToken() BEGIN ──")
         print("🏦 [PlaidManager] publicToken prefix: \(String(publicToken.prefix(30)))...")
         print("🏦 [PlaidManager] institution: \(institutionName) (\(institutionId))")
+        print("🏦 [PlaidManager] selected account IDs: \(selectedAccountIds)")
         do {
             let session = try await client.auth.session
             let body = ExchangePublicTokenBody(
                 public_token: publicToken,
-                institution: .init(institution_id: institutionId, name: institutionName)
+                institution: .init(institution_id: institutionId, name: institutionName),
+                selected_account_ids: selectedAccountIds
             )
             let options = FunctionInvokeOptions(
                 headers: ["Authorization": "Bearer \(session.accessToken)"],
@@ -161,6 +164,7 @@ private struct EmptyBody: Encodable {}
 private struct ExchangePublicTokenBody: Encodable {
     let public_token: String
     let institution: Institution
+    let selected_account_ids: [String]
 
     struct Institution: Encodable {
         let institution_id: String

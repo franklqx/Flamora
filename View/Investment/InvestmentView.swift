@@ -82,15 +82,14 @@ struct InvestmentView: View {
 
 // MARK: - Data Loading & Computed Data
 private extension InvestmentView {
-    /// Investment Tab 主数字：持仓 API 总值 → 净资产投资合计 → 净资产总值，依次回退。
+    /// Investment Tab 主数字：账户总值（含未投资现金）→ 净资产投资合计 → 净资产总值，依次回退。
     var portfolioBalanceDisplay: Double {
-        if let h = apiHoldingsPayload, h.summary.totalValue > 0 {
-            return h.summary.totalValue
+        if let h = apiHoldingsPayload {
+            let accountValue = h.summary.totalAccountValue ?? h.summary.totalValue
+            if accountValue > 0 { return accountValue }
         }
         guard let nw = apiNetWorth else { return 0 }
-        if let inv = nw.breakdown.investmentTotal, inv > 0 {
-            return inv
-        }
+        if let inv = nw.breakdown.investmentTotal, inv > 0 { return inv }
         return nw.totalNetWorth
     }
 
@@ -172,29 +171,13 @@ private extension InvestmentView {
         }
     }
 
-    /// 按机构名称聚合账户：同一银行绑定只显示一条，余额求和。
+    /// Investment 页账户列表：只显示 investment 类型账户，逐个展示，不按机构聚合。
     var computedAccounts: [Account] {
         guard let nw = apiNetWorth, !nw.accounts.isEmpty else { return [] }
-        let all = nw.accounts.map { Account.fromNetWorthAccount($0) }
-        var groups: [String: (representative: Account, totalBalance: Double)] = [:]
-        for acc in all {
-            let key = acc.institution.isEmpty ? "Unknown" : acc.institution
-            if let existing = groups[key] {
-                groups[key] = (representative: existing.representative, totalBalance: existing.totalBalance + acc.balance)
-            } else {
-                groups[key] = (representative: acc, totalBalance: acc.balance)
-            }
-        }
-        return groups.map { (_, data) in
-            Account(
-                id: data.representative.id,
-                institution: data.representative.institution,
-                accountType: data.representative.accountType,
-                balance: data.totalBalance,
-                connected: true,
-                logoUrl: data.representative.logoUrl
-            )
-        }.sorted { $0.institution < $1.institution }
+        return nw.accounts
+            .filter { $0.type == "investment" }
+            .map { Account.fromNetWorthAccount($0) }
+            .sorted { $0.balance > $1.balance }
     }
 }
 

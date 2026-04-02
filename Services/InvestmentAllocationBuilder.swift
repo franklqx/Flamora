@@ -17,27 +17,28 @@ enum InvestmentAllocationBuilder {
     )
 
     static func allocation(from payload: APIInvestmentHoldingsPayload) -> Allocation {
-        let total = payload.summary.totalValue
-        let rows = payload.typeBreakdown
-        guard total > 0, !rows.isEmpty else {
-            return zeroAllocation
-        }
+        // 分母优先用 total_account_value（账户余额总和，含未投资现金），确保百分比正确
+        let totalAccountValue = payload.summary.totalAccountValue ?? payload.summary.totalValue
+        guard totalAccountValue > 0 else { return zeroAllocation }
+
+        // 从 type_breakdown 累加各类持仓市值
         var stocks = 0.0
         var crypto = 0.0
         var cash = 0.0
         var other = 0.0
-        for row in rows {
+        for row in payload.typeBreakdown {
             switch bucket(for: row.type) {
             case .stocks: stocks += row.value
             case .crypto: crypto += row.value
-            case .cash: cash += row.value
-            case .other: other += row.value
+            case .cash:   cash   += row.value
+            case .other:  other  += row.value
             }
         }
-        let sum = stocks + crypto + cash + other
-        let denom = sum > 0 ? sum : total
+        // 将未投资现金（账户余额 - 持仓市值）计入 Cash；仅计 investment portfolio 内部，不混入 depository
+        cash += payload.summary.uninvestedCashValue ?? 0
+
         func pct(_ amount: Double) -> Int {
-            Int((amount / denom * 100).rounded())
+            Int((amount / totalAccountValue * 100).rounded())
         }
         return Allocation(
             stocks: AssetClass(percent: pct(stocks), amount: stocks),

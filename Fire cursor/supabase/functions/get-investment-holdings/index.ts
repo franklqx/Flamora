@@ -122,14 +122,14 @@ serve(async (req) => {
     // ============================================================
     // 4. 计算汇总
     // ============================================================
-    const totalValue = enrichedHoldings.reduce((sum: number, h: any) => sum + (h.value || 0), 0)
+    const totalHoldingsValue = enrichedHoldings.reduce((sum: number, h: any) => sum + (h.value || 0), 0)
     const totalCostBasis = enrichedHoldings.reduce((sum: number, h: any) => sum + (h.cost_basis || 0), 0)
-    const totalGainLoss = totalCostBasis > 0 ? totalValue - totalCostBasis : null
+    const totalGainLoss = totalCostBasis > 0 ? totalHoldingsValue - totalCostBasis : null
     const totalGainLossPct = totalCostBasis > 0
       ? parseFloat(((totalGainLoss! / totalCostBasis) * 100).toFixed(2))
       : null
 
-    // 按类型分组汇总
+    // 按类型分组汇总（用于 AssetAllocation 饼图）
     const byType: Record<string, number> = {}
     for (const h of enrichedHoldings) {
       const type = h.type || 'other'
@@ -140,11 +140,40 @@ serve(async (req) => {
       .map(([type, value]) => ({
         type,
         value: parseFloat(value.toFixed(2)),
-        percentage: totalValue > 0
-          ? parseFloat(((value / totalValue) * 100).toFixed(1))
+        percentage: totalHoldingsValue > 0
+          ? parseFloat(((value / totalHoldingsValue) * 100).toFixed(1))
           : 0,
       }))
       .sort((a, b) => b.value - a.value)
+
+    // 查询活跃 investment 账户余额（balance_current 包含未投资现金）
+    const { data: investmentAccounts } = await supabase
+      .from('plaid_accounts')
+      .select('id, name, official_name, mask, balance_current')
+      .eq('user_id', user.id)
+      .eq('type', 'investment')
+      .eq('is_active', true)
+
+    const totalAccountValue = (investmentAccounts || [])
+      .reduce((sum: number, a: any) => sum + (a.balance_current || 0), 0)
+
+    const uninvestedCashValue = Math.max(0, totalAccountValue - totalHoldingsValue)
+
+    // 每个 investment account 的持仓市值
+    const holdingsValueByAccountId: Record<string, number> = {}
+    for (const h of enrichedHoldings) {
+      const aid = h.plaid_account_id
+      if (aid) holdingsValueByAccountId[aid] = (holdingsValueByAccountId[aid] || 0) + (h.value || 0)
+    }
+
+    const accountsBreakdown = (investmentAccounts || []).map((a: any) => ({
+      id: a.id,
+      name: a.name || a.official_name || '',
+      mask: a.mask ?? null,
+      balance_current: parseFloat((a.balance_current || 0).toFixed(2)),
+      holdings_value: parseFloat((holdingsValueByAccountId[a.id] || 0).toFixed(2)),
+      uninvested_cash_value: parseFloat(Math.max(0, (a.balance_current || 0) - (holdingsValueByAccountId[a.id] || 0)).toFixed(2)),
+    }))
 
     // ============================================================
     // 5. 返回结果
@@ -154,7 +183,10 @@ serve(async (req) => {
         success: true,
         data: {
           summary: {
-            total_value: parseFloat(totalValue.toFixed(2)),
+            total_value: parseFloat(totalHoldingsValue.toFixed(2)),
+            total_account_value: parseFloat(totalAccountValue.toFixed(2)),
+            total_holdings_value: parseFloat(totalHoldingsValue.toFixed(2)),
+            uninvested_cash_value: parseFloat(uninvestedCashValue.toFixed(2)),
             total_cost_basis: parseFloat(totalCostBasis.toFixed(2)),
             total_gain_loss: totalGainLoss ? parseFloat(totalGainLoss.toFixed(2)) : null,
             total_gain_loss_pct: totalGainLossPct,
@@ -162,6 +194,7 @@ serve(async (req) => {
           },
           type_breakdown: typeBreakdown,
           holdings: enrichedHoldings,
+          accounts: accountsBreakdown,
         },
         meta: {
           timestamp: new Date().toISOString(),
