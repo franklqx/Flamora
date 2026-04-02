@@ -644,6 +644,8 @@ private struct SmartRulesGradientToggle: View {
 
 struct SpendingAnalysisDetailView: View {
     let data: SpendingDetailData
+    /// "needs" 或 "wants"，用于向 get-transactions 传递正确的分类过滤。
+    let flamoraCategory: String
 
     @Environment(\.dismiss) private var dismiss
     @State private var dragOffset: CGFloat = 0
@@ -655,8 +657,9 @@ struct SpendingAnalysisDetailView: View {
     private let monthsFull = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     private let monthsLong = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
-    init(data: SpendingDetailData) {
+    init(data: SpendingDetailData, flamoraCategory: String = "needs") {
         self.data = data
+        self.flamoraCategory = flamoraCategory
         let latest = data.availableYears.last ?? 2026
         let trend = data.trendsByYear[latest] ?? []
         _selectedYear = State(initialValue: latest)
@@ -750,10 +753,12 @@ struct SpendingAnalysisDetailView: View {
                 }
         )
         .fullScreenCover(item: $selectedCategory) { category in
+            let monthStr = String(format: "%04d-%02d", selectedYear, selectedBarIndex + 1)
             SpendingCategoryTransactionsDetailView(
                 category: category,
                 monthLabel: selectedMonthLongLabel,
-                groups: transactionGroups(for: category)
+                month: monthStr,
+                flamoraCategory: flamoraCategory
             )
         }
     }
@@ -970,138 +975,6 @@ private extension SpendingAnalysisDetailView {
     }
 }
 
-private extension SpendingAnalysisDetailView {
-    static let defaultCategoryTemplates: [SpendingCategoryTransactionTemplate] = [
-        SpendingCategoryTransactionTemplate(merchant: "Netflix", subtitle: "Premium Plan - Visa ending in 4242", amount: 19.99, group: .today),
-        SpendingCategoryTransactionTemplate(merchant: "Spotify", subtitle: "Family Plan - Visa ending in 4242", amount: 16.99, group: .today),
-        SpendingCategoryTransactionTemplate(merchant: "iCloud+", subtitle: "2TB Storage - Apple Pay", amount: 9.99, group: .yesterday),
-        SpendingCategoryTransactionTemplate(merchant: "Adobe Creative Cloud", subtitle: "All Apps Plan - Visa ending in 4242", amount: 54.99, group: .midMonth),
-        SpendingCategoryTransactionTemplate(merchant: "ChatGPT Plus", subtitle: "Monthly Subscription - Apple Pay", amount: 20.00, group: .midMonth),
-        SpendingCategoryTransactionTemplate(merchant: "YouTube Premium", subtitle: "Individual - Visa ending in 4242", amount: 13.99, group: .midMonth)
-    ]
-
-    static let categoryTransactionTemplates: [String: [SpendingCategoryTransactionTemplate]] = [
-        "Rent & Housing": [
-            SpendingCategoryTransactionTemplate(merchant: "Luna Apartments", subtitle: "Monthly Rent - ACH Transfer", amount: 1450.00, group: .today),
-            SpendingCategoryTransactionTemplate(merchant: "City Utilities", subtitle: "Water and Gas - AutoPay", amount: 126.40, group: .yesterday),
-            SpendingCategoryTransactionTemplate(merchant: "Home Insurance", subtitle: "Policy Renewal - Visa ending in 4242", amount: 84.70, group: .midMonth),
-            SpendingCategoryTransactionTemplate(merchant: "Building Maintenance", subtitle: "Service Fee - Debit Card", amount: 62.90, group: .midMonth),
-            SpendingCategoryTransactionTemplate(merchant: "Renter Add-on", subtitle: "Appliance Coverage - Apple Pay", amount: 28.50, group: .midMonth)
-        ],
-        "Groceries": [
-            SpendingCategoryTransactionTemplate(merchant: "Whole Foods", subtitle: "Weekly Groceries - Apple Pay", amount: 86.32, group: .today),
-            SpendingCategoryTransactionTemplate(merchant: "Trader Joe's", subtitle: "Household Refill - Visa ending in 4242", amount: 72.15, group: .today),
-            SpendingCategoryTransactionTemplate(merchant: "Costco", subtitle: "Monthly Stock-up - Visa ending in 4242", amount: 214.78, group: .yesterday),
-            SpendingCategoryTransactionTemplate(merchant: "Safeway", subtitle: "Fresh Produce - Apple Pay", amount: 54.20, group: .midMonth),
-            SpendingCategoryTransactionTemplate(merchant: "H Mart", subtitle: "Pantry Items - Debit Card", amount: 38.35, group: .midMonth)
-        ],
-        "Utilities": [
-            SpendingCategoryTransactionTemplate(merchant: "Pacific Electric", subtitle: "Monthly Bill - AutoPay", amount: 118.30, group: .today),
-            SpendingCategoryTransactionTemplate(merchant: "City Water", subtitle: "Utilities Bill - AutoPay", amount: 62.10, group: .yesterday),
-            SpendingCategoryTransactionTemplate(merchant: "Comcast", subtitle: "Home Internet - Visa ending in 4242", amount: 79.99, group: .midMonth),
-            SpendingCategoryTransactionTemplate(merchant: "T-Mobile", subtitle: "Phone Plan - Apple Pay", amount: 44.50, group: .midMonth)
-        ],
-        "Transportation": [
-            SpendingCategoryTransactionTemplate(merchant: "Shell", subtitle: "Fuel - Visa ending in 4242", amount: 52.30, group: .today),
-            SpendingCategoryTransactionTemplate(merchant: "Caltrain", subtitle: "Monthly Pass - Apple Pay", amount: 89.00, group: .yesterday),
-            SpendingCategoryTransactionTemplate(merchant: "Uber", subtitle: "Commute Ride - Apple Pay", amount: 26.40, group: .midMonth),
-            SpendingCategoryTransactionTemplate(merchant: "City Parking", subtitle: "Garage Fee - Debit Card", amount: 18.75, group: .midMonth)
-        ],
-        "Health & Fitness": [
-            SpendingCategoryTransactionTemplate(merchant: "Equinox", subtitle: "Gym Membership - Visa ending in 4242", amount: 69.00, group: .today),
-            SpendingCategoryTransactionTemplate(merchant: "CVS Pharmacy", subtitle: "Prescription Refill - Apple Pay", amount: 24.60, group: .yesterday),
-            SpendingCategoryTransactionTemplate(merchant: "One Medical", subtitle: "Virtual Visit - Apple Pay", amount: 38.00, group: .midMonth),
-            SpendingCategoryTransactionTemplate(merchant: "Vitamin Shoppe", subtitle: "Supplements - Debit Card", amount: 16.40, group: .midMonth)
-        ],
-        "Dining & Social": [
-            SpendingCategoryTransactionTemplate(merchant: "Blue Bottle", subtitle: "Coffee Meetup - Apple Pay", amount: 14.90, group: .today),
-            SpendingCategoryTransactionTemplate(merchant: "Sushi Roku", subtitle: "Dinner with Friends - Visa ending in 4242", amount: 86.40, group: .today),
-            SpendingCategoryTransactionTemplate(merchant: "Sweetgreen", subtitle: "Lunch - Apple Pay", amount: 17.80, group: .yesterday),
-            SpendingCategoryTransactionTemplate(merchant: "Nobu", subtitle: "Weekend Social - Visa ending in 4242", amount: 164.20, group: .midMonth),
-            SpendingCategoryTransactionTemplate(merchant: "Speakeasy SF", subtitle: "Cocktails - Debit Card", amount: 72.50, group: .midMonth)
-        ],
-        "Shopping": [
-            SpendingCategoryTransactionTemplate(merchant: "Amazon", subtitle: "Home Accessories - Visa ending in 4242", amount: 74.30, group: .today),
-            SpendingCategoryTransactionTemplate(merchant: "Uniqlo", subtitle: "Everyday Basics - Apple Pay", amount: 42.00, group: .yesterday),
-            SpendingCategoryTransactionTemplate(merchant: "Sephora", subtitle: "Skin Care - Apple Pay", amount: 58.40, group: .midMonth),
-            SpendingCategoryTransactionTemplate(merchant: "Nike", subtitle: "Training Shoes - Visa ending in 4242", amount: 96.70, group: .midMonth),
-            SpendingCategoryTransactionTemplate(merchant: "Target", subtitle: "Small Essentials - Debit Card", amount: 36.20, group: .midMonth)
-        ],
-        "Subscriptions": [
-            SpendingCategoryTransactionTemplate(merchant: "Netflix", subtitle: "Premium Plan - Visa ending in 4242", amount: 19.99, group: .today),
-            SpendingCategoryTransactionTemplate(merchant: "Spotify", subtitle: "Family Plan - Visa ending in 4242", amount: 16.99, group: .today),
-            SpendingCategoryTransactionTemplate(merchant: "iCloud+", subtitle: "2TB Storage - Apple Pay", amount: 9.99, group: .yesterday),
-            SpendingCategoryTransactionTemplate(merchant: "Adobe Creative Cloud", subtitle: "All Apps Plan - Visa ending in 4242", amount: 54.99, group: .midMonth),
-            SpendingCategoryTransactionTemplate(merchant: "ChatGPT Plus", subtitle: "Monthly Subscription - Apple Pay", amount: 20.00, group: .midMonth),
-            SpendingCategoryTransactionTemplate(merchant: "YouTube Premium", subtitle: "Individual - Visa ending in 4242", amount: 13.99, group: .midMonth)
-        ],
-        "Travel": [
-            SpendingCategoryTransactionTemplate(merchant: "United Airlines", subtitle: "Trip Deposit - Visa ending in 4242", amount: 118.00, group: .today),
-            SpendingCategoryTransactionTemplate(merchant: "Booking.com", subtitle: "Hotel Reservation - Apple Pay", amount: 76.40, group: .yesterday),
-            SpendingCategoryTransactionTemplate(merchant: "Lyft", subtitle: "Airport Ride - Apple Pay", amount: 34.25, group: .midMonth),
-            SpendingCategoryTransactionTemplate(merchant: "Delta", subtitle: "Seat Upgrade - Visa ending in 4242", amount: 46.30, group: .midMonth)
-        ],
-        "Hobbies & Leisure": [
-            SpendingCategoryTransactionTemplate(merchant: "Steam", subtitle: "Game Purchase - Visa ending in 4242", amount: 32.00, group: .today),
-            SpendingCategoryTransactionTemplate(merchant: "AMC Theatres", subtitle: "Movie Tickets - Apple Pay", amount: 28.70, group: .yesterday),
-            SpendingCategoryTransactionTemplate(merchant: "Michaels", subtitle: "Art Supplies - Debit Card", amount: 34.90, group: .midMonth),
-            SpendingCategoryTransactionTemplate(merchant: "Kindle", subtitle: "Book Purchase - Apple Pay", amount: 14.20, group: .midMonth)
-        ]
-    ]
-
-    func transactionGroups(for category: SpendingDetailCategory) -> [SpendingCategoryTransactionGroup] {
-        let templates = Self.categoryTransactionTemplates[category.name] ?? Self.defaultCategoryTemplates
-        let baseTotal = max(templates.reduce(0) { $0 + $1.amount }, 1)
-        let scale = category.amount / baseTotal
-        let monthToken = monthsFull[selectedBarIndex].uppercased()
-
-        return SpendingCategoryTransactionGroupType.allCases.compactMap { group in
-            let items = templates.enumerated().compactMap { index, template -> SpendingCategoryTransaction? in
-                guard template.group == group else { return nil }
-                return SpendingCategoryTransaction(
-                    id: "\(category.id)-\(group.rawValue)-\(index)",
-                    merchant: template.merchant,
-                    subtitle: template.subtitle,
-                    amount: roundedToCents(template.amount * scale)
-                )
-            }
-            guard !items.isEmpty else { return nil }
-            return SpendingCategoryTransactionGroup(
-                id: "\(category.id)-\(group.rawValue)",
-                title: groupTitle(for: group, monthToken: monthToken),
-                items: items
-            )
-        }
-    }
-
-    func groupTitle(for group: SpendingCategoryTransactionGroupType, monthToken: String) -> String {
-        switch group {
-        case .today:
-            return "TODAY"
-        case .yesterday:
-            return "YESTERDAY"
-        case .midMonth:
-            return "\(monthToken) 15"
-        }
-    }
-
-    func roundedToCents(_ value: Double) -> Double {
-        (value * 100).rounded() / 100
-    }
-}
-
-private enum SpendingCategoryTransactionGroupType: String, CaseIterable {
-    case today
-    case yesterday
-    case midMonth
-}
-
-private struct SpendingCategoryTransactionTemplate {
-    let merchant: String
-    let subtitle: String
-    let amount: Double
-    let group: SpendingCategoryTransactionGroupType
-}
 
 private struct SpendingCategoryTransaction: Identifiable {
     let id: String
@@ -1119,10 +992,15 @@ private struct SpendingCategoryTransactionGroup: Identifiable {
 private struct SpendingCategoryTransactionsDetailView: View {
     let category: SpendingDetailCategory
     let monthLabel: String
-    let groups: [SpendingCategoryTransactionGroup]
+    /// 月份字符串，如 "2026-03"，用于向 get-transactions 传递日期范围过滤。
+    let month: String
+    /// "needs" 或 "wants"
+    let flamoraCategory: String
 
     @Environment(\.dismiss) private var dismiss
     @State private var dragOffset: CGFloat = 0
+    @State private var groups: [SpendingCategoryTransactionGroup] = []
+    @State private var isLoading = true
 
     var body: some View {
         ZStack {
@@ -1134,7 +1012,14 @@ private struct SpendingCategoryTransactionsDetailView: View {
 
                     headerSection
 
-                    groupsSection
+                    if isLoading {
+                        ProgressView()
+                            .tint(AppColors.textSecondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, AppSpacing.lg)
+                    } else {
+                        groupsSection
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 18)
@@ -1160,6 +1045,59 @@ private struct SpendingCategoryTransactionsDetailView: View {
                     }
                 }
         )
+        .task {
+            await loadTransactions()
+        }
+    }
+
+    private func loadTransactions() async {
+        let components = month.split(separator: "-").map { Int($0) ?? 0 }
+        guard components.count == 2 else { isLoading = false; return }
+        let year = components[0], mon = components[1]
+        let lastDay = Calendar.current.range(of: .day, in: .month, for: Calendar.current.date(from: DateComponents(year: year, month: mon))!)?.count ?? 30
+        let startDate = "\(month)-01"
+        let endDate = String(format: "%04d-%02d-%02d", year, mon, lastDay)
+
+        let response = try? await APIService.shared.getTransactions(
+            page: 1,
+            limit: 100,
+            category: flamoraCategory,
+            subcategory: category.name,
+            startDate: startDate,
+            endDate: endDate
+        )
+        let txs = response?.transactions ?? []
+        groups = groupTransactionsByDate(txs)
+        isLoading = false
+    }
+
+    private func groupTransactionsByDate(_ transactions: [APITransaction]) -> [SpendingCategoryTransactionGroup] {
+        var byDate: [String: [APITransaction]] = [:]
+        for tx in transactions { byDate[tx.date, default: []].append(tx) }
+
+        let parseFmt = DateFormatter(); parseFmt.dateFormat = "yyyy-MM-dd"
+        let displayFmt = DateFormatter(); displayFmt.dateFormat = "MMM d"
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        let yesterday = cal.date(byAdding: .day, value: -1, to: today)!
+
+        return byDate.keys.sorted(by: >).compactMap { key in
+            guard let date = parseFmt.date(from: key) else { return nil }
+            let items = byDate[key]!.sorted { $0.amount > $1.amount }.map { tx in
+                SpendingCategoryTransaction(
+                    id: tx.id,
+                    merchant: tx.merchantDisplay,
+                    subtitle: tx.flamoraSubcategory?.replacingOccurrences(of: "_", with: " ").capitalized ?? "",
+                    amount: tx.amount
+                )
+            }
+            let groupDate = cal.startOfDay(for: date)
+            let title: String
+            if groupDate == today { title = "TODAY" }
+            else if groupDate == yesterday { title = "YESTERDAY" }
+            else { title = displayFmt.string(from: date).uppercased() }
+            return SpendingCategoryTransactionGroup(id: key, title: title, items: items)
+        }
     }
 }
 
@@ -1277,15 +1215,17 @@ struct TotalSpendingAnalysisDetailView: View {
     init(
         data: TotalSpendingDetailData,
         needsDetailData: SpendingDetailData = .emptyNeeds,
-        wantsDetailData: SpendingDetailData = .emptyWants
+        wantsDetailData: SpendingDetailData = .emptyWants,
+        initialSelectedMonth: Int? = nil
     ) {
         self.data = data
         self.needsDetailData = needsDetailData
         self.wantsDetailData = wantsDetailData
-        let latest = data.availableYears.last ?? 2026
+        let latest = data.availableYears.last ?? Calendar.current.component(.year, from: Date())
         let trend = data.trendsByYear[latest] ?? []
         _selectedYear = State(initialValue: latest)
-        _selectedBarIndex = State(initialValue: trend.indices.last(where: { trend[$0] != nil }) ?? 0)
+        let computed = trend.indices.last(where: { trend[$0] != nil }) ?? 0
+        _selectedBarIndex = State(initialValue: initialSelectedMonth ?? computed)
     }
 
     private var currentTrend: [Double?] {
@@ -1365,10 +1305,17 @@ struct TotalSpendingAnalysisDetailView: View {
                 }
         )
         .fullScreenCover(isPresented: $showNeedsDetail) {
-            SpendingAnalysisDetailView(data: needsDetailData)
+            SpendingAnalysisDetailView(data: needsDetailData, flamoraCategory: "needs")
         }
         .fullScreenCover(isPresented: $showWantsDetail) {
-            SpendingAnalysisDetailView(data: wantsDetailData)
+            SpendingAnalysisDetailView(data: wantsDetailData, flamoraCategory: "wants")
+        }
+        .onChange(of: data.trendsByYear.isEmpty) { _, isEmpty in
+            guard !isEmpty else { return }
+            let trend = data.trendsByYear[selectedYear] ?? []
+            if let lastIndex = trend.indices.last(where: { trend[$0] != nil }) {
+                selectedBarIndex = lastIndex
+            }
         }
     }
 }
@@ -1619,6 +1566,46 @@ private extension TotalSpendingAnalysisDetailView {
         formatter.maximumFractionDigits = 2
         formatter.minimumFractionDigits = 2
         return formatter.string(from: NSNumber(value: value)) ?? "$0.00"
+    }
+}
+
+// MARK: - TotalSpendingDetailContainer
+/// Journey 入口 → 总支出详情的数据加载容器，与 CashflowView 使用同一 CashflowAPICharts 数据源。
+struct TotalSpendingDetailContainer: View {
+    @Environment(PlaidManager.self) private var plaidManager
+    @State private var spendingTotalDetail: TotalSpendingDetailData?
+    @State private var needsDetail: SpendingDetailData?
+    @State private var wantsDetail: SpendingDetailData?
+    @State private var isLoaded = false
+
+    private var currentMonthIndex: Int {
+        Calendar.current.component(.month, from: Date()) - 1
+    }
+
+    var body: some View {
+        TotalSpendingAnalysisDetailView(
+            data: spendingTotalDetail ?? .empty,
+            needsDetailData: needsDetail ?? .emptyNeeds,
+            wantsDetailData: wantsDetail ?? .emptyWants,
+            initialSelectedMonth: currentMonthIndex
+        )
+        .task {
+            guard !isLoaded else { return }
+            await loadData()
+        }
+    }
+
+    private func loadData() async {
+        guard plaidManager.hasLinkedBank else { isLoaded = true; return }
+        let cal = Calendar.current
+        let year = cal.component(.year, from: Date())
+        let through = cal.component(.month, from: Date())
+        let summaries = await CashflowAPICharts.fetchMonthlySummaries(year: year, throughMonth: through)
+        isLoaded = true
+        guard !summaries.isEmpty else { return }
+        spendingTotalDetail = CashflowAPICharts.totalSpendingDetail(summaries: summaries, year: year)
+        needsDetail = CashflowAPICharts.needsSpendingDetail(summaries: summaries, year: year)
+        wantsDetail = CashflowAPICharts.wantsSpendingDetail(summaries: summaries, year: year)
     }
 }
 

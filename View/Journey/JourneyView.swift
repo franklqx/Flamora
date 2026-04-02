@@ -21,6 +21,10 @@ struct JourneyView: View {
     @State private var fireGoal: APIFireGoal? = nil
     /// 已连接银行时由 `get-spending-summary` 推导的当年各月储蓄，供 `SavingsRateCard` 迷你图；nil 时迷你图为空柱。
     @State private var savingsByYearForChart: [Int: [Double?]]?
+    /// 当月 `get-spending-summary`，供 BudgetPlanCard 使用与 CashflowView 同口径的实际支出。
+    @State private var currentMonthSummary: APISpendingSummary?
+    /// 按时间范围缓存的真实投资历史曲线，供首页 PortfolioCard 使用（与 InvestmentView 共用同一套数据）。
+    @State private var portfolioHistoryCache: [String: [PortfolioDataPoint]] = [:]
     @State private var quoteIndex: Int = 0
     @State private var quoteVisible: Bool = true
     var onFireTapped: (() -> Void)? = nil
@@ -55,6 +59,9 @@ struct JourneyView: View {
                             portfolioBalance: netWorthSummary.totalNetWorth,
                             gainAmount: netWorthSummary.growthAmount ?? 0,
                             gainPercentage: netWorthSummary.growthPercentage ?? 0,
+                            realChartData: plaidManager.hasLinkedBank ? { [portfolioHistoryCache] range in
+                                portfolioHistoryCache[journeyRangeKey(range)]
+                            } : nil,
                             isConnected: plaidManager.hasLinkedBank,
                             onConnectTapped: {
                                 guard subscriptionManager.isPremium else {
@@ -79,6 +86,8 @@ struct JourneyView: View {
                                 BudgetPlanCard(
                                     apiBudget: apiBudget,
                                     daysLeft: daysLeftInCurrentMonth,
+                                    summaryNeedsSpent: currentMonthSummary?.needs.total,
+                                    summaryWantsSpent: currentMonthSummary?.wants.total,
                                     onSetupBudget: { plaidManager.showBudgetSetup = true },
                                     action: { onOpenCashflowDestination?(.totalSpending) }
                                 )
@@ -229,13 +238,25 @@ private extension JourneyView {
             apiBudget = .empty
             fireGoal = fire
             savingsByYearForChart = nil
+            currentMonthSummary = nil
+            portfolioHistoryCache = [:]
             print("📍 [Flow] loadData skipped budget fetch — hasLinkedBank=false")
             return
         }
 
+        // 优先用缓存填充，避免首帧空白
+        if portfolioHistoryCache.isEmpty {
+            portfolioHistoryCache = TabContentCache.shared.portfolioHistory
+        }
+        if savingsByYearForChart == nil {
+            savingsByYearForChart = TabContentCache.shared.cashflowSavingsByYear
+        }
+
         async let budgetTask = fetchBudget(month: monthStr)
-        async let savingsChartTask = fetchSavingsByYearForMiniChart()
-        let (nw, budget, fire, savingsLookup) = await (nwTask, budgetTask, fireTask, savingsChartTask)
+        async let spendingDataTask = fetchSpendingData()
+        async let portfolioHistoryTask = fetchAllPortfolioHistory()
+        let (nw, budget, fire, spendingData, portfolioHistory) = await (nwTask, budgetTask, fireTask, spendingDataTask, portfolioHistoryTask)
+
         if let nw {
             netWorthSummary = nw
             let hasInv = nw.accounts.contains { $0.type == "investment" }
@@ -251,18 +272,43 @@ private extension JourneyView {
             print("📍 [Flow] budget fetch returned nil (no budget in DB for \(monthStr))")
         }
         fireGoal = fire
-        savingsByYearForChart = savingsLookup
+        savingsByYearForChart = spendingData.savingsByYear
+        currentMonthSummary = spendingData.currentMonthSummary
+        portfolioHistoryCache = portfolioHistory
+        // 写入共享缓存，供 InvestmentView / CashflowView 复用
+        TabContentCache.shared.setPortfolioHistory(portfolioHistory)
+        if let savings = spendingData.savingsByYear {
+            TabContentCache.shared.setCashflowSavingsByYear(savings)
+        }
         print("📍 [Flow] hasBudgetData=\(hasBudgetData), hasLinkedBank=\(plaidManager.hasLinkedBank)")
     }
 
-    /// 与 Cash Flow 同源：多月份 `get-spending-summary` → 每月 max(0, income − spending)。
-    private func fetchSavingsByYearForMiniChart() async -> [Int: [Double?]]? {
+    /// 统一拉取多月 summary，返回储蓄趋势与当月 summary（与 CashflowView 同口径）。
+    private func fetchSpendingData() async -> (savingsByYear: [Int: [Double?]]?, currentMonthSummary: APISpendingSummary?) {
         let cal = Calendar.current
         let year = cal.component(.year, from: Date())
         let through = cal.component(.month, from: Date())
         let summaries = await CashflowAPICharts.fetchMonthlySummaries(year: year, throughMonth: through)
-        guard !summaries.isEmpty else { return nil }
-        return CashflowAPICharts.savingsMonthlyAmountsByYear(summaries: summaries, year: year)
+        guard !summaries.isEmpty else { return (nil, nil) }
+        let savingsByYear = CashflowAPICharts.savingsMonthlyAmountsByYear(summaries: summaries, year: year)
+        let currentSummary = summaries[through - 1]
+        return (savingsByYear, currentSummary)
+    }
+
+    private func fetchAllPortfolioHistory() async -> [String: [PortfolioDataPoint]] {
+        let ranges = ["1w", "1m", "3m", "ytd", "all"]
+        var result: [String: [PortfolioDataPoint]] = [:]
+        await withTaskGroup(of: (String, [PortfolioDataPoint]).self) { group in
+            for r in ranges {
+                group.addTask {
+                    let pts = (try? await APIService.shared.getPortfolioHistory(range: r))?.points
+                        .map { PortfolioDataPoint(date: journeyParseDate($0.date), value: $0.value) } ?? []
+                    return (r, pts)
+                }
+            }
+            for await (r, pts) in group { result[r] = pts }
+        }
+        return result
     }
 
     private func fetchNetWorth() async -> APINetWorthSummary? {
@@ -285,6 +331,25 @@ private extension JourneyView {
         f.dateFormat = "yyyy-MM"
         return f.string(from: Date())
     }
+}
+
+// MARK: - Portfolio range helpers (file-private, mirrors InvestmentView)
+
+private func journeyRangeKey(_ range: PortfolioTimeRange) -> String {
+    switch range {
+    case .oneWeek:     return "1w"
+    case .oneMonth:    return "1m"
+    case .threeMonths: return "3m"
+    case .ytd:         return "ytd"
+    case .all:         return "all"
+    }
+}
+
+private func journeyParseDate(_ str: String) -> Date {
+    let f = DateFormatter()
+    f.dateFormat = "yyyy-MM-dd"
+    f.locale = Locale(identifier: "en_US_POSIX")
+    return f.date(from: str) ?? Date()
 }
 
 #Preview {

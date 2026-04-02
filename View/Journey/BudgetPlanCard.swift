@@ -8,6 +8,10 @@ import SwiftUI
 struct BudgetPlanCard: View {
     let apiBudget: APIMonthlyBudget
     let daysLeft: Int
+    /// 来自 `get-spending-summary` 的当月 Needs 实际支出；nil 时回退到 `apiBudget.needsSpent`。
+    var summaryNeedsSpent: Double? = nil
+    /// 来自 `get-spending-summary` 的当月 Wants 实际支出；nil 时回退到 `apiBudget.wantsSpent`。
+    var summaryWantsSpent: Double? = nil
     var onSetupBudget: (() -> Void)? = nil
     var action: (() -> Void)? = nil
 
@@ -34,9 +38,9 @@ struct BudgetPlanCard: View {
         && apiBudget.selectedPlan != nil
     }
 
-    private var spent: Double {
-        (apiBudget.needsSpent ?? 0) + (apiBudget.wantsSpent ?? 0)
-    }
+    private var resolvedNeedsSpent: Double { summaryNeedsSpent ?? (apiBudget.needsSpent ?? 0) }
+    private var resolvedWantsSpent: Double { summaryWantsSpent ?? (apiBudget.wantsSpent ?? 0) }
+    private var spent: Double { resolvedNeedsSpent + resolvedWantsSpent }
     private var limit: Double {
         apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget
     }
@@ -191,8 +195,8 @@ struct BudgetPlanCard: View {
                     GeometryReader { geo in
                         let w = max(geo.size.width, 1)
                         let safeLimit = max(limit, 1)
-                        let nRatio = min(max((apiBudget.needsSpent ?? 0) / safeLimit, 0), 1)
-                        let wRatio = min(max((apiBudget.wantsSpent ?? 0) / safeLimit, 0), 1)
+                        let nRatio = min(max(resolvedNeedsSpent / safeLimit, 0), 1)
+                        let wRatio = min(max(resolvedWantsSpent / safeLimit, 0), 1)
                         ZStack(alignment: .leading) {
                             Capsule()
                                 .fill(AppColors.progressTrack)

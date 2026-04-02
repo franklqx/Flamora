@@ -11,6 +11,8 @@ struct SavingsTargetCard: View {
     @Binding var currentAmount: Double
     var targetAmount: Double
     var isConnected: Bool = true
+    /// 仅在 isConnected == true 时生效：Budget Setup 尚未完成时显示空态引导，不展示目标数值。
+    var hasBudgetSetup: Bool = true
     var onAdd: () -> Void
     var onCardTap: (() -> Void)? = nil
 
@@ -57,7 +59,20 @@ struct SavingsTargetCard: View {
                     .padding(.horizontal, AppSpacing.cardPadding)
 
                 Group {
-                    if isConnected {
+                    if isConnected && !hasBudgetSetup {
+                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                            Text("$—")
+                                .font(.cardFigurePrimary)
+                                .foregroundStyle(AppColors.textTertiary)
+                                .padding(.top, AppSpacing.md)
+                            Text("Complete budget setup to track savings")
+                                .font(.footnoteRegular)
+                                .foregroundStyle(AppColors.textTertiary)
+                            Capsule()
+                                .fill(AppColors.progressTrack)
+                                .frame(height: (AppSpacing.sm + AppSpacing.xs) / 2)
+                        }
+                    } else if isConnected {
                         VStack(alignment: .leading, spacing: 0) {
                             if currentAmount > 0 {
                                 HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {

@@ -27,7 +27,8 @@ struct AccountDetailView: View {
 
     private var holdings: [Holding] { apiHoldings }
 
-    /// 尚无账户级净值历史 API：用当前余额生成简短趋势线占位。
+    /// No account-level balance history API exists yet.
+    /// Show a flat line at current balance so the chart is honest (no artificial +/-).
     private var filteredSnapshots: [BalanceSnapshot] {
         let cal = Calendar.current
         let now = Date()
@@ -38,10 +39,9 @@ struct AccountDetailView: View {
         case .threeMonths: cutoff = cal.date(byAdding: .month,      value: -3,  to: now) ?? now
         case .oneYear:     cutoff = cal.date(byAdding: .year,       value: -1,  to: now) ?? now
         }
-        let startBal = max(account.balance * 0.995, 0.01)
         return [
-            BalanceSnapshot(id: "trend-a", accountId: account.id, date: cutoff, balance: startBal),
-            BalanceSnapshot(id: "trend-b", accountId: account.id, date: now, balance: account.balance)
+            BalanceSnapshot(id: "trend-a", accountId: account.id, date: cutoff, balance: account.balance),
+            BalanceSnapshot(id: "trend-b", accountId: account.id, date: now,    balance: account.balance)
         ]
     }
 
@@ -373,10 +373,12 @@ struct AccountDetailView: View {
     }
 
     private func loadTransactionsForAccount() async -> [Transaction] {
-        guard let response = try? await APIService.shared.getTransactions(page: 1, limit: 100) else { return [] }
-        return response.transactions
-            .filter { $0.plaidAccountId == account.id }
-            .map { Transaction(from: $0) }
+        guard let response = try? await APIService.shared.getTransactions(
+            page: 1,
+            limit: 100,
+            accountId: account.id
+        ) else { return [] }
+        return response.transactions.map { Transaction(from: $0) }
     }
 
     private var accentColor: Color {

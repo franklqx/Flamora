@@ -87,10 +87,10 @@ struct SavingsRateCard: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                         HStack(alignment: .bottom, spacing: AppSpacing.sm) {
-                            ForEach(0..<6, id: \.self) { _ in
+                            ForEach(Array([14, 22, 10, 28, 16, 20].enumerated()), id: \.offset) { _, h in
                                 RoundedRectangle(cornerRadius: 3)
                                     .fill(AppColors.surfaceBorder)
-                                    .frame(width: 6, height: CGFloat.random(in: 8...32))
+                                    .frame(width: 6, height: CGFloat(h))
                             }
                         }
                         .frame(width: 110)
@@ -116,20 +116,19 @@ struct SavingsRateCard: View {
 
     private func miniChart(height: CGFloat) -> some View {
         let entries = last6MonthsSavings()
-        // Scale so the tallest bar among the six uses full `height` (not targetAmount / first column).
+        // Scale so the tallest bar among the six uses full `height`.
         let dataMax = entries.compactMap { $0.0 }.max() ?? 0
         let scaleMax = max(dataMax, 1)
 
         return HStack(alignment: .bottom, spacing: AppSpacing.sm) {
             ForEach(0..<6, id: \.self) { i in
                 let (amount, metTarget) = entries[i]
-                let barHeight: CGFloat = amount == nil
-                    ? 4
-                    : max(4, height * CGFloat((amount ?? 0) / scaleMax))
+                let barHeight: CGFloat = amount.map { max(4, height * CGFloat($0 / scaleMax)) } ?? 4
 
                 RoundedRectangle(cornerRadius: 3)
                     .fill(barFill(amount: amount, metTarget: metTarget))
                     .frame(width: 6, height: barHeight)
+                    .opacity(amount == nil ? 0.25 : 1.0)
             }
         }
         .frame(width: 110, height: height, alignment: .trailing)

@@ -13,6 +13,8 @@ struct InvestmentView: View {
     @State private var apiNetWorth: APINetWorthSummary? = nil
     /// 来自 `get-investment-holdings`；断连或未拉取成功时为 nil。
     @State private var apiHoldingsPayload: APIInvestmentHoldingsPayload?
+    /// 按时间范围缓存的真实历史曲线；nil 时 PortfolioCard 回退 mock。
+    @State private var portfolioHistoryCache: [String: [PortfolioDataPoint]] = [:]
 
     var body: some View {
         connectedView
@@ -27,8 +29,9 @@ struct InvestmentView: View {
                     VStack(alignment: .leading, spacing: AppSpacing.lg) {
                         PortfolioCard(
                             portfolioBalance: portfolioBalanceDisplay,
-                            gainAmount: apiNetWorth?.growthAmount ?? 0,
-                            gainPercentage: apiNetWorth?.growthPercentage ?? 0,
+                            gainAmount: apiHoldingsPayload?.summary.totalGainLoss ?? apiNetWorth?.growthAmount ?? 0,
+                            gainPercentage: apiHoldingsPayload?.summary.totalGainLossPct ?? apiNetWorth?.growthPercentage ?? 0,
+                            realChartData: { range in portfolioHistoryCache[rangeKey(range)] },
                             isConnected: plaidManager.hasLinkedBank,
                             onConnectTapped: {
                                 Task { await plaidManager.startLinkFlow() }
@@ -46,7 +49,8 @@ struct InvestmentView: View {
                         AccountsCard(
                             accounts: computedAccounts,
                             isConnected: plaidManager.hasLinkedBank,
-                            onAddAccount: { Task { await plaidManager.startLinkFlow() } }
+                            onAddAccount: { Task { await plaidManager.startLinkFlow() } },
+                            lastSyncedAt: apiNetWorth?.lastSyncedAt
                         )
                         .padding(.horizontal, AppSpacing.screenPadding)
                     }
@@ -60,6 +64,12 @@ struct InvestmentView: View {
             if apiNetWorth == nil {
                 apiNetWorth = TabContentCache.shared.investmentNetWorth
             }
+            if portfolioHistoryCache.isEmpty {
+                portfolioHistoryCache = TabContentCache.shared.portfolioHistory
+            }
+            if apiHoldingsPayload == nil {
+                apiHoldingsPayload = TabContentCache.shared.investmentHoldings
+            }
         }
         .task {
             await loadInvestmentData()
@@ -72,8 +82,11 @@ struct InvestmentView: View {
 
 // MARK: - Data Loading & Computed Data
 private extension InvestmentView {
-    /// Investment Tab 主数字优先用净资产里的「投资账户」合计，与持仓 API 一致。
+    /// Investment Tab 主数字：持仓 API 总值 → 净资产投资合计 → 净资产总值，依次回退。
     var portfolioBalanceDisplay: Double {
+        if let h = apiHoldingsPayload, h.summary.totalValue > 0 {
+            return h.summary.totalValue
+        }
         guard let nw = apiNetWorth else { return 0 }
         if let inv = nw.breakdown.investmentTotal, inv > 0 {
             return inv
@@ -100,13 +113,48 @@ private extension InvestmentView {
         guard plaidManager.hasLinkedBank else {
             apiNetWorth = nil
             apiHoldingsPayload = nil
+            portfolioHistoryCache = [:]
             TabContentCache.shared.setInvestmentNetWorth(nil)
             return
         }
         let nw = await fetchNetWorth()
         apiNetWorth = nw
         TabContentCache.shared.setInvestmentNetWorth(nw)
-        apiHoldingsPayload = await fetchHoldingsPayload()
+        async let holdingsTask = fetchHoldingsPayload()
+        async let historyTask  = fetchAllPortfolioHistory()
+        let (h, hist) = await (holdingsTask, historyTask)
+        apiHoldingsPayload    = h
+        portfolioHistoryCache = hist
+        TabContentCache.shared.setPortfolioHistory(hist)
+        TabContentCache.shared.setInvestmentHoldings(h)
+    }
+
+    private func fetchAllPortfolioHistory() async -> [String: [PortfolioDataPoint]] {
+        let ranges = ["1w", "1m", "3m", "ytd", "all"]
+        var result: [String: [PortfolioDataPoint]] = [:]
+        await withTaskGroup(of: (String, [PortfolioDataPoint]).self) { group in
+            for r in ranges {
+                group.addTask {
+                    let pts = (try? await APIService.shared.getPortfolioHistory(range: r))?.points
+                        .map { PortfolioDataPoint(date: parseDate($0.date), value: $0.value) } ?? []
+                    return (r, pts)
+                }
+            }
+            for await (r, pts) in group {
+                result[r] = pts
+            }
+        }
+        return result
+    }
+
+    private func rangeKey(_ range: PortfolioTimeRange) -> String {
+        switch range {
+        case .oneWeek:      return "1w"
+        case .oneMonth:     return "1m"
+        case .threeMonths:  return "3m"
+        case .ytd:          return "ytd"
+        case .all:          return "all"
+        }
     }
 
     private func fetchHoldingsPayload() async -> APIInvestmentHoldingsPayload? {
@@ -124,10 +172,37 @@ private extension InvestmentView {
         }
     }
 
+    /// 按机构名称聚合账户：同一银行绑定只显示一条，余额求和。
     var computedAccounts: [Account] {
         guard let nw = apiNetWorth, !nw.accounts.isEmpty else { return [] }
-        return nw.accounts.map { Account.fromNetWorthAccount($0) }
+        let all = nw.accounts.map { Account.fromNetWorthAccount($0) }
+        var groups: [String: (representative: Account, totalBalance: Double)] = [:]
+        for acc in all {
+            let key = acc.institution.isEmpty ? "Unknown" : acc.institution
+            if let existing = groups[key] {
+                groups[key] = (representative: existing.representative, totalBalance: existing.totalBalance + acc.balance)
+            } else {
+                groups[key] = (representative: acc, totalBalance: acc.balance)
+            }
+        }
+        return groups.map { (_, data) in
+            Account(
+                id: data.representative.id,
+                institution: data.representative.institution,
+                accountType: data.representative.accountType,
+                balance: data.totalBalance,
+                connected: true,
+                logoUrl: data.representative.logoUrl
+            )
+        }.sorted { $0.institution < $1.institution }
     }
+}
+
+private func parseDate(_ str: String) -> Date {
+    let f = DateFormatter()
+    f.dateFormat = "yyyy-MM-dd"
+    f.locale = Locale(identifier: "en_US_POSIX")
+    return f.date(from: str) ?? Date()
 }
 
 #Preview {

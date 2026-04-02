@@ -26,6 +26,30 @@ struct MainTabView: View {
 
             // 内容区域 — 参与翻转，header 不参与
             ZStack {
+                // Tab 视图树始终保留在层级中（不随 isSimulatorShown 销毁），切换仅改变可见性
+                ZStack {
+                    JourneyContainerView(
+                        onFireTapped: flipPage,
+                        onInvestmentTapped: { selectedTab = 2 },
+                        onOpenCashflowDestination: { journeyCashflowSecondary = $0 }
+                    )
+                    .opacity(selectedTab == 0 ? 1 : 0)
+                    .allowsHitTesting(selectedTab == 0)
+
+                    CashflowView()
+                        .opacity(selectedTab == 1 ? 1 : 0)
+                        .allowsHitTesting(selectedTab == 1)
+
+                    InvestmentView()
+                        .opacity(selectedTab == 2 ? 1 : 0)
+                        .allowsHitTesting(selectedTab == 2)
+                }
+                .background(Color.clear)
+                .transaction { $0.animation = nil }
+                .opacity(isSimulatorShown ? 0 : 1)
+                .allowsHitTesting(!isSimulatorShown)
+
+                // 模拟器覆盖层 — 仅在展开时渲染
                 if isSimulatorShown {
                     AppColors.backgroundPrimary.ignoresSafeArea()
                         .zIndex(1)
@@ -36,29 +60,6 @@ struct MainTabView: View {
                         onFireToggle: flipPage
                     )
                     .zIndex(2)
-                } else {
-                    Group {
-                        switch selectedTab {
-                        case 0:
-                            JourneyContainerView(
-                                onFireTapped: flipPage,
-                                onInvestmentTapped: { selectedTab = 2 },
-                                onOpenCashflowDestination: { journeyCashflowSecondary = $0 }
-                            )
-                        case 1:
-                            CashflowView()
-                        case 2:
-                            InvestmentView()
-                        default:
-                            JourneyContainerView(
-                                onFireTapped: flipPage,
-                                onInvestmentTapped: { selectedTab = 2 },
-                                onOpenCashflowDestination: { journeyCashflowSecondary = $0 }
-                            )
-                        }
-                    }
-                    .background(Color.clear)
-                    .transaction { $0.animation = nil }
                 }
             }
             // 用透明占位把内容推到 header 下方
@@ -106,13 +107,11 @@ struct MainTabView: View {
         .fullScreenCover(item: $journeyCashflowSecondary) { destination in
             switch destination {
             case .totalSpending:
-                TotalSpendingAnalysisDetailView(
-                    data: .empty,
-                    needsDetailData: .emptyNeeds,
-                    wantsDetailData: .emptyWants
-                )
+                TotalSpendingDetailContainer()
+                    .environment(plaidManager)
             case .savingsOverview:
                 SavingsTargetDetailView2Container()
+                    .environment(plaidManager)
             }
         }
     }

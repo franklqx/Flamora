@@ -94,8 +94,8 @@ serve(async (req) => {
         .gte('date', monthStart)
         .lt('date', monthEndStr)
 
-      needsSpent = (needsData || []).reduce((sum, t) => sum + Math.abs(t.amount), 0)
-      wantsSpent = (wantsData || []).reduce((sum, t) => sum + Math.abs(t.amount), 0)
+      needsSpent = (needsData || []).filter(t => t.amount > 0).reduce((sum, t) => sum + t.amount, 0)
+      wantsSpent = (wantsData || []).filter(t => t.amount > 0).reduce((sum, t) => sum + t.amount, 0)
     }
 
     // 计算进度百分比

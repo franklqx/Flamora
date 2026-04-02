@@ -189,10 +189,23 @@ class APIService {
         return try await perform(request)
     }
 
-    func getTransactions(page: Int = 1, limit: Int = 20, category: String? = nil, pendingReview: Bool? = nil) async throws -> APITransactionsResponse {
+    func getTransactions(
+        page: Int = 1,
+        limit: Int = 20,
+        category: String? = nil,
+        subcategory: String? = nil,
+        startDate: String? = nil,
+        endDate: String? = nil,
+        pendingReview: Bool? = nil,
+        accountId: String? = nil
+    ) async throws -> APITransactionsResponse {
         var params: [String: String] = ["page": "\(page)", "limit": "\(limit)"]
         if let cat = category { params["category"] = cat }
+        if let sub = subcategory { params["subcategory"] = sub }
+        if let s = startDate { params["start_date"] = s }
+        if let e = endDate { params["end_date"] = e }
         if let pr = pendingReview { params["pending_review"] = pr ? "true" : "false" }
+        if let aid = accountId { params["account_id"] = aid }
         let request = try await authenticatedRequest(function: "get-transactions", queryParams: params)
         return try await perform(request)
     }
@@ -204,6 +217,15 @@ class APIService {
 
     func getInvestmentHoldings() async throws -> APIInvestmentHoldingsPayload {
         let request = try await authenticatedRequest(function: "get-investment-holdings")
+        return try await perform(request)
+    }
+
+    func getPortfolioHistory(range: String) async throws -> APIPortfolioHistory {
+        var request = try await authenticatedRequest(function: "get-portfolio-history")
+        if var components = URLComponents(url: request.url!, resolvingAgainstBaseURL: false) {
+            components.queryItems = [URLQueryItem(name: "range", value: range)]
+            request.url = components.url
+        }
         return try await perform(request)
     }
 
@@ -242,9 +264,21 @@ struct APISpendingSummary: Codable {
     let month: String
     let totalSpending: Double
     let totalIncome: Double
+    /// Active income (salary/payroll/wages)；旧版 API 不含此字段时回落到 totalIncome。
+    let activeIncome: Double?
+    /// Passive income (interest/dividends/rental)；旧版 API 不含此字段时回落到 0。
+    let passiveIncome: Double?
+    let incomeActiveSources: [APIIncomeSource]?
+    let incomePassiveSources: [APIIncomeSource]?
     let needs: APISpendingCategoryBucket
     let wants: APISpendingCategoryBucket
     let savings: APISpendingSavingsBucket
+}
+
+struct APIIncomeSource: Codable {
+    let name: String
+    let amount: Double
+    let percentage: Double
 }
 
 struct APISpendingCategoryBucket: Codable {
@@ -364,4 +398,15 @@ struct APIAvgSpending: Codable {
     let months: Int
     let needsAvg: Double
     let wantsAvg: Double
+}
+
+/// 与 Edge Function `get-portfolio-history` 的 `data` 对齐。
+struct APIPortfolioHistory: Codable {
+    let points: [APIPortfolioPoint]
+    let range: String
+}
+
+struct APIPortfolioPoint: Codable {
+    let date: String
+    let value: Double
 }

@@ -9,6 +9,7 @@ struct AccountsCard: View {
     let accounts: [Account]
     var isConnected: Bool = true
     var onAddAccount: (() -> Void)? = nil
+    var lastSyncedAt: String? = nil
     @State private var selectedAccount: Account?
 
     var body: some View {
@@ -34,7 +35,7 @@ struct AccountsCard: View {
                 // Account rows
                 ForEach(accounts.indices, id: \.self) { index in
                     Button(action: { selectedAccount = accounts[index] }) {
-                        AccountRow(account: accounts[index])
+                        AccountRow(account: accounts[index], lastSyncedAt: lastSyncedAt)
                     }
                     .buttonStyle(.plain)
 
@@ -121,6 +122,7 @@ struct AccountsCard: View {
 
 private struct AccountRow: View {
     let account: Account
+    var lastSyncedAt: String? = nil
 
     var body: some View {
         HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
@@ -187,7 +189,17 @@ private struct AccountRow: View {
         }
     }
 
-    private var lastUpdatedLabel: String { "Updated recently" }
+    private var lastUpdatedLabel: String {
+        guard let iso = lastSyncedAt,
+              let date = ISO8601DateFormatter().date(from: iso) else {
+            return "Updated recently"
+        }
+        let diff = Int(Date().timeIntervalSince(date))
+        if diff < 60 { return "Updated just now" }
+        if diff < 3600 { return "Updated \(diff / 60)m ago" }
+        if diff < 86400 { return "Updated \(diff / 3600)h ago" }
+        return "Updated \(diff / 86400)d ago"
+    }
 
     private func formatCurrency(_ value: Double) -> String {
         let f = NumberFormatter()

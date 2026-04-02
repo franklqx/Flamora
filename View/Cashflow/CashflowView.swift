@@ -101,6 +101,7 @@ struct CashflowView: View {
                             currentAmount: $currentSavings,
                             targetAmount: apiBudget.savingsBudget,
                             isConnected: plaidManager.hasLinkedBank,
+                            hasBudgetSetup: hasBudget,
                             onAdd: { showSavingsInput = true },
                             onCardTap: { showSavingsSummary = true }
                         )
@@ -126,6 +127,9 @@ struct CashflowView: View {
                 }
             }
         }
+        .onAppear {
+            restoreFromCache()
+        }
         .task {
             await loadCashflowData()
         }
@@ -145,7 +149,9 @@ struct CashflowView: View {
         .fullScreenCover(isPresented: $showTotalIncomeDetail) {
             TotalIncomeDetailView(
                 data: cashflowTotalIncomeDetail ?? .empty,
-                initialSelectedMonth: currentMonthIndex
+                initialSelectedMonth: currentMonthIndex,
+                activeData: cashflowActiveIncomeDetail,
+                passiveData: cashflowPassiveIncomeDetail
             )
         }
         .fullScreenCover(isPresented: $showActiveIncomeDetail) {
@@ -164,14 +170,15 @@ struct CashflowView: View {
             TotalSpendingAnalysisDetailView(
                 data: cashflowSpendingTotalDetail ?? .empty,
                 needsDetailData: cashflowNeedsDetail ?? .emptyNeeds,
-                wantsDetailData: cashflowWantsDetail ?? .emptyWants
+                wantsDetailData: cashflowWantsDetail ?? .emptyWants,
+                initialSelectedMonth: currentMonthIndex
             )
         }
         .fullScreenCover(isPresented: $showNeedsSpendingDetail) {
-            SpendingAnalysisDetailView(data: cashflowNeedsDetail ?? .emptyNeeds)
+            SpendingAnalysisDetailView(data: cashflowNeedsDetail ?? .emptyNeeds, flamoraCategory: "needs")
         }
         .fullScreenCover(isPresented: $showWantsSpendingDetail) {
-            SpendingAnalysisDetailView(data: cashflowWantsDetail ?? .emptyWants)
+            SpendingAnalysisDetailView(data: cashflowWantsDetail ?? .emptyWants, flamoraCategory: "wants")
         }
         .sheet(isPresented: $showSavingsInput) {
             SavingsInputSheet(amount: $currentSavings)
@@ -199,6 +206,26 @@ struct CashflowView: View {
 // MARK: - Data Loading
 
 private extension CashflowView {
+    func restoreFromCache() {
+        let cache = TabContentCache.shared
+        if let b = cache.cashflowBudget, apiBudget.budgetId.isEmpty {
+            apiBudget = b
+            currentSavings = b.savingsActual ?? currentSavings
+        }
+        if let savings = cache.cashflowSavingsByYear, cashflowSavingsByYear == nil {
+            cashflowSavingsByYear = savings
+        }
+        if let total = cache.cashflowSpendingTotalDetail, cashflowSpendingTotalDetail == nil {
+            cashflowSpendingTotalDetail = total
+        }
+        if let needs = cache.cashflowNeedsDetail, cashflowNeedsDetail == nil {
+            cashflowNeedsDetail = needs
+        }
+        if let wants = cache.cashflowWantsDetail, cashflowWantsDetail == nil {
+            cashflowWantsDetail = wants
+        }
+    }
+
     func loadCashflowData() async {
         let monthStr = apiMonthString(from: Date())
 
@@ -229,6 +256,7 @@ private extension CashflowView {
             needsTotal = b.needsSpent ?? 0
             wantsTotal = b.wantsSpent ?? 0
             totalSpend = (b.needsSpent ?? 0) + (b.wantsSpent ?? 0)
+            TabContentCache.shared.setCashflowBudget(b)
         }
 
         let cal = Calendar.current
@@ -250,13 +278,19 @@ private extension CashflowView {
         }
 
         if !summaries.isEmpty {
-            cashflowSpendingTotalDetail = CashflowAPICharts.totalSpendingDetail(summaries: summaries, year: year)
-            cashflowNeedsDetail = CashflowAPICharts.needsSpendingDetail(summaries: summaries, year: year)
-            cashflowWantsDetail = CashflowAPICharts.wantsSpendingDetail(summaries: summaries, year: year)
+            let total = CashflowAPICharts.totalSpendingDetail(summaries: summaries, year: year)
+            let needs = CashflowAPICharts.needsSpendingDetail(summaries: summaries, year: year)
+            let wants = CashflowAPICharts.wantsSpendingDetail(summaries: summaries, year: year)
+            let savings = CashflowAPICharts.savingsMonthlyAmountsByYear(summaries: summaries, year: year)
+            cashflowSpendingTotalDetail = total
+            cashflowNeedsDetail = needs
+            cashflowWantsDetail = wants
             cashflowTotalIncomeDetail = CashflowAPICharts.totalIncomeDetail(summaries: summaries, year: year)
             cashflowActiveIncomeDetail = CashflowAPICharts.activeIncomeDetail(summaries: summaries, year: year)
             cashflowPassiveIncomeDetail = CashflowAPICharts.passiveIncomeDetail(summaries: summaries, year: year)
-            cashflowSavingsByYear = CashflowAPICharts.savingsMonthlyAmountsByYear(summaries: summaries, year: year)
+            cashflowSavingsByYear = savings
+            TabContentCache.shared.setCashflowSavingsByYear(savings)
+            TabContentCache.shared.setCashflowSpendingDetails(total: total, needs: needs, wants: wants)
         } else {
             cashflowSpendingTotalDetail = nil
             cashflowNeedsDetail = nil

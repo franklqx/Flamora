@@ -55,6 +55,7 @@ serve(async (req) => {
     const endDate = url.searchParams.get('end_date')            // 2026-01-31
     const pendingReview = url.searchParams.get('pending_review') // true/false
     const search = url.searchParams.get('search')               // 搜索商户名
+    const accountId = url.searchParams.get('account_id')        // plaid_accounts.id (UUID)
 
     // ============================================================
     // 3. 构建查询
@@ -91,6 +92,10 @@ serve(async (req) => {
 
     if (search) {
       query = query.or(`merchant_name.ilike.%${search}%,name.ilike.%${search}%`)
+    }
+
+    if (accountId) {
+      query = query.eq('plaid_account_id', accountId)
     }
 
     // 分页

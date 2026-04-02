@@ -45,6 +45,8 @@ struct PortfolioCard: View {
     let portfolioBalance: Double
     let gainAmount: Double
     let gainPercentage: Double
+    /// Real historical data provided by parent. nil = not yet loaded.
+    var realChartData: ((PortfolioTimeRange) -> [PortfolioDataPoint]?)? = nil
     /// First account link date. Defaults to 30 days ago so mock data shows the chart immediately.
     var accountLinkedDate: Date = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
     var isConnected: Bool = true
@@ -63,7 +65,14 @@ struct PortfolioCard: View {
         return days >= 7
     }
 
-    private var currentData: [PortfolioDataPoint] { mockData(for: selectedRange) }
+    private var currentData: [PortfolioDataPoint] {
+        // 没有 provider → Preview 模式，使用 mock
+        guard let provider = realChartData else {
+            return mockData(for: selectedRange)
+        }
+        // 有 provider → 真实数据（可能仍在加载中，返回空数组而非 mock）
+        return provider(selectedRange) ?? []
+    }
 
     private var displayedValue: Double {
         guard let idx = hoveredIndex, idx < currentData.count else { return portfolioBalance }
@@ -91,7 +100,7 @@ struct PortfolioCard: View {
                 .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
 
             if isConnected {
-                if hasEnoughData {
+                if !currentData.isEmpty {
                     chartView
                 } else {
                     noDataPlaceholder

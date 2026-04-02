@@ -123,20 +123,53 @@ serve(async (req) => {
       .single()
 
     // ============================================================
-    // 6. 获取当月收入
+    // 6. 获取当月收入（含 subcategory 以区分 active / passive）
     // ============================================================
     const { data: incomeTxns } = await supabase
       .from('transactions')
-      .select('amount')
+      .select('amount, flamora_subcategory, merchant_name, name')
       .eq('user_id', user.id)
       .eq('flamora_category', 'income')
       .eq('pending', false)
       .gte('date', startDate)
       .lte('date', endDate)
 
-    const incomeTotal = (incomeTxns || []).reduce(
-      (sum: number, tx: any) => sum + Math.abs(tx.amount), 0
-    )
+    // 被动收入子类别（不区分大小写匹配前缀/全名）
+    const PASSIVE_SUBS = new Set([
+      'interest', 'dividend', 'dividends', 'rental', 'rental_income',
+      'investment_income', 'royalty', 'royalties', 'passive'
+    ])
+
+    let activeIncome = 0
+    let passiveIncome = 0
+    const activeSourceMap: Record<string, number> = {}
+    const passiveSourceMap: Record<string, number> = {}
+
+    for (const tx of incomeTxns || []) {
+      const abs = Math.abs(tx.amount)
+      const sub = (tx.flamora_subcategory || '').toLowerCase()
+      const displayName = tx.merchant_name || tx.name || sub || 'Income'
+      const isPassive = PASSIVE_SUBS.has(sub) || sub.startsWith('interest') || sub.startsWith('dividend')
+
+      if (isPassive) {
+        passiveIncome += abs
+        passiveSourceMap[displayName] = (passiveSourceMap[displayName] || 0) + abs
+      } else {
+        activeIncome += abs
+        activeSourceMap[displayName] = (activeSourceMap[displayName] || 0) + abs
+      }
+    }
+
+    const incomeTotal = activeIncome + passiveIncome
+
+    const formatIncomeSources = (map: Record<string, number>, total: number) =>
+      Object.entries(map)
+        .map(([name, amount]) => ({
+          name,
+          amount: parseFloat(amount.toFixed(2)),
+          percentage: total > 0 ? parseFloat(((amount / total) * 100).toFixed(1)) : 0,
+        }))
+        .sort((a, b) => b.amount - a.amount)
 
     // ============================================================
     // 7. 返回结果
@@ -148,6 +181,10 @@ serve(async (req) => {
           month: targetMonth,
           total_spending: parseFloat(totalSpending.toFixed(2)),
           total_income: parseFloat(incomeTotal.toFixed(2)),
+          active_income: parseFloat(activeIncome.toFixed(2)),
+          passive_income: parseFloat(passiveIncome.toFixed(2)),
+          income_active_sources: formatIncomeSources(activeSourceMap, activeIncome),
+          income_passive_sources: formatIncomeSources(passiveSourceMap, passiveIncome),
 
           needs: {
             total: parseFloat(needsTotal.toFixed(2)),

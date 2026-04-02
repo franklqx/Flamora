@@ -14,8 +14,8 @@ struct BS_ConfirmView: View {
 
     private let gradientColors = [Color(hex: "F5C842"), Color(hex: "E88BC4"), Color(hex: "B4A0E5")]
     private let purpleColor = Color(hex: "C084FC")
-    private let tealColor = Color(hex: "34D399")
-    private let goldColor = Color(hex: "FBBF24")
+    private let tealColor   = AppColors.accentGreen   // #34D399 — exact match
+    private let goldColor   = Color(hex: "FBBF24")
 
     @State private var showContent = false
     @State private var ringProgress: Double = 0
@@ -244,7 +244,7 @@ struct BS_ConfirmView: View {
                         LinearGradient(colors: gradientColors, startPoint: .topLeading, endPoint: .bottomTrailing)
                     )
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
-                    .shadow(color: Color(hex: "E88BC4").opacity(0.25), radius: AppSpacing.md, y: AppSpacing.sm)
+                    .shadow(color: gradientColors[1].opacity(0.25), radius: AppSpacing.md, y: AppSpacing.sm)
                 }
                 .disabled(viewModel.isSaving)
 

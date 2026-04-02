@@ -47,6 +47,7 @@ serve(async (req) => {
       .select(`
         id,
         plaid_account_id,
+        security_id,
         quantity,
         cost_basis,
         institution_price,

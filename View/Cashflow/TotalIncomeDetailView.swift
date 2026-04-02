@@ -13,6 +13,8 @@ import SwiftUI
 
 struct TotalIncomeDetailView: View {
     let data: TotalIncomeDetailData
+    private let activeData: IncomeDetailData?
+    private let passiveData: IncomeDetailData?
 
     @Environment(\.dismiss) private var dismiss
     @State private var dragOffset: CGFloat = 0
@@ -21,8 +23,11 @@ struct TotalIncomeDetailView: View {
     @State private var showActiveDetail = false
     @State private var showPassiveDetail = false
 
-    init(data: TotalIncomeDetailData, initialSelectedMonth: Int = 0) {
+    init(data: TotalIncomeDetailData, initialSelectedMonth: Int = 0,
+         activeData: IncomeDetailData? = nil, passiveData: IncomeDetailData? = nil) {
         self.data = data
+        self.activeData = activeData
+        self.passiveData = passiveData
         let latest = data.availableYears.last ?? 2026
         _selectedYear = State(initialValue: latest)
         _selectedBarIndex = State(initialValue: initialSelectedMonth)
@@ -109,10 +114,10 @@ struct TotalIncomeDetailView: View {
                 }
         )
         .fullScreenCover(isPresented: $showActiveDetail) {
-            IncomeDetailView(data: MockData.activeIncomeDetail, initialSelectedMonth: selectedBarIndex)
+            IncomeDetailView(data: activeData ?? .emptyActiveIncome, initialSelectedMonth: selectedBarIndex)
         }
         .fullScreenCover(isPresented: $showPassiveDetail) {
-            IncomeDetailView(data: MockData.passiveIncomeDetail, initialSelectedMonth: selectedBarIndex)
+            IncomeDetailView(data: passiveData ?? .emptyPassiveIncome, initialSelectedMonth: selectedBarIndex)
         }
     }
 }

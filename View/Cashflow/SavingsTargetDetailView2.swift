@@ -117,35 +117,37 @@ struct SavingsTargetDetailView2: View {
                     }
                     .padding(.top, AppSpacing.sm)
 
-                    // Target info
-                    HStack(spacing: AppSpacing.xl) {
-                        VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
-                            Text("TARGET SAVING RATE")
-                                .font(.cardHeader)
-                                .foregroundColor(AppColors.textTertiary)
+                    // Target info — 仅在 Budget Setup 完成（targetAmount > 0）后展示
+                    if targetAmount > 0 {
+                        HStack(spacing: AppSpacing.xl) {
+                            VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
+                                Text("TARGET SAVING RATE")
+                                    .font(.cardHeader)
+                                    .foregroundColor(AppColors.textTertiary)
 
-                            Text("\(Int(savingsRatioPercent))%")
-                                .font(.detailTitle)
-                                .foregroundStyle(AppColors.textPrimary)
+                                Text("\(Int(savingsRatioPercent))%")
+                                    .font(.detailTitle)
+                                    .foregroundStyle(AppColors.textPrimary)
+                            }
+
+                            Divider()
+                                .frame(height: 50)
+                                .background(AppColors.surfaceBorder)
+
+                            VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
+                                Text("TARGET SAVING")
+                                    .font(.cardHeader)
+                                    .foregroundColor(AppColors.textTertiary)
+
+                                Text(formatMoney(targetAmount))
+                                    .font(.detailTitle)
+                                    .foregroundStyle(AppColors.textPrimary)
+                            }
+
+                            Spacer()
                         }
-
-                        Divider()
-                            .frame(height: 50)
-                            .background(AppColors.surfaceBorder)
-
-                        VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
-                            Text("TARGET SAVING")
-                                .font(.cardHeader)
-                                .foregroundColor(AppColors.textTertiary)
-
-                            Text(formatMoney(targetAmount))
-                                .font(.detailTitle)
-                                .foregroundStyle(AppColors.textPrimary)
-                        }
-
-                        Spacer()
+                        .padding(.vertical, AppSpacing.sm)
                     }
-                    .padding(.vertical, AppSpacing.sm)
 
                     // Monthly milestones
                     VStack(alignment: .leading, spacing: AppSpacing.md) {
@@ -225,7 +227,11 @@ struct SavingsTargetDetailView2: View {
 
     // MARK: - Chart View
 
-    private let maxChartAmount: Double = 3500
+    /// 动态图表最大值：取实际储蓄数据与目标值中的较大者，避免固定量程失真。
+    private var maxChartAmount: Double {
+        let dataMax = currentMonthlyAmounts.compactMap { $0 }.max() ?? 0
+        return max(dataMax, targetAmount, 1)
+    }
 
     private var chartView: some View {
         GeometryReader { geometry in
@@ -234,13 +240,15 @@ struct SavingsTargetDetailView2: View {
             let targetY = geometry.size.height - 30 - barAreaHeight * targetRatio
 
             ZStack(alignment: .bottomLeading) {
-                // Target line
-                Path { path in
-                    path.move(to: CGPoint(x: 0, y: targetY))
-                    path.addLine(to: CGPoint(x: geometry.size.width, y: targetY))
+                // Target line — 仅在 Budget Setup 完成后展示
+                if targetAmount > 0 {
+                    Path { path in
+                        path.move(to: CGPoint(x: 0, y: targetY))
+                        path.addLine(to: CGPoint(x: geometry.size.width, y: targetY))
+                    }
+                    .stroke(style: StrokeStyle(lineWidth: 1, dash: [5, 5]))
+                    .foregroundColor(AppColors.textTertiary)
                 }
-                .stroke(style: StrokeStyle(lineWidth: 1, dash: [5, 5]))
-                .foregroundColor(AppColors.textTertiary)
 
                 HStack(alignment: .bottom, spacing: AppSpacing.sm) {
                     ForEach(0..<12) { index in
@@ -250,11 +258,13 @@ struct SavingsTargetDetailView2: View {
 
                 chartHoverOverlay(geometry: geometry)
 
-                // Target label
-                Text("TARGET")
-                    .font(.label)
-                    .foregroundColor(AppColors.textTertiary)
-                    .position(x: geometry.size.width - 30, y: targetY - 10)
+                // Target label — 仅在 Budget Setup 完成后展示
+                if targetAmount > 0 {
+                    Text("TARGET")
+                        .font(.label)
+                        .foregroundColor(AppColors.textTertiary)
+                        .position(x: geometry.size.width - 30, y: targetY - 10)
+                }
             }
         }
         .simultaneousGesture(
@@ -269,7 +279,7 @@ struct SavingsTargetDetailView2: View {
     private func barView(index: Int, maxHeight: CGFloat) -> some View {
         let amount = index < currentMonthlyAmounts.count ? currentMonthlyAmounts[index] : nil
         let height = calculateHeight(amount: amount, maxHeight: maxHeight)
-        let isTarget = (amount ?? 0) >= targetAmount
+        let isTarget = targetAmount > 0 && (amount ?? 0) >= targetAmount
 
         return VStack(spacing: AppSpacing.sm + AppSpacing.xs) {
             RoundedRectangle(cornerRadius: AppRadius.sm)
@@ -345,7 +355,7 @@ struct SavingsTargetDetailView2: View {
         if isTarget {
             return AnyShapeStyle(
                 LinearGradient(
-                    colors: [Color(hex: "#A78BFA"), Color(hex: "#F9A8D4"), Color(hex: "#FCD34D")],
+                    colors: [AppColors.accentPurple, AppColors.accentPink, AppColors.accentAmber],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -358,7 +368,8 @@ struct SavingsTargetDetailView2: View {
 
     private func monthCard(index: Int) -> some View {
         let amount = index < currentMonthlyAmounts.count ? currentMonthlyAmounts[index] : nil
-        let isTarget = (amount ?? 0) >= targetAmount
+        let hasTarget = targetAmount > 0
+        let isTarget = hasTarget && (amount ?? 0) >= targetAmount
         let hasData = amount != nil
 
         return VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
@@ -375,13 +386,25 @@ struct SavingsTargetDetailView2: View {
             }
 
             if let amount = amount {
-                Text("\(formatMoney(amount)) / \(formatMoney(targetAmount))")
-                    .font(.bodySmallSemibold)
-                    .foregroundStyle(AppColors.textPrimary)
+                if hasTarget {
+                    Text("\(formatMoney(amount)) / \(formatMoney(targetAmount))")
+                        .font(.bodySmallSemibold)
+                        .foregroundStyle(AppColors.textPrimary)
+                } else {
+                    Text(formatMoney(amount))
+                        .font(.bodySmallSemibold)
+                        .foregroundStyle(AppColors.textPrimary)
+                }
             } else {
-                Text("-- / \(formatMoney(targetAmount))")
-                    .font(.bodySmallSemibold)
-                    .foregroundColor(AppColors.textTertiary)
+                if hasTarget {
+                    Text("-- / \(formatMoney(targetAmount))")
+                        .font(.bodySmallSemibold)
+                        .foregroundColor(AppColors.textTertiary)
+                } else {
+                    Text("--")
+                        .font(.bodySmallSemibold)
+                        .foregroundColor(AppColors.textTertiary)
+                }
             }
         }
         .padding(AppSpacing.md)
@@ -401,7 +424,7 @@ struct SavingsTargetDetailView2: View {
 
     private var flameBadge: some View {
         LinearGradient(
-            colors: [Color(hex: "#A78BFA"), Color(hex: "#F9A8D4"), Color(hex: "#FCD34D")],
+            colors: [AppColors.accentPurple, AppColors.accentPink, AppColors.accentAmber],
             startPoint: .top,
             endPoint: .bottom
         )
@@ -459,6 +482,15 @@ struct SavingsTargetDetailView2Container: View {
             savingsBudgetTarget: apiBudget.savingsBudget,
             monthlyAmountsByYear: monthlyAmountsByYear
         )
+        .onAppear {
+            // 优先使用共享缓存（与 CashflowView / JourneyView 同一组数据），避免数据不一致
+            if let cached = TabContentCache.shared.cashflowSavingsByYear {
+                monthlyAmountsByYear = cached
+            }
+            if let cachedBudget = TabContentCache.shared.cashflowBudget {
+                apiBudget = cachedBudget
+            }
+        }
         .task {
             await loadBudgetAndSavingsSeries()
         }
@@ -471,9 +503,13 @@ struct SavingsTargetDetailView2Container: View {
         async let budgetResult = try? await APIService.shared.getMonthlyBudget(month: month)
         async let savingsSeries = loadSavingsByYearFromAPI()
         let (b, series) = await (budgetResult, savingsSeries)
-        if let b { apiBudget = b }
+        if let b {
+            apiBudget = b
+            TabContentCache.shared.setCashflowBudget(b)
+        }
         if let series {
             monthlyAmountsByYear = series
+            TabContentCache.shared.setCashflowSavingsByYear(series)
         } else {
             monthlyAmountsByYear = CashflowDetailEmptyStates.savingsMonthlyAmountsEmptyCurrentYear()
         }

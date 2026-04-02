@@ -51,11 +51,17 @@ enum InvestmentAllocationBuilder {
 
     /// 将 Plaid securities.type 映射到「股票 / Crypto / 现金 / 其他」四块（与 AssetAllocationCard 文案一致）。
     private static func bucket(for apiType: String) -> Bucket {
-        let t = apiType.lowercased()
-        if t.contains("crypto") { return .crypto }
-        if t == "cash" || t.contains("money market") || t.contains("currency") { return .cash }
-        if t == "equity" || t == "etf" || t == "mutual fund" || t == "derivative" { return .stocks }
-        if t.contains("bond") || t.contains("fixed") { return .stocks }
+        let t = apiType.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        // Crypto
+        if t.contains("crypto") || t == "digital asset" { return .crypto }
+        // Cash / 货币市场
+        if t == "cash" || t == "cash equivalent" || t.contains("money market") || t.contains("currency") { return .cash }
+        // 股票类
+        if t == "equity" || t == "etf" || t == "mutual fund" || t == "derivative"
+            || t == "fund" || t == "common stock" || t == "stock" || t == "reit" { return .stocks }
+        // 债券 / 固收 — 单独归入 other（UI 当前四档为 Stocks/Crypto/Cash/Other，无 Bonds 档）
+        if t.contains("bond") || t.contains("fixed income") || t.contains("treasury")
+            || t.contains("note") || t == "loan" { return .other }
         return .other
     }
 

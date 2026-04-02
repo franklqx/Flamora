@@ -127,13 +127,16 @@ enum CashflowAPICharts {
         for m in 0..<12 {
             guard let s = summaries[m] else { continue }
             let inc = s.totalIncome
+            let active = s.activeIncome ?? inc
+            let passive = s.passiveIncome ?? 0
             trend[m] = inc
+            let denom = max(inc, 0.0001)
             monthly[m] = TotalIncomeMonthData(
                 total: inc,
-                activeAmount: inc,
-                passiveAmount: 0,
-                activePercentage: inc > 0 ? 100 : 0,
-                passivePercentage: 0
+                activeAmount: active,
+                passiveAmount: passive,
+                activePercentage: active / denom * 100,
+                passivePercentage: passive / denom * 100
             )
         }
         return TotalIncomeDetailData(
@@ -148,22 +151,35 @@ enum CashflowAPICharts {
         var monthly: [Int: IncomeMonthData] = [:]
         for m in 0..<12 {
             guard let s = summaries[m] else { continue }
-            let inc = s.totalIncome
-            trend[m] = inc
-            monthly[m] = IncomeMonthData(
-                total: inc,
-                sources: [
+            let active = s.activeIncome ?? s.totalIncome
+            trend[m] = active > 0 ? active : nil
+            let sources: [IncomeDetailSource]
+            if let apiSources = s.incomeActiveSources, !apiSources.isEmpty {
+                sources = apiSources.enumerated().map { i, src in
                     IncomeDetailSource(
-                        id: "active-\(year)-\(m)",
-                        name: "Recorded income",
+                        id: "active-\(year)-\(m)-\(i)",
+                        name: src.name,
                         account: "Linked accounts",
-                        amount: inc,
-                        percentage: 100,
+                        amount: src.amount,
+                        percentage: src.percentage,
                         colorHex: "#34D399",
                         type: .active
                     )
-                ]
-            )
+                }
+            } else if active > 0 {
+                sources = [IncomeDetailSource(
+                    id: "active-\(year)-\(m)",
+                    name: "Recorded income",
+                    account: "Linked accounts",
+                    amount: active,
+                    percentage: 100,
+                    colorHex: "#34D399",
+                    type: .active
+                )]
+            } else {
+                sources = []
+            }
+            monthly[m] = IncomeMonthData(total: active, sources: sources)
         }
         return IncomeDetailData(
             title: "Active Income",
@@ -173,14 +189,30 @@ enum CashflowAPICharts {
         )
     }
 
-    /// 尚无 passive 拆分时：有 summary 的月份显示 0，与「全部记入 Active」一致。
     static func passiveIncomeDetail(summaries: [Int: APISpendingSummary], year: Int) -> IncomeDetailData {
         var trend: [Double?] = Array(repeating: nil, count: 12)
         var monthly: [Int: IncomeMonthData] = [:]
         for m in 0..<12 {
-            guard summaries[m] != nil else { continue }
-            trend[m] = 0
-            monthly[m] = IncomeMonthData(total: 0, sources: [])
+            guard let s = summaries[m] else { continue }
+            let passive = s.passiveIncome ?? 0
+            trend[m] = passive > 0 ? passive : nil
+            let sources: [IncomeDetailSource]
+            if let apiSources = s.incomePassiveSources, !apiSources.isEmpty {
+                sources = apiSources.enumerated().map { i, src in
+                    IncomeDetailSource(
+                        id: "passive-\(year)-\(m)-\(i)",
+                        name: src.name,
+                        account: "Linked accounts",
+                        amount: src.amount,
+                        percentage: src.percentage,
+                        colorHex: "#A78BFA",
+                        type: .passive
+                    )
+                }
+            } else {
+                sources = []
+            }
+            monthly[m] = IncomeMonthData(total: passive, sources: sources)
         }
         return IncomeDetailData(
             title: "Passive Income",

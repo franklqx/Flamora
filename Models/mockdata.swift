@@ -825,6 +825,7 @@ struct APINetWorthSummary: Codable {
     let asOfDate: String
     let breakdown: NetWorthBreakdown
     let accounts: [APIAccount]
+    let lastSyncedAt: String?       // ISO 8601 timestamp of last Plaid sync; null if no Plaid
 
     struct NetWorthBreakdown: Codable {
         // Matches backend: { investment_total, depository_total, credit_total, loan_total }
@@ -841,7 +842,8 @@ struct APINetWorthSummary: Codable {
         growthPercentage: nil,
         asOfDate: "",
         breakdown: NetWorthBreakdown(investmentTotal: nil, depositoryTotal: nil, creditTotal: nil, loanTotal: nil),
-        accounts: []
+        accounts: [],
+        lastSyncedAt: nil
     )
 }
 
@@ -1166,6 +1168,7 @@ extension MockData {
                 mask: "5678",
                 institution: "Chase"
             )
-        ]
+        ],
+        lastSyncedAt: nil
     )
 }
