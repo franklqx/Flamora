@@ -31,11 +31,11 @@ struct BS_ConfirmView: View {
                     headerSection
                         .padding(.horizontal, AppSpacing.lg)
 
-                    if let plan = viewModel.spendingPlan, let selected = viewModel.selectedPlan {
-                        budgetSummaryRing(plan: plan, selectedPlan: selected)
+                    if let plan = viewModel.spendingPlan {
+                        budgetSummaryRing(plan: plan)
                             .padding(.horizontal, AppSpacing.lg)
 
-                        planDetailsCard(plan: plan, selectedPlan: selected)
+                        planDetailsCard(plan: plan)
                             .padding(.horizontal, AppSpacing.lg)
 
                         tipCard
@@ -60,16 +60,6 @@ struct BS_ConfirmView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Button { viewModel.goBack() } label: {
-                HStack(spacing: AppSpacing.xs) {
-                    Image(systemName: "chevron.left")
-                    Text("Back")
-                }
-                .font(.bodySmall)
-                .foregroundStyle(AppColors.textSecondary)
-            }
-            .padding(.bottom, AppSpacing.sm)
-
             Text("Your Plan")
                 .font(.cardFigurePrimary)
                 .foregroundStyle(AppColors.textPrimary)
@@ -78,7 +68,7 @@ struct BS_ConfirmView: View {
 
     // MARK: - Budget Summary Ring
 
-    private func budgetSummaryRing(plan: SpendingPlanResponse, selectedPlan: PlanDetail) -> some View {
+    private func budgetSummaryRing(plan: SpendingPlanResponse) -> some View {
         // `fixedBudget` / `flexibleBudget` 为 API 字段名；UI 展示为 Needs / Wants。
         let budgetTotal = plan.fixedBudget.total + plan.flexibleBudget.total
         let needsShare = budgetTotal > 0 ? plan.fixedBudget.total / budgetTotal : 0.5
@@ -109,7 +99,7 @@ struct BS_ConfirmView: View {
                         .font(.cardHeader)
                         .tracking(0.8)
                         .foregroundStyle(AppColors.overlayWhiteOnPhoto)
-                    Text("$\(formattedInt(selectedPlan.monthlySpend))")
+                    Text("$\(formattedInt(plan.totalSpend))")
                         .font(.h1)
                         .foregroundStyle(AppColors.textPrimary)
                         .monospacedDigit()
@@ -150,14 +140,14 @@ struct BS_ConfirmView: View {
 
     // MARK: - Plan Details Card
 
-    private func planDetailsCard(plan: SpendingPlanResponse, selectedPlan: PlanDetail) -> some View {
-        let income = viewModel.spendingStats?.avgMonthlyIncome ?? viewModel.monthlyIncome
+    private func planDetailsCard(plan: SpendingPlanResponse) -> some View {
+        let income = max(plan.totalIncome, viewModel.spendingStats?.avgMonthlyIncome ?? viewModel.monthlyIncome)
         let rows: [(label: String, value: String, isRate: Bool)] = [
             ("Plan", viewModel.selectedPlanName, false),
             ("Monthly income", "$\(formattedInt(income))", false),
-            ("Monthly budget", "$\(formattedInt(selectedPlan.monthlySpend))", false),
-            ("Monthly savings", "$\(formattedInt(selectedPlan.monthlySave))", false),
-            ("Savings rate", formattedPct(selectedPlan.savingsRate), true)
+            ("Monthly budget", "$\(formattedInt(plan.totalSpend))", false),
+            ("Monthly savings", "$\(formattedInt(plan.totalSavings))", false),
+            ("Savings rate", formattedPct(plan.planRate), true)
         ]
 
         return VStack(alignment: .leading, spacing: 0) {
@@ -271,8 +261,9 @@ struct BS_ConfirmView: View {
     }
 
     private func formattedPct(_ value: Double) -> String {
-        if value == value.rounded() { return "\(Int(value))%" }
-        return String(format: "%.1f%%", value)
+        let rounded = (value * 10).rounded() / 10
+        if rounded == rounded.rounded() { return "\(Int(rounded))%" }
+        return String(format: "%.1f%%", rounded)
     }
 
     private func formattedCompact(_ value: Double) -> String {

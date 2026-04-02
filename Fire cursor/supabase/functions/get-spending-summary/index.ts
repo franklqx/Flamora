@@ -56,16 +56,44 @@ serve(async (req) => {
     const endDate = `${targetMonth}-${String(lastDay).padStart(2, '0')}`
 
     // ============================================================
+    // 2b. 仅使用 depository + credit 账户（排除投资账户交易）
+    // ============================================================
+    const { data: cashAccounts } = await supabase
+      .from('plaid_accounts')
+      .select('id')
+      .eq('user_id', user.id)
+      .in('type', ['depository', 'credit'])
+      .eq('is_active', true)
+    const cashAccountIds: string[] = (cashAccounts || []).map((a: any) => a.id)
+
+    // ============================================================
     // 3. 获取当月所有 needs + wants 交易
     // ============================================================
-    const { data: transactions, error: txError } = await supabase
-      .from('transactions')
-      .select('amount, flamora_category, flamora_subcategory')
-      .eq('user_id', user.id)
-      .in('flamora_category', ['needs', 'wants'])
-      .eq('pending', false)
-      .gte('date', startDate)
-      .lte('date', endDate)
+    let rawTransactions: any[] = []
+    let txError: any = null
+
+    if (cashAccountIds.length > 0) {
+      const txQuery = supabase
+        .from('transactions')
+        .select('amount, flamora_category, flamora_subcategory, pfc_primary, pfc_detailed')
+        .eq('user_id', user.id)
+        .in('flamora_category', ['needs', 'wants'])
+        .eq('pending', false)
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .in('plaid_account_id', cashAccountIds)
+
+      const txResponse = await txQuery
+      rawTransactions = txResponse.data || []
+      txError = txResponse.error
+    }
+
+    // 排除资金搬运类交易（转账、信用卡还款）以防双重计算
+    const EXCLUDE_PFC_PRIMARY = new Set(['TRANSFER_IN', 'TRANSFER_OUT'])
+    const transactions = (rawTransactions || []).filter((t: any) =>
+      !EXCLUDE_PFC_PRIMARY.has(t.pfc_primary || '') &&
+      t.pfc_detailed !== 'LOAN_PAYMENTS_CREDIT_CARD_PAYMENT'
+    )
 
     if (txError) {
       console.error('Error fetching transactions:', txError)
@@ -125,14 +153,20 @@ serve(async (req) => {
     // ============================================================
     // 6. 获取当月收入（含 subcategory 以区分 active / passive）
     // ============================================================
-    const { data: incomeTxns } = await supabase
-      .from('transactions')
-      .select('amount, flamora_subcategory, merchant_name, name')
-      .eq('user_id', user.id)
-      .eq('flamora_category', 'income')
-      .eq('pending', false)
-      .gte('date', startDate)
-      .lte('date', endDate)
+    let incomeTxns: any[] = []
+    if (cashAccountIds.length > 0) {
+      const { data } = await supabase
+        .from('transactions')
+        .select('amount, flamora_subcategory, merchant_name, name, pfc_primary')
+        .eq('user_id', user.id)
+        .eq('flamora_category', 'income')
+        .eq('pending', false)
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .in('plaid_account_id', cashAccountIds)
+
+      incomeTxns = (data || []).filter((tx: any) => tx.pfc_primary !== 'TRANSFER_IN')
+    }
 
     // 被动收入子类别（不区分大小写匹配前缀/全名）
     const PASSIVE_SUBS = new Set([

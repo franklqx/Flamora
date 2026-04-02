@@ -44,6 +44,10 @@ function round2(value: number): number {
   return Math.round(value * 100) / 100
 }
 
+function roundMoney(value: number): number {
+  return Math.round(value / 10) * 10
+}
+
 function getFirstDayOfMonth(date: Date): string {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -118,18 +122,19 @@ serve(async (req) => {
     // ============================================================
     // 3. Compute budget splits
     // ============================================================
-    const totalSavings = round2(income * (planRate / 100))
-    const totalSpend = round2(income - totalSavings)
-    const totalFixed = round2(fixedExpenses.reduce((sum, f) => sum + f.monthly_amount, 0))
-    const totalFlexible = round2(Math.max(0, totalSpend - totalFixed))
+    const totalSavings = roundMoney(income * (planRate / 100))
+    const totalSpend = roundMoney(income - totalSavings)
+    const totalFixedRaw = fixedExpenses.reduce((sum, f) => sum + f.monthly_amount, 0)
+    const totalFixed = Math.min(totalSpend, roundMoney(totalFixedRaw))
+    const totalFlexible = roundMoney(Math.max(0, totalSpend - totalFixed))
 
-    const fixedExceedsBudget = totalSpend < totalFixed
+    const fixedExceedsBudget = totalFixedRaw > totalSpend
 
     // ============================================================
     // 4. Distribute flexible budget across sub-categories
     // ============================================================
     const flexibleItems = flexibleBreakdown.map(cat => {
-      const suggestedAmount = round2(cat.share_of_flexible * totalFlexible)
+      const suggestedAmount = roundMoney(cat.share_of_flexible * totalFlexible)
       const historicalAvg = cat.avg_monthly_amount
       const changePct = historicalAvg > 0
         ? round2(((suggestedAmount - historicalAvg) / historicalAvg) * 100)
@@ -149,7 +154,7 @@ serve(async (req) => {
     const fixedItems = fixedExpenses.map(f => ({
       name: f.name,
       pfc_detailed: f.pfc_detailed,
-      monthly_amount: round2(f.monthly_amount),
+      monthly_amount: roundMoney(f.monthly_amount),
       is_user_corrected: f.is_user_corrected || false,
     })).sort((a, b) => b.monthly_amount - a.monthly_amount)
 
@@ -171,7 +176,7 @@ serve(async (req) => {
           plan_rate: planRate,
           plan_name: planName,
 
-          total_income: round2(income),
+          total_income: roundMoney(income),
           total_savings: totalSavings,
           total_spend: totalSpend,
 

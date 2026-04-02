@@ -3,8 +3,8 @@
 // V2 Budget Module — Step 1
 // Analyses Plaid transaction data to compute:
 //   - avg monthly income, expenses, savings, savings rate
-//   - fixed vs flexible expense classification
-//   - flexible sub-category breakdown
+//   - needs vs wants budget classification
+//   - wants category breakdown
 //   - monthly breakdown for diagnosis charts
 //
 // Replaces: calculate-avg-spending (V1)
@@ -50,51 +50,145 @@ interface MonthlyBreakdownItem {
 // Classification rules
 // ============================================================
 
-const ALWAYS_FIXED_PFC_PRIMARY = new Set([
+const NEEDS_PFC_PRIMARY = new Set([
   'RENT_AND_UTILITIES',
   'LOAN_PAYMENTS',
+  'INSURANCE',
+  'MEDICAL',
+  'TRANSPORTATION',
+  'EDUCATION',
+  'CHILDCARE',
+  'GOVERNMENT_AND_NON_PROFIT',
 ])
 
-const ALWAYS_FIXED_PFC_DETAILED_PREFIXES = [
+const NEEDS_PFC_DETAILED_PREFIXES = [
   'RENT_',
   'UTILITIES_',
   'INSURANCE_',
   'LOAN_PAYMENTS_',
   'MORTGAGE_',
+  'MEDICAL_',
+  'TRANSPORTATION_',
 ]
 
-const ALWAYS_FLEXIBLE_PFC_PRIMARY = new Set([
+const WANTS_PFC_PRIMARY = new Set([
   'FOOD_AND_DRINK',
   'ENTERTAINMENT',
   'GENERAL_MERCHANDISE',
   'TRAVEL',
+  'RECREATION',
+  'PERSONAL_CARE',
 ])
 
-const ALWAYS_FLEXIBLE_SUBCATEGORIES = new Set([
+const WANTS_SUBCATEGORIES = new Set([
   'dining_out',
   'shopping',
   'entertainment',
+  'subscription',
+  'travel',
+  'coffee',
+  'bars',
+  'food_delivery',
+])
+
+const NEEDS_SUBCATEGORIES = new Set([
   'groceries',
+  'rent',
+  'utilities',
+  'insurance',
+  'healthcare',
+  'medical',
+  'transportation',
+  'gas',
+  'public_transit',
+  'childcare',
+  'education',
+  'loan_payments',
 ])
 
 // ============================================================
 // Helper functions
 // ============================================================
 
-function isAlwaysFixed(pfcPrimary: string | null, pfcDetailed: string | null): boolean {
-  if (pfcPrimary && ALWAYS_FIXED_PFC_PRIMARY.has(pfcPrimary)) return true
+function isNeedsCategory(pfcPrimary: string | null, pfcDetailed: string | null, flamoraSubcategory: string | null): boolean {
+  if (flamoraSubcategory && NEEDS_SUBCATEGORIES.has(flamoraSubcategory)) return true
+  if (pfcPrimary && NEEDS_PFC_PRIMARY.has(pfcPrimary)) return true
   if (pfcDetailed) {
-    for (const prefix of ALWAYS_FIXED_PFC_DETAILED_PREFIXES) {
+    if (pfcDetailed.includes('GROCERIES')) return true
+    for (const prefix of NEEDS_PFC_DETAILED_PREFIXES) {
       if (pfcDetailed.startsWith(prefix)) return true
     }
   }
   return false
 }
 
-function isAlwaysFlexible(pfcPrimary: string | null, flamoraSubcategory: string | null): boolean {
-  if (pfcPrimary && ALWAYS_FLEXIBLE_PFC_PRIMARY.has(pfcPrimary)) return true
-  if (flamoraSubcategory && ALWAYS_FLEXIBLE_SUBCATEGORIES.has(flamoraSubcategory)) return true
+function isWantsCategory(pfcPrimary: string | null, flamoraSubcategory: string | null): boolean {
+  if (flamoraSubcategory && WANTS_SUBCATEGORIES.has(flamoraSubcategory)) return true
+  if (pfcPrimary && WANTS_PFC_PRIMARY.has(pfcPrimary)) return true
   return false
+}
+
+function normalizeCategoryKey(value: string | null | undefined): string | null {
+  if (!value) return null
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+function classifyBudgetBucket(
+  pfcPrimary: string | null,
+  pfcDetailed: string | null,
+  flamoraSubcategory: string | null,
+): 'needs' | 'wants' {
+  if (isNeedsCategory(pfcPrimary, pfcDetailed, flamoraSubcategory)) return 'needs'
+  if (isWantsCategory(pfcPrimary, flamoraSubcategory)) return 'wants'
+  return 'wants'
+}
+
+function categoryKeyForBucket(
+  bucket: 'needs' | 'wants',
+  pfcPrimary: string | null,
+  pfcDetailed: string | null,
+  flamoraSubcategory: string | null,
+): string {
+  if (bucket === 'needs') {
+    return normalizeCategoryKey(pfcDetailed)
+      || normalizeCategoryKey(pfcPrimary)
+      || 'OTHER_NEEDS'
+  }
+
+  return normalizeCategoryKey(flamoraSubcategory)
+    || normalizeCategoryKey(pfcDetailed)
+    || normalizeCategoryKey(pfcPrimary)
+    || 'OTHER_WANTS'
+}
+
+function resolveOverrideBucket(
+  overrideMap: Map<string, string>,
+  txn: {
+    merchant_name?: string | null
+    name?: string | null
+    pfc_detailed?: string | null
+    flamora_subcategory?: string | null
+    pfc_primary?: string | null
+  }
+): 'needs' | 'wants' | null {
+  const candidates = [
+    txn.merchant_name,
+    txn.name,
+    txn.pfc_detailed,
+    txn.flamora_subcategory,
+    txn.pfc_primary,
+  ]
+
+  for (const candidate of candidates) {
+    const key = normalizeCategoryKey(candidate)
+    if (!key) continue
+    const override = overrideMap.get(key)
+    if (override === 'fixed') return 'needs'
+    if (override === 'flexible') return 'wants'
+  }
+
+  return null
 }
 
 function calculateMedian(values: number[]): number {
@@ -192,24 +286,47 @@ serve(async (req) => {
     }
 
     // ============================================================
-    // 5. Fetch all expense transactions
+    // 4b. Determine effective account scope (depository + credit only)
     // ============================================================
-    let expenseQuery = supabase
-      .from('transactions')
-      .select('amount, date, name, merchant_name, pfc_primary, pfc_detailed, flamora_category, flamora_subcategory')
-      .eq('user_id', user.id)
-      .eq('pending', false)
-      .in('flamora_category', ['needs', 'wants'])
-      .gt('amount', 0)
-      .gte('date', startDateStr)
-      .order('date', { ascending: true })
+    // Default to active cashflow accounts unless caller provides explicit account_ids.
+    // This prevents investment transactions from polluting the spending analysis.
+    let effectiveAccountIds: string[] | null =
+      body.account_ids && body.account_ids.length > 0 ? body.account_ids : null
 
-    // If specific accounts requested, filter by plaid_account_id
-    if (body.account_ids && body.account_ids.length > 0) {
-      expenseQuery = expenseQuery.in('plaid_account_id', body.account_ids)
+    if (!effectiveAccountIds) {
+      const { data: cashAccounts } = await supabase
+        .from('plaid_accounts')
+        .select('id')
+        .eq('user_id', user.id)
+        .in('type', ['depository', 'credit'])
+        .eq('is_active', true)
+      if (cashAccounts && cashAccounts.length > 0) {
+        effectiveAccountIds = cashAccounts.map((a: any) => a.id)
+      }
     }
 
-    const { data: expenseTxns, error: expError } = await expenseQuery
+    // ============================================================
+    // 5. Fetch all expense transactions
+    // ============================================================
+    let rawExpenseTxns: any[] = []
+    let expError: any = null
+
+    if (effectiveAccountIds && effectiveAccountIds.length > 0) {
+      const expenseQuery = supabase
+        .from('transactions')
+        .select('amount, date, name, merchant_name, pfc_primary, pfc_detailed, flamora_category, flamora_subcategory')
+        .eq('user_id', user.id)
+        .eq('pending', false)
+        .in('flamora_category', ['needs', 'wants'])
+        .gt('amount', 0)
+        .gte('date', startDateStr)
+        .in('plaid_account_id', effectiveAccountIds)
+        .order('date', { ascending: true })
+
+      const expenseResponse = await expenseQuery
+      rawExpenseTxns = expenseResponse.data || []
+      expError = expenseResponse.error
+    }
 
     if (expError) {
       console.error('Error fetching expense transactions:', expError)
@@ -219,34 +336,52 @@ serve(async (req) => {
       )
     }
 
+    // Exclude fund-movement noise: transfers and credit card payments.
+    // Without this, a credit card payment from checking counts as a "needs" expense
+    // while the individual charges on the credit card are also counted — double-counting.
+    const EXCLUDE_PFC_PRIMARY = new Set(['TRANSFER_IN', 'TRANSFER_OUT'])
+    const expenseTxns = (rawExpenseTxns || []).filter((t: any) =>
+      !EXCLUDE_PFC_PRIMARY.has(t.pfc_primary || '') &&
+      t.pfc_detailed !== 'LOAN_PAYMENTS_CREDIT_CARD_PAYMENT'
+    )
+
     // ============================================================
     // 6. Fetch income transactions
     // ============================================================
-    let incomeQuery = supabase
-      .from('transactions')
-      .select('amount, date, pfc_primary')
-      .eq('user_id', user.id)
-      .eq('pending', false)
-      .lt('amount', 0)  // Plaid: income = negative amount
-      .gte('date', startDateStr)
+    let rawIncomeTxns: any[] = []
+    let rawIncomeTxnsAlt: any[] = []
 
-    // Also check for pfc_primary = 'INCOME' with positive amounts (some Plaid setups)
-    let incomeAltQuery = supabase
-      .from('transactions')
-      .select('amount, date, pfc_primary')
-      .eq('user_id', user.id)
-      .eq('pending', false)
-      .eq('pfc_primary', 'INCOME')
-      .gt('amount', 0)
-      .gte('date', startDateStr)
+    if (effectiveAccountIds && effectiveAccountIds.length > 0) {
+      const incomeQuery = supabase
+        .from('transactions')
+        .select('amount, date, pfc_primary')
+        .eq('user_id', user.id)
+        .eq('pending', false)
+        .lt('amount', 0)  // Plaid: income = negative amount
+        .gte('date', startDateStr)
+        .in('plaid_account_id', effectiveAccountIds)
 
-    if (body.account_ids && body.account_ids.length > 0) {
-      incomeQuery = incomeQuery.in('plaid_account_id', body.account_ids)
-      incomeAltQuery = incomeAltQuery.in('plaid_account_id', body.account_ids)
+      // Also check for pfc_primary = 'INCOME' with positive amounts (some Plaid setups)
+      const incomeAltQuery = supabase
+        .from('transactions')
+        .select('amount, date, pfc_primary')
+        .eq('user_id', user.id)
+        .eq('pending', false)
+        .eq('pfc_primary', 'INCOME')
+        .gt('amount', 0)
+        .gte('date', startDateStr)
+        .in('plaid_account_id', effectiveAccountIds)
+
+      const incomeResponse = await incomeQuery
+      rawIncomeTxns = incomeResponse.data || []
+
+      const incomeAltResponse = await incomeAltQuery
+      rawIncomeTxnsAlt = incomeAltResponse.data || []
     }
 
-    const { data: incomeTxns } = await incomeQuery
-    const { data: incomeTxnsAlt } = await incomeAltQuery
+    // Exclude TRANSFER_IN from income: savings→checking moves aren't real income.
+    const incomeTxns = (rawIncomeTxns || []).filter((t: any) => t.pfc_primary !== 'TRANSFER_IN')
+    const incomeTxnsAlt = (rawIncomeTxnsAlt || []).filter((t: any) => t.pfc_primary !== 'TRANSFER_IN')
 
     // ============================================================
     // 7. Handle no-data fallback
@@ -287,7 +422,6 @@ serve(async (req) => {
     // ============================================================
     const allExpenseMonths = new Set(expenseTxns.map(t => getMonthKey(t.date)))
     const monthsAnalyzed = allExpenseMonths.size || 1
-    const minFixedFrequency = monthsAnalyzed < 3 ? 2 : 3
 
     // ============================================================
     // 9. Compute income
@@ -321,148 +455,97 @@ serve(async (req) => {
     }
 
     // ============================================================
-    // 10. Group expenses by payee for fixed detection
+    // 10. Classify expenses into budget buckets and category groups
     // ============================================================
-    interface PayeeGroup {
-      name: string
-      pfcPrimary: string | null
+    interface CategoryAccumulator {
+      key: string
       pfcDetailed: string | null
-      flamoraSubcategory: string | null
-      amounts: number[]
-      months: Set<string>
       totalAmount: number
       txnCount: number
+      months: Set<string>
+      monthlyTotals: Map<string, number>
     }
 
-    const payeeGroups = new Map<string, PayeeGroup>()
+    const needsByCategory = new Map<string, CategoryAccumulator>()
+    const wantsByCategory = new Map<string, CategoryAccumulator>()
+    const txnBucketByMonth = new Map<string, { needs: number; wants: number }>()
 
-    for (const txn of expenseTxns) {
-      // Use merchant_name if available, otherwise fall back to pfc_detailed
-      const key = txn.merchant_name || txn.pfc_detailed || txn.name || 'unknown'
-
-      if (!payeeGroups.has(key)) {
-        payeeGroups.set(key, {
-          name: key,
-          pfcPrimary: txn.pfc_primary,
-          pfcDetailed: txn.pfc_detailed,
-          flamoraSubcategory: txn.flamora_subcategory,
-          amounts: [],
-          months: new Set(),
+    function getAccumulator(
+      store: Map<string, CategoryAccumulator>,
+      key: string,
+      pfcDetailed: string | null,
+    ) {
+      if (!store.has(key)) {
+        store.set(key, {
+          key,
+          pfcDetailed,
           totalAmount: 0,
           txnCount: 0,
+          months: new Set(),
+          monthlyTotals: new Map(),
         })
       }
+      return store.get(key)!
+    }
 
-      const group = payeeGroups.get(key)!
-      group.amounts.push(txn.amount)
-      group.months.add(getMonthKey(txn.date))
-      group.totalAmount += txn.amount
-      group.txnCount++
+    let totalExpenses = 0
+
+    for (const txn of expenseTxns) {
+      const month = getMonthKey(txn.date)
+      const bucket = resolveOverrideBucket(overrideMap, txn)
+        || classifyBudgetBucket(txn.pfc_primary, txn.pfc_detailed, txn.flamora_subcategory)
+      const categoryKey = categoryKeyForBucket(
+        bucket,
+        txn.pfc_primary,
+        txn.pfc_detailed,
+        txn.flamora_subcategory
+      )
+      const store = bucket === 'needs' ? needsByCategory : wantsByCategory
+      const accumulator = getAccumulator(store, categoryKey, txn.pfc_detailed)
+
+      accumulator.totalAmount += txn.amount
+      accumulator.txnCount += 1
+      accumulator.months.add(month)
+      accumulator.monthlyTotals.set(month, (accumulator.monthlyTotals.get(month) || 0) + txn.amount)
+
+      const monthBucket = txnBucketByMonth.get(month) || { needs: 0, wants: 0 }
+      monthBucket[bucket] += txn.amount
+      txnBucketByMonth.set(month, monthBucket)
+
+      totalExpenses += txn.amount
     }
 
     // ============================================================
-    // 11. Classify each payee group as fixed or flexible
+    // 11. Build needs / wants output
     // ============================================================
     const fixedExpenses: FixedExpenseItem[] = []
-    let totalFixed = 0
-    let totalExpenses = 0
-
-    // Track flexible by subcategory
-    const flexibleBySubcategory = new Map<string, { total: number; count: number }>()
-
-    for (const [key, group] of payeeGroups) {
-      const monthlyAmounts: number[] = []
-      // Calculate average monthly amount for this payee
-      for (const month of allExpenseMonths) {
-        const monthTxns = expenseTxns.filter(
-          t => (t.merchant_name || t.pfc_detailed || t.name || 'unknown') === key
-            && getMonthKey(t.date) === month
-        )
-        if (monthTxns.length > 0) {
-          monthlyAmounts.push(monthTxns.reduce((s, t) => s + t.amount, 0))
-        }
-      }
-
+    for (const category of needsByCategory.values()) {
+      const monthlyAmounts = Array.from(category.monthlyTotals.values())
       const median = calculateMedian(monthlyAmounts)
       const maxVariance = monthlyAmounts.length > 0
         ? Math.max(...monthlyAmounts.map(a => median > 0 ? Math.abs(a - median) / median : 0))
         : 0
-      const avgMonthlyAmount = group.totalAmount / monthsAnalyzed
 
-      totalExpenses += group.totalAmount
-
-      // Check user override first
-      if (overrideMap.has(key)) {
-        const override = overrideMap.get(key)!
-        if (override === 'fixed') {
-          fixedExpenses.push({
-            name: group.name,
-            pfc_detailed: group.pfcDetailed,
-            avg_monthly_amount: round2(avgMonthlyAmount),
-            months_appeared: group.months.size,
-            variance_pct: round2(maxVariance),
-            is_always_fixed: false,
-          })
-          totalFixed += avgMonthlyAmount * monthsAnalyzed
-        } else {
-          // User said flexible
-          const subcat = group.flamoraSubcategory || 'other_flexible'
-          const existing = flexibleBySubcategory.get(subcat) || { total: 0, count: 0 }
-          existing.total += group.totalAmount
-          existing.count += group.txnCount
-          flexibleBySubcategory.set(subcat, existing)
-        }
-        continue
-      }
-
-      // Auto-classification
-      const alwaysFixed = isAlwaysFixed(group.pfcPrimary, group.pfcDetailed)
-      const alwaysFlexible = isAlwaysFlexible(group.pfcPrimary, group.flamoraSubcategory)
-
-      if (alwaysFlexible) {
-        const subcat = group.flamoraSubcategory || 'other_flexible'
-        const existing = flexibleBySubcategory.get(subcat) || { total: 0, count: 0 }
-        existing.total += group.totalAmount
-        existing.count += group.txnCount
-        flexibleBySubcategory.set(subcat, existing)
-      } else if (alwaysFixed) {
-        fixedExpenses.push({
-          name: group.name,
-          pfc_detailed: group.pfcDetailed,
-          avg_monthly_amount: round2(avgMonthlyAmount),
-          months_appeared: group.months.size,
-          variance_pct: round2(maxVariance),
-          is_always_fixed: true,
-        })
-        totalFixed += avgMonthlyAmount * monthsAnalyzed
-      } else if (group.months.size >= minFixedFrequency && maxVariance <= 0.20) {
-        // Recurring + stable amount → fixed
-        fixedExpenses.push({
-          name: group.name,
-          pfc_detailed: group.pfcDetailed,
-          avg_monthly_amount: round2(avgMonthlyAmount),
-          months_appeared: group.months.size,
-          variance_pct: round2(maxVariance),
-          is_always_fixed: false,
-        })
-        totalFixed += avgMonthlyAmount * monthsAnalyzed
-      } else {
-        // Default: flexible
-        const subcat = group.flamoraSubcategory || 'other_flexible'
-        const existing = flexibleBySubcategory.get(subcat) || { total: 0, count: 0 }
-        existing.total += group.totalAmount
-        existing.count += group.txnCount
-        flexibleBySubcategory.set(subcat, existing)
-      }
+      const avgMonthlyAmount = category.totalAmount / monthsAnalyzed
+      fixedExpenses.push({
+        name: category.key,
+        pfc_detailed: category.pfcDetailed,
+        avg_monthly_amount: round2(avgMonthlyAmount),
+        months_appeared: category.months.size,
+        variance_pct: round2(maxVariance),
+        is_always_fixed: true,
+      })
     }
+
+    const totalWantsSpending = Array.from(wantsByCategory.values())
+      .reduce((sum, category) => sum + category.totalAmount, 0)
 
     // ============================================================
     // 12. Calculate averages
     // ============================================================
     const avgMonthlyExpenses = totalExpenses / monthsAnalyzed
-    const avgMonthlyFixed = totalFixed / monthsAnalyzed / monthsAnalyzed * monthsAnalyzed  // simplify
     const avgMonthlyFixedCalc = fixedExpenses.reduce((sum, f) => sum + f.avg_monthly_amount, 0)
-    const avgMonthlyFlexible = avgMonthlyExpenses - avgMonthlyFixedCalc
+    const avgMonthlyFlexible = totalWantsSpending / monthsAnalyzed
     const avgMonthlySavings = avgMonthlyIncome - avgMonthlyExpenses
     const currentSavingsRate = avgMonthlyIncome > 0
       ? (avgMonthlySavings / avgMonthlyIncome) * 100
@@ -471,17 +554,14 @@ serve(async (req) => {
     // ============================================================
     // 13. Build flexible breakdown
     // ============================================================
-    const totalFlexibleSpending = Array.from(flexibleBySubcategory.values())
-      .reduce((sum, v) => sum + v.total, 0)
-
-    const flexibleBreakdown: FlexibleBreakdownItem[] = Array.from(flexibleBySubcategory.entries())
-      .map(([subcat, data]) => ({
-        subcategory: subcat,
-        avg_monthly_amount: round2(data.total / monthsAnalyzed),
-        share_of_flexible: totalFlexibleSpending > 0
-          ? round2(data.total / totalFlexibleSpending)
+    const flexibleBreakdown: FlexibleBreakdownItem[] = Array.from(wantsByCategory.values())
+      .map((category) => ({
+        subcategory: category.key,
+        avg_monthly_amount: round2(category.totalAmount / monthsAnalyzed),
+        share_of_flexible: totalWantsSpending > 0
+          ? round2(category.totalAmount / totalWantsSpending)
           : 0,
-        transaction_count: data.count,
+        transaction_count: category.txnCount,
       }))
       .sort((a, b) => b.avg_monthly_amount - a.avg_monthly_amount)
 
@@ -503,24 +583,12 @@ serve(async (req) => {
       }
     }
 
-    // Build fixed/flexible by month
-    const fixedNames = new Set(fixedExpenses.map(f => f.name))
-
     const monthlyBreakdown: MonthlyBreakdownItem[] = Array.from(allExpenseMonths)
       .sort()
       .map(month => {
-        const monthTxns = expenseTxns.filter(t => getMonthKey(t.date) === month)
-        let fixedTotal = 0
-        let flexibleTotal = 0
-
-        for (const t of monthTxns) {
-          const key = t.merchant_name || t.pfc_detailed || t.name || 'unknown'
-          if (fixedNames.has(key)) {
-            fixedTotal += t.amount
-          } else {
-            flexibleTotal += t.amount
-          }
-        }
+        const monthBucket = txnBucketByMonth.get(month) || { needs: 0, wants: 0 }
+        const fixedTotal = monthBucket.needs
+        const flexibleTotal = monthBucket.wants
 
         const monthIncome = incomeByMonth.get(month) || avgMonthlyIncome
         const monthSavings = monthIncome - fixedTotal - flexibleTotal

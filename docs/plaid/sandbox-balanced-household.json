@@ -1,0 +1,256 @@
+{
+  "version": "2",
+  "seed": "flamora-balanced-household-v1",
+  "override_accounts": [
+    {
+      "type": "depository",
+      "subtype": "checking",
+      "starting_balance": 4825.42,
+      "currency": "USD",
+      "meta": {
+        "name": "Main Checking",
+        "official_name": "Everyday Checking",
+        "mask": "1428"
+      },
+      "transactions": [
+        { "date_transacted": "2025-10-03", "date_posted": "2025-10-03", "amount": -4200.00, "description": "ACME PAYROLL DIRECT DEP", "currency": "USD" },
+        { "date_transacted": "2025-10-05", "date_posted": "2025-10-05", "amount": 1650.00, "description": "LUNA APARTMENTS RENT", "currency": "USD" },
+        { "date_transacted": "2025-10-06", "date_posted": "2025-10-06", "amount": 128.40, "description": "PACIFIC GAS & ELECTRIC", "currency": "USD" },
+        { "date_transacted": "2025-10-08", "date_posted": "2025-10-08", "amount": 186.27, "description": "WHOLE FOODS MARKET", "currency": "USD" },
+        { "date_transacted": "2025-10-12", "date_posted": "2025-10-12", "amount": 74.38, "description": "SHELL OIL 575238", "currency": "USD" },
+        { "date_transacted": "2025-10-15", "date_posted": "2025-10-15", "amount": 96.12, "description": "TRADER JOES 113 SAN MATEO", "currency": "USD" },
+        { "date_transacted": "2025-10-18", "date_posted": "2025-10-18", "amount": 48.75, "description": "UBER TRIP HELP.UBER.COM", "currency": "USD" },
+        { "date_transacted": "2025-10-19", "date_posted": "2025-10-19", "amount": 41.32, "description": "BLUE BOTTLE COFFEE", "currency": "USD" },
+        { "date_transacted": "2025-10-21", "date_posted": "2025-10-21", "amount": 89.99, "description": "COMCAST CABLE PAYMENT", "currency": "USD" },
+        { "date_transacted": "2025-10-24", "date_posted": "2025-10-24", "amount": 350.00, "description": "ONLINE TRANSFER TO SAVINGS", "currency": "USD" },
+        { "date_transacted": "2025-10-25", "date_posted": "2025-10-25", "amount": 250.00, "description": "ONLINE TRANSFER TO BROKERAGE", "currency": "USD" },
+        { "date_transacted": "2025-10-28", "date_posted": "2025-10-28", "amount": 16.99, "description": "SPOTIFY USA", "currency": "USD" },
+
+        { "date_transacted": "2025-11-01", "date_posted": "2025-11-01", "amount": -4200.00, "description": "ACME PAYROLL DIRECT DEP", "currency": "USD" },
+        { "date_transacted": "2025-11-03", "date_posted": "2025-11-03", "amount": 1650.00, "description": "LUNA APARTMENTS RENT", "currency": "USD" },
+        { "date_transacted": "2025-11-05", "date_posted": "2025-11-05", "amount": 132.14, "description": "PACIFIC GAS & ELECTRIC", "currency": "USD" },
+        { "date_transacted": "2025-11-07", "date_posted": "2025-11-07", "amount": 176.48, "description": "WHOLE FOODS MARKET", "currency": "USD" },
+        { "date_transacted": "2025-11-10", "date_posted": "2025-11-10", "amount": 68.25, "description": "SAFEWAY #3421", "currency": "USD" },
+        { "date_transacted": "2025-11-13", "date_posted": "2025-11-13", "amount": 77.31, "description": "CHEVRON 009842", "currency": "USD" },
+        { "date_transacted": "2025-11-15", "date_posted": "2025-11-15", "amount": 128.66, "description": "COSTCO WHOLESALE", "currency": "USD" },
+        { "date_transacted": "2025-11-18", "date_posted": "2025-11-18", "amount": 112.48, "description": "SWEETGREEN PALO ALTO", "currency": "USD" },
+        { "date_transacted": "2025-11-20", "date_posted": "2025-11-20", "amount": 350.00, "description": "ONLINE TRANSFER TO SAVINGS", "currency": "USD" },
+        { "date_transacted": "2025-11-21", "date_posted": "2025-11-21", "amount": 250.00, "description": "ONLINE TRANSFER TO BROKERAGE", "currency": "USD" },
+        { "date_transacted": "2025-11-24", "date_posted": "2025-11-24", "amount": 15.99, "description": "NETFLIX.COM", "currency": "USD" },
+        { "date_transacted": "2025-11-26", "date_posted": "2025-11-26", "amount": 62.45, "description": "TARGET T-2184", "currency": "USD" },
+
+        { "date_transacted": "2025-12-01", "date_posted": "2025-12-01", "amount": -4200.00, "description": "ACME PAYROLL DIRECT DEP", "currency": "USD" },
+        { "date_transacted": "2025-12-03", "date_posted": "2025-12-03", "amount": 1650.00, "description": "LUNA APARTMENTS RENT", "currency": "USD" },
+        { "date_transacted": "2025-12-05", "date_posted": "2025-12-05", "amount": 141.55, "description": "PACIFIC GAS & ELECTRIC", "currency": "USD" },
+        { "date_transacted": "2025-12-08", "date_posted": "2025-12-08", "amount": 184.92, "description": "TRADER JOES 113 SAN MATEO", "currency": "USD" },
+        { "date_transacted": "2025-12-12", "date_posted": "2025-12-12", "amount": 69.30, "description": "SHELL OIL 575238", "currency": "USD" },
+        { "date_transacted": "2025-12-14", "date_posted": "2025-12-14", "amount": 54.20, "description": "AMAZON MARKETPLACE", "currency": "USD" },
+        { "date_transacted": "2025-12-18", "date_posted": "2025-12-18", "amount": 138.40, "description": "WHOLE FOODS MARKET", "currency": "USD" },
+        { "date_transacted": "2025-12-20", "date_posted": "2025-12-20", "amount": 350.00, "description": "ONLINE TRANSFER TO SAVINGS", "currency": "USD" },
+        { "date_transacted": "2025-12-21", "date_posted": "2025-12-21", "amount": 300.00, "description": "ONLINE TRANSFER TO BROKERAGE", "currency": "USD" },
+        { "date_transacted": "2025-12-23", "date_posted": "2025-12-23", "amount": 16.99, "description": "SPOTIFY USA", "currency": "USD" },
+        { "date_transacted": "2025-12-27", "date_posted": "2025-12-27", "amount": 118.55, "description": "APPLE.COM/BILL ICLOUD+", "currency": "USD" },
+        { "date_transacted": "2025-12-29", "date_posted": "2025-12-29", "amount": 88.42, "description": "REI PALO ALTO", "currency": "USD" },
+
+        { "date_transacted": "2026-01-02", "date_posted": "2026-01-02", "amount": -4250.00, "description": "ACME PAYROLL DIRECT DEP", "currency": "USD" },
+        { "date_transacted": "2026-01-03", "date_posted": "2026-01-03", "amount": 1650.00, "description": "LUNA APARTMENTS RENT", "currency": "USD" },
+        { "date_transacted": "2026-01-05", "date_posted": "2026-01-05", "amount": 122.31, "description": "PACIFIC GAS & ELECTRIC", "currency": "USD" },
+        { "date_transacted": "2026-01-08", "date_posted": "2026-01-08", "amount": 171.14, "description": "WHOLE FOODS MARKET", "currency": "USD" },
+        { "date_transacted": "2026-01-11", "date_posted": "2026-01-11", "amount": 77.52, "description": "CHEVRON 009842", "currency": "USD" },
+        { "date_transacted": "2026-01-14", "date_posted": "2026-01-14", "amount": 86.19, "description": "SAFEWAY #3421", "currency": "USD" },
+        { "date_transacted": "2026-01-17", "date_posted": "2026-01-17", "amount": 63.48, "description": "SWEETGREEN PALO ALTO", "currency": "USD" },
+        { "date_transacted": "2026-01-20", "date_posted": "2026-01-20", "amount": 350.00, "description": "ONLINE TRANSFER TO SAVINGS", "currency": "USD" },
+        { "date_transacted": "2026-01-21", "date_posted": "2026-01-21", "amount": 300.00, "description": "ONLINE TRANSFER TO BROKERAGE", "currency": "USD" },
+        { "date_transacted": "2026-01-22", "date_posted": "2026-01-22", "amount": 15.99, "description": "NETFLIX.COM", "currency": "USD" },
+        { "date_transacted": "2026-01-25", "date_posted": "2026-01-25", "amount": 44.28, "description": "UBER TRIP HELP.UBER.COM", "currency": "USD" },
+        { "date_transacted": "2026-01-29", "date_posted": "2026-01-29", "amount": 94.62, "description": "UNIQLO USA", "currency": "USD" },
+
+        { "date_transacted": "2026-02-01", "date_posted": "2026-02-01", "amount": -4250.00, "description": "ACME PAYROLL DIRECT DEP", "currency": "USD" },
+        { "date_transacted": "2026-02-03", "date_posted": "2026-02-03", "amount": 1650.00, "description": "LUNA APARTMENTS RENT", "currency": "USD" },
+        { "date_transacted": "2026-02-05", "date_posted": "2026-02-05", "amount": 126.78, "description": "PACIFIC GAS & ELECTRIC", "currency": "USD" },
+        { "date_transacted": "2026-02-08", "date_posted": "2026-02-08", "amount": 182.30, "description": "TRADER JOES 113 SAN MATEO", "currency": "USD" },
+        { "date_transacted": "2026-02-10", "date_posted": "2026-02-10", "amount": 72.94, "description": "SHELL OIL 575238", "currency": "USD" },
+        { "date_transacted": "2026-02-12", "date_posted": "2026-02-12", "amount": 109.44, "description": "COSTCO WHOLESALE", "currency": "USD" },
+        { "date_transacted": "2026-02-16", "date_posted": "2026-02-16", "amount": 58.72, "description": "BLUE BOTTLE COFFEE", "currency": "USD" },
+        { "date_transacted": "2026-02-18", "date_posted": "2026-02-18", "amount": 350.00, "description": "ONLINE TRANSFER TO SAVINGS", "currency": "USD" },
+        { "date_transacted": "2026-02-19", "date_posted": "2026-02-19", "amount": 300.00, "description": "ONLINE TRANSFER TO BROKERAGE", "currency": "USD" },
+        { "date_transacted": "2026-02-21", "date_posted": "2026-02-21", "amount": 16.99, "description": "SPOTIFY USA", "currency": "USD" },
+        { "date_transacted": "2026-02-24", "date_posted": "2026-02-24", "amount": 61.27, "description": "AMAZON MARKETPLACE", "currency": "USD" },
+        { "date_transacted": "2026-02-26", "date_posted": "2026-02-26", "amount": 138.90, "description": "DELTA AIR LINES", "currency": "USD" },
+
+        { "date_transacted": "2026-03-01", "date_posted": "2026-03-01", "amount": -4300.00, "description": "ACME PAYROLL DIRECT DEP", "currency": "USD" },
+        { "date_transacted": "2026-03-03", "date_posted": "2026-03-03", "amount": 1650.00, "description": "LUNA APARTMENTS RENT", "currency": "USD" },
+        { "date_transacted": "2026-03-05", "date_posted": "2026-03-05", "amount": 119.84, "description": "PACIFIC GAS & ELECTRIC", "currency": "USD" },
+        { "date_transacted": "2026-03-08", "date_posted": "2026-03-08", "amount": 179.66, "description": "WHOLE FOODS MARKET", "currency": "USD" },
+        { "date_transacted": "2026-03-10", "date_posted": "2026-03-10", "amount": 67.80, "description": "SAFEWAY #3421", "currency": "USD" },
+        { "date_transacted": "2026-03-12", "date_posted": "2026-03-12", "amount": 78.45, "description": "CHEVRON 009842", "currency": "USD" },
+        { "date_transacted": "2026-03-15", "date_posted": "2026-03-15", "amount": 84.12, "description": "SWEETGREEN PALO ALTO", "currency": "USD" },
+        { "date_transacted": "2026-03-18", "date_posted": "2026-03-18", "amount": 350.00, "description": "ONLINE TRANSFER TO SAVINGS", "currency": "USD" },
+        { "date_transacted": "2026-03-19", "date_posted": "2026-03-19", "amount": 300.00, "description": "ONLINE TRANSFER TO BROKERAGE", "currency": "USD" },
+        { "date_transacted": "2026-03-21", "date_posted": "2026-03-21", "amount": 15.99, "description": "NETFLIX.COM", "currency": "USD" },
+        { "date_transacted": "2026-03-24", "date_posted": "2026-03-24", "amount": 118.34, "description": "TARGET T-2184", "currency": "USD" },
+        { "date_transacted": "2026-03-28", "date_posted": "2026-03-28", "amount": 74.20, "description": "UBER TRIP HELP.UBER.COM", "currency": "USD" }
+      ]
+    },
+    {
+      "type": "depository",
+      "subtype": "savings",
+      "starting_balance": 12180.11,
+      "currency": "USD",
+      "meta": {
+        "name": "Emergency Savings",
+        "official_name": "High Yield Savings",
+        "mask": "7714"
+      },
+      "transactions": [
+        { "date_transacted": "2025-10-24", "date_posted": "2025-10-24", "amount": -350.00, "description": "ONLINE TRANSFER FROM CHECKING", "currency": "USD" },
+        { "date_transacted": "2025-10-31", "date_posted": "2025-10-31", "amount": -4.68, "description": "SAVINGS INTEREST PAYMENT", "currency": "USD" },
+        { "date_transacted": "2025-11-20", "date_posted": "2025-11-20", "amount": -350.00, "description": "ONLINE TRANSFER FROM CHECKING", "currency": "USD" },
+        { "date_transacted": "2025-11-30", "date_posted": "2025-11-30", "amount": -4.77, "description": "SAVINGS INTEREST PAYMENT", "currency": "USD" },
+        { "date_transacted": "2025-12-20", "date_posted": "2025-12-20", "amount": -350.00, "description": "ONLINE TRANSFER FROM CHECKING", "currency": "USD" },
+        { "date_transacted": "2025-12-31", "date_posted": "2025-12-31", "amount": -4.81, "description": "SAVINGS INTEREST PAYMENT", "currency": "USD" },
+        { "date_transacted": "2026-01-20", "date_posted": "2026-01-20", "amount": -350.00, "description": "ONLINE TRANSFER FROM CHECKING", "currency": "USD" },
+        { "date_transacted": "2026-01-31", "date_posted": "2026-01-31", "amount": -4.92, "description": "SAVINGS INTEREST PAYMENT", "currency": "USD" },
+        { "date_transacted": "2026-02-18", "date_posted": "2026-02-18", "amount": -350.00, "description": "ONLINE TRANSFER FROM CHECKING", "currency": "USD" },
+        { "date_transacted": "2026-02-28", "date_posted": "2026-02-28", "amount": -5.04, "description": "SAVINGS INTEREST PAYMENT", "currency": "USD" },
+        { "date_transacted": "2026-03-18", "date_posted": "2026-03-18", "amount": -350.00, "description": "ONLINE TRANSFER FROM CHECKING", "currency": "USD" },
+        { "date_transacted": "2026-03-31", "date_posted": "2026-03-31", "amount": -5.15, "description": "SAVINGS INTEREST PAYMENT", "currency": "USD" }
+      ]
+    },
+    {
+      "type": "investment",
+      "subtype": "brokerage",
+      "starting_balance": 25640.73,
+      "currency": "USD",
+      "meta": {
+        "name": "Long-Term Brokerage",
+        "official_name": "Taxable Brokerage Account",
+        "mask": "3901"
+      },
+      "holdings": [
+        {
+          "institution_price": 194.26,
+          "institution_price_as_of": "2026-03-31",
+          "cost_basis": 4850.00,
+          "quantity": 30,
+          "currency": "USD",
+          "security": {
+            "ticker_symbol": "AAPL",
+            "name": "Apple Inc",
+            "currency": "USD"
+          }
+        },
+        {
+          "institution_price": 274.90,
+          "institution_price_as_of": "2026-03-31",
+          "cost_basis": 12600.00,
+          "quantity": 55,
+          "currency": "USD",
+          "security": {
+            "ticker_symbol": "VTI",
+            "name": "Vanguard Total Stock Market ETF",
+            "currency": "USD"
+          }
+        },
+        {
+          "institution_price": 72.40,
+          "institution_price_as_of": "2026-03-31",
+          "cost_basis": 3200.00,
+          "quantity": 42,
+          "currency": "USD",
+          "security": {
+            "ticker_symbol": "BND",
+            "name": "Vanguard Total Bond Market ETF",
+            "currency": "USD"
+          }
+        }
+      ],
+      "investment_transactions": [
+        {
+          "date": "2025-10-25",
+          "name": "Transfer into brokerage",
+          "quantity": 0,
+          "price": 250.00,
+          "fees": 0,
+          "type": "cash",
+          "currency": "USD",
+          "security": {
+            "ticker_symbol": "USD",
+            "name": "US Dollar Cash",
+            "currency": "USD"
+          }
+        },
+        {
+          "date": "2025-11-21",
+          "name": "Buy Vanguard Total Stock Market ETF",
+          "quantity": 1,
+          "price": 250.00,
+          "fees": 0,
+          "type": "buy",
+          "currency": "USD",
+          "security": {
+            "ticker_symbol": "VTI",
+            "name": "Vanguard Total Stock Market ETF",
+            "currency": "USD"
+          }
+        },
+        {
+          "date": "2025-12-21",
+          "name": "Buy Apple Inc",
+          "quantity": 1,
+          "price": 200.00,
+          "fees": 1.00,
+          "type": "buy",
+          "currency": "USD",
+          "security": {
+            "ticker_symbol": "AAPL",
+            "name": "Apple Inc",
+            "currency": "USD"
+          }
+        },
+        {
+          "date": "2026-01-21",
+          "name": "Transfer into brokerage",
+          "quantity": 0,
+          "price": 300.00,
+          "fees": 0,
+          "type": "cash",
+          "currency": "USD",
+          "security": {
+            "ticker_symbol": "USD",
+            "name": "US Dollar Cash",
+            "currency": "USD"
+          }
+        },
+        {
+          "date": "2026-02-19",
+          "name": "Buy Vanguard Total Bond Market ETF",
+          "quantity": 2,
+          "price": 72.00,
+          "fees": 0,
+          "type": "buy",
+          "currency": "USD",
+          "security": {
+            "ticker_symbol": "BND",
+            "name": "Vanguard Total Bond Market ETF",
+            "currency": "USD"
+          }
+        },
+        {
+          "date": "2026-03-17",
+          "name": "Dividend payment",
+          "quantity": 0,
+          "price": 42.37,
+          "fees": 0,
+          "type": "cash",
+          "currency": "USD",
+          "security": {
+            "ticker_symbol": "VTI",
+            "name": "Vanguard Total Stock Market ETF",
+            "currency": "USD"
+          }
+        }
+      ]
+    }
+  ]
+}

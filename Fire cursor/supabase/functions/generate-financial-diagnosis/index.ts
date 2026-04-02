@@ -105,24 +105,12 @@ serve(async (req) => {
     }
 
     // ============================================================
-    // 4. Call Claude Haiku for AI text generation
+    // 4. Generate stable setup insights
     // ============================================================
-    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY')
-    let aiDiagnosis: any = null
-
-    if (anthropicKey) {
-      try {
-        aiDiagnosis = await generateAIDiagnosis(anthropicKey, metrics, body.monthly_breakdown)
-      } catch (aiError) {
-        console.error('AI diagnosis error (falling back to rules):', aiError)
-        // Fall through to rule-based fallback
-      }
-    }
-
-    // Fallback if AI fails or no API key
-    if (!aiDiagnosis) {
-      aiDiagnosis = generateRuleBasedDiagnosis(metrics)
-    }
+    // Build Your Plan needs repeatable outputs for the same data. Use the
+    // deterministic rules engine here so cards, chart copy, and ordering
+    // remain stable across repeated visits to the setup flow.
+    const aiDiagnosis = generateRuleBasedDiagnosis(metrics)
 
     // ============================================================
     // 5. Return
@@ -137,7 +125,8 @@ serve(async (req) => {
         meta: {
           timestamp: new Date().toISOString(),
           user_id: user.id,
-          ai_powered: anthropicKey ? true : false,
+          ai_powered: false,
+          diagnosis_mode: 'rules',
         },
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

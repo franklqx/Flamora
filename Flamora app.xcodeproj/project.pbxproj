@@ -92,6 +92,8 @@
 		15E21AF82F34010000A9BB71 /* TransactionDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF72F34010000A9BB70 /* TransactionDetailSheet.swift */; };
 		15E21AFA2F34020000A9BB72 /* TransactionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF92F34020000A9BB73 /* TransactionRow.swift */; };
 		15E21AFC2F34030000A9BB74 /* AllTransactionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AFB2F34030000A9BB75 /* AllTransactionsView.swift */; };
+		CDBB00022FA1000000000001 /* CashAccountsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00012FA1000000000001 /* CashAccountsCard.swift */; };
+		CDBB00042FA1000000000001 /* CashAccountDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00032FA1000000000001 /* CashAccountDetailView.swift */; };
 		15E21B102F33F31000A9BB70 /* AccountDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21B0F2F33F31000A9BB70 /* AccountDetailView.swift */; };
 		15E21B142F33F33000A9BB80 /* AssetAllocationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21B132F33F33000A9BB80 /* AssetAllocationDetailView.swift */; };
 		15FF6EDA2F31096B0005F482 /* GradientButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED92F31043F0005F482 /* GradientButton.swift */; };
@@ -213,6 +215,8 @@
 		15E21AF72F34010000A9BB70 /* TransactionDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionDetailSheet.swift; sourceTree = "<group>"; };
 		15E21AF92F34020000A9BB73 /* TransactionRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionRow.swift; sourceTree = "<group>"; };
 		15E21AFB2F34030000A9BB75 /* AllTransactionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllTransactionsView.swift; sourceTree = "<group>"; };
+		CDBB00012FA1000000000001 /* CashAccountsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountsCard.swift; sourceTree = "<group>"; };
+		CDBB00032FA1000000000001 /* CashAccountDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountDetailView.swift; sourceTree = "<group>"; };
 		15E21B0F2F33F31000A9BB70 /* AccountDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountDetailView.swift; sourceTree = "<group>"; };
 		15E21B132F33F33000A9BB80 /* AssetAllocationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetAllocationDetailView.swift; sourceTree = "<group>"; };
 		15FF6ED72F31033C0005F482 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
@@ -460,6 +464,8 @@
 				15E21AF72F34010000A9BB70 /* TransactionDetailSheet.swift */,
 				15E21AF92F34020000A9BB73 /* TransactionRow.swift */,
 				15E21AFB2F34030000A9BB75 /* AllTransactionsView.swift */,
+				CDBB00012FA1000000000001 /* CashAccountsCard.swift */,
+				CDBB00032FA1000000000001 /* CashAccountDetailView.swift */,
 			);
 			path = Cashflow;
 			sourceTree = "<group>";
@@ -701,6 +707,8 @@
 				15E21AF82F34010000A9BB71 /* TransactionDetailSheet.swift in Sources */,
 				15E21AFA2F34020000A9BB72 /* TransactionRow.swift in Sources */,
 				15E21AFC2F34030000A9BB74 /* AllTransactionsView.swift in Sources */,
+				CDBB00022FA1000000000001 /* CashAccountsCard.swift in Sources */,
+				CDBB00042FA1000000000001 /* CashAccountDetailView.swift in Sources */,
 				153CA31A2F34EDEC001ED98E /* TopHeaderBar.swift in Sources */,
 				15E21AAF2F324F1F00A9BB60 /* MonthIndicator.swift in Sources */,
 				15E21AEF2F33C3F600A9BB60 /* IncomeCard.swift in Sources */,

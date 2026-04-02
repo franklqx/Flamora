@@ -37,6 +37,8 @@ struct CashflowView: View {
     @State private var allTransactions: [Transaction] = []
     /// 与 `transaction.accountId` 匹配，供交易详情 Sheet 展示账户行。
     @State private var linkedAccounts: [Account] = []
+    /// Cash 页账户列表：depository + credit，来自 get-net-worth-summary.accounts。
+    @State private var cashAccountsList: [APIAccount] = []
     @State private var selectedTransaction: Transaction? = nil
     @State private var showAllTransactions = false
     @State private var showSavingsInput = false
@@ -76,6 +78,16 @@ struct CashflowView: View {
         && (apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget) > 0
     }
 
+    private var isCashflowUnlocked: Bool {
+        plaidManager.hasLinkedBank && budgetSetupCompleted
+    }
+
+    private var incomePlaceholderMessage: String {
+        plaidManager.hasLinkedBank
+            ? "Complete budget setup to unlock income"
+            : "Connect accounts to see income"
+    }
+
     var body: some View {
         connectedView
     }
@@ -93,7 +105,8 @@ struct CashflowView: View {
                             onCardTapped:    { showTotalIncomeDetail = true },
                             onActiveTapped:  { showActiveIncomeDetail = true },
                             onPassiveTapped: { showPassiveIncomeDetail = true },
-                            isConnected:     plaidManager.hasLinkedBank
+                            isConnected:     isCashflowUnlocked,
+                            placeholderMessage: incomePlaceholderMessage
                         )
                         .padding(.horizontal, AppSpacing.screenPadding)
 
@@ -119,6 +132,8 @@ struct CashflowView: View {
                         )
                         .padding(.horizontal, AppSpacing.screenPadding)
 
+                        cashAccountsSection
+
                         transactionsSection
                     }
                     .frame(minHeight: proxy.size.height, alignment: .top)
@@ -137,6 +152,9 @@ struct CashflowView: View {
             Task { await loadCashflowData() }
         }
         .onChange(of: plaidManager.hasLinkedBank) { _, _ in
+            Task { await loadCashflowData() }
+        }
+        .onChange(of: budgetSetupCompleted) { _, _ in
             Task { await loadCashflowData() }
         }
         .fullScreenCover(isPresented: $showSavingsSummary) {
@@ -229,7 +247,20 @@ private extension CashflowView {
     func loadCashflowData() async {
         let monthStr = apiMonthString(from: Date())
 
-        if !plaidManager.hasLinkedBank {
+        // 账户列表独立于 budget setup，只要连接了银行就加载
+        if plaidManager.hasLinkedBank {
+            if let nw = try? await APIService.shared.getNetWorthSummary() {
+                linkedAccounts = nw.accounts.map { Account.fromNetWorthAccount($0) }
+                cashAccountsList = nw.accounts.filter {
+                    $0.type == "depository" || $0.type == "credit"
+                }
+            }
+        } else {
+            linkedAccounts = []
+            cashAccountsList = []
+        }
+
+        guard isCashflowUnlocked else {
             apiBudget = .empty
             currentSavings = 0
             needsTotal = 0
@@ -245,7 +276,6 @@ private extension CashflowView {
             cashflowPassiveIncomeDetail = nil
             cashflowSavingsByYear = nil
             allTransactions = []
-            linkedAccounts = []
             return
         }
 
@@ -304,12 +334,6 @@ private extension CashflowView {
         if let tx = try? await APIService.shared.getTransactions(page: 1, limit: 20) {
             allTransactions = tx.transactions.map { Transaction(from: $0) }
         }
-
-        if let nw = try? await APIService.shared.getNetWorthSummary() {
-            linkedAccounts = nw.accounts.map { Account.fromNetWorthAccount($0) }
-        } else {
-            linkedAccounts = []
-        }
     }
 
     private func fetchBudget(month: String) async -> APIMonthlyBudget? {
@@ -320,6 +344,26 @@ private extension CashflowView {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM"
         return formatter.string(from: date)
+    }
+}
+
+// MARK: - Cash Accounts
+
+private extension CashflowView {
+    var cashAccountsSection: some View {
+        Group {
+            if plaidManager.hasLinkedBank && !cashAccountsList.isEmpty {
+                let depository = cashAccountsList.filter { $0.type == "depository" }
+                let credit     = cashAccountsList.filter { $0.type == "credit" }
+                CashAccountsCard(
+                    cashAccounts: depository,
+                    creditAccounts: credit,
+                    lastSyncedAt: nil,
+                    onAddAccount: { Task { await plaidManager.startLinkFlow() } }
+                )
+                .padding(.horizontal, AppSpacing.screenPadding)
+            }
+        }
     }
 }
 
@@ -336,7 +380,7 @@ private extension CashflowView {
 
                 Spacer()
 
-                if plaidManager.hasLinkedBank {
+                if isCashflowUnlocked {
                     Button(action: { showAllTransactions = true }) {
                         Text("SEE ALL")
                             .font(.smallLabel)
@@ -348,7 +392,7 @@ private extension CashflowView {
             }
             .padding(.horizontal, AppSpacing.screenPadding)
 
-            if plaidManager.hasLinkedBank {
+            if isCashflowUnlocked {
                 ForEach(allTransactions.sorted {
                     if $0.date != $1.date { return $0.date > $1.date }
                     return ($0.time ?? "") > ($1.time ?? "")
@@ -360,10 +404,12 @@ private extension CashflowView {
                 }
             } else {
                 HStack(spacing: AppSpacing.sm) {
-                    Image(systemName: "lock.fill")
+                    Image(systemName: plaidManager.hasLinkedBank ? "sparkles" : "lock.fill")
                         .font(.footnoteRegular)
                         .foregroundStyle(AppColors.textTertiary.opacity(0.45))
-                    Text("Connect accounts to see your transactions")
+                    Text(plaidManager.hasLinkedBank
+                         ? "Complete Build Your Plan to unlock transactions"
+                         : "Connect accounts to see your transactions")
                         .font(.footnoteRegular)
                         .foregroundStyle(AppColors.textTertiary)
                 }

@@ -67,6 +67,11 @@ struct BS_AccountSelectionView: View {
                 .font(.inlineLabel)
                 .foregroundStyle(AppColors.textSecondary)
                 .lineSpacing(3)
+
+            Text("Investment accounts stay in the Investment module and won’t be used to build this budget.")
+                .font(.caption)
+                .foregroundStyle(AppColors.textTertiary)
+                .lineSpacing(3)
         }
     }
 

@@ -42,7 +42,7 @@ struct SavingsTargetCard: View {
                             .font(.cardHeader)
                             .foregroundColor(AppColors.textTertiary)
                             .tracking(AppTypography.Tracking.cardHeader)
-                        if isConnected {
+                        if isConnected && hasBudgetSetup {
                             Image(systemName: "chevron.right")
                                 .font(.miniLabel)
                                 .foregroundColor(AppColors.textTertiary)
@@ -137,10 +137,14 @@ struct SavingsTargetCard: View {
                 .padding(.bottom, AppSpacing.cardPadding)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
-                .onTapGesture { if isConnected { onCardTap?() } }
+                .onTapGesture {
+                    if isConnected && hasBudgetSetup {
+                        onCardTap?()
+                    }
+                }
             }
 
-            if currentAmount <= 0 && isConnected {
+            if currentAmount <= 0 && isConnected && hasBudgetSetup {
                 Button(action: onAdd) {
                     ZStack {
                         Circle()

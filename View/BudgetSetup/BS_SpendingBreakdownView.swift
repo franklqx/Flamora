@@ -65,16 +65,6 @@ struct BS_SpendingBreakdownView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Button { viewModel.goBack() } label: {
-                HStack(spacing: AppSpacing.xs) {
-                    Image(systemName: "chevron.left")
-                    Text("Back")
-                }
-                .font(.bodySmall)
-                .foregroundStyle(AppColors.textSecondary)
-            }
-            .padding(.bottom, AppSpacing.sm)
-
             Text("Your Spending Breakdown")
                 .font(.cardFigurePrimary)
                 .foregroundStyle(AppColors.textPrimary)
@@ -390,7 +380,9 @@ struct BS_SpendingBreakdownView: View {
                 .frame(height: AppRadius.button)
 
             Button {
-                Task { await viewModel.loadPlans() }
+                if viewModel.plansResponse == nil {
+                    Task { await viewModel.loadPlans() }
+                }
                 viewModel.goToStep(.choosePath)
             } label: {
                 Text("Continue")

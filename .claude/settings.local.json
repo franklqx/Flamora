@@ -67,7 +67,20 @@
       "Skill(design-review:*)",
       "Bash(supabase status:*)",
       "Bash(supabase functions deploy:*)",
-      "Bash(cd ~/Desktop/Fire cursor)"
+      "Bash(cd ~/Desktop/Fire cursor)",
+      "Bash(supabase:*)",
+      "Bash(supabase projects list:*)",
+      "Bash(PROJECT_URL=\"https://vnyalfpmopvoswccewju.supabase.co\")",
+      "Bash(SERVICE_ROLE=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZueWFsZnBtb3B2b3N3Y2Nld2p1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDE4ODY4OCwiZXhwIjoyMDg1NzY0Njg4fQ.N5JqLCHNBkBlPuIQjpzlWXaFXcHWRjyCRGj3pVJYEAw\")",
+      "Bash(__NEW_LINE_4b9a981916ad6ddd__ echo \"=== investment_holdings \\(institution_value per holding\\) ===\")",
+      "Bash(__NEW_LINE_4b9a981916ad6ddd__ echo \"\")",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(SERVICE_ROLE=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZueWFsZnBtb3B2b3N3Y2Nld2p1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDE4ODY4OCwiZXhwIjoyMDg1NzY0Njg4fQ.4LqktDFt4Bwaqv1kSPA5zPWlsgivwrp4y2bn2nqDpLk\")",
+      "Bash(__NEW_LINE_42f812d789b0afa2__ echo \"=== plaid_accounts \\(investment, is_active\\) ===\")",
+      "Bash(__NEW_LINE_42f812d789b0afa2__ echo \"\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

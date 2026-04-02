@@ -28,30 +28,10 @@ struct AccountDetailView: View {
     private var holdings: [Holding] { apiHoldings }
 
     /// No account-level balance history API exists yet.
-    /// Show a flat line at current balance so the chart is honest (no artificial +/-).
-    private var filteredSnapshots: [BalanceSnapshot] {
-        let cal = Calendar.current
-        let now = Date()
-        let cutoff: Date
-        switch selectedPeriod {
-        case .oneWeek:     cutoff = cal.date(byAdding: .weekOfYear, value: -1,  to: now) ?? now
-        case .oneMonth:    cutoff = cal.date(byAdding: .month,      value: -1,  to: now) ?? now
-        case .threeMonths: cutoff = cal.date(byAdding: .month,      value: -3,  to: now) ?? now
-        case .oneYear:     cutoff = cal.date(byAdding: .year,       value: -1,  to: now) ?? now
-        }
-        return [
-            BalanceSnapshot(id: "trend-a", accountId: account.id, date: cutoff, balance: account.balance),
-            BalanceSnapshot(id: "trend-b", accountId: account.id, date: now,    balance: account.balance)
-        ]
-    }
+    /// Return empty so the chart section shows an honest placeholder, not a fake flat line.
+    private var filteredSnapshots: [BalanceSnapshot] { [] }
 
-    private var performancePercent: Double? {
-        guard filteredSnapshots.count >= 2 else { return nil }
-        let start   = filteredSnapshots.first!.balance
-        let current = filteredSnapshots.last!.balance
-        guard start > 0 else { return nil }
-        return (current - start) / start * 100
-    }
+    private var performancePercent: Double? { nil }
 
     // MARK: - Body
 
@@ -123,7 +103,7 @@ struct AccountDetailView: View {
                 Text(account.institution)
                     .font(.h3)
                     .foregroundStyle(AppColors.textPrimary)
-                Text(lastUpdatedLabel)
+                Text(account.accountType.displayLabel)
                     .font(.inlineLabel)
                     .foregroundColor(AppColors.textTertiary)
             }
@@ -167,32 +147,26 @@ struct AccountDetailView: View {
     // MARK: - Chart
 
     private var chartSection: some View {
-        VStack(spacing: AppSpacing.md) {
-            // Period selector
-            HStack(spacing: AppSpacing.sm) {
-                ForEach(ChartPeriod.allCases, id: \.self) { period in
-                    Button(action: { selectedPeriod = period }) {
-                        Text(period.rawValue)
-                            .font(.smallLabel)
-                            .foregroundColor(selectedPeriod == period
-                                ? AppColors.textPrimary
-                                : AppColors.textTertiary)
-                            .frame(width: 36, height: 28)
-                            .background(selectedPeriod == period
-                                ? AppColors.surfaceElevated
-                                : Color.clear)
-                            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-                    }
-                    .buttonStyle(.plain)
-                }
-                Spacer()
+        HStack(spacing: AppSpacing.md) {
+            Image(systemName: "chart.line.uptrend.xyaxis")
+                .font(.h3)
+                .foregroundColor(AppColors.textTertiary.opacity(0.35))
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text("History not yet available")
+                    .font(.bodySemibold)
+                    .foregroundColor(AppColors.textTertiary)
+                Text("Balance history will appear after a few syncs.")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textTertiary.opacity(0.6))
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.horizontal, AppSpacing.cardPadding)
-
-            AccountLineChart(snapshots: filteredSnapshots, accentColor: accentColor)
-                .frame(height: 120)
-                .padding(.horizontal, AppSpacing.cardPadding)
+            Spacer()
         }
+        .padding(AppSpacing.cardPadding)
+        .frame(maxWidth: .infinity)
+        .background(AppColors.surfaceElevated)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+        .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.bottom, AppSpacing.lg)
     }
 

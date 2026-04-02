@@ -82,15 +82,15 @@ struct InvestmentView: View {
 
 // MARK: - Data Loading & Computed Data
 private extension InvestmentView {
-    /// Investment Tab 主数字：账户总值（含未投资现金）→ 净资产投资合计 → 净资产总值，依次回退。
+    /// Investment Tab 主数字：账户总值（含未投资现金）→ 净资产投资合计 → 0。
+    /// 不允许 fallback 到 totalNetWorth（totalNetWorth 混入 depository，语义错误）。
     var portfolioBalanceDisplay: Double {
         if let h = apiHoldingsPayload {
             let accountValue = h.summary.totalAccountValue ?? h.summary.totalValue
             if accountValue > 0 { return accountValue }
         }
         guard let nw = apiNetWorth else { return 0 }
-        if let inv = nw.breakdown.investmentTotal, inv > 0 { return inv }
-        return nw.totalNetWorth
+        return nw.breakdown.investmentTotal ?? 0
     }
 
     /// 未连接：零占位；已连接：用 `get-investment-holdings` 聚合；拉取失败：零占位。

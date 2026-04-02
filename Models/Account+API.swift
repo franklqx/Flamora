@@ -5,6 +5,9 @@
 
 import Foundation
 
+/// Allow APIAccount to be used as SwiftUI sheet/fullScreenCover item.
+extension APIAccount: Identifiable {}
+
 extension Account {
     /// 由 `get-net-worth-summary` 的 `accounts` 项映射。
     static func fromNetWorthAccount(_ a: APIAccount) -> Account {

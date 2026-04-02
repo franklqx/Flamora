@@ -25,6 +25,7 @@ struct IncomeCard: View {
     /// Called when the period toggle changes — lets parent reload data
     var onPeriodChanged: ((Bool) -> Void)? = nil   // true = year, false = month
     var isConnected: Bool = true
+    var placeholderMessage: String = "Connect accounts to see income"
 
     // MARK: – Internal state
 
@@ -126,7 +127,7 @@ struct IncomeCard: View {
                     Text("$—")
                         .font(.cardFigurePrimary)
                         .foregroundStyle(AppColors.textTertiary)
-                    Text("Connect accounts to see income")
+                    Text(placeholderMessage)
                         .font(.caption)
                         .foregroundStyle(AppColors.textTertiary)
                         .multilineTextAlignment(.center)

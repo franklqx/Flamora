@@ -24,3 +24,24 @@ verify_jwt = false
 
 [functions.disconnect-bank]
 verify_jwt = false
+
+[functions.get-net-worth-summary]
+verify_jwt = false
+
+[functions.get-portfolio-history]
+verify_jwt = false
+
+[functions.calculate-spending-stats]
+verify_jwt = false
+
+[functions.generate-financial-diagnosis]
+verify_jwt = false
+
+[functions.generate-plans]
+verify_jwt = false
+
+[functions.generate-spending-plan]
+verify_jwt = false
+
+[functions.handle-plaid-webhook]
+verify_jwt = false

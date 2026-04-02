@@ -102,6 +102,14 @@ function round2(value: number): number {
   return Math.round(value * 100) / 100
 }
 
+function roundMoney(value: number): number {
+  return Math.round(value / 10) * 10
+}
+
+function roundRate(value: number): number {
+  return Math.round(value * 10) / 10
+}
+
 // ============================================================
 // Plan generation
 // ============================================================
@@ -172,10 +180,10 @@ function generateAllPlans(input: GeneratePlansRequest) {
   }
 
   // Step 6: Compute "Do nothing" baseline
-  const baselineSave = Math.max(0, currentSavings)
+  const baselineSave = roundMoney(Math.max(0, currentSavings))
   const baseline = {
-    savings_rate: round2(currentRate),
-    monthly_save: round2(baselineSave),
+    savings_rate: roundRate(currentRate),
+    monthly_save: baselineSave,
     projection_1y: projectPortfolio(baselineSave, netWorth, 1),
     projection_5y: projectPortfolio(baselineSave, netWorth, 5),
     projection_10y: projectPortfolio(baselineSave, netWorth, 10),
@@ -183,10 +191,10 @@ function generateAllPlans(input: GeneratePlansRequest) {
 
   // Step 7: Build each plan
   function buildPlan(rate: number): PlanDetail {
-    const monthlySave = income * (rate / 100)
-    const monthlySpend = income - monthlySave
-    const flexibleSpend = Math.max(0, monthlySpend - fixed)
-    const extra = monthlySave - currentSavings
+    const monthlySave = roundMoney(income * (rate / 100))
+    const monthlySpend = roundMoney(income - monthlySave)
+    const flexibleSpend = roundMoney(Math.max(0, monthlySpend - fixed))
+    const extra = roundMoney(monthlySave - baseline.monthly_save)
     const compressionPct = flexible > 0
       ? round2((1 - flexibleSpend / flexible) * 100)
       : 0
@@ -196,11 +204,11 @@ function generateAllPlans(input: GeneratePlansRequest) {
     const p10y = projectPortfolio(monthlySave, netWorth, 10)
 
     return {
-      savings_rate: round2(rate),
-      monthly_save: round2(monthlySave),
-      monthly_spend: round2(monthlySpend),
-      flexible_spend: round2(flexibleSpend),
-      extra_per_month: round2(extra),
+      savings_rate: roundRate(rate),
+      monthly_save: monthlySave,
+      monthly_spend: monthlySpend,
+      flexible_spend: flexibleSpend,
+      extra_per_month: extra,
       flexible_compression_pct: compressionPct,
       projection_1y: p1y,
       projection_5y: p5y,

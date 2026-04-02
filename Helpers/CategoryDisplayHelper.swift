@@ -136,6 +136,8 @@ enum CategoryDisplay {
         "GOVERNMENT_AND_NON_PROFIT":              "Government & Fees",
         "TRANSFER":                               "Transfers",
         "OTHER":                                  "Other",
+        "OTHER_NEEDS":                            "Other Needs",
+        "OTHER_WANTS":                            "Other Wants",
     ]
 
     /// Prefix-based fallback mapping (uppercased prefixes).

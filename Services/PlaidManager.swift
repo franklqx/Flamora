@@ -111,17 +111,50 @@ class PlaidManager {
         print("🏦 [PlaidManager] institution: \(institutionName) (\(institutionId))")
         print("🏦 [PlaidManager] selected account IDs: \(selectedAccountIds)")
         do {
-            let session = try await client.auth.session
+            // Proactively refresh if token is near expiry — mirrors APIService.authenticatedRequest.
+            // User may spend several minutes inside Plaid Link UI; token can expire before we return.
+            let accessToken: String
+            do {
+                let current = try await client.auth.session
+                if current.expiresAt <= Date().timeIntervalSince1970 + 60 {
+                    print("🏦 [PlaidManager] Token near expiry — proactive refresh before exchange")
+                    accessToken = try await client.auth.refreshSession().accessToken
+                } else {
+                    accessToken = current.accessToken
+                }
+            } catch {
+                print("🏦 [PlaidManager] Session fetch failed — attempting refresh: \(error)")
+                accessToken = try await client.auth.refreshSession().accessToken
+            }
+
             let body = ExchangePublicTokenBody(
                 public_token: publicToken,
                 institution: .init(institution_id: institutionId, name: institutionName),
                 selected_account_ids: selectedAccountIds
             )
             let options = FunctionInvokeOptions(
-                headers: ["Authorization": "Bearer \(session.accessToken)"],
+                headers: ["Authorization": "Bearer \(accessToken)"],
                 body: body
             )
-            let response: ExchangeResponse = try await client.functions.invoke("exchange-public-token", options: options)
+            // Invoke with 401-retry (same pattern as APIService.perform)
+            let response: ExchangeResponse
+            do {
+                response = try await client.functions.invoke("exchange-public-token", options: options)
+            } catch let fnError as FunctionsError {
+                if case .httpError(let code, let data) = fnError, code == 401 {
+                    let errBody = String(data: data, encoding: .utf8) ?? "non-UTF8 (\(data.count) bytes)"
+                    print("🏦 [PlaidManager] ⚠️ 401 from exchange-public-token — body: \(errBody)")
+                    print("🏦 [PlaidManager] Refreshing session and retrying exchange-public-token…")
+                    let retryToken = try await client.auth.refreshSession().accessToken
+                    let retryOptions = FunctionInvokeOptions(
+                        headers: ["Authorization": "Bearer \(retryToken)"],
+                        body: body
+                    )
+                    response = try await client.functions.invoke("exchange-public-token", options: retryOptions)
+                } else {
+                    throw fnError
+                }
+            }
             if response.success {
                 hasLinkedBank = true
                 connectedInstitutionName = response.data.institution_name ?? institutionName
@@ -132,6 +165,13 @@ class PlaidManager {
             }
         } catch let decodingError as DecodingError {
             print("🏦 [PlaidManager] ❌ exchangePublicToken decode error: \(decodingError)")
+        } catch let fnError as FunctionsError {
+            if case .httpError(let code, let data) = fnError {
+                let errBody = String(data: data, encoding: .utf8) ?? "non-UTF8 (\(data.count) bytes)"
+                print("🏦 [PlaidManager] ❌ exchangePublicToken HTTP \(code) — body: \(errBody)")
+            } else {
+                print("🏦 [PlaidManager] ❌ exchangePublicToken FunctionsError: \(fnError)")
+            }
         } catch {
             print("🏦 [PlaidManager] ❌ exchangePublicToken error: \(error)")
         }

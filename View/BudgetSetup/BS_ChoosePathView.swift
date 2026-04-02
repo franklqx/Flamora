@@ -86,16 +86,6 @@ struct BS_ChoosePathView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Button { viewModel.goBack() } label: {
-                HStack(spacing: AppSpacing.xs) {
-                    Image(systemName: "chevron.left")
-                    Text("Back")
-                }
-                .font(.bodySmall)
-                .foregroundStyle(AppColors.textSecondary)
-            }
-            .padding(.bottom, AppSpacing.sm)
-
             Text("Pick Your Plan")
                 .font(.cardFigurePrimary)
                 .foregroundStyle(AppColors.textPrimary)
@@ -103,12 +93,7 @@ struct BS_ChoosePathView: View {
             Group {
                 let avgExpense = viewModel.spendingStats?.avgMonthlyExpenses ?? 0
                 if avgExpense > 0 {
-                    Text("Choose how much to spend each month. You currently spend ")
-                        .foregroundStyle(AppColors.textSecondary)
-                    + Text("$\(formattedInt(avgExpense))/mo")
-                        .fontWeight(.semibold)
-                        .foregroundStyle(AppColors.overlayWhiteOnGlass)
-                    + Text(" on average.")
+                    Text("Choose how much to spend each month. You currently spend \(Text("$\(formattedInt(avgExpense))/mo").fontWeight(.semibold).foregroundStyle(AppColors.overlayWhiteOnGlass)) on average.")
                         .foregroundStyle(AppColors.textSecondary)
                 } else {
                     Text("Choose how much to spend each month.")
@@ -141,7 +126,6 @@ struct BS_ChoosePathView: View {
                           difficulty: Int, difficultyLabel: String, difficultyColor: Color,
                           showBestFit: Bool = false) -> some View {
         let isSelected = viewModel.selectedPlanType == type
-        let extraPerMonth = plan.extraPerMonth
 
         Button {
             withAnimation(.easeOut(duration: 0.3)) {
@@ -310,17 +294,9 @@ struct BS_ChoosePathView: View {
                     .foregroundStyle(greenLabel)
             }
 
-            (Text("$\(formattedCompact(monthlySave))/mo")
-                .fontWeight(.bold)
-                .foregroundStyle(saveColor)
-            + Text(" invested at 8% annual return, grows to ")
-                .foregroundStyle(AppColors.overlayWhiteOnGlass)
-            + Text("$\(formattedCompact(g10y))")
-                .fontWeight(.bold)
-                .foregroundStyle(AppColors.textPrimary)
-            + Text(" in 10 years.")
-                .foregroundStyle(AppColors.overlayWhiteOnGlass))
+        Text("\(Text("$\(formattedCompact(monthlySave))/mo").fontWeight(.bold).foregroundStyle(saveColor)) invested at 8% annual return, grows to \(Text("$\(formattedCompact(g10y))").fontWeight(.bold).foregroundStyle(AppColors.textPrimary)) in 10 years.")
             .font(.bodySmall)
+            .foregroundStyle(AppColors.overlayWhiteOnGlass)
             .lineSpacing(3)
 
             Text(subText)
@@ -390,8 +366,8 @@ struct BS_ChoosePathView: View {
         let avgExpense = viewModel.spendingStats?.avgMonthlyExpenses ?? income * 0.8
         // 月均必需支出下限（API avg_monthly_fixed）；用于自定义预算危险区判断
         let monthlyNeedsBaseline = viewModel.spendingStats?.avgMonthlyFixed ?? avgExpense * 0.5
-        let sliderMin: Double = 10_000
-        let sliderMax = max((avgExpense * 1.2 / 500).rounded() * 500, sliderMin + 500)
+        let sliderMin = max(0, roundedDown(min(monthlyNeedsBaseline * 0.9, avgExpense * 0.65)))
+        let sliderMax = max(roundedUp(max(avgExpense * 1.25, income * 0.95)), sliderMin + 200)
         let budget = customBudgetAmount > 0 ? customBudgetAmount : sliderMin
         let monthlySave = max(0, income - budget)
         let savingsRate = income > 0 ? monthlySave / income * 100 : 0
@@ -423,7 +399,7 @@ struct BS_ChoosePathView: View {
             .padding(.vertical, AppSpacing.xs)
 
             // Slider
-            Slider(value: $customBudgetAmount, in: sliderMin...sliderMax, step: 500)
+            Slider(value: $customBudgetAmount, in: sliderMin...sliderMax, step: 10)
                 .tint(AppColors.overlayWhiteAt60)
                 .accessibilityLabel("Monthly budget slider")
                 .accessibilityValue("$\(formattedInt(budget))")
@@ -461,7 +437,7 @@ struct BS_ChoosePathView: View {
         .onAppear {
             if customBudgetAmount == 0 {
                 let initial = viewModel.plansResponse?.plans.recommended.monthlySpend ?? avgExpense * 0.85
-                customBudgetAmount = (initial / 500).rounded() * 500
+                customBudgetAmount = min(max(roundedToNearest10(initial), sliderMin), sliderMax)
             }
         }
         .onChange(of: customBudgetAmount) { _, newBudget in
@@ -588,10 +564,11 @@ struct BS_ChoosePathView: View {
     }
 
     private func formattedPct(_ value: Double) -> String {
-        if value == value.rounded() {
-            return "\(Int(value))%"
+        let rounded = (value * 10).rounded() / 10
+        if rounded == rounded.rounded() {
+            return "\(Int(rounded))%"
         }
-        return String(format: "%.1f%%", value)
+        return String(format: "%.1f%%", rounded)
     }
 
     private func formattedCompact(_ value: Double) -> String {
@@ -601,6 +578,18 @@ struct BS_ChoosePathView: View {
             return "\(Int(value / 1_000))K"
         }
         return formattedInt(value)
+    }
+
+    private func roundedToNearest10(_ value: Double) -> Double {
+        (value / 10).rounded() * 10
+    }
+
+    private func roundedDown(_ value: Double) -> Double {
+        floor(value / 10) * 10
+    }
+
+    private func roundedUp(_ value: Double) -> Double {
+        ceil(value / 10) * 10
     }
 }
 

@@ -40,7 +40,56 @@ serve(async (req) => {
     )
 
     // ============================================================
-    // 2. 获取投资持仓 + 证券信息
+    // 2. 先查活跃 investment 账户（作为 holdings 查询的过滤基准）
+    //    只有 is_active=true AND type='investment' 的账户才算入本次统计
+    // ============================================================
+    const { data: investmentAccounts } = await supabase
+      .from('plaid_accounts')
+      .select(`
+        id,
+        name,
+        official_name,
+        mask,
+        subtype,
+        balance_current,
+        plaid_items ( institution_name )
+      `)
+      .eq('user_id', user.id)
+      .eq('type', 'investment')
+      .eq('is_active', true)
+
+    const activeInvestmentAccounts = investmentAccounts || []
+    const activeAccountIds = activeInvestmentAccounts.map((a: any) => a.id)
+
+    // 没有活跃 investment 账户 → 直接返回空结果
+    if (activeAccountIds.length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            summary: {
+              total_value: 0,
+              total_account_value: 0,
+              total_holdings_value: 0,
+              uninvested_cash_value: 0,
+              total_cost_basis: 0,
+              total_gain_loss: null,
+              total_gain_loss_pct: null,
+              holdings_count: 0,
+            },
+            type_breakdown: [],
+            holdings: [],
+            accounts: [],
+          },
+          meta: { timestamp: new Date().toISOString(), user_id: user.id },
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // ============================================================
+    // 3. 获取投资持仓 + 证券信息
+    //    只查 activeAccountIds 范围内的 holdings，与账户口径一致
     // ============================================================
     const { data: holdings, error: holdingsError } = await supabase
       .from('investment_holdings')
@@ -55,9 +104,10 @@ serve(async (req) => {
         institution_price_as_of,
         iso_currency_code,
         last_updated,
-        plaid_accounts!inner(name, official_name, mask, type, subtype, balance_current)
+        plaid_accounts!inner ( name, mask, subtype, plaid_items ( institution_name ) )
       `)
       .eq('user_id', user.id)
+      .in('plaid_account_id', activeAccountIds)
 
     if (holdingsError) {
       console.error('Error fetching holdings:', holdingsError)
@@ -83,7 +133,7 @@ serve(async (req) => {
     }
 
     // ============================================================
-    // 3. 组装持仓数据
+    // 4. 组装持仓数据（只来自 active investment accounts）
     // ============================================================
     const enrichedHoldings = (holdings || []).map((h: any) => {
       const security = securitiesMap.get(h.security_id) || {}
@@ -110,9 +160,11 @@ serve(async (req) => {
         gain_loss: gainLoss ? parseFloat(gainLoss.toFixed(2)) : null,
         gain_loss_pct: gainLossPct,
         price_as_of: h.institution_price_as_of,
-        // 账户信息
-        account_name: h.plaid_accounts?.name,
-        account_mask: h.plaid_accounts?.mask,
+        // 账户归属信息（满足 Step 3 要求 7/8）
+        account_name: h.plaid_accounts?.name ?? null,
+        account_mask: h.plaid_accounts?.mask ?? null,
+        account_subtype: h.plaid_accounts?.subtype ?? null,
+        institution_name: h.plaid_accounts?.plaid_items?.institution_name ?? null,
       }
     })
 
@@ -120,7 +172,7 @@ serve(async (req) => {
     enrichedHoldings.sort((a: any, b: any) => (b.value || 0) - (a.value || 0))
 
     // ============================================================
-    // 4. 计算汇总
+    // 5. 计算汇总（基于 active investment holdings）
     // ============================================================
     const totalHoldingsValue = enrichedHoldings.reduce((sum: number, h: any) => sum + (h.value || 0), 0)
     const totalCostBasis = enrichedHoldings.reduce((sum: number, h: any) => sum + (h.cost_basis || 0), 0)
@@ -129,7 +181,8 @@ serve(async (req) => {
       ? parseFloat(((totalGainLoss! / totalCostBasis) * 100).toFixed(2))
       : null
 
-    // 按类型分组汇总（用于 AssetAllocation 饼图）
+    // 按证券类型分组汇总（用于 AssetAllocation 饼图）
+    // type_breakdown 只来自 active investment holdings
     const byType: Record<string, number> = {}
     for (const h of enrichedHoldings) {
       const type = h.type || 'other'
@@ -146,15 +199,8 @@ serve(async (req) => {
       }))
       .sort((a, b) => b.value - a.value)
 
-    // 查询活跃 investment 账户余额（balance_current 包含未投资现金）
-    const { data: investmentAccounts } = await supabase
-      .from('plaid_accounts')
-      .select('id, name, official_name, mask, balance_current')
-      .eq('user_id', user.id)
-      .eq('type', 'investment')
-      .eq('is_active', true)
-
-    const totalAccountValue = (investmentAccounts || [])
+    // total_account_value = active investment accounts 的 balance_current 总和
+    const totalAccountValue = activeInvestmentAccounts
       .reduce((sum: number, a: any) => sum + (a.balance_current || 0), 0)
 
     const uninvestedCashValue = Math.max(0, totalAccountValue - totalHoldingsValue)
@@ -166,17 +212,19 @@ serve(async (req) => {
       if (aid) holdingsValueByAccountId[aid] = (holdingsValueByAccountId[aid] || 0) + (h.value || 0)
     }
 
-    const accountsBreakdown = (investmentAccounts || []).map((a: any) => ({
+    const accountsBreakdown = activeInvestmentAccounts.map((a: any) => ({
       id: a.id,
       name: a.name || a.official_name || '',
       mask: a.mask ?? null,
+      subtype: a.subtype ?? null,
+      institution_name: a.plaid_items?.institution_name ?? null,
       balance_current: parseFloat((a.balance_current || 0).toFixed(2)),
       holdings_value: parseFloat((holdingsValueByAccountId[a.id] || 0).toFixed(2)),
       uninvested_cash_value: parseFloat(Math.max(0, (a.balance_current || 0) - (holdingsValueByAccountId[a.id] || 0)).toFixed(2)),
     }))
 
     // ============================================================
-    // 5. 返回结果
+    // 6. 返回结果
     // ============================================================
     return new Response(
       JSON.stringify({
@@ -188,7 +236,7 @@ serve(async (req) => {
             total_holdings_value: parseFloat(totalHoldingsValue.toFixed(2)),
             uninvested_cash_value: parseFloat(uninvestedCashValue.toFixed(2)),
             total_cost_basis: parseFloat(totalCostBasis.toFixed(2)),
-            total_gain_loss: totalGainLoss ? parseFloat(totalGainLoss.toFixed(2)) : null,
+            total_gain_loss: totalGainLoss !== null ? parseFloat(totalGainLoss.toFixed(2)) : null,
             total_gain_loss_pct: totalGainLossPct,
             holdings_count: enrichedHoldings.length,
           },

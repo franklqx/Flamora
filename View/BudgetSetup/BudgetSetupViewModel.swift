@@ -16,6 +16,7 @@ import SwiftUI
 
 @Observable
 class BudgetSetupViewModel {
+    private let budgetRoundingUnit: Double = 10
     
     // MARK: - Navigation
     
@@ -179,10 +180,13 @@ class BudgetSetupViewModel {
         let flexible = spendingStats?.avgMonthlyFlexible ?? 0
         let rate = customSavingsRate
         
-        let monthlySave = income * (rate / 100)
-        let monthlySpend = income - monthlySave
-        let flexibleSpend = max(0, monthlySpend - fixed)
-        let extra = monthlySave - savings
+        let monthlySaveRaw = income * (rate / 100)
+        let monthlySpendRaw = income - monthlySaveRaw
+        let flexibleSpendRaw = max(0, monthlySpendRaw - fixed)
+        let monthlySave = roundBudgetAmount(monthlySaveRaw)
+        let monthlySpend = roundBudgetAmount(monthlySpendRaw)
+        let flexibleSpend = roundBudgetAmount(flexibleSpendRaw)
+        let extra = roundBudgetAmount(monthlySave - roundBudgetAmount(savings))
         let compressionPct = flexible > 0 ? (1 - flexibleSpend / flexible) * 100 : 0
         
         let p1y = projectPortfolio(monthlySavings: monthlySave, startingPortfolio: currentNetWorth, years: 1)
@@ -205,7 +209,7 @@ class BudgetSetupViewModel {
         }()
         
         return PlanDetail(
-            savingsRate: rate,
+            savingsRate: roundPercentage(rate),
             monthlySave: monthlySave,
             monthlySpend: monthlySpend,
             flexibleSpend: flexibleSpend,
@@ -218,6 +222,14 @@ class BudgetSetupViewModel {
             feasibility: feasibility,
             status: monthlySave < 0 ? "deficit" : (currentRate < 0 && monthlySave >= 0 ? "breakeven" : "on_track")
         )
+    }
+
+    private func roundBudgetAmount(_ value: Double) -> Double {
+        (value / budgetRoundingUnit).rounded() * budgetRoundingUnit
+    }
+
+    private func roundPercentage(_ value: Double) -> Double {
+        (value * 10).rounded() / 10
     }
     
     /// Client-side compound growth projection (matches backend formula)

@@ -56,7 +56,7 @@ struct JourneyView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: AppSpacing.lg) {
                         PortfolioCard(
-                            portfolioBalance: netWorthSummary.breakdown.investmentTotal ?? netWorthSummary.totalNetWorth,
+                            portfolioBalance: netWorthSummary.breakdown.investmentTotal ?? 0,
                             gainAmount: netWorthSummary.growthAmount ?? 0,
                             gainPercentage: netWorthSummary.growthPercentage ?? 0,
                             realChartData: plaidManager.hasLinkedBank ? { [portfolioHistoryCache] range in
