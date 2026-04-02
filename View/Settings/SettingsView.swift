@@ -18,21 +18,25 @@ struct SettingsView: View {
     @State private var isDisconnecting = false
     @State private var showPaywall = false
 
+    @AppStorage(FlamoraStorageKey.budgetSetupCompleted) private var budgetSetupCompleted: Bool = false
+    @State private var currentBudget: APIMonthlyBudget = .empty
+
     var body: some View {
         NavigationStack {
             ZStack {
                 AppColors.backgroundPrimary.ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 24) {
+                    VStack(spacing: AppSpacing.sectionGap) {
                         profileSection
                         subscriptionSection
                         if plaidManager.hasLinkedBank { bankSection }
+                        budgetSection
                         signOutSection
                         legalSection
                     }
-                    .padding(20)
-                    .padding(.bottom, 40)
+                    .padding(AppSpacing.cardPadding)
+                    .padding(.bottom, AppSpacing.xl)
                 }
             }
             .navigationTitle("Settings")
@@ -45,6 +49,16 @@ struct SettingsView: View {
                 }
             }
             .preferredColorScheme(.dark)
+            .task {
+                if budgetSetupCompleted {
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM"
+                    let month = formatter.string(from: Date())
+                    if let b = try? await APIService.shared.getMonthlyBudget(month: month) {
+                        currentBudget = b
+                    }
+                }
+            }
         }
         .sheet(isPresented: $showPaywall) {
             PaywallSheet()
@@ -74,7 +88,7 @@ struct SettingsView: View {
 private extension SettingsView {
 
     var profileSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AppSpacing.sectionLabelGap) {
             sectionLabel("Account")
             cardContainer {
                 row(
@@ -88,7 +102,7 @@ private extension SettingsView {
     }
 
     var subscriptionSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AppSpacing.sectionLabelGap) {
             sectionLabel("Subscription")
             cardContainer {
                 VStack(spacing: 0) {
@@ -166,7 +180,7 @@ private extension SettingsView {
     }
 
     var bankSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AppSpacing.sectionLabelGap) {
             sectionLabel("Connected Bank")
             cardContainer {
                 VStack(spacing: 0) {
@@ -205,6 +219,51 @@ private extension SettingsView {
         }
     }
 
+    var budgetSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sectionLabelGap) {
+            sectionLabel("Budget")
+            cardContainer {
+                VStack(spacing: 0) {
+                    if budgetSetupCompleted {
+                        let totalBudget = currentBudget.needsBudget + currentBudget.wantsBudget + currentBudget.savingsBudget
+                        let planName = currentBudget.selectedPlan?.capitalized ?? "Custom"
+                        let subtitle = totalBudget > 0 ? "\(planName) · $\(formattedBudget(totalBudget))/mo" : planName
+
+                        row(
+                            icon: "chart.pie.fill",
+                            iconColor: AppColors.accentPurple,
+                            title: "Current Budget",
+                            subtitle: subtitle
+                        )
+
+                        Divider().background(AppColors.borderLight).padding(.leading, 60)
+                    }
+
+                    Button(action: {
+                        dismiss()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            plaidManager.showBudgetSetup = true
+                        }
+                    }) {
+                        row(
+                            icon: "arrow.clockwise.circle.fill",
+                            iconColor: AppColors.budgetGold,
+                            title: budgetSetupCompleted ? "Rebuild Budget" : "Set Up Budget",
+                            trailing: {
+                                AnyView(
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundColor(AppColors.textTertiary)
+                                )
+                            }
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
     var signOutSection: some View {
         Button(action: {
             Task {
@@ -228,7 +287,7 @@ private extension SettingsView {
     }
 
     var legalSection: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: AppSpacing.md) {
             Text("Privacy Policy")
                 .font(.caption)
                 .foregroundColor(AppColors.textMuted)
@@ -245,6 +304,13 @@ private extension SettingsView {
 // MARK: - Reusable UI Helpers
 
 private extension SettingsView {
+
+    func formattedBudget(_ value: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        return formatter.string(from: NSNumber(value: value)) ?? "\(Int(value))"
+    }
 
     func sectionLabel(_ text: String) -> some View {
         Text(text)
@@ -275,15 +341,15 @@ private extension SettingsView {
         subtitle: String? = nil,
         trailing: (() -> AnyView)? = nil
     ) -> some View {
-        HStack(spacing: 14) {
+        HStack(spacing: AppSpacing.rowItem) {
             Image(systemName: icon)
                 .font(.figureSecondarySemibold)
                 .foregroundColor(iconColor)
                 .frame(width: 34, height: 34)
                 .background(iconColor.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 9))
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm + 1))
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(title)
                     .font(.supportingText)
                     .foregroundStyle(AppColors.textPrimary)
@@ -300,8 +366,8 @@ private extension SettingsView {
 
             trailing?()
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.rowItem)
     }
 }
 

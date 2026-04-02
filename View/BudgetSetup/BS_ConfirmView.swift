@@ -12,17 +12,16 @@ struct BS_ConfirmView: View {
     @Bindable var viewModel: BudgetSetupViewModel
     var onComplete: () -> Void
 
-    private let gradientColors = [Color(hex: "F5C842"), Color(hex: "E88BC4"), Color(hex: "B4A0E5")]
-    private let purpleColor = Color(hex: "C084FC")
-    private let tealColor   = AppColors.accentGreen   // #34D399 — exact match
-    private let goldColor   = Color(hex: "FBBF24")
+    private let purpleColor = AppColors.chartBlue
+    private let tealColor   = AppColors.chartAmber
+    private let goldColor   = AppColors.budgetGold
 
     @State private var showContent = false
     @State private var ringProgress: Double = 0
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundSecondary.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
@@ -95,15 +94,15 @@ struct BS_ConfirmView: View {
                     .rotationEffect(.degrees(-90))
 
                 VStack(spacing: AppSpacing.xs) {
-                    Text("MONTHLY BUDGET")
-                        .font(.cardHeader)
-                        .tracking(0.8)
-                        .foregroundStyle(AppColors.overlayWhiteOnPhoto)
-                    Text("$\(formattedInt(plan.totalSpend))")
-                        .font(.h1)
-                        .foregroundStyle(AppColors.textPrimary)
-                        .monospacedDigit()
-                }
+                Text("MONTHLY BUDGET")
+                    .font(.cardHeader)
+                    .tracking(0.8)
+                    .foregroundStyle(AppColors.overlayWhiteOnPhoto)
+                Text("$\(formattedInt(plan.totalSpend))")
+                    .font(.h1)
+                    .foregroundStyle(AppColors.textPrimary)
+                    .monospacedDigit()
+            }
             }
 
             // Legend — side by side
@@ -126,7 +125,7 @@ struct BS_ConfirmView: View {
     private func legendItem(color: Color, label: String, amount: Double) -> some View {
         HStack(spacing: AppSpacing.sm) {
             Circle().fill(color).frame(width: AppSpacing.sm, height: AppSpacing.sm)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(label)
                     .font(.footnoteRegular)
                     .foregroundStyle(AppColors.textSecondary)
@@ -205,7 +204,7 @@ struct BS_ConfirmView: View {
 
     private var stickyBottomCTA: some View {
         VStack(spacing: 0) {
-            LinearGradient(colors: [AppColors.backgroundSecondary.opacity(0), AppColors.backgroundSecondary], startPoint: .top, endPoint: .bottom)
+            LinearGradient(colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary], startPoint: .top, endPoint: .bottom)
                 .frame(height: AppRadius.button)
 
             VStack(spacing: 0) {
@@ -225,16 +224,16 @@ struct BS_ConfirmView: View {
                             ProgressView().tint(AppColors.textPrimary)
                         }
                         Text(viewModel.isSaving ? "Saving..." : "Start My Journey")
-                            .font(.figureSecondarySemibold)
+                            .font(.sheetPrimaryButton)
                     }
                     .foregroundStyle(AppColors.textInverse)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
                     .background(
-                        LinearGradient(colors: gradientColors, startPoint: .topLeading, endPoint: .bottomTrailing)
+                        LinearGradient(colors: AppColors.gradientFire, startPoint: .leading, endPoint: .trailing)
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
-                    .shadow(color: gradientColors[1].opacity(0.25), radius: AppSpacing.md, y: AppSpacing.sm)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+                    .shadow(color: AppColors.gradientMiddle.opacity(0.25), radius: AppSpacing.md, y: AppSpacing.sm)
                 }
                 .disabled(viewModel.isSaving)
 
@@ -247,7 +246,7 @@ struct BS_ConfirmView: View {
             }
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.md)
-            .background(AppColors.backgroundSecondary)
+            .background(AppColors.backgroundPrimary)
         }
     }
 

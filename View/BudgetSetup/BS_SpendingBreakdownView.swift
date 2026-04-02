@@ -16,9 +16,8 @@ struct BS_SpendingBreakdownView: View {
     @State private var showAllNeeds = false
     @State private var showAllWants = false
 
-    private let gradientColors = [Color(hex: "F5C842"), Color(hex: "E88BC4")]
-    private let purpleColor = Color(hex: "C084FC")
-    private let tealColor = Color(hex: "34D399")
+    private let purpleColor = AppColors.chartBlue
+    private let tealColor = AppColors.chartAmber
 
     /// 甜甜圈选中扇区（与 API 字段 `avg_monthly_fixed` / `avg_monthly_flexible` 对应为 Needs / Wants）。
     private enum Segment {
@@ -27,7 +26,7 @@ struct BS_SpendingBreakdownView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundSecondary.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
@@ -181,7 +180,7 @@ struct BS_SpendingBreakdownView: View {
         } label: {
             HStack(spacing: AppSpacing.sm) {
                 Circle().fill(color).frame(width: AppSpacing.sm, height: AppSpacing.sm)
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text(label)
                         .font(.footnoteRegular)
                         .foregroundStyle(AppColors.textSecondary)
@@ -348,7 +347,7 @@ struct BS_SpendingBreakdownView: View {
                 .monospacedDigit()
                 .frame(width: 64, alignment: .trailing)
         }
-        .padding(.vertical, 3)
+        .padding(.vertical, AppSpacing.xs)
     }
 
     // MARK: - Tip Banner
@@ -376,7 +375,7 @@ struct BS_SpendingBreakdownView: View {
 
     private var stickyBottomCTA: some View {
         VStack(spacing: 0) {
-            LinearGradient(colors: [AppColors.backgroundSecondary.opacity(0), AppColors.backgroundSecondary], startPoint: .top, endPoint: .bottom)
+            LinearGradient(colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary], startPoint: .top, endPoint: .bottom)
                 .frame(height: AppRadius.button)
 
             Button {
@@ -386,18 +385,18 @@ struct BS_SpendingBreakdownView: View {
                 viewModel.goToStep(.choosePath)
             } label: {
                 Text("Continue")
-                    .font(.figureSecondarySemibold)
+                    .font(.sheetPrimaryButton)
                     .foregroundStyle(AppColors.textInverse)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
                     .background(
-                        LinearGradient(colors: gradientColors, startPoint: .leading, endPoint: .trailing)
+                        LinearGradient(colors: AppColors.gradientFire, startPoint: .leading, endPoint: .trailing)
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
             }
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.md)
-            .background(AppColors.backgroundSecondary)
+            .background(AppColors.backgroundPrimary)
         }
     }
 

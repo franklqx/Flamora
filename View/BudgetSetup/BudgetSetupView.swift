@@ -46,7 +46,7 @@ struct BudgetSetupView: View {
             }
 
             BudgetSetupNavigationBar(
-                showsBack: viewModel.currentStep != .accountSelection,
+                showsBack: viewModel.currentStep != .accountSelection && viewModel.currentStep != .loading,
                 onBack: { viewModel.goBack() },
                 onClose: { showDiscardConfirmation = true }
             )

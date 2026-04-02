@@ -20,7 +20,7 @@ struct BS_AccountSelectionView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Spacer().frame(height: 60)
+                    Spacer().frame(height: AppSpacing.navBarTopSpace)
 
                     headerSection
                         .padding(.horizontal, AppSpacing.lg)
@@ -86,7 +86,7 @@ struct BS_AccountSelectionView: View {
                 .foregroundStyle(AppColors.textSecondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 60)
+        .padding(.top, AppSpacing.navBarTopSpace)
     }
 
     // MARK: - Error
@@ -107,7 +107,7 @@ struct BS_AccountSelectionView: View {
             .foregroundStyle(AppColors.warning)
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 60)
+        .padding(.top, AppSpacing.navBarTopSpace)
         .padding(.horizontal, AppSpacing.lg)
     }
 
@@ -125,7 +125,7 @@ struct BS_AccountSelectionView: View {
                 .lineSpacing(3)
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 60)
+        .padding(.top, AppSpacing.navBarTopSpace)
         .padding(.horizontal, AppSpacing.lg)
     }
 
@@ -158,7 +158,7 @@ struct BS_AccountSelectionView: View {
         return Button {
             viewModel.toggleAccount(account.id)
         } label: {
-            HStack(spacing: AppSpacing.sm + 6) {
+            HStack(spacing: AppSpacing.rowItem) {
                 // Checkbox
                 ZStack {
                     RoundedRectangle(cornerRadius: AppRadius.sm)
@@ -177,8 +177,8 @@ struct BS_AccountSelectionView: View {
                 }
 
                 // Account info
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: AppSpacing.xs + 2) {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    HStack(spacing: AppSpacing.sm) {
                         Text(account.name)
                             .font(.figureSecondarySemibold)
                             .foregroundStyle(AppColors.textPrimary)
@@ -190,7 +190,7 @@ struct BS_AccountSelectionView: View {
                         }
                     }
 
-                    HStack(spacing: AppSpacing.xs + 2) {
+                    HStack(spacing: AppSpacing.sm) {
                         Text(account.type)
                             .font(.caption)
                             .foregroundStyle(isTransactionAccount ? AppColors.accentGreen : AppColors.textSecondary)
@@ -217,7 +217,7 @@ struct BS_AccountSelectionView: View {
                 }
             }
             .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.sm + 6)
+            .padding(.vertical, AppSpacing.rowItem)
         }
         .buttonStyle(.plain)
     }
@@ -232,7 +232,7 @@ struct BS_AccountSelectionView: View {
             }
             Task { await plaidManager.startLinkFlow() }
         } label: {
-            HStack(spacing: AppSpacing.sm + 2) {
+            HStack(spacing: AppSpacing.sm) {
                 Image(systemName: "plus.circle.fill")
                     .font(.h4)
                     .foregroundStyle(AppColors.accentAmber)
@@ -242,7 +242,7 @@ struct BS_AccountSelectionView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.sm + 6)
+            .padding(.vertical, AppSpacing.rowItem)
             .background(AppColors.surface.opacity(0.5))
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(
@@ -262,7 +262,7 @@ struct BS_AccountSelectionView: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .frame(height: 28)
+            .frame(height: AppSpacing.lg)
 
             VStack(spacing: AppSpacing.sm) {
                 Button {

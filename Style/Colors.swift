@@ -174,6 +174,38 @@ struct AppColors {
 
     /// UIKit 控件（如 `UISlider`）thumb tint，与 `textPrimary`（#FFFFFF）一致。
     static let uiSliderThumbTint: UIColor = UIColor(red: 1, green: 1, blue: 1, alpha: 1)
+
+    // MARK: - Budget Setup
+    /// Gold accent used for spinners, "Recommended" badge, and difficulty indicators
+    static let budgetGold           = Color(hex: "#F5C842")
+    /// Pink accent used in spinner inner ring and gradient pair with budgetGold
+    static let budgetPink           = Color(hex: "#E88BC4")
+    /// Teal/mint used for Wants arc, "done" checkmark circle, and Steady difficulty color
+    static let budgetTeal           = Color(hex: "#5DDEC0")
+    /// Purple used for Needs arc and ring segment in confirm view
+    static let budgetPurple         = Color(hex: "#C084FC")
+    /// Savings tip card green label
+    static let budgetGreenLabel     = Color(hex: "#5EEAA0")
+    /// Savings tip card — dark gradient start (green)
+    static let budgetGreenDarkStart = Color(red: 34/255, green: 120/255, blue: 80/255)
+    /// Savings tip card — dark gradient end (deep green)
+    static let budgetGreenDarkEnd   = Color(red: 22/255, green: 80/255, blue: 55/255)
+    /// Savings tip card stroke
+    static let budgetGreenStroke    = Color(red: 52/255, green: 180/255, blue: 100/255)
+    /// Custom zone: danger gradient start
+    static let budgetDangerStart    = Color(hex: "#7F1D1D")
+    /// Custom zone: danger gradient end
+    static let budgetDangerEnd      = Color(hex: "#450A0A")
+    /// Custom zone: warning gradient start
+    static let budgetWarningStart   = Color(hex: "#78350F")
+    /// Custom zone: warning gradient end
+    static let budgetWarningEnd     = Color(hex: "#431407")
+    /// Custom zone: ambitious gradient start
+    static let budgetAmbitiousStart = Color(hex: "#1E3A5F")
+    /// Custom zone: ambitious gradient end
+    static let budgetAmbitiousEnd   = Color(hex: "#0F2236")
+    /// Accelerate difficulty color
+    static let budgetOrange         = Color(hex: "#F59E42")
 }
 
 // MARK: - Gradient Wallpaper (Welcome / Onboarding 背景)

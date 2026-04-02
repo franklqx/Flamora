@@ -21,7 +21,6 @@ struct BS_DiagnosisView: View {
     @State private var showChart = false
     @State private var showInsights = false
     
-    private let gradientColors = [Color(hex: "F5D76E"), Color(hex: "E8829B"), Color(hex: "B4A0E5")]
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -281,14 +280,14 @@ struct BS_DiagnosisView: View {
                 viewModel.goToStep(.spendingBreakdown)
             } label: {
                 Text("Continue")
-                    .font(.figureSecondarySemibold)
+                    .font(.sheetPrimaryButton)
                     .foregroundStyle(AppColors.textInverse)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
                     .background(
-                        LinearGradient(colors: gradientColors, startPoint: .leading, endPoint: .trailing)
+                        LinearGradient(colors: AppColors.gradientFire, startPoint: .leading, endPoint: .trailing)
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.full))
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
             }
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.md)

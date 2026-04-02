@@ -16,12 +16,11 @@ struct BS_ChoosePathView: View {
     @State private var showCustom = false
     @State private var customBudgetAmount: Double = 0
 
-    private let goldColor = Color(hex: "F5C842")
-    private let gradientColors = [Color(hex: "F5C842"), Color(hex: "E88BC4")]
+    private let goldColor = AppColors.budgetGold
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundSecondary.ignoresSafeArea()
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
@@ -35,7 +34,7 @@ struct BS_ChoosePathView: View {
                     } else if let plans = viewModel.plansResponse {
                         // Plan cards
                         planCard(plan: plans.plans.steady, name: "Steady", type: .steady,
-                                 difficulty: 1, difficultyLabel: "Easy", difficultyColor: Color(hex: "5DDEC0"))
+                                 difficulty: 1, difficultyLabel: "Easy", difficultyColor: AppColors.budgetTeal)
                             .padding(.horizontal, AppSpacing.lg)
 
                         planCard(plan: plans.plans.recommended, name: "Recommended", type: .recommended,
@@ -44,7 +43,7 @@ struct BS_ChoosePathView: View {
                             .padding(.horizontal, AppSpacing.lg)
 
                         planCard(plan: plans.plans.accelerate, name: "Accelerate", type: .accelerate,
-                                 difficulty: 3, difficultyLabel: "Ambitious", difficultyColor: Color(hex: "F59E42"))
+                                 difficulty: 3, difficultyLabel: "Ambitious", difficultyColor: AppColors.budgetOrange)
                             .padding(.horizontal, AppSpacing.lg)
 
                         // Custom option
@@ -158,13 +157,13 @@ struct BS_ChoosePathView: View {
                             ForEach(0..<3) { i in
                                 Circle()
                                     .fill(i < difficulty ? AppColors.textPrimary : AppColors.overlayWhiteForegroundSoft)
-                                    .frame(width: 7, height: 7)
+                                    .frame(width: AppSpacing.sm - 1, height: AppSpacing.sm - 1)
                             }
                             Text(difficultyLabel)
                                 .font(.cardRowMeta)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(AppColors.textPrimary)
-                                .padding(.leading, 2)
+                                .padding(.leading, AppSpacing.xs / 2)
                         }
                     }
 
@@ -188,7 +187,7 @@ struct BS_ChoosePathView: View {
                 }
 
                 // Hero Budget/Mo number
-                VStack(spacing: 2) {
+                VStack(spacing: AppSpacing.xs) {
                     Text("MONTHLY BUDGET")
                         .font(.cardHeader)
                         .tracking(1.5)
@@ -232,7 +231,7 @@ struct BS_ChoosePathView: View {
 
     @ViewBuilder
     private func statColumn(label: String, value: String) -> some View {
-        VStack(spacing: 3) {
+        VStack(spacing: AppSpacing.xs) {
             Text(label)
                 .font(.miniLabel)
                 .tracking(0.5)
@@ -247,7 +246,7 @@ struct BS_ChoosePathView: View {
 
     @ViewBuilder
     private func statColumnSmall(label: String, value: String) -> some View {
-        VStack(spacing: 2) {
+        VStack(spacing: AppSpacing.xs) {
             Text(label)
                 .font(.label)
                 .tracking(0.8)
@@ -266,8 +265,8 @@ struct BS_ChoosePathView: View {
     private func growthTipCard(plan: PlanDetail, planType: BudgetSetupViewModel.PlanSelection) -> some View {
         let monthlySave = plan.monthlySave
         let g10y = nominalGrowth8pct(monthly: monthlySave, years: 10)
-        let greenLabel = Color(red: 0.47, green: 0.90, blue: 0.63)
-        let saveColor = Color(hex: "5EEAA0")
+        let greenLabel = AppColors.budgetGreenLabel
+        let saveColor = AppColors.budgetGreenLabel
 
         let subText: String = {
             switch planType {
@@ -309,8 +308,8 @@ struct BS_ChoosePathView: View {
         .background(
             LinearGradient(
                 colors: [
-                    Color(red: 34/255, green: 120/255, blue: 80/255).opacity(0.35),
-                    Color(red: 22/255, green: 80/255, blue: 55/255).opacity(0.25)
+                    AppColors.budgetGreenDarkStart.opacity(0.35),
+                    AppColors.budgetGreenDarkEnd.opacity(0.25)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -319,7 +318,7 @@ struct BS_ChoosePathView: View {
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(Color(red: 52/255, green: 180/255, blue: 100/255).opacity(0.2), lineWidth: 1)
+                .stroke(AppColors.budgetGreenStroke.opacity(0.2), lineWidth: 1)
         )
     }
 
@@ -383,7 +382,7 @@ struct BS_ChoosePathView: View {
 
         return VStack(spacing: AppSpacing.md) {
             // Budget display
-            VStack(spacing: AppSpacing.sm - 2) {
+            VStack(spacing: AppSpacing.sm) {
                 Text("MONTHLY BUDGET")
                     .font(.cardHeader)
                     .tracking(1.5)
@@ -454,18 +453,17 @@ struct BS_ChoosePathView: View {
         let config: (bg: [Color], border: Color, icon: String, label: String) = {
             switch zone {
             case .danger:
-                return ([Color(hex: "7F1D1D").opacity(0.4), Color(hex: "450A0A").opacity(0.3)],
-                        Color(hex: "EF4444").opacity(0.3), "⚠️", "NOT ACHIEVABLE")
+                return ([AppColors.budgetDangerStart.opacity(0.4), AppColors.budgetDangerEnd.opacity(0.3)],
+                        AppColors.error.opacity(0.3), "⚠️", "NOT ACHIEVABLE")
             case .warning:
-                return ([Color(hex: "78350F").opacity(0.4), Color(hex: "431407").opacity(0.3)],
-                        Color(hex: "F59E0B").opacity(0.3), "💪", "VERY AGGRESSIVE")
+                return ([AppColors.budgetWarningStart.opacity(0.4), AppColors.budgetWarningEnd.opacity(0.3)],
+                        AppColors.warning.opacity(0.3), "💪", "VERY AGGRESSIVE")
             case .ambitious:
-                return ([Color(hex: "1E3A5F").opacity(0.4), Color(hex: "0F2236").opacity(0.3)],
-                        Color(hex: "60A5FA").opacity(0.3), "🎯", "AMBITIOUS BUT DOABLE")
+                return ([AppColors.budgetAmbitiousStart.opacity(0.4), AppColors.budgetAmbitiousEnd.opacity(0.3)],
+                        AppColors.accentBlueBright.opacity(0.3), "🎯", "AMBITIOUS BUT DOABLE")
             case .healthy:
-                return ([Color(red: 34/255, green: 120/255, blue: 80/255).opacity(0.35),
-                         Color(red: 22/255, green: 80/255, blue: 55/255).opacity(0.25)],
-                        Color(red: 52/255, green: 180/255, blue: 100/255).opacity(0.2), "✨", "YOUR POTENTIAL GROWTH")
+                return ([AppColors.budgetGreenDarkStart.opacity(0.35), AppColors.budgetGreenDarkEnd.opacity(0.25)],
+                        AppColors.budgetGreenStroke.opacity(0.2), "✨", "YOUR POTENTIAL GROWTH")
             }
         }()
 
@@ -516,7 +514,7 @@ struct BS_ChoosePathView: View {
 
     private var stickyBottomCTA: some View {
         VStack(spacing: 0) {
-            LinearGradient(colors: [AppColors.backgroundSecondary.opacity(0), AppColors.backgroundSecondary], startPoint: .top, endPoint: .bottom)
+            LinearGradient(colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary], startPoint: .top, endPoint: .bottom)
                 .frame(height: AppRadius.button)
 
             Button {
@@ -535,22 +533,22 @@ struct BS_ChoosePathView: View {
                             .tint(AppColors.textInverse)
                     } else {
                         Text("Continue")
-                            .font(.figureSecondarySemibold)
+                            .font(.sheetPrimaryButton)
                     }
                 }
                 .foregroundStyle(AppColors.textInverse)
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
-                    .background(
-                        LinearGradient(colors: gradientColors, startPoint: .leading, endPoint: .trailing)
-                            .opacity(viewModel.selectedPlan != nil && !viewModel.isLoadingPlans && !viewModel.isLoadingSpendingPlan ? 1 : 0.4)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
+                .background(
+                    LinearGradient(colors: AppColors.gradientFire, startPoint: .leading, endPoint: .trailing)
+                        .opacity(viewModel.selectedPlan != nil && !viewModel.isLoadingPlans && !viewModel.isLoadingSpendingPlan ? 1 : 0.4)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
             }
             .disabled(viewModel.selectedPlan == nil || viewModel.isLoadingPlans || viewModel.isLoadingSpendingPlan)
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.md)
-            .background(AppColors.backgroundSecondary)
+            .background(AppColors.backgroundPrimary)
         }
     }
 

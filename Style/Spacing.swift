@@ -14,12 +14,19 @@ struct AppSpacing {
     static let lg: CGFloat = 24
     static let xl: CGFloat = 32
     static let xxl: CGFloat = 48
-    
+
     static let cardPadding: CGFloat = 20
     static let cardGap: CGFloat = 16
     static let screenPadding: CGFloat = 16
     static let sectionGap: CGFloat = 24
     static let tabBarReserve: CGFloat = 84
+
+    /// Top spacer height below the custom nav bar (clears the BudgetSetup nav bar)
+    static let navBarTopSpace: CGFloat = 60
+    /// Standard row-level horizontal/vertical item spacing (14pt)
+    static let rowItem: CGFloat = 14
+    /// Settings section label gap (10pt)
+    static let sectionLabelGap: CGFloat = 10
 }
 
 struct AppRadius {

@@ -38,7 +38,7 @@ struct BS_LoadingView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppColors.backgroundSecondary.ignoresSafeArea())
+        .background(AppColors.backgroundPrimary.ignoresSafeArea())
         .onAppear {
             startSpinnerAnimation()
             startChecklistAnimation()
@@ -52,23 +52,23 @@ struct BS_LoadingView: View {
         ZStack {
             // Outer ring (gold arc)
             Circle()
-                .stroke(Color(hex: "F5C842").opacity(0.1), lineWidth: 3)
+                .stroke(AppColors.budgetGold.opacity(0.1), lineWidth: 3)
                 .frame(width: 72, height: 72)
 
             Circle()
                 .trim(from: 0, to: 0.35)
-                .stroke(Color(hex: "F5C842"), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                .stroke(AppColors.budgetGold, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                 .frame(width: 72, height: 72)
                 .rotationEffect(.degrees(outerRotation))
 
             // Inner ring (pink accent, counter-rotating)
             Circle()
-                .stroke(Color(hex: "E88BC4").opacity(0.1), lineWidth: 2)
+                .stroke(AppColors.budgetPink.opacity(0.1), lineWidth: 2)
                 .frame(width: 52, height: 52)
 
             Circle()
                 .trim(from: 0, to: 0.25)
-                .stroke(Color(hex: "E88BC4"), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .stroke(AppColors.budgetPink, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                 .frame(width: 52, height: 52)
                 .rotationEffect(.degrees(innerRotation))
         }
@@ -101,17 +101,17 @@ struct BS_LoadingView: View {
 
                 case .active:
                     Circle()
-                        .stroke(Color(hex: "F5C842").opacity(0.6), lineWidth: 1.5)
+                        .stroke(AppColors.budgetGold.opacity(0.6), lineWidth: 1.5)
                         .frame(width: AppRadius.button, height: AppRadius.button)
                     // Pulsing gold dot
                     Circle()
-                        .fill(Color(hex: "F5C842"))
+                        .fill(AppColors.budgetGold)
                         .frame(width: AppSpacing.sm, height: AppSpacing.sm)
                         .modifier(PulseModifier())
 
                 case .done:
                     Circle()
-                        .fill(Color(hex: "5DDEC0"))
+                        .fill(AppColors.budgetTeal)
                         .frame(width: AppRadius.button, height: AppRadius.button)
                     Image(systemName: "checkmark")
                         .font(.smallLabel)
