@@ -85,7 +85,7 @@ struct BS_ChoosePathView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Pick Your Plan")
+            Text("Choose Your Monthly Budget")
                 .font(.cardFigurePrimary)
                 .foregroundStyle(AppColors.textPrimary)
 

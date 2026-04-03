@@ -64,11 +64,11 @@ struct BS_SpendingBreakdownView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Your Spending Breakdown")
+            Text("Spending Breakdown")
                 .font(.cardFigurePrimary)
                 .foregroundStyle(AppColors.textPrimary)
 
-            Text("We categorized your spending into needs and wants.")
+            Text("Here's how your spending breaks down. Your monthly budget will cover both needs and wants.")
                 .font(.bodySmall)
                 .foregroundStyle(AppColors.textSecondary)
                 .lineSpacing(3)

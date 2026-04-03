@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SavingsInputSheet: View {
     @Binding var amount: Double
+    var onSubmit: ((Double) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @State private var inputText: String = ""
     @State private var sheetHeight: CGFloat = 520
@@ -42,6 +43,7 @@ struct SavingsInputSheet: View {
                     GradientButton(title: "Submit") {
                         if let value = Double(inputText) {
                             amount = value
+                            onSubmit?(value)
                         }
                         dismiss()
                     }

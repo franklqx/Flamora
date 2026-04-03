@@ -94,7 +94,9 @@ enum InvestmentAllocationBuilder {
             name: row.name,
             shares: row.quantity ?? 0,
             totalValue: row.value ?? 0,
-            logoUrl: nil
+            logoUrl: nil,
+            accountName: row.accountName,
+            accountMask: row.accountMask
         )
     }
 

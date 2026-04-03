@@ -29,8 +29,9 @@ struct TotalIncomeDetailView: View {
         self.activeData = activeData
         self.passiveData = passiveData
         let latest = data.availableYears.last ?? 2026
+        let trend = data.trendsByYear[latest] ?? []
         _selectedYear = State(initialValue: latest)
-        _selectedBarIndex = State(initialValue: initialSelectedMonth)
+        _selectedBarIndex = State(initialValue: preferredInitialMonthIndex(in: trend, requested: initialSelectedMonth))
     }
 
     private let monthLabels = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
@@ -122,6 +123,22 @@ struct TotalIncomeDetailView: View {
     }
 }
 
+private func preferredInitialMonthIndex(in trend: [Double?], requested: Int?) -> Int {
+    let hasAnyData = trend.contains { $0 != nil }
+    if let requested, trend.indices.contains(requested) {
+        if !hasAnyData || trend[requested] != nil {
+            return requested
+        }
+    }
+    if let last = trend.indices.last(where: { trend[$0] != nil }) {
+        return last
+    }
+    if let requested, (0..<12).contains(requested) {
+        return requested
+    }
+    return 0
+}
+
 // MARK: - Header
 private extension TotalIncomeDetailView {
     var headerSection: some View {
@@ -147,7 +164,7 @@ private extension TotalIncomeDetailView {
                     .font(.h1)
                     .foregroundStyle(AppColors.textPrimary)
 
-                Text("earned in \(selectedMonthLabel)")
+                Text("received in \(selectedMonthLabel)")
                     .font(.bodyRegular)
                     .foregroundColor(AppColors.textSecondary)
             }
@@ -202,10 +219,12 @@ private extension TotalIncomeDetailView {
 
     var chartView: some View {
         GeometryReader { geometry in
-            let barAreaHeight = geometry.size.height - 30
+            let rawHeight = geometry.size.height.isFinite ? geometry.size.height : 0
+            let barAreaHeight = max(rawHeight - 30, 0)
             let barSpacing: CGFloat = 8
             let totalSpacing = barSpacing * 11
-            let barWidth = (geometry.size.width - totalSpacing) / 12
+            let availableWidth = geometry.size.width.isFinite ? max(geometry.size.width, 0) : 0
+            let barWidth = max((availableWidth - totalSpacing) / 12, 0)
 
             HStack(alignment: .bottom, spacing: barSpacing) {
                 ForEach(0..<12, id: \.self) { index in
@@ -254,7 +273,7 @@ private extension TotalIncomeDetailView {
     func stackedBarFill(for monthData: TotalIncomeMonthData) -> some View {
         let total = max(monthData.total, 0.0001)
         return GeometryReader { geometry in
-            let h = geometry.size.height
+            let h = geometry.size.height.isFinite ? max(geometry.size.height, 0) : 0
             VStack(spacing: 0) {
                 // Passive on top
                 Rectangle()
@@ -280,32 +299,33 @@ private extension TotalIncomeDetailView {
 // MARK: - Sources
 private extension TotalIncomeDetailView {
     var sourcesSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Sources")
-                .font(.detailTitle)
-                .foregroundStyle(AppColors.textPrimary)
-
+        Group {
             if let monthData = selectedMonthData {
-                VStack(spacing: 12) {
-                    Button { showActiveDetail = true } label: {
-                        sourceCard(
-                            name: "Active Income",
-                            amount: monthData.activeAmount,
-                            percentage: monthData.activePercentage,
-                            color: activeColor
-                        )
-                    }
-                    .buttonStyle(.plain)
+                let visibleSources: [(name: String, amount: Double, percentage: Double, color: Color, action: () -> Void)] = [
+                    ("Active Income", monthData.activeAmount, monthData.activePercentage, activeColor, { showActiveDetail = true }),
+                    ("Passive Income", monthData.passiveAmount, monthData.passivePercentage, passiveColor, { showPassiveDetail = true })
+                ].filter { $0.amount > 0 }
 
-                    Button { showPassiveDetail = true } label: {
-                        sourceCard(
-                            name: "Passive Income",
-                            amount: monthData.passiveAmount,
-                            percentage: monthData.passivePercentage,
-                            color: passiveColor
-                        )
+                if !visibleSources.isEmpty {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Sources")
+                        .font(.detailTitle)
+                        .foregroundStyle(AppColors.textPrimary)
+
+                    VStack(spacing: 12) {
+                        ForEach(Array(visibleSources.enumerated()), id: \.offset) { _, source in
+                            Button(action: source.action) {
+                                sourceCard(
+                                    name: source.name,
+                                    amount: source.amount,
+                                    percentage: source.percentage,
+                                    color: source.color
+                                )
+                            }
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
+                }
                 }
             }
         }
@@ -313,9 +333,10 @@ private extension TotalIncomeDetailView {
 
     func sourceCard(name: String, amount: Double, percentage: Double, color: Color) -> some View {
         GeometryReader { geometry in
-            let width = geometry.size.width
-            let ratio = min(max(percentage / 100, 0), 1)
-            let fillWidth = ratio == 0 ? 0 : max(56, width * CGFloat(ratio))
+            let width = geometry.size.width.isFinite ? max(geometry.size.width, 0) : 0
+            let ratioValue = percentage.isFinite ? min(max(percentage / 100, 0), 1) : 0
+            let ratio = CGFloat(ratioValue)
+            let fillWidth = ratio == 0 ? 0 : min(width, max(56, width * ratio))
 
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: AppRadius.lg)

@@ -34,7 +34,7 @@ struct BudgetPlanCard: View {
     private var hasBudget: Bool {
         budgetSetupCompleted
         && hasLinkedBank
-        && (apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget) > 0
+        && (apiBudget.needsBudget + apiBudget.wantsBudget) > 0
         && apiBudget.selectedPlan != nil
     }
 
@@ -42,7 +42,7 @@ struct BudgetPlanCard: View {
     private var resolvedWantsSpent: Double { summaryWantsSpent ?? (apiBudget.wantsSpent ?? 0) }
     private var spent: Double { resolvedNeedsSpent + resolvedWantsSpent }
     private var limit: Double {
-        apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget
+        apiBudget.needsBudget + apiBudget.wantsBudget
     }
     private var remaining: Double { limit - spent }
     private var spentPercent: Int {
@@ -176,7 +176,7 @@ struct BudgetPlanCard: View {
                                 .font(.inlineLabel)
                                 .foregroundColor(AppColors.textSecondary)
                         }
-                        Text("\(formatCurrency(spent)) spent this month")
+                        Text("of \(formatCurrency(limit)) monthly budget")
                             .font(.footnoteRegular)
                             .foregroundColor(AppColors.textTertiary)
                     }
@@ -212,7 +212,7 @@ struct BudgetPlanCard: View {
                     .frame(height: Self.progressBarHeight)
                     .frame(maxWidth: .infinity)
 
-                    Text("\(spentPercent)%")
+                    Text("\(spentPercent)% used")
                         .font(.inlineFigureBold)
                         .foregroundColor(AppColors.textSecondary)
                 }

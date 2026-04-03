@@ -12,8 +12,6 @@ struct BS_ConfirmView: View {
     @Bindable var viewModel: BudgetSetupViewModel
     var onComplete: () -> Void
 
-    private let purpleColor = AppColors.chartBlue
-    private let tealColor   = AppColors.chartAmber
     private let goldColor   = AppColors.budgetGold
 
     @State private var showContent = false
@@ -59,7 +57,7 @@ struct BS_ConfirmView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Your Plan")
+            Text("Review Plan")
                 .font(.cardFigurePrimary)
                 .foregroundStyle(AppColors.textPrimary)
         }
@@ -68,48 +66,46 @@ struct BS_ConfirmView: View {
     // MARK: - Budget Summary Ring
 
     private func budgetSummaryRing(plan: SpendingPlanResponse) -> some View {
-        // `fixedBudget` / `flexibleBudget` 为 API 字段名；UI 展示为 Needs / Wants。
-        let budgetTotal = plan.fixedBudget.total + plan.flexibleBudget.total
-        let needsShare = budgetTotal > 0 ? plan.fixedBudget.total / budgetTotal : 0.5
+        let ringWidth: CGFloat = 220
+        let ringHeight: CGFloat = 176
+        let lineWidth: CGFloat = 20
 
-        return VStack(spacing: AppSpacing.lg) {
+        return VStack(spacing: 0) {
             ZStack {
-                // Background track
-                Circle()
-                    .stroke(AppColors.overlayWhiteWash, lineWidth: 20)
-                    .frame(width: 200, height: 200)
+                ConfirmTopSemiRing(startProgress: 0, endProgress: 1)
+                    .stroke(
+                        AppColors.overlayWhiteWash,
+                        style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                    )
 
-                // Needs arc (purple) with round caps
-                Circle()
-                    .trim(from: 0, to: needsShare * ringProgress)
-                    .stroke(purpleColor, style: StrokeStyle(lineWidth: 20, lineCap: .round))
-                    .frame(width: 200, height: 200)
-                    .rotationEffect(.degrees(-90))
-
-                // Wants arc (teal) with round caps
-                Circle()
-                    .trim(from: needsShare * ringProgress, to: ringProgress)
-                    .stroke(tealColor, style: StrokeStyle(lineWidth: 20, lineCap: .round))
-                    .frame(width: 200, height: 200)
-                    .rotationEffect(.degrees(-90))
+                ConfirmTopSemiRing(startProgress: 0, endProgress: CGFloat(ringProgress))
+                    .stroke(
+                        LinearGradient(
+                            colors: AppColors.gradientFire,
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                    )
 
                 VStack(spacing: AppSpacing.xs) {
-                Text("MONTHLY BUDGET")
-                    .font(.cardHeader)
-                    .tracking(0.8)
-                    .foregroundStyle(AppColors.overlayWhiteOnPhoto)
-                Text("$\(formattedInt(plan.totalSpend))")
-                    .font(.h1)
-                    .foregroundStyle(AppColors.textPrimary)
-                    .monospacedDigit()
-            }
-            }
+                    Text("$\(formattedInt(plan.totalSpend))")
+                        .font(.h1)
+                        .foregroundStyle(AppColors.textPrimary)
+                        .monospacedDigit()
 
-            // Legend — side by side
-            HStack(spacing: AppSpacing.xl) {
-                legendItem(color: purpleColor, label: "Needs", amount: plan.fixedBudget.total)
-                legendItem(color: tealColor, label: "Wants", amount: plan.flexibleBudget.total)
+                    Text("Monthly spend budget")
+                        .font(.bodySmall)
+                        .foregroundStyle(AppColors.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.center)
+                .padding(.top, 92)
             }
+            .frame(width: ringWidth, height: ringHeight)
+            .frame(maxWidth: .infinity)
+            .padding(.top, AppSpacing.md)
+            .padding(.bottom, AppSpacing.sm)
         }
         .padding(AppSpacing.lg)
         .frame(maxWidth: .infinity)
@@ -119,22 +115,6 @@ struct BS_ConfirmView: View {
             RoundedRectangle(cornerRadius: AppRadius.card)
                 .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
         )
-    }
-
-    @ViewBuilder
-    private func legendItem(color: Color, label: String, amount: Double) -> some View {
-        HStack(spacing: AppSpacing.sm) {
-            Circle().fill(color).frame(width: AppSpacing.sm, height: AppSpacing.sm)
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text(label)
-                    .font(.footnoteRegular)
-                    .foregroundStyle(AppColors.textSecondary)
-                Text("$\(formattedInt(amount))")
-                    .font(.statRowSemibold)
-                    .foregroundStyle(AppColors.textPrimary)
-                    .monospacedDigit()
-            }
-        }
     }
 
     // MARK: - Plan Details Card
@@ -269,6 +249,41 @@ struct BS_ConfirmView: View {
         if value >= 1_000_000 { return String(format: "%.1fM", value / 1_000_000) }
         if value >= 1_000 { return "\(Int(value / 1_000))K" }
         return formattedInt(value)
+    }
+}
+
+private struct ConfirmTopSemiRing: Shape {
+    let startProgress: CGFloat
+    let endProgress: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let clampedStart = min(max(startProgress, 0), 1)
+        let clampedEnd = min(max(endProgress, 0), 1)
+        guard clampedEnd > clampedStart else { return Path() }
+
+        let radius = min(rect.width / 2, rect.height) - 10
+        let center = CGPoint(x: rect.midX, y: rect.maxY - 10)
+        let startAngle = Double.pi * Double(1 - clampedStart)
+        let endAngle = Double.pi * Double(1 - clampedEnd)
+        let steps = max(Int(ceil((clampedEnd - clampedStart) * 48)), 2)
+        var path = Path()
+
+        for step in 0...steps {
+            let progress = Double(step) / Double(steps)
+            let angle = startAngle + (endAngle - startAngle) * progress
+            let cosValue = CGFloat(Foundation.cos(angle))
+            let sinValue = CGFloat(Foundation.sin(angle))
+            let point = CGPoint(
+                x: center.x + radius * cosValue,
+                y: center.y - radius * sinValue
+            )
+            if step == 0 {
+                path.move(to: point)
+            } else {
+                path.addLine(to: point)
+            }
+        }
+        return path
     }
 }
 

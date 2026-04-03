@@ -8,6 +8,10 @@
 
 import Foundation
 
+extension Notification.Name {
+    static let savingsCheckInDidPersist = Notification.Name("SavingsCheckInDidPersist")
+}
+
 final class TabContentCache {
     static let shared = TabContentCache()
 

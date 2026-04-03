@@ -10,7 +10,7 @@ import SwiftUI
 struct AllTransactionsView: View {
     @Binding var transactions: [Transaction]
     var linkedAccounts: [Account] = []
-    let onUpdate: (Transaction) -> Void
+    let onUpdate: (Transaction) async throws -> Void
 
     @State private var filter: String = "all"   // "all" | "needs" | "wants"
     @State private var selectedTransaction: Transaction? = nil
@@ -104,8 +104,7 @@ struct AllTransactionsView: View {
         .preferredColorScheme(.dark)
         .sheet(item: $selectedTransaction) { transaction in
             TransactionDetailSheet(transaction: transaction, linkedAccounts: linkedAccounts) { updated in
-                updateLocal(updated)
-                onUpdate(updated)
+                try await onUpdate(updated)
             }
             .ignoresSafeArea(.container, edges: .bottom)
             .presentationDragIndicator(.visible)
@@ -201,13 +200,5 @@ struct AllTransactionsView: View {
         }
 
         return "\(months[m - 1].uppercased()) \(d)"
-    }
-
-    // MARK: - Update
-
-    private func updateLocal(_ updated: Transaction) {
-        if let idx = transactions.firstIndex(where: { $0.id == updated.id }) {
-            transactions[idx] = updated
-        }
     }
 }

@@ -12,8 +12,12 @@ struct CashAccountDetailView: View {
     let account: APIAccount
     @Environment(\.dismiss) private var dismiss
 
+    @State private var selectedPeriod: AccountHistoryRange = .oneMonth
     @State private var transactions: [Transaction] = []
+    @State private var historySnapshots: [BalanceSnapshot] = []
+    @State private var historyCache: [AccountHistoryRange: [BalanceSnapshot]] = [:]
     @State private var isLoading = true
+    @State private var isHistoryLoading = true
     @State private var selectedTransaction: Transaction?
     @State private var dragOffset: CGFloat = 0
 
@@ -25,6 +29,7 @@ struct CashAccountDetailView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     headerSection
                     balanceSection
+                    chartSection
                     Divider()
                         .background(AppColors.surfaceBorder)
                         .padding(.horizontal, AppSpacing.cardPadding)
@@ -35,6 +40,7 @@ struct CashAccountDetailView: View {
         }
         .preferredColorScheme(.dark)
         .task { await loadTransactions() }
+        .task(id: selectedPeriod) { await loadHistory() }
         .offset(y: dragOffset)
         .simultaneousGesture(
             DragGesture()
@@ -61,9 +67,7 @@ struct CashAccountDetailView: View {
                 logoUrl: nil
             )
             TransactionDetailSheet(transaction: txn, linkedAccounts: [acct]) { updated in
-                if let idx = transactions.firstIndex(where: { $0.id == updated.id }) {
-                    transactions[idx] = updated
-                }
+                try await persistTransactionClassification(updated)
             }
             .ignoresSafeArea(.container, edges: .bottom)
             .presentationDragIndicator(.visible)
@@ -125,6 +129,19 @@ struct CashAccountDetailView: View {
         .padding(.bottom, AppSpacing.lg)
     }
 
+    private var chartSection: some View {
+        AccountHistoryCard(
+            snapshots: historySnapshots,
+            selectedRange: selectedPeriod,
+            isLoading: isHistoryLoading,
+            emptyTitle: account.type == "credit" ? "Balance owed history is starting" : "Balance history is starting",
+            emptySubtitle: "We'll show daily account balance after your next few syncs.",
+            onSelectRange: { selectedPeriod = $0 }
+        )
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.bottom, AppSpacing.lg)
+    }
+
     // MARK: - Transactions
 
     private var transactionsSection: some View {
@@ -151,7 +168,7 @@ struct CashAccountDetailView: View {
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.vertical, AppSpacing.lg)
             } else if transactions.isEmpty {
-                Text("No transactions found")
+                Text("No transactions recorded for this account")
                     .font(.bodyRegular)
                     .foregroundColor(AppColors.textTertiary)
                     .padding(.horizontal, AppSpacing.cardPadding)
@@ -228,6 +245,86 @@ struct CashAccountDetailView: View {
         isLoading = false
     }
 
+    @MainActor
+    private func persistTransactionClassification(_ updated: Transaction) async throws {
+        let response = try await APIService.shared.updateTransactionClassification(
+            transactionId: updated.id,
+            category: updated.category,
+            subcategory: updated.subcategory
+        )
+        let persisted = Transaction(from: response)
+        if let idx = transactions.firstIndex(where: { $0.id == persisted.id }) {
+            transactions[idx] = persisted
+        }
+    }
+
+    private func loadHistory() async {
+        if let cached = historyCache[selectedPeriod] {
+            await MainActor.run {
+                historySnapshots = cached
+                isHistoryLoading = false
+            }
+            return
+        }
+
+        let shouldShowLoader = historySnapshots.isEmpty
+        if shouldShowLoader {
+            await MainActor.run { isHistoryLoading = true }
+        }
+
+        guard let response = try? await APIService.shared.getAccountBalanceHistory(
+            accountId: account.id,
+            range: selectedPeriod.apiValue
+        ) else {
+            await MainActor.run {
+                if shouldShowLoader { historySnapshots = [] }
+                isHistoryLoading = false
+            }
+            return
+        }
+
+        let snapshots = response.points.compactMap { point -> BalanceSnapshot? in
+            guard let date = Self.accountHistoryDateFormatter.date(from: point.date) else { return nil }
+            return BalanceSnapshot(
+                id: "\(account.id)-\(point.date)",
+                accountId: account.id,
+                date: date,
+                balance: point.currentBalance
+            )
+        }
+
+        await MainActor.run {
+            historyCache[selectedPeriod] = snapshots
+            historySnapshots = snapshots
+            isHistoryLoading = false
+        }
+
+        await prefetchOtherRanges(excluding: selectedPeriod)
+    }
+
+    private func prefetchOtherRanges(excluding current: AccountHistoryRange) async {
+        for range in AccountHistoryRange.allCases where range != current && historyCache[range] == nil {
+            guard let response = try? await APIService.shared.getAccountBalanceHistory(
+                accountId: account.id,
+                range: range.apiValue
+            ) else { continue }
+
+            let snapshots = response.points.compactMap { point -> BalanceSnapshot? in
+                guard let date = Self.accountHistoryDateFormatter.date(from: point.date) else { return nil }
+                return BalanceSnapshot(
+                    id: "\(account.id)-\(point.date)",
+                    accountId: account.id,
+                    date: date,
+                    balance: point.currentBalance
+                )
+            }
+
+            await MainActor.run {
+                historyCache[range] = snapshots
+            }
+        }
+    }
+
     // MARK: - Helpers
 
     private var accentColor: Color {
@@ -258,4 +355,12 @@ struct CashAccountDetailView: View {
         f.minimumFractionDigits = 0
         return f.string(from: NSNumber(value: v)) ?? "$0"
     }
+
+    private static let accountHistoryDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter
+    }()
 }

@@ -259,7 +259,7 @@ private struct AllocDetailRow: View {
                                 .font(.bodySmall)
                                 .foregroundStyle(AppColors.textPrimary)
                                 .lineLimit(1)
-                            Text(sharesLabel(holdings[i].shares))
+                            Text(holdingSubtitle(holdings[i]))
                                 .font(.caption)
                                 .foregroundColor(AppColors.textTertiary)
                         }
@@ -353,6 +353,20 @@ private struct AllocDetailRow: View {
 
     private func sharesLabel(_ shares: Double) -> String {
         shares == shares.rounded() ? "\(Int(shares)) shares" : String(format: "%.4f shares", shares)
+    }
+
+    /// Combines shares count with account attribution when available.
+    /// e.g. "12 shares · Chase • 7892" or just "12 shares"
+    private func holdingSubtitle(_ holding: Holding) -> String {
+        var parts: [String] = [sharesLabel(holding.shares)]
+        if let acctName = holding.accountName, !acctName.isEmpty {
+            var acct = acctName
+            if let mask = holding.accountMask, !mask.isEmpty {
+                acct += "\u{00A0}•\u{00A0}\(mask)"
+            }
+            parts.append(acct)
+        }
+        return parts.joined(separator: " · ")
     }
 
     private func formatCurrency(_ value: Double) -> String {

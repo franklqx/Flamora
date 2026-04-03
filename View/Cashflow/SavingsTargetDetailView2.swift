@@ -17,11 +17,13 @@ struct SavingsTargetDetailView2: View {
 
     @State private var selectedYear: Int
     @State private var monthlyAmountsByYear: [Int: [Double?]]
-    @State private var editingMonthIndex: Int? = nil
-    @State private var editingAmount: Double = 0
-    @State private var isShowingEditSheet: Bool = false
     @State private var chartHoverIndex: Int? = nil
     @State private var dragOffset: CGFloat = 0
+    @State private var editingMonthIndex: Int? = nil
+    @State private var editingAmountValue: Double = 0
+    @State private var isShowingEditSheet: Bool = false
+    @State private var isPersistingEdit: Bool = false
+    private let onMonthlyAmountsChange: (([Int: [Double?]]) -> Void)?
 
     private let months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
     private let monthsShort = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
@@ -30,11 +32,13 @@ struct SavingsTargetDetailView2: View {
     init(
         savingsRatioPercent: Double,
         savingsBudgetTarget: Double,
-        monthlyAmountsByYear: [Int: [Double?]]
+        monthlyAmountsByYear: [Int: [Double?]],
+        onMonthlyAmountsChange: (([Int: [Double?]]) -> Void)? = nil
     ) {
         self.savingsRatioPercent = savingsRatioPercent
         self.targetRate = savingsRatioPercent / 100.0
         self.targetAmount = savingsBudgetTarget
+        self.onMonthlyAmountsChange = onMonthlyAmountsChange
         let byYear = monthlyAmountsByYear
         let latest = byYear.keys.sorted().last ?? Calendar.current.component(.year, from: Date())
         _selectedYear = State(initialValue: latest)
@@ -71,7 +75,7 @@ struct SavingsTargetDetailView2: View {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
                     // Header
                     HStack(alignment: .firstTextBaseline) {
-                        Text("Saving overview")
+                        Text("Savings")
                             .font(.cardFigurePrimary)
                             .foregroundStyle(AppColors.textPrimary)
 
@@ -121,7 +125,7 @@ struct SavingsTargetDetailView2: View {
                     if targetAmount > 0 {
                         HStack(spacing: AppSpacing.xl) {
                             VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
-                                Text("TARGET SAVING RATE")
+                                Text("TARGET SAVINGS RATE")
                                     .font(.cardHeader)
                                     .foregroundColor(AppColors.textTertiary)
 
@@ -135,7 +139,7 @@ struct SavingsTargetDetailView2: View {
                                 .background(AppColors.surfaceBorder)
 
                             VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
-                                Text("TARGET SAVING")
+                                Text("MONTHLY SAVINGS TARGET")
                                     .font(.cardHeader)
                                     .foregroundColor(AppColors.textTertiary)
 
@@ -151,7 +155,7 @@ struct SavingsTargetDetailView2: View {
 
                     // Monthly milestones
                     VStack(alignment: .leading, spacing: AppSpacing.md) {
-                        Text("MONTHLY MILESTONES")
+                        Text("MONTHLY SAVINGS")
                             .font(.smallLabel)
                             .foregroundColor(AppColors.textTertiary)
 
@@ -187,14 +191,9 @@ struct SavingsTargetDetailView2: View {
                     }
                 }
         )
-        .sheet(isPresented: $isShowingEditSheet, onDismiss: {
-            applyEditedAmount()
-        }) {
-            SavingsInputSheet(amount: $editingAmount)
-                .ignoresSafeArea(.container, edges: .bottom)
+        .sheet(isPresented: $isShowingEditSheet, onDismiss: applyEditedAmount) {
+            SavingsInputSheet(amount: $editingAmountValue)
                 .presentationDragIndicator(.visible)
-                .presentationCornerRadius(AppRadius.button)
-                .presentationBackground(AppColors.backgroundPrimary)
         }
     }
 
@@ -352,16 +351,14 @@ struct SavingsTargetDetailView2: View {
         if amount == nil {
             return AnyShapeStyle(AppColors.surfaceBorder)
         }
-        if isTarget {
-            return AnyShapeStyle(
-                LinearGradient(
-                    colors: [AppColors.accentPurple, AppColors.accentPink, AppColors.accentAmber],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-        }
-        return AnyShapeStyle(AppColors.surfaceElevated)
+        let gradient = LinearGradient(
+            colors: isTarget
+                ? [AppColors.accentPurple, AppColors.accentPink, AppColors.accentAmber]
+                : AppColors.gradientFire,
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        return AnyShapeStyle(gradient)
     }
 
     // MARK: - Month Card
@@ -387,7 +384,7 @@ struct SavingsTargetDetailView2: View {
 
             if let amount = amount {
                 if hasTarget {
-                    Text("\(formatMoney(amount)) / \(formatMoney(targetAmount))")
+                    Text("Saved \(formatMoney(amount)) / Target \(formatMoney(targetAmount))")
                         .font(.bodySmallSemibold)
                         .foregroundStyle(AppColors.textPrimary)
                 } else {
@@ -396,15 +393,9 @@ struct SavingsTargetDetailView2: View {
                         .foregroundStyle(AppColors.textPrimary)
                 }
             } else {
-                if hasTarget {
-                    Text("-- / \(formatMoney(targetAmount))")
-                        .font(.bodySmallSemibold)
-                        .foregroundColor(AppColors.textTertiary)
-                } else {
-                    Text("--")
-                        .font(.bodySmallSemibold)
-                        .foregroundColor(AppColors.textTertiary)
-                }
+                Text("No check-in yet")
+                    .font(.bodySmallSemibold)
+                    .foregroundColor(AppColors.textTertiary)
             }
         }
         .padding(AppSpacing.md)
@@ -416,10 +407,7 @@ struct SavingsTargetDetailView2: View {
                 .stroke(hasData ? AppColors.surfaceBorder : AppColors.surfaceBorder.opacity(0.5), lineWidth: 1)
         )
         .opacity(hasData ? 1.0 : 0.7)
-        .contentShape(RoundedRectangle(cornerRadius: AppRadius.card))
-        .onTapGesture {
-            beginEditMonth(index: index)
-        }
+        .onTapGesture { beginEditMonth(index: index) }
     }
 
     private var flameBadge: some View {
@@ -434,21 +422,40 @@ struct SavingsTargetDetailView2: View {
         .frame(width: 16, height: 16)
     }
 
+    // MARK: - Month Editing
+
     private func beginEditMonth(index: Int) {
         editingMonthIndex = index
-        editingAmount = (index < currentMonthlyAmounts.count ? currentMonthlyAmounts[index] : nil) ?? 0
+        let existing = index < currentMonthlyAmounts.count ? (currentMonthlyAmounts[index] ?? 0) : 0
+        editingAmountValue = existing
         isShowingEditSheet = true
     }
 
     private func applyEditedAmount() {
-        guard let index = editingMonthIndex else { return }
-        var amounts = monthlyAmountsByYear[selectedYear] ?? Array(repeating: nil, count: 12)
-        if editingAmount > 0 {
-            amounts[index] = editingAmount
-        } else {
-            amounts[index] = nil
+        guard let idx = editingMonthIndex else { return }
+        var arr = monthlyAmountsByYear[selectedYear] ?? Array(repeating: nil, count: 12)
+        while arr.count < 12 { arr.append(nil) }
+        arr[idx] = editingAmountValue > 0 ? editingAmountValue : nil
+        monthlyAmountsByYear[selectedYear] = arr
+        onMonthlyAmountsChange?(monthlyAmountsByYear)
+        Task { await persistEditedAmount(year: selectedYear, monthIndex: idx, amount: arr[idx]) }
+        editingMonthIndex = nil
+    }
+
+    @MainActor
+    private func persistEditedAmount(year: Int, monthIndex: Int, amount: Double?) async {
+        guard !isPersistingEdit else { return }
+        isPersistingEdit = true
+        defer { isPersistingEdit = false }
+
+        do {
+            let month = String(format: "%04d-%02d", year, monthIndex + 1)
+            _ = try await APIService.shared.saveSavingsCheckIn(month: month, savingsActual: amount)
+            TabContentCache.shared.setCashflowSavingsByYear(monthlyAmountsByYear)
+            NotificationCenter.default.post(name: .savingsCheckInDidPersist, object: nil)
+        } catch {
+            print("❌ [SavingsTargetDetailView2] Failed to persist savings check-in: \(error)")
         }
-        monthlyAmountsByYear[selectedYear] = amounts
     }
 
     // MARK: - Helper
@@ -480,19 +487,29 @@ struct SavingsTargetDetailView2Container: View {
         SavingsTargetDetailView2(
             savingsRatioPercent: apiBudget.savingsRatio,
             savingsBudgetTarget: apiBudget.savingsBudget,
-            monthlyAmountsByYear: monthlyAmountsByYear
+            monthlyAmountsByYear: monthlyAmountsByYear,
+            onMonthlyAmountsChange: { updated in
+                monthlyAmountsByYear = updated
+                TabContentCache.shared.setCashflowSavingsByYear(updated)
+            }
         )
         .onAppear {
-            // 优先使用共享缓存（与 CashflowView / JourneyView 同一组数据），避免数据不一致
-            if let cached = TabContentCache.shared.cashflowSavingsByYear {
-                monthlyAmountsByYear = cached
-            }
-            if let cachedBudget = TabContentCache.shared.cashflowBudget {
-                apiBudget = cachedBudget
-            }
+            syncFromCache()
         }
         .task {
             await loadBudgetAndSavingsSeries()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .savingsCheckInDidPersist)) { _ in
+            syncFromCache()
+        }
+    }
+
+    private func syncFromCache() {
+        if let cached = TabContentCache.shared.cashflowSavingsByYear {
+            monthlyAmountsByYear = cached
+        }
+        if let cachedBudget = TabContentCache.shared.cashflowBudget {
+            apiBudget = cachedBudget
         }
     }
 
@@ -507,7 +524,9 @@ struct SavingsTargetDetailView2Container: View {
             apiBudget = b
             TabContentCache.shared.setCashflowBudget(b)
         }
-        if let series {
+        if let cached = TabContentCache.shared.cashflowSavingsByYear {
+            monthlyAmountsByYear = cached
+        } else if let series {
             monthlyAmountsByYear = series
             TabContentCache.shared.setCashflowSavingsByYear(series)
         } else {

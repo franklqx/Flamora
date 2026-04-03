@@ -82,7 +82,7 @@ extension TotalSpendingDetailData {
     static var empty: TotalSpendingDetailData {
         let y = CashflowDetailEmptyStates.currentYear
         return TotalSpendingDetailData(
-            title: "Spending Analysis",
+            title: "Total Spending",
             trendsByYear: [y: CashflowDetailEmptyStates.twelveNils],
             monthlyDataByYear: [y: [:]]
         )

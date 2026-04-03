@@ -21,6 +21,21 @@ extension Account {
         )
     }
 
+    /// 由 `get-investment-holdings` 的 `accounts[]` 项映射。
+    /// 保留 name（账户名）和 mask（末四位）以供 AccountRow 显示。
+    static func fromInvestmentAccount(_ a: APIInvestmentAccount) -> Account {
+        Account(
+            id: a.id,
+            institution: a.institutionName ?? "",
+            accountType: .brokerage,
+            balance: a.balanceCurrent,
+            connected: true,
+            logoUrl: nil,
+            name: a.name.isEmpty ? nil : a.name,
+            mask: a.mask
+        )
+    }
+
     private static func mapPlaidAccountType(_ type: String) -> AccountType {
         let t = type.lowercased()
         if t.contains("crypto") { return .crypto }

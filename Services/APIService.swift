@@ -215,6 +215,49 @@ class APIService {
         return try await perform(request)
     }
 
+    func saveSavingsCheckIn(month: String, savingsActual: Double?) async throws -> APIMonthlyBudget {
+        struct SaveSavingsCheckInRequest: Encodable {
+            let month: String
+            let savingsActual: Double?
+
+            enum CodingKeys: String, CodingKey {
+                case month
+                case savingsActual = "savings_actual"
+            }
+        }
+
+        let body = try JSONEncoder().encode(
+            SaveSavingsCheckInRequest(month: month, savingsActual: savingsActual)
+        )
+        let request = try await authenticatedRequest(function: "save-savings-checkin", body: body)
+        return try await perform(request)
+    }
+
+    func updateTransactionClassification(
+        transactionId: String,
+        category: String?,
+        subcategory: String?
+    ) async throws -> APITransaction {
+        print("🔄 [API] updateClassification start — id:\(transactionId) cat:\(category ?? "nil") sub:\(subcategory ?? "nil") onMain:\(Thread.isMainThread)")
+        var payload: [String: Any] = ["transaction_id": transactionId]
+        if let category { payload["flamora_category"] = category }
+        if let subcategory { payload["flamora_subcategory"] = subcategory }
+        print("🔄 [API] payload keys: \(payload.keys.sorted())")
+        let body: Data
+        do {
+            body = try JSONSerialization.data(withJSONObject: payload, options: [])
+        } catch {
+            print("❌ [API] JSONSerialization failed: \(error)")
+            throw error
+        }
+        print("🔄 [API] body ready (\(body.count) bytes), building auth request...")
+        let request = try await authenticatedRequest(function: "update-transaction-classification", body: body)
+        print("🔄 [API] auth request built, performing network call...")
+        let result: APITransaction = try await perform(request)
+        print("✅ [API] updateClassification success — id:\(result.id) cat:\(result.flamoraCategory ?? "nil")")
+        return result
+    }
+
     func getInvestmentHoldings() async throws -> APIInvestmentHoldingsPayload {
         let request = try await authenticatedRequest(function: "get-investment-holdings")
         return try await perform(request)
@@ -224,6 +267,18 @@ class APIService {
         var request = try await authenticatedRequest(function: "get-portfolio-history")
         if var components = URLComponents(url: request.url!, resolvingAgainstBaseURL: false) {
             components.queryItems = [URLQueryItem(name: "range", value: range)]
+            request.url = components.url
+        }
+        return try await perform(request)
+    }
+
+    func getAccountBalanceHistory(accountId: String, range: String) async throws -> APIAccountBalanceHistory {
+        var request = try await authenticatedRequest(function: "get-account-balance-history")
+        if var components = URLComponents(url: request.url!, resolvingAgainstBaseURL: false) {
+            components.queryItems = [
+                URLQueryItem(name: "account_id", value: accountId),
+                URLQueryItem(name: "range", value: range),
+            ]
             request.url = components.url
         }
         return try await perform(request)
@@ -298,6 +353,8 @@ struct APISpendingSubcategory: Codable {
 
 struct APISpendingSavingsBucket: Codable {
     let budget: Double?
+    let actual: Double?
+    let estimated: Double?
 }
 
 /// 与 Edge Function `get-transactions` 返回的 `data` 对齐（见 `Fire cursor/supabase/functions/get-transactions/index.ts`）。
@@ -381,6 +438,8 @@ struct APIInvestmentAccount: Codable {
     let id: String
     let name: String
     let mask: String?
+    let subtype: String?
+    let institutionName: String?
     let balanceCurrent: Double
     let holdingsValue: Double
     let uninvestedCashValue: Double
@@ -425,4 +484,25 @@ struct APIPortfolioHistory: Codable {
 struct APIPortfolioPoint: Codable {
     let date: String
     let value: Double
+}
+
+struct APIAccountBalanceHistory: Codable {
+    let account: APIAccountBalanceHistoryAccount
+    let points: [APIAccountBalanceHistoryPoint]
+    let range: String
+}
+
+struct APIAccountBalanceHistoryAccount: Codable {
+    let id: String
+    let name: String
+    let type: String
+    let subtype: String?
+    let mask: String?
+    let institutionName: String?
+}
+
+struct APIAccountBalanceHistoryPoint: Codable {
+    let date: String
+    let currentBalance: Double
+    let availableBalance: Double?
 }

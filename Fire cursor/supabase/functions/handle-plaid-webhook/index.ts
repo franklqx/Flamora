@@ -534,6 +534,8 @@ async function updateNetWorth(supabase: any, userId: string) {
     ? parseFloat(((investmentTotal / fireGoal.fire_number) * 100).toFixed(2))
     : null
 
+  await snapshotCurrentAccountBalances(supabase, userId)
+
   // Upsert 今天的净资产记录
   const today = new Date().toISOString().split('T')[0]
   await supabase
@@ -547,6 +549,40 @@ async function updateNetWorth(supabase: any, userId: string) {
       fire_number: fireGoal?.fire_number || null,
       fire_progress_pct: fireProgressPct,
     }, { onConflict: 'user_id,date' })
+}
+
+async function snapshotCurrentAccountBalances(supabase: any, userId: string) {
+  const today = new Date().toISOString().split('T')[0]
+
+  const { data: accounts, error } = await supabase
+    .from('plaid_accounts')
+    .select('id, type, balance_current, balance_available')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+
+  if (error) {
+    console.error('[balances] Error loading accounts for balance snapshot:', error)
+    return
+  }
+
+  const rows = (accounts || []).map((account: any) => ({
+    user_id: userId,
+    plaid_account_id: account.id,
+    date: today,
+    account_type: account.type,
+    current_balance: account.balance_current,
+    available_balance: account.balance_available,
+  }))
+
+  if (rows.length === 0) return
+
+  const { error: snapshotError } = await supabase
+    .from('account_balance_history')
+    .upsert(rows, { onConflict: 'user_id,plaid_account_id,date' })
+
+  if (snapshotError) {
+    console.error('[balances] Error upserting account balance history:', snapshotError)
+  }
 }
 
 

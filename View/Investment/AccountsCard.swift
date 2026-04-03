@@ -128,10 +128,10 @@ private struct AccountRow: View {
         HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
             accountLogo
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text(account.institution)
+                Text(account.name ?? account.institution)
                     .font(.figureSecondarySemibold)
                     .foregroundStyle(AppColors.textPrimary)
-                Text(lastUpdatedLabel)
+                Text(accountSubtypeLabel)
                     .font(.caption)
                     .foregroundColor(AppColors.textTertiary)
             }
@@ -142,6 +142,15 @@ private struct AccountRow: View {
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.md)
+    }
+
+    /// e.g. "Brokerage • 7892" or just "Brokerage"
+    private var accountSubtypeLabel: String {
+        var parts: [String] = [account.accountType.displayLabel]
+        if let mask = account.mask, !mask.isEmpty {
+            parts.append("•\u{00A0}\(mask)")
+        }
+        return parts.joined(separator: " ")
     }
 
     @ViewBuilder
@@ -187,18 +196,6 @@ private struct AccountRow: View {
         case .crypto:    return AppColors.accentPink
         case .bank:      return AppColors.accentGreen
         }
-    }
-
-    private var lastUpdatedLabel: String {
-        guard let iso = lastSyncedAt,
-              let date = ISO8601DateFormatter().date(from: iso) else {
-            return "Updated recently"
-        }
-        let diff = Int(Date().timeIntervalSince(date))
-        if diff < 60 { return "Updated just now" }
-        if diff < 3600 { return "Updated \(diff / 60)m ago" }
-        if diff < 86400 { return "Updated \(diff / 3600)h ago" }
-        return "Updated \(diff / 86400)d ago"
     }
 
     private func formatCurrency(_ value: Double) -> String {

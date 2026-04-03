@@ -18,13 +18,6 @@ struct IncomeDetailView: View {
     @State private var selectedBarIndex: Int
     @State private var selectedYear: Int
     @State private var editableDataByYear: [Int: [Int: IncomeMonthData]]
-    @State private var isSourceEditorPresented = false
-    @State private var editingSourceID = ""
-    @State private var editingSourceSeriesKey = ""
-    @State private var editingSourceMonthIndex = 0
-    @State private var editingSourceName = ""
-    @State private var editingSourceType: IncomeSourceType = .active
-    @State private var applySmartRules = true
 
     private let monthLabels = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
     private let monthsFull = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -32,9 +25,10 @@ struct IncomeDetailView: View {
     init(data: IncomeDetailData, initialSelectedMonth: Int = 0) {
         self.data = data
         let latest = data.availableYears.last ?? 2026
+        let trend = data.trendsByYear[latest] ?? []
         _selectedYear = State(initialValue: latest)
         _editableDataByYear = State(initialValue: data.monthlyDataByYear)
-        _selectedBarIndex = State(initialValue: initialSelectedMonth)
+        _selectedBarIndex = State(initialValue: preferredCashflowMonthIndex(in: trend, requested: initialSelectedMonth))
     }
 
     private var currentTrend: [Double?] {
@@ -117,17 +111,6 @@ struct IncomeDetailView: View {
                     }
                 }
         )
-        .sheet(isPresented: $isSourceEditorPresented) {
-            IncomeSourceEditorSheet(
-                sourceName: $editingSourceName,
-                selectedType: $editingSourceType,
-                applySmartRules: $applySmartRules,
-                onClose: { isSourceEditorPresented = false },
-                onSave: saveSourceEdits
-            )
-            .presentationDetents([.height(460)])
-            .presentationDragIndicator(.hidden)
-        }
     }
 }
 
@@ -156,7 +139,7 @@ private extension IncomeDetailView {
                     .font(.h1)
                     .foregroundStyle(AppColors.textPrimary)
 
-                Text("earned in \(selectedMonthLabel)")
+                Text("received in \(selectedMonthLabel)")
                     .font(.bodyRegular)
                     .foregroundColor(Color(hex: "#9CA3AF"))
             }
@@ -208,10 +191,12 @@ private extension IncomeDetailView {
 
     var chartView: some View {
         GeometryReader { geometry in
-            let barAreaHeight = geometry.size.height - 30
+            let rawHeight = geometry.size.height.isFinite ? geometry.size.height : 0
+            let barAreaHeight = max(rawHeight - 30, 0)
             let barSpacing: CGFloat = 8
             let totalSpacing = barSpacing * 11
-            let barWidth = (geometry.size.width - totalSpacing) / 12
+            let availableWidth = geometry.size.width.isFinite ? max(geometry.size.width, 0) : 0
+            let barWidth = max((availableWidth - totalSpacing) / 12, 0)
 
             HStack(alignment: .bottom, spacing: barSpacing) {
                 ForEach(0..<12, id: \.self) { index in
@@ -271,7 +256,7 @@ private extension IncomeDetailView {
         let colors = colorMap(for: monthData.sources)
 
         return GeometryReader { geometry in
-            let availableHeight = geometry.size.height
+            let availableHeight = geometry.size.height.isFinite ? max(geometry.size.height, 0) : 0
 
             VStack(spacing: 0) {
                 ForEach(stackedSources) { source in
@@ -291,22 +276,21 @@ private extension IncomeDetailView {
 private extension IncomeDetailView {
     var sourcesSection: some View {
         let colors = colorMap(for: selectedSources)
-        return VStack(alignment: .leading, spacing: 16) {
-            Text("Sources")
-                .font(.detailTitle)
-                .foregroundStyle(AppColors.textPrimary)
+        return Group {
+            if !selectedSources.isEmpty {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Sources")
+                        .font(.detailTitle)
+                        .foregroundStyle(AppColors.textPrimary)
 
-            VStack(spacing: 12) {
-                ForEach(selectedSources) { source in
-                    Button {
-                        openSourceEditor(for: source)
-                    } label: {
-                        sourceCard(
-                            source: source,
-                            fillColor: colors[source.id] ?? colorScale[0]
-                        )
+                    VStack(spacing: 12) {
+                        ForEach(selectedSources) { source in
+                            sourceCard(
+                                source: source,
+                                fillColor: colors[source.id] ?? colorScale[0]
+                            )
+                        }
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
@@ -314,9 +298,10 @@ private extension IncomeDetailView {
 
     func sourceCard(source: IncomeDetailSource, fillColor: Color) -> some View {
         GeometryReader { geometry in
-            let width = geometry.size.width
-            let ratio = min(max(source.percentage / 100, 0), 1)
-            let fillWidth = ratio == 0 ? 0 : max(56, width * CGFloat(ratio))
+            let width = geometry.size.width.isFinite ? max(geometry.size.width, 0) : 0
+            let ratioValue = source.percentage.isFinite ? min(max(source.percentage / 100, 0), 1) : 0
+            let ratio = CGFloat(ratioValue)
+            let fillWidth = ratio == 0 ? 0 : min(width, max(56, width * ratio))
 
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 20)
@@ -355,46 +340,6 @@ private extension IncomeDetailView {
         .frame(height: 92)
     }
 
-    func openSourceEditor(for source: IncomeDetailSource) {
-        editingSourceID = source.id
-        editingSourceSeriesKey = sourceSeriesKey(for: source.id)
-        editingSourceMonthIndex = selectedBarIndex
-        editingSourceName = source.name
-        editingSourceType = source.type
-        applySmartRules = true
-        isSourceEditorPresented = true
-    }
-
-    func saveSourceEdits() {
-        let trimmedName = editingSourceName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedName.isEmpty else { return }
-
-        var yearData = editableDataByYear[selectedYear] ?? [:]
-        if applySmartRules {
-            for monthIndex in yearData.keys {
-                guard let monthData = yearData[monthIndex] else { continue }
-                let updated = monthData.sources.map { source -> IncomeDetailSource in
-                    guard sourceSeriesKey(for: source.id) == editingSourceSeriesKey else { return source }
-                    var s = source; s.name = trimmedName; s.type = editingSourceType; return s
-                }
-                yearData[monthIndex] = IncomeMonthData(total: monthData.total, sources: updated)
-            }
-        } else {
-            guard let monthData = yearData[editingSourceMonthIndex] else { return }
-            let updated = monthData.sources.map { source -> IncomeDetailSource in
-                guard source.id == editingSourceID else { return source }
-                var s = source; s.name = trimmedName; s.type = editingSourceType; return s
-            }
-            yearData[editingSourceMonthIndex] = IncomeMonthData(total: monthData.total, sources: updated)
-        }
-        editableDataByYear[selectedYear] = yearData
-        isSourceEditorPresented = false
-    }
-
-    func sourceSeriesKey(for sourceID: String) -> String {
-        guard let lastDash = sourceID.lastIndex(of: "-") else { return sourceID }
-        return String(sourceID[..<lastDash])
-    }
 }
 
 // MARK: - Helper
@@ -657,13 +602,13 @@ struct SpendingAnalysisDetailView: View {
     private let monthsFull = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     private let monthsLong = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
-    init(data: SpendingDetailData, flamoraCategory: String = "needs") {
+    init(data: SpendingDetailData, flamoraCategory: String = "needs", initialSelectedMonth: Int? = nil) {
         self.data = data
         self.flamoraCategory = flamoraCategory
         let latest = data.availableYears.last ?? 2026
         let trend = data.trendsByYear[latest] ?? []
         _selectedYear = State(initialValue: latest)
-        _selectedBarIndex = State(initialValue: trend.indices.last(where: { trend[$0] != nil }) ?? 0)
+        _selectedBarIndex = State(initialValue: preferredCashflowMonthIndex(in: trend, requested: initialSelectedMonth))
     }
 
     private var accentColor: Color { Color(hex: data.accentColor) }
@@ -839,10 +784,12 @@ private extension SpendingAnalysisDetailView {
 
     var chartView: some View {
         GeometryReader { geometry in
-            let barAreaHeight = geometry.size.height - 30
+            let rawHeight = geometry.size.height.isFinite ? geometry.size.height : 0
+            let barAreaHeight = max(rawHeight - 30, 0)
             let barSpacing: CGFloat = 8
             let totalSpacing = barSpacing * 11
-            let barWidth = (geometry.size.width - totalSpacing) / 12
+            let availableWidth = geometry.size.width.isFinite ? max(geometry.size.width, 0) : 0
+            let barWidth = max((availableWidth - totalSpacing) / 12, 0)
 
             HStack(alignment: .bottom, spacing: barSpacing) {
                 ForEach(0..<12, id: \.self) { index in
@@ -912,9 +859,10 @@ private extension SpendingAnalysisDetailView {
 
     func categoryCard(category: SpendingDetailCategory) -> some View {
         GeometryReader { geometry in
-            let width = geometry.size.width
-            let ratio = min(max(category.percentage / 100, 0), 1)
-            let fillWidth = min(width, max(56, width * CGFloat(ratio)))
+            let width = geometry.size.width.isFinite ? max(geometry.size.width, 0) : 0
+            let ratioValue = category.percentage.isFinite ? min(max(category.percentage / 100, 0), 1) : 0
+            let ratio = CGFloat(ratioValue)
+            let fillWidth = ratio == 0 ? 0 : min(width, max(56, width * ratio))
 
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 20)
@@ -1224,8 +1172,7 @@ struct TotalSpendingAnalysisDetailView: View {
         let latest = data.availableYears.last ?? Calendar.current.component(.year, from: Date())
         let trend = data.trendsByYear[latest] ?? []
         _selectedYear = State(initialValue: latest)
-        let computed = trend.indices.last(where: { trend[$0] != nil }) ?? 0
-        _selectedBarIndex = State(initialValue: initialSelectedMonth ?? computed)
+        _selectedBarIndex = State(initialValue: preferredCashflowMonthIndex(in: trend, requested: initialSelectedMonth))
     }
 
     private var currentTrend: [Double?] {
@@ -1305,10 +1252,18 @@ struct TotalSpendingAnalysisDetailView: View {
                 }
         )
         .fullScreenCover(isPresented: $showNeedsDetail) {
-            SpendingAnalysisDetailView(data: needsDetailData, flamoraCategory: "needs")
+            SpendingAnalysisDetailView(
+                data: needsDetailData,
+                flamoraCategory: "needs",
+                initialSelectedMonth: selectedBarIndex
+            )
         }
         .fullScreenCover(isPresented: $showWantsDetail) {
-            SpendingAnalysisDetailView(data: wantsDetailData, flamoraCategory: "wants")
+            SpendingAnalysisDetailView(
+                data: wantsDetailData,
+                flamoraCategory: "wants",
+                initialSelectedMonth: selectedBarIndex
+            )
         }
         .onChange(of: data.trendsByYear.isEmpty) { _, isEmpty in
             guard !isEmpty else { return }
@@ -1318,6 +1273,22 @@ struct TotalSpendingAnalysisDetailView: View {
             }
         }
     }
+}
+
+private func preferredCashflowMonthIndex(in trend: [Double?], requested: Int?) -> Int {
+    let hasAnyData = trend.contains { $0 != nil }
+    if let requested, trend.indices.contains(requested) {
+        if !hasAnyData || trend[requested] != nil {
+            return requested
+        }
+    }
+    if let last = trend.indices.last(where: { trend[$0] != nil }) {
+        return last
+    }
+    if let requested, (0..<12).contains(requested) {
+        return requested
+    }
+    return 0
 }
 
 private extension TotalSpendingAnalysisDetailView {
@@ -1395,10 +1366,12 @@ private extension TotalSpendingAnalysisDetailView {
 
     var chartView: some View {
         GeometryReader { geometry in
-            let barAreaHeight = geometry.size.height - 30
+            let rawHeight = geometry.size.height.isFinite ? geometry.size.height : 0
+            let barAreaHeight = max(rawHeight - 30, 0)
             let barSpacing: CGFloat = 8
             let totalSpacing = barSpacing * 11
-            let barWidth = (geometry.size.width - totalSpacing) / 12
+            let availableWidth = geometry.size.width.isFinite ? max(geometry.size.width, 0) : 0
+            let barWidth = max((availableWidth - totalSpacing) / 12, 0)
 
             HStack(alignment: .bottom, spacing: barSpacing) {
                 ForEach(0..<12, id: \.self) { index in
@@ -1447,7 +1420,7 @@ private extension TotalSpendingAnalysisDetailView {
     func stackedBarFill(for monthData: TotalSpendingMonthData) -> some View {
         let total = max(monthData.total, 0.0001)
         return GeometryReader { geometry in
-            let h = geometry.size.height
+            let h = geometry.size.height.isFinite ? max(geometry.size.height, 0) : 0
             VStack(spacing: 0) {
                 Rectangle().fill(wantsColor)
                     .frame(height: h * CGFloat(monthData.wantsAmount / total))
@@ -1468,32 +1441,34 @@ private extension TotalSpendingAnalysisDetailView {
 
 private extension TotalSpendingAnalysisDetailView {
     var sourcesSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Sources")
-                .font(.detailTitle)
-                .foregroundStyle(AppColors.textPrimary)
-
+        Group {
             if let monthData = selectedMonthData {
-                VStack(spacing: 12) {
-                    Button { showNeedsDetail = true } label: {
-                        sourceCard(
-                            name: "Needs",
-                            amount: monthData.needsAmount,
-                            percentage: monthData.needsPercentage,
-                            color: needsColor
-                        )
-                    }
-                    .buttonStyle(.plain)
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Categories")
+                        .font(.detailTitle)
+                        .foregroundStyle(AppColors.textPrimary)
 
-                    Button { showWantsDetail = true } label: {
-                        sourceCard(
-                            name: "Wants",
-                            amount: monthData.wantsAmount,
-                            percentage: monthData.wantsPercentage,
-                            color: wantsColor
-                        )
+                    VStack(spacing: 12) {
+                        Button { showNeedsDetail = true } label: {
+                            sourceCard(
+                                name: "Needs",
+                                amount: monthData.needsAmount,
+                                percentage: monthData.needsPercentage,
+                                color: needsColor
+                            )
+                        }
+                        .buttonStyle(.plain)
+
+                        Button { showWantsDetail = true } label: {
+                            sourceCard(
+                                name: "Wants",
+                                amount: monthData.wantsAmount,
+                                percentage: monthData.wantsPercentage,
+                                color: wantsColor
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
@@ -1501,9 +1476,10 @@ private extension TotalSpendingAnalysisDetailView {
 
     func sourceCard(name: String, amount: Double, percentage: Double, color: Color) -> some View {
         GeometryReader { geometry in
-            let width = geometry.size.width
-            let ratio = min(max(percentage / 100, 0), 1)
-            let fillWidth = ratio == 0 ? 0 : max(56, width * CGFloat(ratio))
+            let width = geometry.size.width.isFinite ? max(geometry.size.width, 0) : 0
+            let ratioValue = percentage.isFinite ? min(max(percentage / 100, 0), 1) : 0
+            let ratio = CGFloat(ratioValue)
+            let fillWidth = ratio == 0 ? 0 : min(width, max(56, width * ratio))
 
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: AppRadius.lg)

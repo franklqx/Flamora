@@ -20,25 +20,36 @@ enum CashflowAPICharts {
                 let monthStr = String(format: "%04d-%02d", year, m)
                 let idx = m - 1
                 group.addTask {
-                    let s = try? await APIService.shared.getSpendingSummary(month: monthStr)
-                    return (idx, s)
+                    do {
+                        let summary = try await APIService.shared.getSpendingSummary(month: monthStr)
+                        return (idx, summary)
+                    } catch {
+                        print("⚠️ [CashflowAPICharts] get-spending-summary failed for \(monthStr): \(error)")
+                        return (idx, nil)
+                    }
                 }
             }
             var dict: [Int: APISpendingSummary] = [:]
             for await (idx, s) in group {
                 if let s { dict[idx] = s }
             }
+            if dict.isEmpty {
+                print("⚠️ [CashflowAPICharts] No monthly summaries loaded for \(year) through month \(throughMonth)")
+            } else {
+                let loadedMonths = dict.keys.sorted().map { String($0 + 1) }.joined(separator: ",")
+                print("✅ [CashflowAPICharts] Loaded monthly summaries for months: \(loadedMonths)")
+            }
             return dict
         }
     }
 
-    /// 每月储蓄 ≈ max(0, total_income − total_spending)，与 `get-spending-summary` 基于 transactions 的汇总一致。
+    /// 每月储蓄优先使用手动 check-in；若无手动值，再回退到 summary 推导值。
     static func savingsMonthlyAmountsByYear(summaries: [Int: APISpendingSummary], year: Int) -> [Int: [Double?]] {
         var trend: [Double?] = Array(repeating: nil, count: 12)
         for m in 0..<12 {
             guard let s = summaries[m] else { continue }
-            let net = s.totalIncome - s.totalSpending
-            trend[m] = max(0, net)
+            let fallback = max(0, s.totalIncome - s.totalSpending)
+            trend[m] = s.savings.actual ?? s.savings.estimated ?? fallback
         }
         return [year: trend]
     }
@@ -62,7 +73,7 @@ enum CashflowAPICharts {
             )
         }
         return TotalSpendingDetailData(
-            title: "Spending Analysis",
+            title: "Total Spending",
             trendsByYear: [year: trend],
             monthlyDataByYear: [year: monthly]
         )

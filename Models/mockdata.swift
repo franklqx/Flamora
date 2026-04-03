@@ -234,7 +234,7 @@ struct Transaction: Codable, Identifiable {
     let amount: Double
     let date: String        // "MM-DD" or "YYYY-MM-DD"
     let time: String?       // "HH:mm" e.g. "09:32"
-    let pendingClassification: Bool
+    var pendingClassification: Bool
     var subcategory: String?   // e.g. "Rent & Housing" — drives category
     var category: String?      // "needs" | "wants" — derived from subcategory, stored for API
     var note: String?
@@ -326,6 +326,8 @@ struct Holding: Identifiable {
     let shares: Double
     let totalValue: Double
     var logoUrl: String? = nil
+    var accountName: String? = nil
+    var accountMask: String? = nil
 }
 
 // MARK: - Balance Snapshot（账户趋势图用）
@@ -344,6 +346,10 @@ struct Account: Codable, Identifiable {
     let balance: Double
     let connected: Bool
     let logoUrl: String?
+    /// Account-level name from the brokerage (e.g. "Taxable Brokerage"). nil when source is net-worth-summary.
+    var name: String? = nil
+    /// Last-4 mask of the account number (e.g. "7892"). nil when source is net-worth-summary.
+    var mask: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case id, institution, balance, connected, logoUrl

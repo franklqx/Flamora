@@ -28,69 +28,64 @@ struct SavingsTargetCard: View {
     }
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            VStack(spacing: 0) {
-                // Header row
-                HStack {
-                    Text("SAVINGS TARGET")
+        VStack(spacing: 0) {
+            // Header row
+            HStack {
+                Text("SAVINGS")
+                    .font(.cardHeader)
+                    .foregroundColor(AppColors.textTertiary)
+                    .tracking(AppTypography.Tracking.cardHeader)
+                Spacer()
+                HStack(spacing: AppSpacing.xs) {
+                    Text(currentMonthLabel)
                         .font(.cardHeader)
                         .foregroundColor(AppColors.textTertiary)
                         .tracking(AppTypography.Tracking.cardHeader)
-                    Spacer()
-                    HStack(spacing: AppSpacing.xs) {
-                        Text(currentMonthLabel)
-                            .font(.cardHeader)
+                    if isConnected && hasBudgetSetup {
+                        Image(systemName: "chevron.right")
+                            .font(.miniLabel)
                             .foregroundColor(AppColors.textTertiary)
-                            .tracking(AppTypography.Tracking.cardHeader)
-                        if isConnected && hasBudgetSetup {
-                            Image(systemName: "chevron.right")
-                                .font(.miniLabel)
-                                .foregroundColor(AppColors.textTertiary)
-                        }
                     }
                 }
+            }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.top, AppSpacing.cardPadding)
+            .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
+
+            Rectangle()
+                .fill(AppColors.surfaceBorder)
+                .frame(height: 0.5)
                 .padding(.horizontal, AppSpacing.cardPadding)
-                .padding(.top, AppSpacing.cardPadding)
-                .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
 
-                Rectangle()
-                    .fill(AppColors.surfaceBorder)
-                    .frame(height: 0.5)
-                    .padding(.horizontal, AppSpacing.cardPadding)
-
-                Group {
-                    if isConnected && !hasBudgetSetup {
-                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                            Text("$—")
-                                .font(.cardFigurePrimary)
-                                .foregroundStyle(AppColors.textTertiary)
-                                .padding(.top, AppSpacing.md)
-                            Text("Complete budget setup to track savings")
-                                .font(.footnoteRegular)
-                                .foregroundStyle(AppColors.textTertiary)
-                            Capsule()
-                                .fill(AppColors.progressTrack)
-                                .frame(height: (AppSpacing.sm + AppSpacing.xs) / 2)
-                        }
-                    } else if isConnected {
+            Group {
+                if isConnected && !hasBudgetSetup {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("$—")
+                            .font(.cardFigurePrimary)
+                            .foregroundStyle(AppColors.textTertiary)
+                            .padding(.top, AppSpacing.md)
+                        Text("Complete budget setup to track savings")
+                            .font(.footnoteRegular)
+                            .foregroundStyle(AppColors.textTertiary)
+                        Capsule()
+                            .fill(AppColors.progressTrack)
+                            .frame(height: (AppSpacing.sm + AppSpacing.xs) / 2)
+                    }
+                } else if isConnected {
+                    HStack(alignment: .center, spacing: AppSpacing.md) {
                         VStack(alignment: .leading, spacing: 0) {
-                            if currentAmount > 0 {
-                                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
-                                    Text(formatCurrency(currentAmount))
-                                        .font(.cardFigurePrimary)
-                                        .foregroundStyle(AppColors.textPrimary)
+                            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                                Text(formatCurrency(currentAmount))
+                                    .font(.cardFigurePrimary)
+                                    .foregroundStyle(AppColors.textPrimary)
+                                if targetAmount > 0 {
                                     Text("/ \(formatCurrency(targetAmount))")
                                         .font(.bodyRegular)
                                         .fontWeight(.medium)
                                         .foregroundColor(AppColors.textTertiary)
                                 }
-                                .padding(.top, AppSpacing.md)
-                            } else {
-                                Text(formatCurrency(targetAmount))
-                                    .font(.cardFigurePrimary)
-                                    .foregroundStyle(AppColors.textPrimary)
-                                    .padding(.top, AppSpacing.md)
                             }
+                            .padding(.top, AppSpacing.md)
 
                             if currentAmount > 0 {
                                 VStack(spacing: AppSpacing.sm + AppSpacing.xs) {
@@ -110,61 +105,66 @@ struct SavingsTargetCard: View {
                                     progressBar
                                 }
                                 .transition(.opacity.combined(with: .move(edge: .top)))
+                            } else if targetAmount > 0 {
+                                Text("Monthly target \(formatCurrency(targetAmount))")
+                                    .font(.footnoteRegular)
+                                    .foregroundStyle(AppColors.textTertiary)
+                                    .padding(.top, AppSpacing.xs)
                             }
                         }
-                    } else {
-                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
-                                Text("$—")
-                                    .font(.cardFigurePrimary)
-                                    .foregroundStyle(AppColors.textTertiary)
-                                Text("/ \(formatCurrency(targetAmount))")
-                                    .font(.bodyRegular)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(AppColors.textTertiary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                        if currentAmount <= 0 {
+                            Button(action: onAdd) {
+                                ZStack {
+                                    Circle()
+                                        .fill(
+                                            LinearGradient(
+                                                colors: AppColors.gradientFire,
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                    Image(systemName: "plus")
+                                        .font(.title3.weight(.semibold))
+                                        .foregroundStyle(AppColors.textPrimary)
+                                }
+                                .frame(width: 44, height: 44)
+                                .shadow(color: AppColors.accentAmber.opacity(0.18), radius: 12, y: 6)
                             }
-                            .padding(.top, AppSpacing.md)
-                            Text("Connect accounts to track savings")
-                                .font(.footnoteRegular)
-                                .foregroundStyle(AppColors.textTertiary)
-                            Capsule()
-                                .fill(AppColors.progressTrack)
-                                .frame(height: (AppSpacing.sm + AppSpacing.xs) / 2)
+                            .buttonStyle(.plain)
+                            .padding(.top, AppSpacing.sm)
                         }
                     }
-                }
-                .padding(.horizontal, AppSpacing.cardPadding)
-                .padding(.bottom, AppSpacing.cardPadding)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    if isConnected && hasBudgetSetup {
-                        onCardTap?()
+                } else {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                            Text("$—")
+                                .font(.cardFigurePrimary)
+                                .foregroundStyle(AppColors.textTertiary)
+                            Text("/ \(formatCurrency(targetAmount))")
+                                .font(.bodyRegular)
+                                .fontWeight(.medium)
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                        .padding(.top, AppSpacing.md)
+                        Text("Connect accounts to track savings")
+                            .font(.footnoteRegular)
+                            .foregroundStyle(AppColors.textTertiary)
+                        Capsule()
+                            .fill(AppColors.progressTrack)
+                            .frame(height: (AppSpacing.sm + AppSpacing.xs) / 2)
                     }
                 }
             }
-
-            if currentAmount <= 0 && isConnected && hasBudgetSetup {
-                Button(action: onAdd) {
-                    ZStack {
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: AppColors.gradientFlamePill,
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 40, height: 40)
-                        Image(systemName: "plus")
-                            .font(.h4)
-                            .foregroundStyle(AppColors.textInverse)
-                    }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.bottom, AppSpacing.cardPadding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if isConnected && hasBudgetSetup {
+                    onCardTap?()
                 }
-                .buttonStyle(.plain)
-                // Below header row so it does not overlap month + chevron
-                .padding(.top, AppSpacing.cardPadding + AppSpacing.md + AppSpacing.sm + AppSpacing.xs)
-                .padding(.trailing, AppSpacing.cardPadding)
             }
         }
         .background(AppColors.surface)

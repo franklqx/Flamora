@@ -9,6 +9,8 @@ import SwiftUI
 
 struct TransactionRow: View {
     let transaction: Transaction
+    var titleOverride: String? = nil
+    var contextLine: String? = nil
     let onTap: () -> Void
 
     var body: some View {
@@ -28,9 +30,16 @@ struct TransactionRow: View {
 
                 // MARK: Merchant + date/time
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(transaction.merchant)
+                    Text(titleOverride ?? transaction.merchant)
                         .font(.figureSecondarySemibold)
                         .foregroundStyle(AppColors.textPrimary)
+                        .lineLimit(2)
+                    if let contextLine, !contextLine.isEmpty {
+                        Text(contextLine)
+                            .font(.inlineLabel)
+                            .foregroundColor(AppColors.textSecondary)
+                            .lineLimit(1)
+                    }
                     Text(dateTimeLabel)
                         .font(.caption)
                         .foregroundColor(AppColors.textTertiary)
@@ -80,9 +89,10 @@ struct TransactionRow: View {
 
     private var badgeStyle: (String, Color, Color, Bool) {
         if let sub = transaction.subcategory {
-            let parent = TransactionCategoryCatalog.parent(for: sub)
+            let parent = TransactionCategoryCatalog.parent(forStoredSubcategory: sub)
             let color = parent == "needs" ? AppColors.chartBlue : AppColors.chartGold
-            return (sub, color.opacity(0.2), color, false)
+            let label = TransactionCategoryCatalog.displayName(forStoredSubcategory: sub) ?? sub
+            return (label, color.opacity(0.2), color, false)
         }
         if let cat = transaction.category {
             let color = cat == "needs" ? AppColors.chartBlue : AppColors.chartGold
@@ -103,9 +113,8 @@ struct TransactionRow: View {
     }
 
     private var categoryIcon: String {
-        if let sub = transaction.subcategory,
-           let cat = TransactionCategoryCatalog.all.first(where: { $0.name == sub }) {
-            return cat.icon
+        if let icon = TransactionCategoryCatalog.icon(forStoredSubcategory: transaction.subcategory) {
+            return icon
         }
         return merchantIcon(for: transaction.merchant)
     }

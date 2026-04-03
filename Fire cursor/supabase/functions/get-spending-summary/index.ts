@@ -129,13 +129,13 @@ serve(async (req) => {
     const totalSpending = needsTotal + wantsTotal
 
     // 转换子分类为排序后的数组
-    const formatSubcategories = (map: Record<string, number>) =>
+    const formatSubcategories = (map: Record<string, number>, bucketTotal: number) =>
       Object.entries(map)
         .map(([name, amount]) => ({
           subcategory: name,
           amount: parseFloat(amount.toFixed(2)),
-          percentage: totalSpending > 0
-            ? parseFloat(((amount / totalSpending) * 100).toFixed(1))
+          percentage: bucketTotal > 0
+            ? parseFloat(((amount / bucketTotal) * 100).toFixed(1))
             : 0,
         }))
         .sort((a, b) => b.amount - a.amount)
@@ -145,7 +145,7 @@ serve(async (req) => {
     // ============================================================
     const { data: budget } = await supabase
       .from('budgets')
-      .select('needs_budget, wants_budget, savings_budget')
+      .select('needs_budget, wants_budget, savings_budget, savings_actual')
       .eq('user_id', user.id)
       .eq('month', startDate)
       .single()
@@ -230,7 +230,7 @@ serve(async (req) => {
               ? parseFloat((budget.needs_budget - needsTotal).toFixed(2))
               : null,
             over_budget: budget?.needs_budget ? needsTotal > budget.needs_budget : false,
-            subcategories: formatSubcategories(needsBySubcategory),
+            subcategories: formatSubcategories(needsBySubcategory, needsTotal),
           },
 
           wants: {
@@ -243,11 +243,13 @@ serve(async (req) => {
               ? parseFloat((budget.wants_budget - wantsTotal).toFixed(2))
               : null,
             over_budget: budget?.wants_budget ? wantsTotal > budget.wants_budget : false,
-            subcategories: formatSubcategories(wantsBySubcategory),
+            subcategories: formatSubcategories(wantsBySubcategory, wantsTotal),
           },
 
           savings: {
             budget: budget?.savings_budget || null,
+            actual: budget?.savings_actual || null,
+            estimated: parseFloat(Math.max(0, incomeTotal - totalSpending).toFixed(2)),
           },
         },
         meta: {

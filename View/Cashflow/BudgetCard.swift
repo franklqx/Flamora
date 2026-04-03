@@ -42,7 +42,7 @@ struct BudgetCard: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("TOTAL SPEND")
+                Text("BUDGET")
                     .font(.cardHeader)
                     .foregroundColor(AppColors.textTertiary)
                     .tracking(AppTypography.Tracking.cardHeader)
@@ -75,34 +75,22 @@ struct BudgetCard: View {
             if !isConnected {
                 lockedEmptyState
             } else if hasBudget {
-                VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
-                    HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
-                        Text(formatCurrency(spending.total))
-                            .font(.cardFigurePrimary)
-                            .foregroundStyle(AppColors.textPrimary)
-                        Text("/ \(formatCurrency(spending.budgetLimit))")
-                            .font(.inlineLabel)
-                            .foregroundColor(AppColors.textTertiary)
-                    }
-                    segmentedBar
-                }
-                .padding(.horizontal, AppSpacing.cardPadding)
-                .padding(.top, AppSpacing.md)
-                .contentShape(Rectangle())
-                .onTapGesture { onCardTapped?() }
+                halfRingSection
+                    .padding(.horizontal, AppSpacing.cardPadding)
+                    .padding(.top, AppSpacing.md)
+                    .contentShape(Rectangle())
+                    .onTapGesture { onCardTapped?() }
 
                 VStack(spacing: AppSpacing.sm + AppSpacing.xs) {
                     BudgetRowItem(
                         title: "Needs",
-                        current: formatCurrency(spending.needs),
-                        total: formatCurrency(apiBudget.needsBudget),
+                        amount: formatCurrency(spending.needs),
                         color: needsColor,
                         onTap: onNeedsTapped
                     )
                     BudgetRowItem(
                         title: "Wants",
-                        current: formatCurrency(spending.wants),
-                        total: formatCurrency(apiBudget.wantsBudget),
+                        amount: formatCurrency(spending.wants),
                         color: wantsColor,
                         onTap: onWantsTapped
                     )
@@ -185,27 +173,62 @@ struct BudgetCard: View {
         return f.string(from: Date()).uppercased()
     }
 
-    private var segmentedBar: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            let safeW = w.isFinite && w >= 0 ? w : 0
-            let limit = max(spending.budgetLimit, 1)
-            let nRatio = min(max(spending.needs / limit, 0), 1)
-            let wRatio = min(max(spending.wants / limit, 0), 1)
-            let nWidth = max(0, safeW * CGFloat(nRatio))
-            let wWidth = max(0, safeW * CGFloat(wRatio))
+    private var halfRingSection: some View {
+        let ringWidth: CGFloat = 200
+        let ringHeight: CGFloat = 146
+        let lineW: CGFloat = 20
+        let safeLimit = max(spending.budgetLimit, 1)
+        let needsFrac = CGFloat(min(spending.needs / safeLimit, 1.0)) * 0.5
+        let wantsFrac = CGFloat(min(spending.wants / safeLimit, max(0, 1.0 - spending.needs / safeLimit))) * 0.5
+        let usedPercent = min(Int((spending.total / safeLimit * 100).rounded()), 999)
 
-            ZStack(alignment: .leading) {
-                Capsule().fill(AppColors.progressTrack).frame(height: (AppSpacing.sm + AppSpacing.xs) / 2)
-                HStack(spacing: 0) {
-                    Rectangle().fill(needsColor).frame(width: nWidth)
-                    Rectangle().fill(wantsColor).frame(width: wWidth)
+        return VStack(spacing: 0) {
+            ZStack {
+                TopSemiRing(startProgress: 0, endProgress: 1)
+                    .stroke(
+                        AppColors.progressTrack,
+                        style: StrokeStyle(lineWidth: lineW, lineCap: .round)
+                    )
+                if needsFrac > 0 {
+                    TopSemiRing(startProgress: 0, endProgress: needsFrac / 0.5)
+                        .stroke(
+                            needsColor,
+                            style: StrokeStyle(lineWidth: lineW, lineCap: .round)
+                        )
                 }
-                .clipShape(Capsule())
-                .frame(height: (AppSpacing.sm + AppSpacing.xs) / 2)
+                if wantsFrac > 0 {
+                    TopSemiRing(
+                        startProgress: needsFrac / 0.5,
+                        endProgress: (needsFrac + wantsFrac) / 0.5
+                    )
+                    .stroke(
+                        wantsColor,
+                        style: StrokeStyle(lineWidth: lineW, lineCap: .round)
+                        )
+                }
+
+                VStack(spacing: AppSpacing.xs) {
+                    Text("\(usedPercent)% used")
+                        .font(.footnoteRegular)
+                        .foregroundColor(AppColors.textTertiary)
+
+                    Text(formatCurrency(spending.total))
+                        .font(.h2)
+                        .foregroundStyle(AppColors.textPrimary)
+
+                    Text("of \(formatCurrency(spending.budgetLimit)) budget")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.center)
+                .padding(.top, 68)
             }
+            .frame(width: ringWidth, height: ringHeight)
+            .frame(maxWidth: .infinity)
+            .padding(.top, AppSpacing.xs)
         }
-        .frame(height: (AppSpacing.sm + AppSpacing.xs) / 2)
+        .frame(maxWidth: .infinity)
     }
 
     private func formatCurrency(_ value: Double) -> String {
@@ -218,10 +241,44 @@ struct BudgetCard: View {
     }
 }
 
+private struct TopSemiRing: Shape {
+    let startProgress: CGFloat
+    let endProgress: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let clampedStart = min(max(startProgress, 0), 1)
+        let clampedEnd = min(max(endProgress, 0), 1)
+        guard clampedEnd > clampedStart else { return Path() }
+
+        let radius = min(rect.width / 2, rect.height) - 10
+        let center = CGPoint(x: rect.midX, y: rect.maxY - 10)
+        let startAngle = Double.pi * Double(1 - clampedStart)
+        let endAngle = Double.pi * Double(1 - clampedEnd)
+        let steps = max(Int(ceil((clampedEnd - clampedStart) * 48)), 2)
+        var path = Path()
+
+        for step in 0...steps {
+            let progress = Double(step) / Double(steps)
+            let angle = startAngle + (endAngle - startAngle) * progress
+            let cosValue = CGFloat(Foundation.cos(angle))
+            let sinValue = CGFloat(Foundation.sin(angle))
+            let point = CGPoint(
+                x: center.x + radius * cosValue,
+                y: center.y - radius * sinValue
+            )
+            if step == 0 {
+                path.move(to: point)
+            } else {
+                path.addLine(to: point)
+            }
+        }
+        return path
+    }
+}
+
 private struct BudgetRowItem: View {
     let title: String
-    let current: String
-    let total: String
+    let amount: String
     let color: Color
     let onTap: (() -> Void)?
 
@@ -246,10 +303,10 @@ private struct BudgetRowItem: View {
             Spacer()
 
             HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
-                Text(current)
+                Text(amount)
                     .font(.cardFigureSecondary)
                     .foregroundStyle(AppColors.textPrimary)
-                Text("/ \(total)")
+                Text("spent")
                     .font(.caption)
                     .fontWeight(.medium)
                     .foregroundColor(AppColors.textTertiary)

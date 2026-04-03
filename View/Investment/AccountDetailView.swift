@@ -8,30 +8,28 @@ import SwiftUI
 struct AccountDetailView: View {
     let account: Account
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedPeriod: ChartPeriod = .oneMonth
+    @State private var selectedPeriod: AccountHistoryRange = .oneMonth
     @State private var selectedTransaction: Transaction?
     @State private var transactions: [Transaction] = []
     @State private var apiHoldings: [Holding] = []
+    @State private var historySnapshots: [BalanceSnapshot] = []
+    @State private var historyCache: [AccountHistoryRange: [BalanceSnapshot]] = [:]
+    @State private var isHistoryLoading = true
     @State private var dragOffset: CGFloat = 0
 
     init(account: Account) {
         self.account = account
     }
 
-    enum ChartPeriod: String, CaseIterable {
-        case oneWeek      = "1W"
-        case oneMonth     = "1M"
-        case threeMonths  = "3M"
-        case oneYear      = "1Y"
-    }
-
     private var holdings: [Holding] { apiHoldings }
+    private var filteredSnapshots: [BalanceSnapshot] { historySnapshots }
 
-    /// No account-level balance history API exists yet.
-    /// Return empty so the chart section shows an honest placeholder, not a fake flat line.
-    private var filteredSnapshots: [BalanceSnapshot] { [] }
-
-    private var performancePercent: Double? { nil }
+    private var performancePercent: Double? {
+        guard let first = filteredSnapshots.first?.balance,
+              let last = filteredSnapshots.last?.balance,
+              first > 0 else { return nil }
+        return ((last - first) / first) * 100
+    }
 
     // MARK: - Body
 
@@ -61,6 +59,9 @@ struct AccountDetailView: View {
         .task {
             await loadAccountData()
         }
+        .task(id: selectedPeriod) {
+            await loadAccountHistory()
+        }
         .offset(y: dragOffset)
         .simultaneousGesture(
             DragGesture()
@@ -81,9 +82,7 @@ struct AccountDetailView: View {
         )
         .sheet(item: $selectedTransaction) { txn in
             TransactionDetailSheet(transaction: txn, linkedAccounts: [account]) { updated in
-                if let idx = transactions.firstIndex(where: { $0.id == updated.id }) {
-                    transactions[idx] = updated
-                }
+                try await persistTransactionClassification(updated)
             }
             .ignoresSafeArea(.container, edges: .bottom)
             .presentationDragIndicator(.visible)
@@ -100,10 +99,10 @@ struct AccountDetailView: View {
             accountLogoView
                 .frame(width: 44, height: 44)
             VStack(alignment: .leading, spacing: 3) {
-                Text(account.institution)
+                Text(account.name ?? account.institution)
                     .font(.h3)
                     .foregroundStyle(AppColors.textPrimary)
-                Text(account.accountType.displayLabel)
+                Text(headerSubtitle)
                     .font(.inlineLabel)
                     .foregroundColor(AppColors.textTertiary)
             }
@@ -119,6 +118,15 @@ struct AccountDetailView: View {
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.top, AppSpacing.lg)
         .padding(.bottom, AppSpacing.md)
+    }
+
+    /// e.g. "Brokerage • 7892" or just "Brokerage"
+    private var headerSubtitle: String {
+        var parts: [String] = [account.accountType.displayLabel]
+        if let mask = account.mask, !mask.isEmpty {
+            parts.append("•\u{00A0}\(mask)")
+        }
+        return parts.joined(separator: " ")
     }
 
     // MARK: - Balance
@@ -147,25 +155,14 @@ struct AccountDetailView: View {
     // MARK: - Chart
 
     private var chartSection: some View {
-        HStack(spacing: AppSpacing.md) {
-            Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.h3)
-                .foregroundColor(AppColors.textTertiary.opacity(0.35))
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text("History not yet available")
-                    .font(.bodySemibold)
-                    .foregroundColor(AppColors.textTertiary)
-                Text("Balance history will appear after a few syncs.")
-                    .font(.caption)
-                    .foregroundColor(AppColors.textTertiary.opacity(0.6))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer()
-        }
-        .padding(AppSpacing.cardPadding)
-        .frame(maxWidth: .infinity)
-        .background(AppColors.surfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+        AccountHistoryCard(
+            snapshots: filteredSnapshots,
+            selectedRange: selectedPeriod,
+            isLoading: isHistoryLoading,
+            emptyTitle: "Balance history is starting",
+            emptySubtitle: "We'll show account value after your next few syncs.",
+            onSelectRange: { selectedPeriod = $0 }
+        )
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.bottom, AppSpacing.lg)
     }
@@ -326,8 +323,6 @@ struct AccountDetailView: View {
 
     // MARK: - Helpers
 
-    private var lastUpdatedLabel: String { "Updated recently" }
-
     private func loadAccountData() async {
         async let holdingsTask = loadHoldingsForAccount()
         async let txTask = loadTransactionsForAccount()
@@ -335,6 +330,86 @@ struct AccountDetailView: View {
         await MainActor.run {
             apiHoldings = h
             transactions = t
+        }
+    }
+
+    @MainActor
+    private func persistTransactionClassification(_ updated: Transaction) async throws {
+        let response = try await APIService.shared.updateTransactionClassification(
+            transactionId: updated.id,
+            category: updated.category,
+            subcategory: updated.subcategory
+        )
+        let persisted = Transaction(from: response)
+        if let idx = transactions.firstIndex(where: { $0.id == persisted.id }) {
+            transactions[idx] = persisted
+        }
+    }
+
+    private func loadAccountHistory() async {
+        if let cached = historyCache[selectedPeriod] {
+            await MainActor.run {
+                historySnapshots = cached
+                isHistoryLoading = false
+            }
+            return
+        }
+
+        let shouldShowLoader = historySnapshots.isEmpty
+        if shouldShowLoader {
+            await MainActor.run { isHistoryLoading = true }
+        }
+
+        guard let response = try? await APIService.shared.getAccountBalanceHistory(
+            accountId: account.id,
+            range: selectedPeriod.apiValue
+        ) else {
+            await MainActor.run {
+                if shouldShowLoader { historySnapshots = [] }
+                isHistoryLoading = false
+            }
+            return
+        }
+
+        let snapshots = response.points.compactMap { point -> BalanceSnapshot? in
+            guard let date = Self.accountHistoryDateFormatter.date(from: point.date) else { return nil }
+            return BalanceSnapshot(
+                id: "\(account.id)-\(point.date)",
+                accountId: account.id,
+                date: date,
+                balance: point.currentBalance
+            )
+        }
+
+        await MainActor.run {
+            historyCache[selectedPeriod] = snapshots
+            historySnapshots = snapshots
+            isHistoryLoading = false
+        }
+
+        await prefetchOtherRanges(excluding: selectedPeriod)
+    }
+
+    private func prefetchOtherRanges(excluding current: AccountHistoryRange) async {
+        for range in AccountHistoryRange.allCases where range != current && historyCache[range] == nil {
+            guard let response = try? await APIService.shared.getAccountBalanceHistory(
+                accountId: account.id,
+                range: range.apiValue
+            ) else { continue }
+
+            let snapshots = response.points.compactMap { point -> BalanceSnapshot? in
+                guard let date = Self.accountHistoryDateFormatter.date(from: point.date) else { return nil }
+                return BalanceSnapshot(
+                    id: "\(account.id)-\(point.date)",
+                    accountId: account.id,
+                    date: date,
+                    balance: point.currentBalance
+                )
+            }
+
+            await MainActor.run {
+                historyCache[range] = snapshots
+            }
         }
     }
 
@@ -384,65 +459,14 @@ struct AccountDetailView: View {
         let sign = value >= 0 ? "+" : ""
         return String(format: "\(sign)%.1f%%", value)
     }
-}
 
-// MARK: - Account Line Chart
-
-private struct AccountLineChart: View {
-    let snapshots: [BalanceSnapshot]
-    let accentColor: Color
-
-    var body: some View {
-        if snapshots.count < 2 {
-            RoundedRectangle(cornerRadius: AppRadius.md)
-                .fill(AppColors.surfaceElevated)
-        } else {
-            GeometryReader { geo in
-                let values  = snapshots.map { $0.balance }
-                let minVal  = (values.min() ?? 0) * 0.98
-                let maxVal  = (values.max() ?? 1) * 1.02
-                let range   = max(maxVal - minVal, 1)
-                let w = geo.size.width
-                let h = geo.size.height
-
-                let pts: [CGPoint] = snapshots.enumerated().map { i, s in
-                    CGPoint(
-                        x: w * CGFloat(i) / CGFloat(snapshots.count - 1),
-                        y: h * CGFloat(1 - (s.balance - minVal) / range)
-                    )
-                }
-
-                ZStack {
-                    // Gradient fill
-                    Path { p in
-                        p.move(to: CGPoint(x: pts[0].x, y: h))
-                        pts.forEach { p.addLine(to: $0) }
-                        p.addLine(to: CGPoint(x: pts.last!.x, y: h))
-                        p.closeSubpath()
-                    }
-                    .fill(LinearGradient(
-                        colors: [accentColor.opacity(0.25), Color.clear],
-                        startPoint: .top, endPoint: .bottom
-                    ))
-
-                    // Line
-                    Path { p in
-                        p.move(to: pts[0])
-                        pts.dropFirst().forEach { p.addLine(to: $0) }
-                    }
-                    .stroke(accentColor, lineWidth: 2)
-
-                    // End dot
-                    if let last = pts.last {
-                        Circle()
-                            .fill(AppColors.textPrimary)
-                            .frame(width: 8, height: 8)
-                            .position(last)
-                    }
-                }
-            }
-        }
-    }
+    private static let accountHistoryDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter
+    }()
 }
 
 // MARK: - Holding Row
@@ -499,6 +523,180 @@ private struct HoldingRow: View {
         f.maximumFractionDigits = 0
         f.minimumFractionDigits = 0
         return f.string(from: NSNumber(value: value)) ?? "$0"
+    }
+}
+
+enum AccountHistoryRange: String, CaseIterable {
+    case oneWeek = "1W"
+    case oneMonth = "1M"
+    case threeMonths = "3M"
+    case oneYear = "1Y"
+
+    var apiValue: String {
+        switch self {
+        case .oneWeek: return "1w"
+        case .oneMonth: return "1m"
+        case .threeMonths: return "3m"
+        case .oneYear: return "1y"
+        }
+    }
+}
+
+struct AccountHistoryCard: View {
+    let snapshots: [BalanceSnapshot]
+    let selectedRange: AccountHistoryRange
+    let isLoading: Bool
+    let emptyTitle: String
+    let emptySubtitle: String
+    let onSelectRange: (AccountHistoryRange) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            rangeSelector
+
+            ZStack {
+                if snapshots.count >= 2 {
+                    AccountHistoryLineChart(snapshots: snapshots)
+                        .transition(.opacity)
+                } else if isLoading {
+                    loadingState
+                        .transition(.opacity)
+                } else {
+                    emptyState
+                        .transition(.opacity)
+                }
+            }
+            .frame(height: 164)
+            .animation(.easeInOut(duration: 0.2), value: snapshots.map(\.id).joined())
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.bottom, AppSpacing.sm)
+    }
+
+    private var loadingState: some View {
+        AccountHistoryLineChart(snapshots: placeholderSnapshots)
+            .opacity(0.55)
+            .overlay(
+                LinearGradient(
+                    colors: [Color.clear, Color.white.opacity(0.03), Color.clear],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .blur(radius: 6)
+            )
+    }
+
+    private var emptyState: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Rectangle()
+                .fill(AppColors.progressTrack.opacity(0.35))
+                .frame(height: 1)
+            Text(emptyTitle)
+                .font(.footnoteRegular)
+                .foregroundColor(AppColors.textTertiary)
+            Text(emptySubtitle)
+                .font(.caption)
+                .foregroundColor(AppColors.textTertiary.opacity(0.55))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    }
+
+    private var rangeSelector: some View {
+        HStack(spacing: AppSpacing.sm) {
+            ForEach(AccountHistoryRange.allCases, id: \.self) { range in
+                Button(action: { onSelectRange(range) }) {
+                    Text(range.rawValue)
+                        .font(.cardHeader)
+                        .foregroundStyle(selectedRange == range ? AppColors.textInverse : AppColors.textTertiary)
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, AppSpacing.xs)
+                        .background(
+                            Capsule()
+                                .fill(selectedRange == range ? AppColors.textPrimary : AppColors.surface)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var placeholderSnapshots: [BalanceSnapshot] {
+        let today = Date()
+        return [
+            BalanceSnapshot(id: "loading-1", accountId: "loading", date: today.addingTimeInterval(-86400 * 3), balance: 100),
+            BalanceSnapshot(id: "loading-2", accountId: "loading", date: today.addingTimeInterval(-86400 * 2), balance: 101),
+            BalanceSnapshot(id: "loading-3", accountId: "loading", date: today.addingTimeInterval(-86400), balance: 100.7),
+            BalanceSnapshot(id: "loading-4", accountId: "loading", date: today, balance: 101.2),
+        ]
+    }
+}
+
+private struct AccountHistoryLineChart: View {
+    let snapshots: [BalanceSnapshot]
+
+    var body: some View {
+        GeometryReader { geo in
+            let values = snapshots.map { $0.balance }
+            let minVal = (values.min() ?? 0) * 0.98
+            let maxVal = (values.max() ?? 1) * 1.02
+            let range = max(maxVal - minVal, 1)
+            let width = max(geo.size.width, 1)
+            let height = max(geo.size.height, 1)
+            let lineColor = AppColors.accentBlue
+            let glowColor = AppColors.accentBlueBright
+
+            let points = snapshots.enumerated().map { index, snapshot in
+                CGPoint(
+                    x: width * CGFloat(index) / CGFloat(max(snapshots.count - 1, 1)),
+                    y: height * CGFloat(1 - (snapshot.balance - minVal) / range)
+                )
+            }
+
+            ZStack {
+                Path { path in
+                    guard let first = points.first, let last = points.last else { return }
+                    path.move(to: CGPoint(x: first.x, y: height))
+                    points.forEach { path.addLine(to: $0) }
+                    path.addLine(to: CGPoint(x: last.x, y: height))
+                    path.closeSubpath()
+                }
+                .fill(
+                    LinearGradient(
+                        colors: [glowColor.opacity(0.16), glowColor.opacity(0.06), Color.clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .blur(radius: 2)
+
+                Path { path in
+                    guard let first = points.first else { return }
+                    path.move(to: first)
+                    points.dropFirst().forEach { path.addLine(to: $0) }
+                }
+                .stroke(glowColor.opacity(0.22), style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
+                .blur(radius: 5)
+
+                Path { path in
+                    guard let first = points.first else { return }
+                    path.move(to: first)
+                    points.dropFirst().forEach { path.addLine(to: $0) }
+                }
+                .stroke(lineColor, style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
+
+                if let last = points.last {
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 8, height: 8)
+                        .overlay(
+                            Circle()
+                                .stroke(lineColor.opacity(0.85), lineWidth: 1.5)
+                        )
+                        .position(last)
+                }
+            }
+        }
     }
 }
 

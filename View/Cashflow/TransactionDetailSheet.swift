@@ -12,21 +12,26 @@ struct TransactionDetailSheet: View {
     let transaction: Transaction
     /// 来自 `get-net-worth-summary` 等真实账户列表，用于匹配 `transaction.accountId`。
     var linkedAccounts: [Account] = []
-    let onSave: (Transaction) -> Void
+    let onSave: @MainActor (Transaction) async throws -> Void
 
-    @State private var selectedSubcategory: String?
-    @State private var noteText: String
+    @State private var selectedSubcategoryKey: String?
+    @State private var isSaving = false
+    @State private var errorMessage: String?
     @Environment(\.dismiss) private var dismiss
 
     private var needsCategories: [TransactionCategory] { TransactionCategoryCatalog.needsCategories }
     private var wantsCategories: [TransactionCategory] { TransactionCategoryCatalog.wantsCategories }
+    private var initialSubcategoryKey: String? {
+        TransactionCategoryCatalog.canonicalSubcategory(fromStored: transaction.subcategory)
+    }
 
-    init(transaction: Transaction, linkedAccounts: [Account] = [], onSave: @escaping (Transaction) -> Void) {
+    init(transaction: Transaction, linkedAccounts: [Account] = [], onSave: @escaping @MainActor (Transaction) async throws -> Void) {
         self.transaction = transaction
         self.linkedAccounts = linkedAccounts
         self.onSave = onSave
-        _selectedSubcategory = State(initialValue: transaction.subcategory)
-        _noteText = State(initialValue: transaction.note ?? "")
+        _selectedSubcategoryKey = State(
+            initialValue: TransactionCategoryCatalog.canonicalSubcategory(fromStored: transaction.subcategory)
+        )
     }
 
     var body: some View {
@@ -56,7 +61,7 @@ struct TransactionDetailSheet: View {
 
                     Spacer()
 
-                    Button(action: save) {
+                    Button(action: { dismiss() }) {
                         Image(systemName: "xmark")
                             .font(.bodySmall)
                             .foregroundColor(AppColors.textSecondary)
@@ -109,6 +114,17 @@ struct TransactionDetailSheet: View {
                     .padding(.horizontal, AppSpacing.cardPadding)
                 }
 
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("CURRENT CATEGORY")
+                        .font(.cardHeader)
+                        .foregroundColor(AppColors.textTertiary)
+                        .tracking(0.8)
+
+                    currentCategoryBadge
+                }
+                .padding(.top, AppSpacing.lg)
+                .padding(.horizontal, AppSpacing.cardPadding)
+
                 // MARK: Category section
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
                     Text("CATEGORY")
@@ -125,38 +141,25 @@ struct TransactionDetailSheet: View {
                 .padding(.top, AppSpacing.lg)
                 .padding(.horizontal, AppSpacing.cardPadding)
 
-                // MARK: Note
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text("NOTE")
-                        .font(.cardHeader)
-                        .foregroundColor(AppColors.textTertiary)
-                        .tracking(0.8)
-
-                    TextField("Add a note...", text: $noteText)
-                        .font(.inlineLabel)
-                        .foregroundStyle(AppColors.textPrimary)
-                        .tint(AppColors.accentPurple)
-                        .padding(.vertical, AppSpacing.sm)
-                        .overlay(
-                            Rectangle()
-                                .frame(height: 0.75)
-                                .foregroundColor(AppColors.surfaceBorder),
-                            alignment: .bottom
-                        )
-                }
-                .padding(.top, AppSpacing.lg)
-                .padding(.horizontal, AppSpacing.cardPadding)
-
                 // MARK: Done button
-                Button(action: save) {
-                    Text("Done")
-                        .font(.sheetPrimaryButton)
-                        .foregroundStyle(AppColors.textInverse)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(AppColors.textPrimary)
-                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+                Button(action: {
+                    Task { await save() }
+                }) {
+                    HStack(spacing: AppSpacing.sm) {
+                        if isSaving {
+                            ProgressView()
+                                .tint(AppColors.textInverse)
+                        }
+                        Text(primaryButtonTitle)
+                            .font(.sheetPrimaryButton)
+                            .foregroundStyle(AppColors.textInverse)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(AppColors.textPrimary)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
                 }
+                .disabled(isSaving)
                 .buttonStyle(.plain)
                 .padding(.top, AppSpacing.xl)
                 .padding(.horizontal, AppSpacing.cardPadding)
@@ -164,6 +167,14 @@ struct TransactionDetailSheet: View {
             }
         }
         .background(AppColors.backgroundPrimary)
+        .alert("Couldn’t save changes", isPresented: Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { errorMessage = nil }
+        } message: {
+            Text(errorMessage ?? "Please try again.")
+        }
     }
 
     // MARK: - Category Group
@@ -186,9 +197,9 @@ struct TransactionDetailSheet: View {
 
     @ViewBuilder
     private func categoryChip(_ cat: TransactionCategory, color: Color) -> some View {
-        let isSelected = selectedSubcategory == cat.name
+        let isSelected = selectedSubcategoryKey == cat.id
         Button(action: {
-            selectedSubcategory = isSelected ? nil : cat.name
+            selectedSubcategoryKey = cat.id
         }) {
             HStack(spacing: 6) {
                 Image(systemName: cat.icon)
@@ -212,6 +223,24 @@ struct TransactionDetailSheet: View {
         .buttonStyle(.plain)
     }
 
+    @ViewBuilder
+    private var currentCategoryBadge: some View {
+        let label = TransactionCategoryCatalog.displayName(forStoredSubcategory: effectiveStoredSubcategory) ?? "Uncategorized"
+        let color = effectiveCategory == "needs" ? AppColors.chartBlue : (effectiveCategory == "wants" ? AppColors.chartGold : AppColors.textTertiary)
+
+        Text(label)
+            .font(.miniLabel)
+            .foregroundColor(color)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 10)
+            .background(color.opacity(0.16))
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(color.opacity(0.35), lineWidth: 0.75)
+            )
+    }
+
     // MARK: - Helpers
 
     private var transactionAccount: Account? {
@@ -220,9 +249,12 @@ struct TransactionDetailSheet: View {
     }
 
     private var currentIcon: String {
-        if let sub = selectedSubcategory,
-           let cat = TransactionCategoryCatalog.all.first(where: { $0.name == sub }) {
+        if let selectedSubcategoryKey,
+           let cat = TransactionCategoryCatalog.all.first(where: { $0.id == selectedSubcategoryKey }) {
             return cat.icon
+        }
+        if let icon = TransactionCategoryCatalog.icon(forStoredSubcategory: transaction.subcategory) {
+            return icon
         }
         return merchantIcon(for: transaction.merchant)
     }
@@ -235,13 +267,46 @@ struct TransactionDetailSheet: View {
         return datePart
     }
 
-    private func save() {
+    private var effectiveStoredSubcategory: String? {
+        selectedSubcategoryKey ?? transaction.subcategory
+    }
+
+    private var effectiveCategory: String? {
+        if let selectedSubcategoryKey {
+            return TransactionCategoryCatalog.parent(forStoredSubcategory: selectedSubcategoryKey)
+        }
+        return transaction.category
+    }
+
+    private var primaryButtonTitle: String {
+        "Done"
+    }
+
+    private var hasChanges: Bool {
+        effectiveStoredSubcategory != transaction.subcategory || effectiveCategory != transaction.category
+    }
+
+    @MainActor
+    private func save() async {
+        guard !isSaving else { return }
+        guard hasChanges else {
+            dismiss()
+            return
+        }
+
+        isSaving = true
         var updated = transaction
-        updated.subcategory = selectedSubcategory
-        updated.category = selectedSubcategory.flatMap { TransactionCategoryCatalog.parent(for: $0) }
-        updated.note = noteText.isEmpty ? nil : noteText
-        onSave(updated)
-        dismiss()
+        updated.subcategory = effectiveStoredSubcategory
+        updated.category = effectiveCategory
+        updated.pendingClassification = effectiveStoredSubcategory != nil ? false : transaction.pendingClassification
+
+        do {
+            try await onSave(updated)
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isSaving = false
     }
 
     private func merchantIcon(for merchant: String) -> String {

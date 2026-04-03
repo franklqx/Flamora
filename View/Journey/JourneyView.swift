@@ -94,7 +94,6 @@ struct JourneyView: View {
                                 if hasBudgetData {
                                     SavingsRateCard(
                                         apiBudget: apiBudget,
-                                        savingsByYearLookup: savingsByYearForChart,
                                         isConnected: true
                                     ) {
                                         onOpenCashflowDestination?(.savingsOverview)
@@ -117,6 +116,9 @@ struct JourneyView: View {
         }
         .onChange(of: plaidManager.hasLinkedBank) { _, _ in
             print("📍 [Flow] hasLinkedBank changed → \(plaidManager.hasLinkedBank)")
+            Task { await loadData() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .savingsCheckInDidPersist)) { _ in
             Task { await loadData() }
         }
     }

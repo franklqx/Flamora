@@ -72,7 +72,7 @@ struct BS_DiagnosisView: View {
     
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Your Financial Snapshot")
+            Text("Financial Snapshot")
                 .font(.cardFigurePrimary)
                 .foregroundStyle(AppColors.textPrimary)
             

@@ -10,21 +10,88 @@ import Foundation
 enum TransactionCategoryCatalog {
     static let all: [TransactionCategory] = [
         TransactionCategory(id: "rent", name: "Rent & Housing", icon: "house.fill", parent: "needs"),
-        TransactionCategory(id: "grocery", name: "Groceries", icon: "cart.fill", parent: "needs"),
-        TransactionCategory(id: "utility", name: "Utilities", icon: "bolt.fill", parent: "needs"),
-        TransactionCategory(id: "transit", name: "Transportation", icon: "car.fill", parent: "needs"),
-        TransactionCategory(id: "health", name: "Health & Fitness", icon: "cross.case.fill", parent: "needs"),
-        TransactionCategory(id: "dining", name: "Dining & Social", icon: "fork.knife", parent: "wants"),
+        TransactionCategory(id: "groceries", name: "Groceries", icon: "cart.fill", parent: "needs"),
+        TransactionCategory(id: "utilities", name: "Utilities", icon: "bolt.fill", parent: "needs"),
+        TransactionCategory(id: "transportation", name: "Transportation", icon: "car.fill", parent: "needs"),
+        TransactionCategory(id: "medical", name: "Health & Fitness", icon: "cross.case.fill", parent: "needs"),
+        TransactionCategory(id: "dining_out", name: "Dining & Social", icon: "fork.knife", parent: "wants"),
         TransactionCategory(id: "shopping", name: "Shopping", icon: "bag.fill", parent: "wants"),
-        TransactionCategory(id: "subs", name: "Subscriptions", icon: "play.tv.fill", parent: "wants"),
+        TransactionCategory(id: "subscriptions", name: "Subscriptions", icon: "play.tv.fill", parent: "wants"),
         TransactionCategory(id: "travel", name: "Travel", icon: "airplane", parent: "wants"),
-        TransactionCategory(id: "hobbies", name: "Hobbies & Leisure", icon: "paintpalette.fill", parent: "wants"),
+        TransactionCategory(id: "entertainment", name: "Hobbies & Leisure", icon: "paintpalette.fill", parent: "wants"),
     ]
 
     static var needsCategories: [TransactionCategory] { all.filter { $0.parent == "needs" } }
     static var wantsCategories: [TransactionCategory] { all.filter { $0.parent == "wants" } }
 
+    /// Curated manual-review chips do not cover every raw backend key, so aliases collapse multiple
+    /// stored keys into a smaller user-facing set.
+    private static let rawToCanonicalAliases: [String: String] = [
+        "rent": "rent",
+        "rent_and_housing": "rent",
+        "groceries": "groceries",
+        "grocery": "groceries",
+        "utilities": "utilities",
+        "utility": "utilities",
+        "internet": "utilities",
+        "phone": "utilities",
+        "transportation": "transportation",
+        "rideshare": "transportation",
+        "insurance": "transportation",
+        "loan_payment": "transportation",
+        "medical": "medical",
+        "health_fitness": "medical",
+        "health_and_fitness": "medical",
+        "dining_out": "dining_out",
+        "shopping": "shopping",
+        "subscriptions": "subscriptions",
+        "travel": "travel",
+        "entertainment": "entertainment",
+        "hobbies_leisure": "entertainment",
+        "hobbies_and_leisure": "entertainment",
+    ]
+
+    static func parent(forStoredSubcategory subcategory: String) -> String? {
+        guard let canonical = canonicalSubcategory(fromStored: subcategory) else { return nil }
+        return all.first(where: { $0.id == canonical })?.parent
+    }
+
+    static func parent(forDisplayedSubcategory name: String) -> String? {
+        all.first(where: { $0.name == name })?.parent
+    }
+
+    static func canonicalSubcategory(fromStored raw: String?) -> String? {
+        guard let raw, !raw.isEmpty else { return nil }
+        let normalized = raw
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        if all.contains(where: { $0.id == normalized }) {
+            return normalized
+        }
+        return rawToCanonicalAliases[normalized]
+    }
+
+    static func category(forStoredSubcategory raw: String?) -> TransactionCategory? {
+        guard let canonical = canonicalSubcategory(fromStored: raw) else { return nil }
+        return all.first(where: { $0.id == canonical })
+    }
+
+    static func displayName(forStoredSubcategory raw: String?) -> String? {
+        guard let raw, !raw.isEmpty else { return nil }
+        if let category = category(forStoredSubcategory: raw) {
+            return category.name
+        }
+        return CategoryDisplay.displayName(raw)
+    }
+
+    static func icon(forStoredSubcategory raw: String?) -> String? {
+        category(forStoredSubcategory: raw)?.icon
+    }
+
     static func parent(for subcategory: String) -> String? {
-        all.first(where: { $0.name == subcategory })?.parent
+        if let displayMatch = all.first(where: { $0.name == subcategory }) {
+            return displayMatch.parent
+        }
+        return parent(forStoredSubcategory: subcategory)
     }
 }

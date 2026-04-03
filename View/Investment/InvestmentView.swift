@@ -171,8 +171,14 @@ private extension InvestmentView {
         }
     }
 
-    /// Investment 页账户列表：只显示 investment 类型账户，逐个展示，不按机构聚合。
+    /// Investment 页账户列表：优先来自 `get-investment-holdings.accounts`（与 Portfolio/Allocation 同一数据链）。
+    /// 回退：从 `get-net-worth-summary.accounts` 过滤 investment 类型（降级，无 name/mask）。
     var computedAccounts: [Account] {
+        if let h = apiHoldingsPayload, let accs = h.accounts, !accs.isEmpty {
+            return accs
+                .map { Account.fromInvestmentAccount($0) }
+                .sorted { $0.balance > $1.balance }
+        }
         guard let nw = apiNetWorth, !nw.accounts.isEmpty else { return [] }
         return nw.accounts
             .filter { $0.type == "investment" }
