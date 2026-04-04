@@ -89,8 +89,8 @@ struct TransactionRow: View {
 
     private var badgeStyle: (String, Color, Color, Bool) {
         if let sub = transaction.subcategory {
-            let parent = TransactionCategoryCatalog.parent(forStoredSubcategory: sub)
-            let color = parent == "needs" ? AppColors.chartBlue : AppColors.chartGold
+            let resolvedParent = TransactionCategoryCatalog.parent(forStoredSubcategory: sub) ?? transaction.category
+            let color = resolvedParent == "needs" ? AppColors.chartBlue : AppColors.chartGold
             let label = TransactionCategoryCatalog.displayName(forStoredSubcategory: sub) ?? sub
             return (label, color.opacity(0.2), color, false)
         }

@@ -410,6 +410,8 @@ struct TotalIncomeMonthData {
     let passiveAmount: Double
     let activePercentage: Double
     let passivePercentage: Double
+    /// 来自 `get-spending-summary` 的 income 来源明细；非空时 Total Income 详情页优先展示分类列表而非 Active/Passive 双卡。
+    let sourceCategories: [SpendingDetailCategory]
 }
 
 struct TotalIncomeDetailData {
@@ -427,6 +429,28 @@ struct SpendingDetailCategory: Identifiable {
     let name: String
     let amount: Double
     let percentage: Double
+    /// 收入明细：入账账户展示名（`get-spending-summary`）；支出明细为 nil。
+    let accountName: String?
+    /// 收入明细：当月该来源最后一笔入账日 `YYYY-MM-DD`；支出明细为 nil。
+    let creditDate: String?
+
+    init(
+        id: String,
+        icon: String,
+        name: String,
+        amount: Double,
+        percentage: Double,
+        accountName: String? = nil,
+        creditDate: String? = nil
+    ) {
+        self.id = id
+        self.icon = icon
+        self.name = name
+        self.amount = amount
+        self.percentage = percentage
+        self.accountName = accountName
+        self.creditDate = creditDate
+    }
 }
 
 struct SpendingDetailMonthData {
@@ -989,8 +1013,35 @@ extension MockData {
                 if let a = at[i], let p = pt[i] {
                     let total = a + p
                     combined.append(total)
-                    monthly[i] = TotalIncomeMonthData(total: total, activeAmount: a, passiveAmount: p,
-                                                      activePercentage: a/total*100, passivePercentage: p/total*100)
+                    let ymd = String(format: "%04d-%02d-14", year, i + 1)
+                    let cats: [SpendingDetailCategory] = [
+                        SpendingDetailCategory(
+                            id: "mock-ti-\(year)-\(i)-active",
+                            icon: "briefcase.fill",
+                            name: "Active income",
+                            amount: a,
+                            percentage: total > 0 ? a / total * 100 : 0,
+                            accountName: "Chase Total Checking · 4832",
+                            creditDate: ymd
+                        ),
+                        SpendingDetailCategory(
+                            id: "mock-ti-\(year)-\(i)-passive",
+                            icon: "chart.line.uptrend.xyaxis",
+                            name: "Passive income",
+                            amount: p,
+                            percentage: total > 0 ? p / total * 100 : 0,
+                            accountName: "Ally Savings · 9102",
+                            creditDate: ymd
+                        )
+                    ]
+                    monthly[i] = TotalIncomeMonthData(
+                        total: total,
+                        activeAmount: a,
+                        passiveAmount: p,
+                        activePercentage: a / total * 100,
+                        passivePercentage: p / total * 100,
+                        sourceCategories: cats
+                    )
                 } else { combined.append(nil) }
             }
             trendsByYear[year] = combined

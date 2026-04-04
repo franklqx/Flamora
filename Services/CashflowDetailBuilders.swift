@@ -142,12 +142,14 @@ enum CashflowAPICharts {
             let passive = s.passiveIncome ?? 0
             trend[m] = inc
             let denom = max(inc, 0.0001)
+            let categories = incomeSourceCategories(from: s, year: year, monthIndex: m, total: inc)
             monthly[m] = TotalIncomeMonthData(
                 total: inc,
                 activeAmount: active,
                 passiveAmount: passive,
                 activePercentage: active / denom * 100,
-                passivePercentage: passive / denom * 100
+                passivePercentage: passive / denom * 100,
+                sourceCategories: categories
             )
         }
         return TotalIncomeDetailData(
@@ -155,6 +157,76 @@ enum CashflowAPICharts {
             trendsByYear: [year: trend],
             monthlyDataByYear: [year: monthly]
         )
+    }
+
+    /// 合并 `incomeActiveSources` / `incomePassiveSources`；无明细时退回 Active/Passive 或「Recorded income」行。
+    private static func incomeSourceCategories(
+        from s: APISpendingSummary,
+        year: Int,
+        monthIndex: Int,
+        total: Double
+    ) -> [SpendingDetailCategory] {
+        struct Row {
+            let name: String
+            let amount: Double
+            let accountName: String?
+            let creditDate: String?
+        }
+        var rows: [Row] = []
+        if let a = s.incomeActiveSources {
+            for src in a {
+                rows.append(Row(name: src.name, amount: src.amount, accountName: src.accountName, creditDate: src.creditDate))
+            }
+        }
+        if let p = s.incomePassiveSources {
+            for src in p {
+                rows.append(Row(name: src.name, amount: src.amount, accountName: src.accountName, creditDate: src.creditDate))
+            }
+        }
+        if rows.isEmpty {
+            let ai = s.activeIncome ?? 0
+            let pi = s.passiveIncome ?? 0
+            if ai > 0.005 { rows.append(Row(name: "Active income", amount: ai, accountName: nil, creditDate: nil)) }
+            if pi > 0.005 { rows.append(Row(name: "Passive income", amount: pi, accountName: nil, creditDate: nil)) }
+            if rows.isEmpty && total > 0.005 {
+                rows.append(Row(name: "Recorded income", amount: total, accountName: nil, creditDate: nil))
+            }
+        }
+        let denom = max(total, 0.0001)
+        return rows.enumerated().map { i, r in
+            SpendingDetailCategory(
+                id: "income-\(year)-\(monthIndex)-\(i)-\(r.name)",
+                icon: TransactionCategoryCatalog.icon(forStoredSubcategory: r.name) ?? "dollarsign.circle.fill",
+                name: r.name,
+                amount: r.amount,
+                percentage: r.amount / denom * 100,
+                accountName: r.accountName,
+                creditDate: r.creditDate
+            )
+        }
+    }
+
+    /// 主卡 `Income` 圆环分段；行顺序与 `incomeSourceCategories` 一致。
+    static func incomeSources(from summary: APISpendingSummary) -> [IncomeSource] {
+        var rows: [(name: String, amount: Double, type: String)] = []
+        if let a = summary.incomeActiveSources {
+            for src in a { rows.append((src.name, src.amount, "active")) }
+        }
+        if let p = summary.incomePassiveSources {
+            for src in p { rows.append((src.name, src.amount, "passive")) }
+        }
+        if rows.isEmpty {
+            let ai = summary.activeIncome ?? 0
+            let pi = summary.passiveIncome ?? 0
+            if ai > 0.005 { rows.append(("Active income", ai, "active")) }
+            if pi > 0.005 { rows.append(("Passive income", pi, "passive")) }
+            if rows.isEmpty && summary.totalIncome > 0.005 {
+                rows.append(("Recorded income", summary.totalIncome, "active"))
+            }
+        }
+        return rows.enumerated().map { i, r in
+            IncomeSource(id: "income-src-\(i)", name: r.name, amount: r.amount, type: r.type)
+        }
     }
 
     static func activeIncomeDetail(summaries: [Int: APISpendingSummary], year: Int) -> IncomeDetailData {

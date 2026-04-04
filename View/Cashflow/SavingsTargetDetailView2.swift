@@ -480,8 +480,9 @@ struct SavingsTargetDetailView2: View {
 /// Home → Plan → 储蓄全屏：无父级传入 `apiBudget` 时在内部拉取当月预算（与 `CashflowView` 显式传入二选一）。
 struct SavingsTargetDetailView2Container: View {
     @Environment(PlaidManager.self) private var plaidManager
-    @State private var apiBudget = APIMonthlyBudget.empty
-    @State private var monthlyAmountsByYear: [Int: [Double?]] = CashflowDetailEmptyStates.savingsMonthlyAmountsEmptyCurrentYear()
+    @State private var apiBudget: APIMonthlyBudget = TabContentCache.shared.cashflowBudget ?? APIMonthlyBudget.empty
+    @State private var monthlyAmountsByYear: [Int: [Double?]] = TabContentCache.shared.cashflowSavingsByYear
+        ?? CashflowDetailEmptyStates.savingsMonthlyAmountsEmptyCurrentYear()
 
     var body: some View {
         SavingsTargetDetailView2(

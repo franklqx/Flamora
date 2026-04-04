@@ -3,11 +3,9 @@
 //  Flamora app
 //
 //  Donut-style Total Income card
-//  Active Income  →  AppColors.accentGreenDeep  (large arc)
-//  Passive Income →  AppColors.accentPurpleMid (small arc)
+//  单来源或 YTD 无明细：整环绿色渐变；多来源：按金额比例分段，`AppColors.incomeSegmentPalette` 同色索引与 Total Income 一致。
 //
 //  Monthly / YTD values come from `CashflowView` → `get-spending-summary` (total_income).
-//  Active vs passive split pending dedicated income API (roadmap 2A).
 //
 
 import SwiftUI
@@ -19,9 +17,7 @@ struct IncomeCard: View {
     /// YTD income (sum of monthly summaries); nil falls back to `income` in UI.
     var yearlyIncome: Income? = nil
 
-    var onCardTapped:    (() -> Void)? = nil
-    var onActiveTapped:  (() -> Void)? = nil
-    var onPassiveTapped: (() -> Void)? = nil
+    var onCardTapped: (() -> Void)? = nil
     /// Called when the period toggle changes — lets parent reload data
     var onPeriodChanged: ((Bool) -> Void)? = nil   // true = year, false = month
     var isConnected: Bool = true
@@ -35,8 +31,6 @@ struct IncomeCard: View {
 
     // MARK: – Design tokens
 
-    private let activeColor  = AppColors.accentGreenDeep
-    private let passiveColor = AppColors.accentPurpleMid
     private let ringWidth: CGFloat = 14
 
     // MARK: – Derived values
@@ -46,11 +40,9 @@ struct IncomeCard: View {
         (period == .year ? yearlyIncome : nil) ?? income
     }
 
-    private var activeFraction: Double {
-        displayed.total > 0 ? max(0.01, displayed.active  / displayed.total) : 0.85
-    }
-    private var passiveFraction: Double {
-        displayed.total > 0 ? max(0.01, displayed.passive / displayed.total) : 0.12
+    /// 多段圆环：YTD 无 `sources` 时用整环单色（与计划一致）。
+    private var shouldShowMultiSegmentDonut: Bool {
+        displayed.sources.count >= 2 && displayed.total > 0
     }
 
     // Label shown inside the donut center
@@ -160,31 +152,11 @@ struct IncomeCard: View {
 
     private var donutSection: some View {
         VStack(spacing: 0) {
+            Color.clear
+                .frame(height: 44)
+                .padding(.horizontal, AppSpacing.cardPadding)
 
-            // ── Passive label (top-trailing) ──────────────────────────────
-            HStack {
-                Spacer()
-                Button { onPassiveTapped?() } label: {
-                    VStack(alignment: .trailing, spacing: 3) {
-                        Text(formatAmount(displayed.passive))
-                            .font(.bodySemibold)
-                            .foregroundStyle(AppColors.textPrimary)
-                        HStack(spacing: 5) {
-                            Circle()
-                                .fill(passiveColor)
-                                .frame(width: 6, height: 6)
-                            Text("Passive")
-                                .font(.footnoteRegular)
-                                .foregroundColor(AppColors.textSecondary)
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-            .frame(height: 44)
-            .padding(.horizontal, AppSpacing.cardPadding)
-
-            // ── Donut ring + tappable center ──────────────────────────────
+            // ── Donut ring + tappable center（分类明细在 Total Income 全屏页）──
             ZStack {
                 donutRings
 
@@ -207,95 +179,102 @@ struct IncomeCard: View {
             }
             .frame(width: 200, height: 200)
 
-            // ── Active label (bottom-left) ────────────────────────────────
-            HStack {
-                Button { onActiveTapped?() } label: {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(formatAmount(displayed.active))
-                            .font(.bodySemibold)
-                            .foregroundStyle(AppColors.textPrimary)
-                        HStack(spacing: 5) {
-                            Circle()
-                                .fill(activeColor)
-                                .frame(width: 6, height: 6)
-                            Text("Active")
-                                .font(.footnoteRegular)
-                                .foregroundColor(AppColors.textSecondary)
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-                Spacer()
-            }
-            .frame(height: 44)
-            .padding(.horizontal, AppSpacing.cardPadding)
+            Text("Tap chart for breakdown")
+                .font(.footnoteRegular)
+                .foregroundColor(AppColors.textTertiary)
+                .frame(height: 44)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, AppSpacing.cardPadding)
         }
     }
 
     // MARK: – Donut rings
 
     private var donutRings: some View {
-        // halfGap applied symmetrically on both sides of every endpoint
-        // → both gaps (active↔passive and passive↔active) become exactly 2×halfGap
-        let halfGap = 0.015   // 2×halfGap ≈ 10.8° per gap, both gaps equal
-        let pf = passiveFraction
+        let betweenGap: CGFloat = 0.012
+        let palette = AppColors.incomeSegmentPalette
 
         return ZStack {
-            // Background track
             Circle()
                 .stroke(AppColors.surfaceInput, lineWidth: ringWidth)
                 .opacity(0.4)
 
-            // Active arc (large – clockwise after passive segment)
-            Circle()
-                .trim(
-                    from: pf + halfGap,
-                    to:   max(pf + halfGap + 0.01, 1.0 - halfGap)
+            if shouldShowMultiSegmentDonut {
+                let segments = incomeDonutSegments(
+                    sources: displayed.sources,
+                    total: displayed.total,
+                    outerGap: 0,
+                    betweenGap: betweenGap,
+                    palette: palette
                 )
-                .stroke(
-                    LinearGradient(
-                        colors: [activeColor.opacity(0.75), activeColor],
-                        startPoint: .topLeading,
-                        endPoint:   .bottomTrailing
-                    ),
-                    style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
-                )
-                .rotationEffect(.degrees(-90))
-
-            // Passive arc (small – at 12 o'clock)
-            Circle()
-                .trim(
-                    from: halfGap,
-                    to:   max(halfGap + 0.01, pf - halfGap)
-                )
-                .stroke(passiveColor,
-                        style: StrokeStyle(lineWidth: ringWidth, lineCap: .round))
-                .rotationEffect(.degrees(-90))
+                ForEach(Array(segments.enumerated()), id: \.offset) { _, seg in
+                    Circle()
+                        .trim(from: seg.start, to: seg.end)
+                        .stroke(
+                            seg.color,
+                            style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
+                        )
+                        .rotationEffect(.degrees(-90))
+                }
+            } else {
+                Circle()
+                    .trim(from: 0, to: 1)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                AppColors.accentGreenDeep.opacity(0.75),
+                                AppColors.accentGreenDeep,
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        style: StrokeStyle(lineWidth: ringWidth, lineCap: .butt)
+                    )
+                    .rotationEffect(.degrees(-90))
+            }
         }
         .frame(width: 200, height: 200)
         .padding(ringWidth * 0.5)
         .contentShape(Circle())
         .gesture(
             DragGesture(minimumDistance: 0)
-                .onEnded { value in
-                    // Center of the 214×214 view (200 + 2×7 padding)
-                    let center = CGPoint(x: 107, y: 107)
-                    let dx = Double(value.location.x - center.x)
-                    let dy = Double(value.location.y - center.y)
-                    let distance = sqrt(dx * dx + dy * dy)
-                    // Only respond to taps in the ring band (skip center button area)
-                    guard distance > 60 && distance < 115 else { return }
-                    // Convert to clockwise angle from 12 o'clock, normalized [0, 1)
-                    var deg = atan2(dy, dx) * 180 / .pi
-                    deg = (deg + 90 + 360).truncatingRemainder(dividingBy: 360)
-                    let normalized = deg / 360.0
-                    if normalized < pf {
-                        onPassiveTapped?()
-                    } else {
-                        onActiveTapped?()
-                    }
+                .onEnded { _ in
+                    onCardTapped?()
                 }
         )
+    }
+
+    private struct IncomeDonutSegment {
+        let start: CGFloat
+        let end: CGFloat
+        let color: Color
+    }
+
+    private func incomeDonutSegments(
+        sources: [IncomeSource],
+        total: Double,
+        outerGap: CGFloat,
+        betweenGap: CGFloat,
+        palette: [Color]
+    ) -> [IncomeDonutSegment] {
+        let n = sources.count
+        guard n >= 2, total > 0 else { return [] }
+        let gapCount = CGFloat(n - 1)
+        let usable = max(0.1, 1.0 - 2 * outerGap - gapCount * betweenGap)
+        var cursor = outerGap
+        var out: [IncomeDonutSegment] = []
+        for (i, src) in sources.enumerated() {
+            let frac = max(0, src.amount / total)
+            let span = max(0.01, CGFloat(frac) * usable)
+            let end = min(cursor + span, 1.0 - outerGap)
+            out.append(IncomeDonutSegment(
+                start: cursor,
+                end: end,
+                color: palette[i % palette.count]
+            ))
+            cursor = end + (i < n - 1 ? betweenGap : 0)
+        }
+        return out
     }
 
     // MARK: – Divider
@@ -372,9 +351,7 @@ struct IncomeCard: View {
         IncomeCard(
             income:       MockData.cashflowData.income,
             yearlyIncome: MockData.yearlyIncome,
-            onCardTapped:    {},
-            onActiveTapped:  {},
-            onPassiveTapped: {}
+            onCardTapped: {}
         )
         .padding(AppSpacing.md)
     }

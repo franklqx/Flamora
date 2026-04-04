@@ -138,6 +138,14 @@ enum CategoryDisplay {
         "OTHER":                                  "Other",
         "OTHER_NEEDS":                            "Other Needs",
         "OTHER_WANTS":                            "Other Wants",
+
+        // ── Loose / Plaid-style service keys (canonical mapping lives in TransactionCategoryCatalog) ──
+        "SERVICE":                                "Services",
+        "SERVICES":                               "Services",
+        "GENERAL_SERVICES":                       "General Services",
+        "PROFESSIONAL_SERVICES":                  "Professional Services",
+        "BUSINESS_SERVICES":                      "Business Services",
+        "HOME_SERVICES":                          "Home Services",
     ]
 
     /// Prefix-based fallback mapping (uppercased prefixes).

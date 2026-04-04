@@ -60,11 +60,18 @@ serve(async (req) => {
     // ============================================================
     const { data: cashAccounts } = await supabase
       .from('plaid_accounts')
-      .select('id')
+      .select('id, name, official_name, mask')
       .eq('user_id', user.id)
       .in('type', ['depository', 'credit'])
       .eq('is_active', true)
     const cashAccountIds: string[] = (cashAccounts || []).map((a: any) => a.id)
+
+    const accountLabelById = new Map<string, string>()
+    for (const a of cashAccounts || []) {
+      const base = String((a.official_name || a.name || '').trim() || 'Account')
+      const mask = String((a.mask || '').trim())
+      accountLabelById.set(a.id, mask ? `${base} · ${mask}` : base)
+    }
 
     // ============================================================
     // 3. 获取当月所有 needs + wants 交易
@@ -157,7 +164,7 @@ serve(async (req) => {
     if (cashAccountIds.length > 0) {
       const { data } = await supabase
         .from('transactions')
-        .select('amount, flamora_subcategory, merchant_name, name, pfc_primary')
+        .select('amount, flamora_subcategory, merchant_name, name, pfc_primary, plaid_account_id, date')
         .eq('user_id', user.id)
         .eq('flamora_category', 'income')
         .eq('pending', false)
@@ -174,36 +181,75 @@ serve(async (req) => {
       'investment_income', 'royalty', 'royalties', 'passive'
     ])
 
+    type IncomeTxSlice = { abs: number; plaid_account_id: string | null; date: string }
+    type IncomeBucket = { amount: number; txs: IncomeTxSlice[] }
+
     let activeIncome = 0
     let passiveIncome = 0
-    const activeSourceMap: Record<string, number> = {}
-    const passiveSourceMap: Record<string, number> = {}
+    const activeBuckets: Record<string, IncomeBucket> = {}
+    const passiveBuckets: Record<string, IncomeBucket> = {}
+
+    const pushBucket = (map: Record<string, IncomeBucket>, key: string, slice: IncomeTxSlice) => {
+      if (!map[key]) map[key] = { amount: 0, txs: [] }
+      map[key].amount += slice.abs
+      map[key].txs.push(slice)
+    }
 
     for (const tx of incomeTxns || []) {
       const abs = Math.abs(tx.amount)
       const sub = (tx.flamora_subcategory || '').toLowerCase()
       const displayName = tx.merchant_name || tx.name || sub || 'Income'
       const isPassive = PASSIVE_SUBS.has(sub) || sub.startsWith('interest') || sub.startsWith('dividend')
+      const dateStr = typeof tx.date === 'string' ? tx.date : String(tx.date || '')
+      const slice: IncomeTxSlice = {
+        abs,
+        plaid_account_id: tx.plaid_account_id ?? null,
+        date: dateStr,
+      }
 
       if (isPassive) {
         passiveIncome += abs
-        passiveSourceMap[displayName] = (passiveSourceMap[displayName] || 0) + abs
+        pushBucket(passiveBuckets, displayName, slice)
       } else {
         activeIncome += abs
-        activeSourceMap[displayName] = (activeSourceMap[displayName] || 0) + abs
+        pushBucket(activeBuckets, displayName, slice)
       }
     }
 
     const incomeTotal = activeIncome + passiveIncome
 
-    const formatIncomeSources = (map: Record<string, number>, total: number) =>
-      Object.entries(map)
-        .map(([name, amount]) => ({
-          name,
-          amount: parseFloat(amount.toFixed(2)),
-          percentage: total > 0 ? parseFloat(((amount / total) * 100).toFixed(1)) : 0,
-        }))
+    const formatIncomeSources = (
+      buckets: Record<string, IncomeBucket>,
+      total: number,
+    ) => {
+      return Object.entries(buckets)
+        .map(([name, b]) => {
+          let account_name: string | null = null
+          let credit_date: string | null = null
+          if (b.txs.length > 0) {
+            let maxTx = b.txs[0]
+            for (const t of b.txs) {
+              if (t.abs > maxTx.abs) maxTx = t
+            }
+            if (maxTx.plaid_account_id) {
+              account_name = accountLabelById.get(maxTx.plaid_account_id) ?? null
+            }
+            let latest = b.txs[0].date
+            for (const t of b.txs) {
+              if (t.date > latest) latest = t.date
+            }
+            credit_date = latest || null
+          }
+          return {
+            name,
+            amount: parseFloat(b.amount.toFixed(2)),
+            percentage: total > 0 ? parseFloat(((b.amount / total) * 100).toFixed(1)) : 0,
+            account_name,
+            credit_date,
+          }
+        })
         .sort((a, b) => b.amount - a.amount)
+    }
 
     // ============================================================
     // 7. 返回结果
@@ -217,8 +263,8 @@ serve(async (req) => {
           total_income: parseFloat(incomeTotal.toFixed(2)),
           active_income: parseFloat(activeIncome.toFixed(2)),
           passive_income: parseFloat(passiveIncome.toFixed(2)),
-          income_active_sources: formatIncomeSources(activeSourceMap, activeIncome),
-          income_passive_sources: formatIncomeSources(passiveSourceMap, passiveIncome),
+          income_active_sources: formatIncomeSources(activeBuckets, activeIncome),
+          income_passive_sources: formatIncomeSources(passiveBuckets, passiveIncome),
 
           needs: {
             total: parseFloat(needsTotal.toFixed(2)),

@@ -172,6 +172,17 @@ struct AppColors {
         accentPurpleFaint,
     ]
 
+    /// 多收入来源分段（圆环、列表、柱状图同一索引同色）；不含默认收入紫，绿为主、再蓝/琥珀等便于区分。
+    static let incomeSegmentPalette: [Color] = [
+        accentGreenDeep,
+        chartBlue,
+        chartAmber,
+        accentGreen,
+        chartSteelBlue,
+        chartYellow,
+        chartCoral,
+    ]
+
     /// UIKit 控件（如 `UISlider`）thumb tint，与 `textPrimary`（#FFFFFF）一致。
     static let uiSliderThumbTint: UIColor = UIColor(red: 1, green: 1, blue: 1, alpha: 1)
 

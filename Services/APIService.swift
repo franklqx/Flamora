@@ -334,6 +334,10 @@ struct APIIncomeSource: Codable {
     let name: String
     let amount: Double
     let percentage: Double
+    /// 该来源桶内金额最大一笔的入账账户展示名（`get-spending-summary`）。
+    let accountName: String?
+    /// 该来源桶内当月最后一笔入账日 ISO `YYYY-MM-DD`。
+    let creditDate: String?
 }
 
 struct APISpendingCategoryBucket: Codable {
@@ -408,6 +412,21 @@ extension Transaction {
             category: api.flamoraCategory,
             note: nil,
             accountId: api.plaidAccountId
+        )
+    }
+
+    /// 将本地编辑后的交易合并回列表（`date` 需与 `get-transactions` 的 `yyyy-MM-dd` 一致）。
+    func asAPITransaction(normalizedDate: String) -> APITransaction {
+        APITransaction(
+            id: id,
+            merchantName: merchant,
+            name: nil,
+            amount: amount,
+            date: normalizedDate,
+            pendingReview: pendingClassification,
+            flamoraCategory: category,
+            flamoraSubcategory: subcategory,
+            plaidAccountId: accountId
         )
     }
 }

@@ -49,6 +49,14 @@ enum TransactionCategoryCatalog {
         "entertainment": "entertainment",
         "hobbies_leisure": "entertainment",
         "hobbies_and_leisure": "entertainment",
+        // Plaid / backend loose keys — map to utilities (needs) so canonical parent + icon resolve;
+        // badge color still falls back to `transaction.category` when unknown (see TransactionRow).
+        "service": "utilities",
+        "services": "utilities",
+        "general_services": "utilities",
+        "professional_services": "utilities",
+        "business_services": "utilities",
+        "home_services": "utilities",
     ]
 
     static func parent(forStoredSubcategory subcategory: String) -> String? {

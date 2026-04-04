@@ -35,7 +35,6 @@ struct CashflowView: View {
     @State private var wantsTotal: Double = 0
     @State private var totalSpend: Double = 0
     @State private var allTransactions: [Transaction] = []
-    @State private var hiddenReviewedTransactionIDs: Set<String> = []
     /// 与 `transaction.accountId` 匹配，供交易详情 Sheet 展示账户行。
     @State private var linkedAccounts: [Account] = []
     /// Cash 页账户列表：depository + credit，来自 get-net-worth-summary.accounts。
@@ -45,8 +44,6 @@ struct CashflowView: View {
     @State private var showSavingsInput = false
     @State private var showSavingsSummary = false
     @State private var showTotalIncomeDetail = false
-    @State private var showActiveIncomeDetail = false
-    @State private var showPassiveIncomeDetail = false
     @State private var showTotalSpendingDetail = false
     @State private var showNeedsSpendingDetail = false
     @State private var showWantsSpendingDetail = false
@@ -104,8 +101,6 @@ struct CashflowView: View {
                             income:          incomeMonthDisplay,
                             yearlyIncome:    incomeYearDisplay,
                             onCardTapped:    { showTotalIncomeDetail = true },
-                            onActiveTapped:  { showActiveIncomeDetail = true },
-                            onPassiveTapped: { showPassiveIncomeDetail = true },
                             isConnected:     isCashflowUnlocked,
                             placeholderMessage: incomePlaceholderMessage
                         )
@@ -161,6 +156,9 @@ struct CashflowView: View {
         .onReceive(NotificationCenter.default.publisher(for: .savingsCheckInDidPersist)) { _ in
             Task { await loadCashflowData() }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .transactionClassificationDidPersist)) { _ in
+            Task { await loadCashflowData() }
+        }
         .fullScreenCover(isPresented: $showSavingsSummary) {
             SavingsTargetDetailView2(
                 savingsRatioPercent: apiBudget.savingsRatio,
@@ -179,38 +177,32 @@ struct CashflowView: View {
                 passiveData: cashflowPassiveIncomeDetail
             )
         }
-        .fullScreenCover(isPresented: $showActiveIncomeDetail) {
-            IncomeDetailView(
-                data: cashflowActiveIncomeDetail ?? .emptyActiveIncome,
-                initialSelectedMonth: currentMonthIndex
-            )
-        }
-        .fullScreenCover(isPresented: $showPassiveIncomeDetail) {
-            IncomeDetailView(
-                data: cashflowPassiveIncomeDetail ?? .emptyPassiveIncome,
-                initialSelectedMonth: currentMonthIndex
-            )
-        }
         .fullScreenCover(isPresented: $showTotalSpendingDetail) {
             TotalSpendingAnalysisDetailView(
                 data: cashflowSpendingTotalDetail ?? .empty,
                 needsDetailData: cashflowNeedsDetail ?? .emptyNeeds,
                 wantsDetailData: cashflowWantsDetail ?? .emptyWants,
-                initialSelectedMonth: currentMonthIndex
+                initialSelectedMonth: currentMonthIndex,
+                linkedAccounts: linkedAccounts,
+                onTransactionPersist: { tx in try await persistTransactionClassification(tx) }
             )
         }
         .fullScreenCover(isPresented: $showNeedsSpendingDetail) {
             SpendingAnalysisDetailView(
                 data: cashflowNeedsDetail ?? .emptyNeeds,
                 flamoraCategory: "needs",
-                initialSelectedMonth: currentMonthIndex
+                initialSelectedMonth: currentMonthIndex,
+                linkedAccounts: linkedAccounts,
+                onTransactionPersist: { tx in try await persistTransactionClassification(tx) }
             )
         }
         .fullScreenCover(isPresented: $showWantsSpendingDetail) {
             SpendingAnalysisDetailView(
                 data: cashflowWantsDetail ?? .emptyWants,
                 flamoraCategory: "wants",
-                initialSelectedMonth: currentMonthIndex
+                initialSelectedMonth: currentMonthIndex,
+                linkedAccounts: linkedAccounts,
+                onTransactionPersist: { tx in try await persistTransactionClassification(tx) }
             )
         }
         .sheet(isPresented: $showSavingsInput, onDismiss: syncMainCardSavingsToSeries) {
@@ -249,9 +241,12 @@ private extension CashflowView {
             apiBudget = b
             currentSavings = b.savingsActual ?? currentSavings
         }
-        if let savings = cache.cashflowSavingsByYear, cashflowSavingsByYear == nil {
+        // 与 Journey「储蓄」全屏共用 TabContentCache；从主页返回 Cashflow 时始终用缓存覆盖，避免双入口不同步。
+        if let savings = cache.cashflowSavingsByYear {
             cashflowSavingsByYear = savings
-            currentSavings = currentSavingsForCurrentMonth(from: savings) ?? currentSavings
+            if let monthVal = currentSavingsForCurrentMonth(from: savings) {
+                currentSavings = monthVal
+            }
         }
         if let total = cache.cashflowSpendingTotalDetail, cashflowSpendingTotalDetail == nil {
             cashflowSpendingTotalDetail = total
@@ -325,7 +320,8 @@ private extension CashflowView {
             wantsTotal = cur.wants.total
             totalSpend = cur.totalSpending
             let inc = cur.totalIncome
-            incomeMonthDisplay = Income(total: inc, active: inc, passive: 0, sources: [])
+            let monthSources = CashflowAPICharts.incomeSources(from: cur)
+            incomeMonthDisplay = Income(total: inc, active: inc, passive: 0, sources: monthSources)
             let ytd = summaries.values.reduce(0) { $0 + $1.totalIncome }
             incomeYearDisplay = Income(total: ytd, active: ytd, passive: 0, sources: [])
         } else {
@@ -505,12 +501,9 @@ private extension CashflowView {
             return ($0.time ?? "") > ($1.time ?? "")
         }
 
-        let filtered = sorted.filter {
-            !hiddenReviewedTransactionIDs.contains($0.id) && !isLowSignalActivity($0)
-        }
+        let filtered = sorted.filter { !isLowSignalActivity($0) }
         if filtered.isEmpty {
-            let visible = sorted.filter { !hiddenReviewedTransactionIDs.contains($0.id) }
-            return Array(visible.prefix(5))
+            return Array(sorted.prefix(5))
         }
         return Array(filtered.prefix(5))
     }
@@ -571,12 +564,7 @@ private extension CashflowView {
             allTransactions.insert(updated, at: 0)
         }
 
-        if let old,
-           old.category != updated.category || old.subcategory != updated.subcategory || (old.pendingClassification && !updated.pendingClassification) {
-            withAnimation(.easeInOut(duration: 0.22)) {
-                hiddenReviewedTransactionIDs.insert(updated.id)
-            }
-        }
+        // Do not hide the row after classification — user expects the transaction to stay visible in place.
     }
 
     func applyTransactionToDetailModels(old: Transaction, updated: Transaction) {
@@ -614,19 +602,96 @@ private extension CashflowView {
         adding newTx: Transaction?
     ) -> SpendingDetailData? {
         guard let data else { return nil }
-        let year = Calendar.current.component(.year, from: Date())
-        let month = currentMonthIndex
+        var result = data
+        if let oldTx {
+            let (y, m) = monthYearComponents(from: oldTx.date)
+            result = applySpendingDetailMonthMutation(
+                result,
+                bucket: bucket,
+                year: y,
+                monthIndex: m,
+                removeTx: oldTx,
+                addTx: nil
+            )
+        }
+        if let newTx {
+            let (y, m) = monthYearComponents(from: newTx.date)
+            result = applySpendingDetailMonthMutation(
+                result,
+                bucket: bucket,
+                year: y,
+                monthIndex: m,
+                removeTx: nil,
+                addTx: newTx
+            )
+        }
+        return result
+    }
 
+    func updateTotalSpendingDetail(
+        _ data: TotalSpendingDetailData?,
+        old: Transaction,
+        updated: Transaction
+    ) -> TotalSpendingDetailData? {
+        guard let data else { return nil }
+        let (yOld, mOld) = monthYearComponents(from: old.date)
+        let (yNew, mNew) = monthYearComponents(from: updated.date)
+
+        let deltaNeedsOld = old.category == "needs" ? -old.amount : 0.0
+        let deltaWantsOld = old.category == "wants" ? -old.amount : 0.0
+        var result = applyTotalSpendingMonthAdjust(
+            data,
+            year: yOld,
+            monthIndex: mOld,
+            deltaNeeds: deltaNeedsOld,
+            deltaWants: deltaWantsOld
+        )
+
+        let deltaNeedsNew = updated.category == "needs" ? updated.amount : 0.0
+        let deltaWantsNew = updated.category == "wants" ? updated.amount : 0.0
+        result = applyTotalSpendingMonthAdjust(
+            result,
+            year: yNew,
+            monthIndex: mNew,
+            deltaNeeds: deltaNeedsNew,
+            deltaWants: deltaWantsNew
+        )
+        return result
+    }
+
+    /// `Transaction.date`: `YYYY-MM-DD` 或当年 `MM-DD`。
+    private func monthYearComponents(from dateString: String) -> (year: Int, monthIndex: Int) {
+        let cal = Calendar.current
+        let defaultYear = cal.component(.year, from: Date())
+        let defaultMonth = cal.component(.month, from: Date()) - 1
+        let parts = dateString.split(separator: "-").map { String($0) }
+        if parts.count == 3, let y = Int(parts[0]), let m = Int(parts[1]), m >= 1, m <= 12 {
+            return (y, m - 1)
+        }
+        if parts.count == 2, let m = Int(parts[0]), m >= 1, m <= 12 {
+            return (defaultYear, m - 1)
+        }
+        return (defaultYear, defaultMonth)
+    }
+
+    private func applySpendingDetailMonthMutation(
+        _ data: SpendingDetailData,
+        bucket: String,
+        year: Int,
+        monthIndex: Int,
+        removeTx: Transaction?,
+        addTx: Transaction?
+    ) -> SpendingDetailData {
         var trendsByYear = data.trendsByYear
         var monthlyDataByYear = data.monthlyDataByYear
         var yearlyTrend = trendsByYear[year] ?? Array(repeating: nil, count: 12)
         var monthlyData = monthlyDataByYear[year] ?? [:]
-        let current = monthlyData[month] ?? SpendingDetailMonthData(total: 0, categories: [])
+        let current = monthlyData[monthIndex] ?? SpendingDetailMonthData(total: 0, categories: [])
 
         var total = current.total
         var categoryAmounts = Dictionary(uniqueKeysWithValues: current.categories.map { ($0.name, $0.amount) })
 
-        if let oldTx {
+        if let oldTx = removeTx {
             let name = oldTx.subcategory ?? "uncategorized"
             let nextAmount = max(0, (categoryAmounts[name] ?? 0) - oldTx.amount)
             if nextAmount <= 0.005 {
@@ -637,7 +702,7 @@ private extension CashflowView {
             total = max(0, total - oldTx.amount)
         }
 
-        if let newTx {
+        if let newTx = addTx {
             let name = newTx.subcategory ?? "uncategorized"
             categoryAmounts[name] = (categoryAmounts[name] ?? 0) + newTx.amount
             total += newTx.amount
@@ -647,7 +712,7 @@ private extension CashflowView {
             .sorted { $0.value > $1.value }
             .map { name, amount in
                 SpendingDetailCategory(
-                    id: "\(bucket)-\(year)-\(month)-\(name)",
+                    id: "\(bucket)-\(year)-\(monthIndex)-\(name)",
                     icon: TransactionCategoryCatalog.icon(forStoredSubcategory: name) ?? "tag.fill",
                     name: name,
                     amount: amount,
@@ -655,8 +720,8 @@ private extension CashflowView {
                 )
             }
 
-        monthlyData[month] = SpendingDetailMonthData(total: total, categories: categories)
-        yearlyTrend[month] = total
+        monthlyData[monthIndex] = SpendingDetailMonthData(total: total, categories: categories)
+        yearlyTrend[monthIndex] = total
         trendsByYear[year] = yearlyTrend
         monthlyDataByYear[year] = monthlyData
 
@@ -668,20 +733,18 @@ private extension CashflowView {
         )
     }
 
-    func updateTotalSpendingDetail(
-        _ data: TotalSpendingDetailData?,
-        old: Transaction,
-        updated: Transaction
-    ) -> TotalSpendingDetailData? {
-        guard let data else { return nil }
-        let year = Calendar.current.component(.year, from: Date())
-        let month = currentMonthIndex
-
+    private func applyTotalSpendingMonthAdjust(
+        _ data: TotalSpendingDetailData,
+        year: Int,
+        monthIndex: Int,
+        deltaNeeds: Double,
+        deltaWants: Double
+    ) -> TotalSpendingDetailData {
         var trendsByYear = data.trendsByYear
         var monthlyDataByYear = data.monthlyDataByYear
         var yearlyTrend = trendsByYear[year] ?? Array(repeating: nil, count: 12)
         var monthlyData = monthlyDataByYear[year] ?? [:]
-        var current = monthlyData[month] ?? TotalSpendingMonthData(
+        let prior = monthlyData[monthIndex] ?? TotalSpendingMonthData(
             total: 0,
             needsAmount: 0,
             wantsAmount: 0,
@@ -689,16 +752,10 @@ private extension CashflowView {
             wantsPercentage: 0
         )
 
-        var needsAmount = current.needsAmount
-        var wantsAmount = current.wantsAmount
-
-        if old.category == "needs" { needsAmount = max(0, needsAmount - old.amount) }
-        if old.category == "wants" { wantsAmount = max(0, wantsAmount - old.amount) }
-        if updated.category == "needs" { needsAmount += updated.amount }
-        if updated.category == "wants" { wantsAmount += updated.amount }
-
+        let needsAmount = max(0, prior.needsAmount + deltaNeeds)
+        let wantsAmount = max(0, prior.wantsAmount + deltaWants)
         let total = needsAmount + wantsAmount
-        current = TotalSpendingMonthData(
+        let current = TotalSpendingMonthData(
             total: total,
             needsAmount: needsAmount,
             wantsAmount: wantsAmount,
@@ -706,8 +763,8 @@ private extension CashflowView {
             wantsPercentage: total > 0 ? (wantsAmount / total) * 100 : 0
         )
 
-        monthlyData[month] = current
-        yearlyTrend[month] = total
+        monthlyData[monthIndex] = current
+        yearlyTrend[monthIndex] = total
         trendsByYear[year] = yearlyTrend
         monthlyDataByYear[year] = monthlyData
 

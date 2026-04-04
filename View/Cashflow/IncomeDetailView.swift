@@ -591,6 +591,9 @@ struct SpendingAnalysisDetailView: View {
     let data: SpendingDetailData
     /// "needs" 或 "wants"，用于向 get-transactions 传递正确的分类过滤。
     let flamoraCategory: String
+    var linkedAccounts: [Account] = []
+    /// 来自 Cashflow 时传入 `persistTransactionClassification`；未传时在子页内调 API 并广播 `transactionClassificationDidPersist`。
+    var onTransactionPersist: ((Transaction) async throws -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @State private var dragOffset: CGFloat = 0
@@ -602,9 +605,17 @@ struct SpendingAnalysisDetailView: View {
     private let monthsFull = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     private let monthsLong = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
-    init(data: SpendingDetailData, flamoraCategory: String = "needs", initialSelectedMonth: Int? = nil) {
+    init(
+        data: SpendingDetailData,
+        flamoraCategory: String = "needs",
+        initialSelectedMonth: Int? = nil,
+        linkedAccounts: [Account] = [],
+        onTransactionPersist: ((Transaction) async throws -> Void)? = nil
+    ) {
         self.data = data
         self.flamoraCategory = flamoraCategory
+        self.linkedAccounts = linkedAccounts
+        self.onTransactionPersist = onTransactionPersist
         let latest = data.availableYears.last ?? 2026
         let trend = data.trendsByYear[latest] ?? []
         _selectedYear = State(initialValue: latest)
@@ -703,7 +714,9 @@ struct SpendingAnalysisDetailView: View {
                 category: category,
                 monthLabel: selectedMonthLongLabel,
                 month: monthStr,
-                flamoraCategory: flamoraCategory
+                flamoraCategory: flamoraCategory,
+                linkedAccounts: linkedAccounts,
+                onTransactionPersist: onTransactionPersist
             )
         }
     }
@@ -929,6 +942,7 @@ private struct SpendingCategoryTransaction: Identifiable {
     let merchant: String
     let subtitle: String
     let amount: Double
+    let raw: APITransaction
 }
 
 private struct SpendingCategoryTransactionGroup: Identifiable {
@@ -944,11 +958,14 @@ private struct SpendingCategoryTransactionsDetailView: View {
     let month: String
     /// "needs" 或 "wants"
     let flamoraCategory: String
+    var linkedAccounts: [Account] = []
+    var onTransactionPersist: ((Transaction) async throws -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @State private var dragOffset: CGFloat = 0
     @State private var groups: [SpendingCategoryTransactionGroup] = []
     @State private var isLoading = true
+    @State private var selectedTransaction: Transaction? = nil
 
     var body: some View {
         ZStack {
@@ -996,9 +1013,33 @@ private struct SpendingCategoryTransactionsDetailView: View {
         .task {
             await loadTransactions()
         }
+        .sheet(item: $selectedTransaction) { transaction in
+            TransactionDetailSheet(transaction: transaction, linkedAccounts: linkedAccounts) { updated in
+                try await persistClassification(updated)
+                await loadTransactions(mergingSticky: updated)
+            }
+            .ignoresSafeArea(.container, edges: .bottom)
+            .presentationDragIndicator(.visible)
+            .presentationDetents([.fraction(0.75)])
+            .presentationCornerRadius(28)
+            .presentationBackground(AppColors.backgroundPrimary)
+        }
     }
 
-    private func loadTransactions() async {
+    private func persistClassification(_ updated: Transaction) async throws {
+        if let onTransactionPersist {
+            try await onTransactionPersist(updated)
+        } else {
+            _ = try await APIService.shared.updateTransactionClassification(
+                transactionId: updated.id,
+                category: updated.category,
+                subcategory: updated.subcategory
+            )
+            NotificationCenter.default.post(name: .transactionClassificationDidPersist, object: nil)
+        }
+    }
+
+    private func loadTransactions(mergingSticky sticky: Transaction? = nil) async {
         let components = month.split(separator: "-").map { Int($0) ?? 0 }
         guard components.count == 2 else { isLoading = false; return }
         let year = components[0], mon = components[1]
@@ -1014,9 +1055,27 @@ private struct SpendingCategoryTransactionsDetailView: View {
             startDate: startDate,
             endDate: endDate
         )
-        let txs = response?.transactions ?? []
+        var txs = response?.transactions ?? []
+        if let sticky, !txs.contains(where: { $0.id == sticky.id }) {
+            txs.append(sticky.asAPITransaction(normalizedDate: normalizedDateKey(for: sticky)))
+        }
         groups = groupTransactionsByDate(txs)
         isLoading = false
+    }
+
+    /// 与 `get-transactions` 返回的 `date`（`yyyy-MM-dd`）对齐，供合并编辑后的行。
+    private func normalizedDateKey(for tx: Transaction) -> String {
+        let parts = tx.date.split(separator: "-").map { String($0) }
+        if parts.count == 3, parts[0].count == 4 {
+            return tx.date
+        }
+        let ym = month.split(separator: "-")
+        guard ym.count == 2,
+              parts.count == 2,
+              let m = Int(parts[0]), let d = Int(parts[1]) else {
+            return tx.date
+        }
+        return String(format: "%@-%02d-%02d", String(ym[0]), m, d)
     }
 
     private func groupTransactionsByDate(_ transactions: [APITransaction]) -> [SpendingCategoryTransactionGroup] {
@@ -1036,7 +1095,8 @@ private struct SpendingCategoryTransactionsDetailView: View {
                     id: tx.id,
                     merchant: tx.merchantDisplay,
                     subtitle: tx.flamoraSubcategory?.replacingOccurrences(of: "_", with: " ").capitalized ?? "",
-                    amount: tx.amount
+                    amount: tx.amount,
+                    raw: tx
                 )
             }
             let groupDate = cal.startOfDay(for: date)
@@ -1101,25 +1161,30 @@ private extension SpendingCategoryTransactionsDetailView {
     }
 
     func transactionRow(_ item: SpendingCategoryTransaction) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(item.merchant)
+        Button {
+            selectedTransaction = Transaction(from: item.raw)
+        } label: {
+            HStack(alignment: .top, spacing: AppSpacing.sm) {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text(item.merchant)
+                        .font(.bodySemibold)
+                        .foregroundStyle(AppColors.textPrimary)
+
+                    Text(item.subtitle)
+                        .font(.footnoteRegular)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+
+                Spacer()
+
+                Text(formatCurrency(item.amount))
                     .font(.bodySemibold)
                     .foregroundStyle(AppColors.textPrimary)
-
-                Text(item.subtitle)
-                    .font(.footnoteRegular)
-                    .foregroundColor(Color(hex: "#94A3B8"))
+                    .padding(.top, AppSpacing.xs)
             }
-
-            Spacer()
-
-            Text(formatCurrency(item.amount))
-                .font(.bodySemibold)
-                .foregroundStyle(AppColors.textPrimary)
-                .padding(.top, 2)
+            .padding(.vertical, AppSpacing.md)
         }
-        .padding(.vertical, 14)
+        .buttonStyle(.plain)
     }
 
     func formatCurrency(_ value: Double) -> String {
@@ -1146,6 +1211,8 @@ struct TotalSpendingAnalysisDetailView: View {
     let data: TotalSpendingDetailData
     let needsDetailData: SpendingDetailData
     let wantsDetailData: SpendingDetailData
+    var linkedAccounts: [Account] = []
+    var onTransactionPersist: ((Transaction) async throws -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @State private var dragOffset: CGFloat = 0
@@ -1164,11 +1231,15 @@ struct TotalSpendingAnalysisDetailView: View {
         data: TotalSpendingDetailData,
         needsDetailData: SpendingDetailData = .emptyNeeds,
         wantsDetailData: SpendingDetailData = .emptyWants,
-        initialSelectedMonth: Int? = nil
+        initialSelectedMonth: Int? = nil,
+        linkedAccounts: [Account] = [],
+        onTransactionPersist: ((Transaction) async throws -> Void)? = nil
     ) {
         self.data = data
         self.needsDetailData = needsDetailData
         self.wantsDetailData = wantsDetailData
+        self.linkedAccounts = linkedAccounts
+        self.onTransactionPersist = onTransactionPersist
         let latest = data.availableYears.last ?? Calendar.current.component(.year, from: Date())
         let trend = data.trendsByYear[latest] ?? []
         _selectedYear = State(initialValue: latest)
@@ -1255,14 +1326,18 @@ struct TotalSpendingAnalysisDetailView: View {
             SpendingAnalysisDetailView(
                 data: needsDetailData,
                 flamoraCategory: "needs",
-                initialSelectedMonth: selectedBarIndex
+                initialSelectedMonth: selectedBarIndex,
+                linkedAccounts: linkedAccounts,
+                onTransactionPersist: onTransactionPersist
             )
         }
         .fullScreenCover(isPresented: $showWantsDetail) {
             SpendingAnalysisDetailView(
                 data: wantsDetailData,
                 flamoraCategory: "wants",
-                initialSelectedMonth: selectedBarIndex
+                initialSelectedMonth: selectedBarIndex,
+                linkedAccounts: linkedAccounts,
+                onTransactionPersist: onTransactionPersist
             )
         }
         .onChange(of: data.trendsByYear.isEmpty) { _, isEmpty in
@@ -1552,7 +1627,7 @@ struct TotalSpendingDetailContainer: View {
     @State private var spendingTotalDetail: TotalSpendingDetailData?
     @State private var needsDetail: SpendingDetailData?
     @State private var wantsDetail: SpendingDetailData?
-    @State private var isLoaded = false
+    @State private var linkedAccounts: [Account] = []
 
     private var currentMonthIndex: Int {
         Calendar.current.component(.month, from: Date()) - 1
@@ -1563,25 +1638,55 @@ struct TotalSpendingDetailContainer: View {
             data: spendingTotalDetail ?? .empty,
             needsDetailData: needsDetail ?? .emptyNeeds,
             wantsDetailData: wantsDetail ?? .emptyWants,
-            initialSelectedMonth: currentMonthIndex
+            initialSelectedMonth: currentMonthIndex,
+            linkedAccounts: linkedAccounts,
+            onTransactionPersist: { tx in try await persistClassificationFromJourney(tx) }
         )
+        .onAppear {
+            syncFromCache()
+        }
         .task {
-            guard !isLoaded else { return }
             await loadData()
         }
     }
 
+    private func syncFromCache() {
+        let c = TabContentCache.shared
+        if spendingTotalDetail == nil { spendingTotalDetail = c.cashflowSpendingTotalDetail }
+        if needsDetail == nil { needsDetail = c.cashflowNeedsDetail }
+        if wantsDetail == nil { wantsDetail = c.cashflowWantsDetail }
+    }
+
+    private func persistClassificationFromJourney(_ tx: Transaction) async throws {
+        _ = try await APIService.shared.updateTransactionClassification(
+            transactionId: tx.id,
+            category: tx.category,
+            subcategory: tx.subcategory
+        )
+        NotificationCenter.default.post(name: .transactionClassificationDidPersist, object: nil)
+        await loadData()
+    }
+
     private func loadData() async {
-        guard plaidManager.hasLinkedBank else { isLoaded = true; return }
         let cal = Calendar.current
         let year = cal.component(.year, from: Date())
         let through = cal.component(.month, from: Date())
-        let summaries = await CashflowAPICharts.fetchMonthlySummaries(year: year, throughMonth: through)
-        isLoaded = true
+        async let netWorth = try? await APIService.shared.getNetWorthSummary()
+        async let summariesTask = CashflowAPICharts.fetchMonthlySummaries(year: year, throughMonth: through)
+
+        if let nw = await netWorth {
+            linkedAccounts = nw.accounts.map { Account.fromNetWorthAccount($0) }
+        }
+        guard plaidManager.hasLinkedBank else { return }
+        let summaries = await summariesTask
         guard !summaries.isEmpty else { return }
-        spendingTotalDetail = CashflowAPICharts.totalSpendingDetail(summaries: summaries, year: year)
-        needsDetail = CashflowAPICharts.needsSpendingDetail(summaries: summaries, year: year)
-        wantsDetail = CashflowAPICharts.wantsSpendingDetail(summaries: summaries, year: year)
+        let total = CashflowAPICharts.totalSpendingDetail(summaries: summaries, year: year)
+        let needs = CashflowAPICharts.needsSpendingDetail(summaries: summaries, year: year)
+        let wants = CashflowAPICharts.wantsSpendingDetail(summaries: summaries, year: year)
+        spendingTotalDetail = total
+        needsDetail = needs
+        wantsDetail = wants
+        TabContentCache.shared.setCashflowSpendingDetails(total: total, needs: needs, wants: wants)
     }
 }
 
