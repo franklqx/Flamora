@@ -28,6 +28,34 @@ The ideal Flamora feels like a fitness tracker for your financial independence. 
 
 ## Accepted Scope (added to this plan)
 
+## Design Decisions Locked
+
+These decisions are locked for v1 implementation:
+
+1. Trust Bridge is a formal first-bank-connection pre-page, not a generic modal sheet.
+2. The Home screen has one clear hero: FIRECountdownCard.
+3. DailyQuoteCard remains second in order, but should not compete with the hero in the default first viewport.
+4. Notification permission comes after Paywall, not before it.
+5. If the user denies notification permission, show a short confirmation state and continue automatically.
+6. Once the user taps "Connect Securely", the Trust Bridge is considered completed and should not be shown again on future retries.
+7. Trust Bridge copy should emphasize control and read-only access, not abstract safety language.
+8. Trust badges are supporting reassurance, not the primary persuasive element.
+9. FIRE hero must define responsive downgrade rules for small screens and large Dynamic Type.
+10. VoiceOver focus order must be explicitly designed on Trust Bridge and Notification Permission screens.
+11. Copy strategy for v1: Home = progress, connection flow = control, notifications = progress delta, Settings = read-only control.
+
+## Component Ownership
+
+New components for v1:
+- FIRECountdownCard: new Home hero component
+- NotificationPermissionView: new onboarding screen
+- TrustBridgeView: new first-connection pre-page
+
+Pattern extensions (not a new design language):
+- legal link row
+- trust badge row
+- read-only trust indicator in Settings
+
 ### 1. FIRE Countdown Hero Metric
 
 **Visual spec (from /plan-design-review):**
@@ -75,6 +103,16 @@ progressBar
 3. PortfolioCard
 4. BudgetPlanCard + SavingsRateCard
 
+**Hierarchy rule:** The default first viewport should primarily show FIRECountdownCard. DailyQuoteCard stays second in order, but should act as the next rhythm point below the fold rather than sharing hero emphasis in the opening composition.
+
+**Responsive behavior:**
+- On small screens and large Dynamic Type sizes, the hero may wrap into 2-3 lines.
+- Priority order:
+  1. Countdown / main progress number
+  2. Progress text
+  3. Delta / sparkline (may move lower or be visually de-emphasized)
+- Do not allow DailyQuoteCard, sparkline, or delta treatment to visually compete with the hero metric in the first viewport.
+
 **Data source:** `fireGoal.yearsLeft` + `fireGoal.fireNumber` from `getActiveFireGoal()` API. Progress fraction: `progressFraction = min(max(netWorthSummary.totalNetWorth / fireGoal.fireNumber, 0), 1)` — reuse pattern from SimulatorView.
 
 ### 2. Notification System (2 tiers for v1)
@@ -95,7 +133,9 @@ progressBar
 
 **iOS side — Notification Permission Screen (from /plan-design-review):**
 
-New screen after `OB_RoadmapView` (step 15), before `OB_PaywallView` (step 17). Slot as new step 16, rename current step 17 to step 18.
+New screen after `OB_PaywallView`, before the main app flow.
+
+**Onboarding order after change:** `Roadmap -> Paywall -> Notification Permission -> Main App`
 
 ```
 ┌─────────────────────────────────────────┐
@@ -119,10 +159,11 @@ New screen after `OB_RoadmapView` (step 15), before `OB_PaywallView` (step 17). 
 **Behavior:**
 - "Enable Notifications" → `UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])`
 - On grant → `UIApplication.shared.registerForRemoteNotifications()` → `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)` → save token to `profiles.apns_token`
+- On deny in the system prompt → show a short confirmation state such as "Notifications can be enabled anytime in Settings", then continue automatically.
 - "Not now" → skip silently, advance to next step. Do NOT re-prompt in-app. User can enable in iOS Settings.
 - Anti-pattern avoided: NO 3-column feature grid, NO "Here's what you'll get:" list. Single value proposition.
 
-- `UNUserNotificationCenter` permission request at END of onboarding (after `OB_RoadmapView` step 15, before app main flow)
+- `UNUserNotificationCenter` permission request at END of onboarding (after `OB_PaywallView`, before app main flow)
 - On permission grant: register for remote notifications → save APNs token to Supabase `profiles.apns_token`
 
 **Supabase schema change:**
@@ -134,7 +175,14 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS apns_token_updated_at TIMESTAMPTZ;
 
 ### 3. Trust Bridge + Legal Screens
 
-**Implementation:** NOT a new numbered onboarding step. A `@State var showTrustBridge = false` sheet inside `PlaidManager`. Guard: `UserDefaults.standard.bool(forKey: "plaidTrustBridgeSeen")`. On first call to `startLinkFlow()` anywhere in the app (InvestmentView, CashflowView, BS_AccountSelectionView), show trust bridge sheet first, then proceed to Plaid on dismiss.
+**Implementation:** Trust Bridge is a formal pre-connection page in the first bank-connection funnel, not a generic modal sheet layered on top of unrelated screens. It should appear in the current flow context before Plaid opens.
+
+**Behavior:**
+- On the first bank connection attempt anywhere in the app, the user enters Trust Bridge before Plaid opens.
+- After the user taps `Connect Securely`, Trust Bridge is considered completed.
+- Future retries should go directly to Plaid, even if a previous connection attempt failed.
+- Trust Bridge should not reappear after connection errors; error handling belongs to the Plaid failure state, not repeated trust education.
+- Guard state remains `UserDefaults.standard.bool(forKey: "plaidTrustBridgeSeen")`.
 
 **Visual spec (from /plan-design-review):**
 
@@ -145,12 +193,12 @@ Trust bridge emotional arc — user arrives ANXIOUS, must leave TRUSTING in 15 s
 │                                         │
 │  🔒                                     │  SF Symbol lock.shield, 48pt, textPrimary
 │                                         │
-│  Your data is safe                      │  .h2 (24pt bold) textPrimary, centered
+│  You stay in control                    │  .h2 (24pt bold) textPrimary, centered
 │                                         │
-│  We never see your login or password.   │  .bodyRegular textSecondary, centered
-│  Flamora connects through Plaid, a      │
-│  read-only service used by Venmo,       │
-│  Coinbase, and 8,000+ apps.             │
+│  Flamora connects through Plaid using   │  .bodyRegular textSecondary, centered
+│  read-only access. Your bank login      │
+│  stays with your institution, not       │
+│  Flamora.                               │
 │                                         │
 │  ┌──────┐  ┌───────────┐  ┌─────────┐  │  3 badge pills
 │  │🔒 Read│  │🏦 Plaid   │  │✓ Encrypt│  │  .smallLabel (12pt semibold) + gradient bg
@@ -174,6 +222,12 @@ Trust bridge emotional arc — user arrives ANXIOUS, must leave TRUSTING in 15 s
 // Text: "Couldn't connect. Try again." .bodySmall textSecondary
 ```
 
+**Copy direction:**
+- Primary message: control
+- Secondary message: read-only access and encrypted connection
+- Avoid overly generic safety language as the main headline
+- Trust badges are supporting cues only; the headline and two-line explanatory copy carry the main persuasive load
+
 **Links:** Privacy Policy + Terms of Service open in `SFSafariViewController` (not external Safari — keeps user in flow).
 
 **"Read-only" badge in Settings:** Add to `SettingsView.bankSection` under connected institution name row:
@@ -184,6 +238,45 @@ Label("Read-only access via Plaid", systemImage: "lock.fill")
 ```
 
 **Privacy Policy + Terms of Service** must be live URLs before App Store submission. GitHub Pages is sufficient.
+
+## Accessibility Rules
+
+Home hero:
+- Must support Dynamic Type without clipping or collapsing hierarchy.
+- On smaller devices and larger text sizes, content may wrap to 2-3 lines.
+- Main countdown / progress remains the highest-priority content.
+
+TrustBridgeView VoiceOver order:
+1. Title
+2. Explanatory copy
+3. Control / read-only trust points
+4. Privacy Policy / Terms of Service links
+5. Primary CTA
+6. Secondary CTA
+
+NotificationPermissionView VoiceOver order:
+1. Title
+2. Explanatory copy
+3. User benefit / return-hook explanation
+4. Primary CTA
+5. Secondary CTA
+
+Legal links must not steal first focus before the primary action.
+
+## Copy Strategy for v1
+
+The v1 product narrative uses two primary axes:
+
+- Progress: used on Home and notifications
+- Control: used in connection and account trust surfaces
+
+Applications:
+- Home = progress toward FIRE
+- Notification copy = progress delta / movement closer or farther
+- Trust Bridge = control, read-only access, clear boundaries
+- Settings = read-only control and trust reassurance
+
+Motivational or inspirational language may be used as a supporting tone layer, but should not replace the primary progress/control narrative.
 
 ### 4. RevenueCat Exception
 - Keep RevenueCat and RevenueCatUI as dependencies (already integrated)
@@ -217,9 +310,9 @@ Label("Read-only access via Plaid", systemImage: "lock.fill")
 | CEO Review | `/plan-ceo-review` | Scope & strategy | 1 | DONE | 4 scope items accepted, 1 deferred; 9 spec issues resolved |
 | Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | — |
 | Eng Review | `/plan-eng-review` | Architecture & tests (required) | 0 | — | — |
-| Design Review | `/plan-design-review` | UI/UX gaps | 1 | CLEAN (PLAN) | score: 3/10 → 8/10, 7 decisions made |
+| Design Review | `/plan-design-review` | UI/UX gaps | 1 | CLEAN (PLAN) | score: 3/10 → 10/10, 11 decisions made |
 | DX Review | `/plan-devex-review` | Developer experience gaps | 0 | — | — |
 
-**DESIGN:** 3 screens fully spec'd with token mapping, interaction states, and accessibility labels.
+**DESIGN:** 3 screens fully spec'd with locked hierarchy, interaction rules, accessibility order, and copy strategy.
 **UNRESOLVED:** 0 design decisions open.
 **VERDICT:** Design Review CLEAR. Eng Review required before implementation.
