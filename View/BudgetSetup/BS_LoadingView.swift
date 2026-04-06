@@ -21,28 +21,82 @@ struct BS_LoadingView: View {
     @State private var outerRotation: Double = 0
     @State private var innerRotation: Double = 0
 
+    // Timeout / error state
+    @State private var showError = false
+    private let timeoutSeconds: Double = 25
+    /// Incremented on every retry. All pending DispatchQueue blocks from earlier attempts
+    /// capture the attempt value at scheduling time and bail out if it no longer matches,
+    /// preventing stale timers from triggering showError during a newer load cycle.
+    @State private var loadAttempt: Int = 0
+
     private enum ChecklistState {
         case pending, active, done
     }
 
     var body: some View {
-        VStack(spacing: AppSpacing.xxl) {
-            Spacer()
-
-            // Dual-ring spinner
-            spinnerSection
-
-            // Checklist items
-            checklistSection
-
-            Spacer()
+        Group {
+            if showError || viewModel.loadingError != nil {
+                errorView
+            } else {
+                loadingView
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(AppColors.backgroundPrimary.ignoresSafeArea())
+    }
+
+    // MARK: - Normal loading view
+
+    private var loadingView: some View {
+        VStack(spacing: AppSpacing.xxl) {
+            Spacer()
+            spinnerSection
+            checklistSection
+            Spacer()
+        }
         .onAppear {
             startSpinnerAnimation()
             startChecklistAnimation()
             Task { await viewModel.loadInitialData() }
+            scheduleTimeout()
+        }
+    }
+
+    // MARK: - Error / timeout view
+
+    private var errorView: some View {
+        VStack(spacing: AppSpacing.xl) {
+            Spacer()
+
+            Image(systemName: "exclamationmark.circle")
+                .font(.system(size: 44, weight: .regular))
+                .foregroundStyle(AppColors.textSecondary)
+
+            VStack(spacing: AppSpacing.sm) {
+                Text("Something went wrong")
+                    .font(.h4)
+                    .foregroundStyle(AppColors.textPrimary)
+
+                Text(viewModel.loadingError ?? "This is taking longer than expected.\nPlease check your connection and try again.")
+                    .font(.bodySmall)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, AppSpacing.xl)
+            }
+
+            Button(action: retryLoading) {
+                Text("Try Again")
+                    .font(.sheetPrimaryButton)
+                    .foregroundStyle(AppColors.textInverse)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(AppColors.textPrimary)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+            }
+            .padding(.horizontal, AppSpacing.screenPadding)
+            .padding(.top, AppSpacing.lg)
+
+            Spacer()
         }
     }
 
@@ -143,41 +197,74 @@ struct BS_LoadingView: View {
     }
 
     private func startChecklistAnimation() {
+        let attempt = loadAttempt
         // Step 1: 0–1.4s
         withAnimation(.easeOut(duration: 0.3)) { step1State = .active }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            guard loadAttempt == attempt else { return }
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { step1State = .done }
             // Step 2: 1.4–2.8s
             withAnimation(.easeOut(duration: 0.3)) { step2State = .active }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.8) {
+            guard loadAttempt == attempt else { return }
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { step2State = .done }
             // Step 3: 2.8–4.2s
             withAnimation(.easeOut(duration: 0.3)) { step3State = .active }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 4.2) {
+            guard loadAttempt == attempt else { return }
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { step3State = .done }
             // Auto-navigate after all complete
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                guard loadAttempt == attempt else { return }
                 if viewModel.allLoadingComplete {
                     onComplete()
+                } else if viewModel.loadingError != nil {
+                    // Body switches to errorView automatically via observation
                 } else {
-                    pollForCompletion()
+                    pollForCompletion(attempt: attempt)
                 }
             }
         }
     }
 
-    private func pollForCompletion() {
+    private func pollForCompletion(attempt: Int) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            guard loadAttempt == attempt else { return }  // stale poll from a previous attempt
             if viewModel.allLoadingComplete {
                 onComplete()
             } else if viewModel.loadingError != nil {
-                onComplete()
+                // Body switches to errorView automatically via observation
+            } else if showError {
+                // Timed out; stay on error view
             } else {
-                pollForCompletion()
+                pollForCompletion(attempt: attempt)
             }
         }
+    }
+
+    private func scheduleTimeout() {
+        let attempt = loadAttempt
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeoutSeconds) {
+            guard loadAttempt == attempt else { return }  // stale — a retry already happened
+            guard !viewModel.allLoadingComplete, viewModel.loadingError == nil else { return }
+            showError = true
+        }
+    }
+
+    private func retryLoading() {
+        loadAttempt += 1  // Invalidates ALL pending DispatchQueue blocks from previous attempt
+        viewModel.loadingError = nil
+        viewModel.isLoadingProfile = true
+        viewModel.isLoadingStats = true
+        viewModel.isLoadingDiagnosis = true
+        step1State = .pending
+        step2State = .pending
+        step3State = .pending
+        outerRotation = 0
+        innerRotation = 0
+        showError = false  // Triggers re-render → loadingView.onAppear fires with new loadAttempt
     }
 }
 

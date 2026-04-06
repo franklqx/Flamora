@@ -3,6 +3,9 @@
 # 本地配置文件（包含真实 secrets，不提交）
 Config.xcconfig
 
+# Claude Code 本地设置（可能含 shell allowlist，不提交）
+.claude/settings.local.json
+
 # Xcode
 xcuserdata/
 *.xcuserstate

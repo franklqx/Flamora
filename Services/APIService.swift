@@ -20,7 +20,7 @@ class APIService {
     // MARK: - Create User Profile
     func createUserProfile(data: OnboardingData) async throws -> CreateProfileResponse {
         let url = URL(string: "\(baseURL)/create-user-profile")!
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: url, timeoutInterval: 20)
         request.httpMethod = "POST"
         request.setValue(anonKey, forHTTPHeaderField: "apikey")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -110,7 +110,7 @@ class APIService {
         if !queryParams.isEmpty {
             urlComponents.queryItems = queryParams.map { URLQueryItem(name: $0.key, value: $0.value) }
         }
-        var request = URLRequest(url: urlComponents.url!)
+        var request = URLRequest(url: urlComponents.url!, timeoutInterval: 20)
         request.httpMethod = "POST"
         request.setValue(anonKey, forHTTPHeaderField: "apikey")
         request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")

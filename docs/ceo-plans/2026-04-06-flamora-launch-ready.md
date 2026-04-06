@@ -204,7 +204,7 @@ Label("Read-only access via Plaid", systemImage: "lock.fill")
 - **Timezone bucketing for push notifications** (v2): Store `utc_offset` in profiles, bucket users for accurate local-time delivery.
 
 ## Critical Issues (must fix before launch, not expansion)
-1. **Hardcoded RevenueCat TEST API key** in `SubscriptionManager.swift:23` — `"test_CTvrBqscaqNCibGtSMxCUeXbmae"` — move to xcconfig (see Section 4 above). Production key required before TestFlight.
+1. **Hardcoded RevenueCat TEST API key** in `SubscriptionManager.swift:23` — move to xcconfig (see Section 4 above). Production key required before TestFlight.
 2. **Stash conflict**: `stash@{1}` "本地合并冲突修复" — resolve before shipping to avoid phantom diff at the worst moment.
 3. **No push notification entitlements** in Xcode project — add `Push Notifications` capability in Xcode → Signing & Capabilities before TestFlight submission.
 4. **No APNs token column** in Supabase `profiles` — run migration (see Section 2 above) before deploying `send-fire-notification` Edge Function.

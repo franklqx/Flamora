@@ -12,7 +12,6 @@
 		12123E342F4719A20011B385 /* LinkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 12123E332F4719A20011B385 /* LinkKit */; };
 		12123E372F4859CB0011B385 /* PlaidManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E352F4859CB0011B385 /* PlaidManager.swift */; };
 		12123E382F4859CB0011B385 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E362F4859CB0011B385 /* SubscriptionManager.swift */; };
-		12123E412F485B920011B385 /* PlaidLinkRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E3F2F485B920011B385 /* PlaidLinkRepresentable.swift */; };
 		12123E422F485B920011B385 /* PaywallSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E3E2F485B920011B385 /* PaywallSheet.swift */; };
 		12123E432F485B920011B385 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E3C2F485B920011B385 /* SettingsView.swift */; };
 		12123E452F48D7E20011B385 /* PlaidLinkPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E442F48D7E20011B385 /* PlaidLinkPresenter.swift */; };
@@ -54,6 +53,7 @@
 		1508AF372F5D1A2600D59781 /* OB_BarChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1508AF362F5D1A2600D59781 /* OB_BarChartView.swift */; };
 		152BE0822F67A66100CACBBC /* SmoothPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152BE0812F67A66100CACBBC /* SmoothPath.swift */; };
 		152BE0842F67A66C00CACBBC /* GlassPillSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152BE0832F67A66C00CACBBC /* GlassPillSelector.swift */; };
+		EB0000012F9A00000000EB01 /* ErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB0000022F9A00000000EB01 /* ErrorBanner.swift */; };
 		152BE0862F67A67000CACBBC /* ChartInteractionLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152BE0852F67A67000CACBBC /* ChartInteractionLayer.swift */; };
 		152BE08A2F67A67200CACBBC /* NoDelayScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152BE0892F67A67100CACBBC /* NoDelayScrollView.swift */; };
 		152C19792F5D3C2C007E68AA /* OB_EditableAmountDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152C19782F5D3C2C007E68AA /* OB_EditableAmountDisplay.swift */; };
@@ -111,6 +111,9 @@
 		CDBB00022FA1000000000001 /* CashAccountsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00012FA1000000000001 /* CashAccountsCard.swift */; };
 		CDBB00042FA1000000000001 /* CashAccountDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00032FA1000000000001 /* CashAccountDetailView.swift */; };
 		C0827AD0E7B54B73916CC9E1 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3D88B1E877C494CB82A4469 /* AppConfig.swift */; };
+		CAA9B02EF31C4C8B934DA729 /* AppLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30135FBE8062413AB05D409B /* AppLinks.swift */; };
+		01996F15BE524BD0BE81E3B6 /* SafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAB934E0EA2D41B4B246F19E /* SafariView.swift */; };
+		18177349D8754A42810808DD /* PlaidTrustBridgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A896C70355034867B690BCB2 /* PlaidTrustBridgeView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -135,7 +138,6 @@
 		12123E362F4859CB0011B385 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
 		12123E3C2F485B920011B385 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		12123E3E2F485B920011B385 /* PaywallSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallSheet.swift; sourceTree = "<group>"; };
-		12123E3F2F485B920011B385 /* PlaidLinkRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidLinkRepresentable.swift; sourceTree = "<group>"; };
 		12123E442F48D7E20011B385 /* PlaidLinkPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidLinkPresenter.swift; sourceTree = "<group>"; };
 		124C462E2F56F65E00E4EA8B /* OB_MicroInsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_MicroInsightCard.swift; sourceTree = "<group>"; };
 		124C462F2F56F65E00E4EA8B /* OB_PersonalizeProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_PersonalizeProgress.swift; sourceTree = "<group>"; };
@@ -178,6 +180,7 @@
 		1508AF362F5D1A2600D59781 /* OB_BarChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_BarChartView.swift; sourceTree = "<group>"; };
 		152BE0812F67A66100CACBBC /* SmoothPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmoothPath.swift; sourceTree = "<group>"; };
 		152BE0832F67A66C00CACBBC /* GlassPillSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassPillSelector.swift; sourceTree = "<group>"; };
+		EB0000022F9A00000000EB01 /* ErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBanner.swift; sourceTree = "<group>"; };
 		152BE0852F67A67000CACBBC /* ChartInteractionLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartInteractionLayer.swift; sourceTree = "<group>"; };
 		152BE0892F67A67100CACBBC /* NoDelayScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoDelayScrollView.swift; sourceTree = "<group>"; };
 		152C19782F5D3C2C007E68AA /* OB_EditableAmountDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_EditableAmountDisplay.swift; sourceTree = "<group>"; };
@@ -235,6 +238,9 @@
 		CDBB00032FA1000000000001 /* CashAccountDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountDetailView.swift; sourceTree = "<group>"; };
 		8E03E4A8398A47FD9CC3F0BF /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		F3D88B1E877C494CB82A4469 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		30135FBE8062413AB05D409B /* AppLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLinks.swift; sourceTree = "<group>"; };
+		AAB934E0EA2D41B4B246F19E /* SafariView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariView.swift; sourceTree = "<group>"; };
+		A896C70355034867B690BCB2 /* PlaidTrustBridgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidTrustBridgeView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -296,7 +302,8 @@
 			isa = PBXGroup;
 			children = (
 				12123E3E2F485B920011B385 /* PaywallSheet.swift */,
-				12123E3F2F485B920011B385 /* PlaidLinkRepresentable.swift */,
+				AAB934E0EA2D41B4B246F19E /* SafariView.swift */,
+				A896C70355034867B690BCB2 /* PlaidTrustBridgeView.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -396,6 +403,7 @@
 			isa = PBXGroup;
 			children = (
 				F3D88B1E877C494CB82A4469 /* AppConfig.swift */,
+				30135FBE8062413AB05D409B /* AppLinks.swift */,
 				12123E442F48D7E20011B385 /* PlaidLinkPresenter.swift */,
 				12123E352F4859CB0011B385 /* PlaidManager.swift */,
 				12123E362F4859CB0011B385 /* SubscriptionManager.swift */,
@@ -513,6 +521,7 @@
 				15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */,
 				15FF6ED92F31043F0005F482 /* GradientButton.swift */,
 				15FF6EDE2F3104500005F482 /* ConnectAccountCTAView.swift */,
+				EB0000022F9A00000000EB01 /* ErrorBanner.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -689,6 +698,7 @@
 				15E21ABB2F325A9D00A9BB60 /* JourneyContainerView.swift in Sources */,
 				15E21AAD2F324F0E00A9BB60 /* ProgressBar.swift in Sources */,
 				152BE0842F67A66C00CACBBC /* GlassPillSelector.swift in Sources */,
+				EB0000012F9A00000000EB01 /* ErrorBanner.swift in Sources */,
 				152BE0862F67A67000CACBBC /* ChartInteractionLayer.swift in Sources */,
 				152BE08A2F67A67200CACBBC /* NoDelayScrollView.swift in Sources */,
 				15E21AED2F33C11A00A9BB60 /* MainTabView.swift in Sources */,
@@ -739,7 +749,6 @@
 				1571A1DA2F3C2A5B0024A729 /* OnboardingModels.swift in Sources */,
 				15E21AD92F3394B100A9BB60 /* FlameIcon.swift in Sources */,
 				15E21AB32F3257B000A9BB60 /* CashflowView.swift in Sources */,
-				12123E412F485B920011B385 /* PlaidLinkRepresentable.swift in Sources */,
 				12123E422F485B920011B385 /* PaywallSheet.swift in Sources */,
 				12123E432F485B920011B385 /* SettingsView.swift in Sources */,
 				12748F232F65CA7300410D60 /* BudgetSetupViewModel.swift in Sources */,
@@ -778,6 +787,9 @@
 				124C46642F56F65E00E4EA8B /* OB_OnboardingHeader.swift in Sources */,
 				AA5B00052F38500000001005 /* SupabaseManager.swift in Sources */,
 				C0827AD0E7B54B73916CC9E1 /* AppConfig.swift in Sources */,
+				CAA9B02EF31C4C8B934DA729 /* AppLinks.swift in Sources */,
+				01996F15BE524BD0BE81E3B6 /* SafariView.swift in Sources */,
+				18177349D8754A42810808DD /* PlaidTrustBridgeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

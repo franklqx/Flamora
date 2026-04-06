@@ -15,6 +15,8 @@ struct InvestmentView: View {
     @State private var apiHoldingsPayload: APIInvestmentHoldingsPayload?
     /// 按时间范围缓存的真实历史曲线；nil 时 PortfolioCard 回退 mock。
     @State private var portfolioHistoryCache: [String: [PortfolioDataPoint]] = [:]
+    @State private var loadError = false
+    @State private var showTrustBridge = false
 
     var body: some View {
         connectedView
@@ -27,6 +29,12 @@ struct InvestmentView: View {
             GeometryReader { proxy in
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                        if loadError {
+                            ErrorBanner(
+                                message: "Couldn't load portfolio data.",
+                                onRetry: { Task { await loadInvestmentData() } }
+                            )
+                        }
                         PortfolioCard(
                             portfolioBalance: portfolioBalanceDisplay,
                             gainAmount: apiHoldingsPayload?.summary.totalGainLoss ?? apiNetWorth?.growthAmount ?? 0,
@@ -34,7 +42,11 @@ struct InvestmentView: View {
                             realChartData: { range in portfolioHistoryCache[rangeKey(range)] },
                             isConnected: plaidManager.hasLinkedBank,
                             onConnectTapped: {
-                                Task { await plaidManager.startLinkFlow() }
+                                if plaidManager.shouldShowTrustBridge() {
+                                    showTrustBridge = true
+                                } else {
+                                    Task { await plaidManager.startLinkFlow() }
+                                }
                             }
                         )
 
@@ -49,7 +61,13 @@ struct InvestmentView: View {
                         AccountsCard(
                             accounts: computedAccounts,
                             isConnected: plaidManager.hasLinkedBank,
-                            onAddAccount: { Task { await plaidManager.startLinkFlow() } },
+                            onAddAccount: {
+                                if plaidManager.shouldShowTrustBridge() {
+                                    showTrustBridge = true
+                                } else {
+                                    Task { await plaidManager.startLinkFlow() }
+                                }
+                            },
                             lastSyncedAt: apiNetWorth?.lastSyncedAt
                         )
                         .padding(.horizontal, AppSpacing.screenPadding)
@@ -59,6 +77,15 @@ struct InvestmentView: View {
                     .padding(.bottom, AppSpacing.lg)
                 }
             }
+        }
+        .alert("Bank Connection Failed", isPresented: Binding(
+            get: { plaidManager.linkError != nil },
+            set: { if !$0 { plaidManager.linkError = nil } }
+        )) {
+            Button("Try Again") { Task { await plaidManager.startLinkFlow() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(plaidManager.linkError ?? "")
         }
         .onAppear {
             if apiNetWorth == nil {
@@ -76,6 +103,13 @@ struct InvestmentView: View {
         }
         .onChange(of: plaidManager.hasLinkedBank) { _, _ in
             Task { await loadInvestmentData() }
+        }
+        .sheet(isPresented: $showTrustBridge, onDismiss: {
+            if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {
+                Task { await plaidManager.startLinkFlow() }
+            }
+        }) {
+            PlaidTrustBridgeView()
         }
     }
 }
@@ -109,6 +143,7 @@ private extension InvestmentView {
     }
 
     func loadInvestmentData() async {
+        loadError = false
         guard plaidManager.hasLinkedBank else {
             apiNetWorth = nil
             apiHoldingsPayload = nil
@@ -117,6 +152,7 @@ private extension InvestmentView {
             return
         }
         let nw = await fetchNetWorth()
+        if nw == nil { loadError = true }
         apiNetWorth = nw
         TabContentCache.shared.setInvestmentNetWorth(nw)
         async let holdingsTask = fetchHoldingsPayload()

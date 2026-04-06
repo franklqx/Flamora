@@ -8,7 +8,7 @@
 
 ## 🌐 Base URL
 ```
-Production: https://vnyalfpmopvoswccewju.supabase.co/functions/v1
+Production: https://YOUR_SUPABASE_PROJECT_REF.supabase.co/functions/v1
 Development: 同上（使用测试用户）
 ```
 
@@ -18,7 +18,7 @@ Development: 同上（使用测试用户）
 
 所有 API 需要在 Header 中携带：
 ```
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZueWFsZnBtb3B2b3N3Y2Nld2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxODg2ODgsImV4cCI6MjA4NTc2NDY4OH0.LWeaM9vRRoh0i-lUcMRV0BjTZHKVDvI8XGWRIcJajG4
+Authorization: Bearer YOUR_SUPABASE_ANON_KEY
 ```
 
 **开发阶段：** 使用测试用户 `00000000-0000-0000-0000-000000000001`

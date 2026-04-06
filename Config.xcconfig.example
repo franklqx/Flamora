@@ -10,7 +10,9 @@
 //
 
 // Supabase 项目 URL（不含尾部斜杠）
-SUPABASE_URL = https://YOUR_PROJECT_REF.supabase.co
+// 注意：.xcconfig 里 `//` 会被当成注释，所以这里必须写成 `https:/$()/...`
+// 运行时 `$( )` 会展开为空字符串，最终值仍然是 `https://...`
+SUPABASE_URL = https:/$()/YOUR_PROJECT_REF.supabase.co
 
 // Supabase anon/public JWT key
 SUPABASE_ANON_KEY = your_supabase_anon_key_here

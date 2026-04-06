@@ -25,6 +25,7 @@ struct CashflowView: View {
     @Environment(PlaidManager.self) private var plaidManager
     @AppStorage(FlamoraStorageKey.budgetSetupCompleted) private var budgetSetupCompleted: Bool = false
 
+    @State private var loadError = false
     @State private var apiBudget = APIMonthlyBudget.empty
     /// 当月收入（来自 `get-spending-summary.total_income`；active/passive 尚无拆分时与 total 对齐）。
     @State private var incomeMonthDisplay = Income(total: 0, active: 0, passive: 0, sources: [])
@@ -41,6 +42,7 @@ struct CashflowView: View {
     @State private var cashAccountsList: [APIAccount] = []
     @State private var selectedTransaction: Transaction? = nil
     @State private var showAllTransactions = false
+    @State private var showTrustBridge = false
     @State private var showSavingsInput = false
     @State private var showSavingsSummary = false
     @State private var showTotalIncomeDetail = false
@@ -97,6 +99,12 @@ struct CashflowView: View {
             GeometryReader { proxy in
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                        if loadError {
+                            ErrorBanner(
+                                message: "Couldn't load your data.",
+                                onRetry: { Task { await loadCashflowData() } }
+                            )
+                        }
                         IncomeCard(
                             income:          incomeMonthDisplay,
                             yearlyIncome:    incomeYearDisplay,
@@ -137,6 +145,15 @@ struct CashflowView: View {
                     .padding(.bottom, AppSpacing.lg)
                 }
             }
+        }
+        .alert("Bank Connection Failed", isPresented: Binding(
+            get: { plaidManager.linkError != nil },
+            set: { if !$0 { plaidManager.linkError = nil } }
+        )) {
+            Button("Try Again") { Task { await plaidManager.startLinkFlow() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(plaidManager.linkError ?? "")
         }
         .onAppear {
             restoreFromCache()
@@ -229,6 +246,13 @@ struct CashflowView: View {
                 try await persistTransactionClassification(updated)
             }
         }
+        .sheet(isPresented: $showTrustBridge, onDismiss: {
+            if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {
+                Task { await plaidManager.startLinkFlow() }
+            }
+        }) {
+            PlaidTrustBridgeView()
+        }
     }
 }
 
@@ -260,15 +284,22 @@ private extension CashflowView {
     }
 
     func loadCashflowData() async {
+        loadError = false
         let monthStr = apiMonthString(from: Date())
 
         // 账户列表独立于 budget setup，只要连接了银行就加载
         if plaidManager.hasLinkedBank {
-            if let nw = try? await APIService.shared.getNetWorthSummary() {
+            do {
+                let nw = try await APIService.shared.getNetWorthSummary()
                 linkedAccounts = nw.accounts.map { Account.fromNetWorthAccount($0) }
                 cashAccountsList = nw.accounts.filter {
                     $0.type == "depository" || $0.type == "credit"
                 }
+            } catch {
+                print("❌ [CashflowView] getNetWorthSummary failed: \(error)")
+                loadError = true
+                linkedAccounts = []
+                cashAccountsList = []
             }
         } else {
             linkedAccounts = []
@@ -425,7 +456,13 @@ private extension CashflowView {
                     cashAccounts: depository,
                     creditAccounts: credit,
                     lastSyncedAt: nil,
-                    onAddAccount: { Task { await plaidManager.startLinkFlow() } }
+                    onAddAccount: {
+                        if plaidManager.shouldShowTrustBridge() {
+                            showTrustBridge = true
+                        } else {
+                            Task { await plaidManager.startLinkFlow() }
+                        }
+                    }
                 )
                 .padding(.horizontal, AppSpacing.screenPadding)
             }

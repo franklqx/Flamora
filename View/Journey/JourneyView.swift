@@ -27,6 +27,7 @@ struct JourneyView: View {
     @State private var portfolioHistoryCache: [String: [PortfolioDataPoint]] = [:]
     @State private var quoteIndex: Int = 0
     @State private var quoteVisible: Bool = true
+    @State private var loadError = false
     var onFireTapped: (() -> Void)? = nil
     var onInvestmentTapped: (() -> Void)? = nil
     var onOpenCashflowDestination: ((CashflowJourneyDestination) -> Void)? = nil
@@ -35,6 +36,7 @@ struct JourneyView: View {
     @Environment(PlaidManager.self) private var plaidManager
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @AppStorage(FlamoraStorageKey.budgetSetupCompleted) private var budgetSetupCompleted: Bool = false
+    @State private var showTrustBridge = false
 
     init(
         bottomPadding: CGFloat = 0,
@@ -55,6 +57,12 @@ struct JourneyView: View {
             GeometryReader { proxy in
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: AppSpacing.lg) {
+                        if loadError {
+                            ErrorBanner(
+                                message: "Couldn't load your data.",
+                                onRetry: { Task { await loadData() } }
+                            )
+                        }
                         PortfolioCard(
                             portfolioBalance: netWorthSummary.breakdown.investmentTotal ?? 0,
                             gainAmount: netWorthSummary.growthAmount ?? 0,
@@ -68,7 +76,11 @@ struct JourneyView: View {
                                     subscriptionManager.showPaywall = true
                                     return
                                 }
-                                Task { await plaidManager.startLinkFlow() }
+                                if plaidManager.shouldShowTrustBridge() {
+                                    showTrustBridge = true
+                                } else {
+                                    Task { await plaidManager.startLinkFlow() }
+                                }
                             }
                         )
 
@@ -109,7 +121,17 @@ struct JourneyView: View {
             }
         }
         .animation(nil, value: bottomPadding)
+        .alert("Bank Connection Failed", isPresented: Binding(
+            get: { plaidManager.linkError != nil },
+            set: { if !$0 { plaidManager.linkError = nil } }
+        )) {
+            Button("Try Again") { Task { await plaidManager.startLinkFlow() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(plaidManager.linkError ?? "")
+        }
         .task { await loadData() }
+
         .onChange(of: plaidManager.lastConnectionTime) { _, _ in
             print("📍 [Flow] lastConnectionTime changed")
             Task { await loadData() }
@@ -120,6 +142,13 @@ struct JourneyView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .savingsCheckInDidPersist)) { _ in
             Task { await loadData() }
+        }
+        .sheet(isPresented: $showTrustBridge, onDismiss: {
+            if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {
+                Task { await plaidManager.startLinkFlow() }
+            }
+        }) {
+            PlaidTrustBridgeView()
         }
     }
 }
@@ -225,6 +254,7 @@ private extension JourneyView {
 
     func loadData() async {
         print("📍 [Flow] loadData started — hasLinkedBank=\(plaidManager.hasLinkedBank)")
+        loadError = false
         let monthStr = currentMonthString
         async let nwTask = fetchNetWorth()
         async let fireTask = fetchFireGoal()
@@ -265,6 +295,7 @@ private extension JourneyView {
             print("📍 [Flow] net worth loaded — accounts: \(nw.accounts.count), total: \(nw.totalNetWorth), hasInvestment: \(hasInv)")
         } else {
             print("📍 [Flow] ❌ net worth fetch returned nil")
+            loadError = true
         }
         if let budget {
             apiBudget = budget

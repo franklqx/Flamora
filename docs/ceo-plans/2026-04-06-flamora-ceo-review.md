@@ -86,7 +86,7 @@ print("📊 [APIService] Response: \(String(data: data, encoding: .utf8) ?? "(ni
 The last one is the worst — it prints the entire API response body, which includes account balances, transaction amounts, and Plaid tokens, to the device console. Anyone with a USB cable and Console.app can read your users' bank data. **This must be removed before TestFlight.**
 
 **Test RevenueCat API key.**
-`test_CTvrBqscaqNCibGtSMxCUeXbmae` — the prefix `test_` is RevenueCat's convention for sandbox keys. In production, ALL purchases will either fail or be treated as sandbox transactions. Your subscription revenue will be zero.
+The configured key is a sandbox key (prefix `test_`). In production, ALL purchases will either fail or be treated as sandbox transactions. Your subscription revenue will be zero.
 
 ### Action items
 - [ ] Move Supabase URL + anon key to `Config.xcconfig` (gitignored)
@@ -248,7 +248,7 @@ print("🏦 [PlaidManager] Bank linked: \(institution)")
 
 | Item | Status | Notes |
 |------|--------|-------|
-| RevenueCat production key | ❌ BLOCKED | `test_CTvrBqscaqNCibGtSMxCUeXbmae` is a test key |
+| RevenueCat production key | ❌ BLOCKED | Sandbox key configured — swap for production key before TestFlight |
 | Push notification entitlement | ❌ BLOCKED | Not added to Xcode project yet |
 | APNs token column in Supabase | ❌ BLOCKED | Migration not run yet |
 | Privacy Policy live URL | ❌ BLOCKED | Required for App Store |

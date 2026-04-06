@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SafariServices
 internal import Auth
 
 struct SettingsView: View {
@@ -17,6 +18,8 @@ struct SettingsView: View {
     @State private var isRestoringPurchases = false
     @State private var isDisconnecting = false
     @State private var showPaywall = false
+    @State private var showPrivacy = false
+    @State private var showTerms   = false
 
     @AppStorage(FlamoraStorageKey.budgetSetupCompleted) private var budgetSetupCompleted: Bool = false
     @State private var currentBudget: APIMonthlyBudget = .empty
@@ -188,13 +191,22 @@ private extension SettingsView {
                         icon: "building.columns.fill",
                             iconColor: AppColors.accentGreen,
                             title: plaidManager.connectedInstitutionName ?? "Connected Account",
-                            subtitle: "Linked via Plaid",
+                            subtitle: "Read-only access via Plaid",
                             trailing: {
                                 AnyView(
-                                    Image(systemName: "checkmark.circle.fill")
+                                    Image(systemName: "lock.shield.fill")
                                         .foregroundColor(AppColors.accentGreen)
                             )
                         }
+                    )
+
+                    Divider().background(AppColors.borderLight).padding(.leading, 60)
+
+                    row(
+                        icon: "lock.fill",
+                        iconColor: AppColors.accentGreen,
+                        title: "Your credentials are never stored in Flamora",
+                        subtitle: nil
                     )
 
                     Divider().background(AppColors.borderLight).padding(.leading, 60)
@@ -288,16 +300,33 @@ private extension SettingsView {
 
     var legalSection: some View {
         HStack(spacing: AppSpacing.md) {
-            Text("Privacy Policy")
-                .font(.caption)
-                .foregroundColor(AppColors.textMuted)
+            Button {
+                showPrivacy = true
+            } label: {
+                Text("Privacy Policy")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textMuted)
+                    .underline()
+            }
             Text("•")
-                .foregroundColor(AppColors.textMuted)
-            Text("Terms of Service")
                 .font(.caption)
                 .foregroundColor(AppColors.textMuted)
+            Button {
+                showTerms = true
+            } label: {
+                Text("Terms of Service")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textMuted)
+                    .underline()
+            }
         }
         .frame(maxWidth: .infinity)
+        .sheet(isPresented: $showPrivacy) {
+            SafariView(url: AppLinks.privacyPolicyURL).ignoresSafeArea()
+        }
+        .sheet(isPresented: $showTerms) {
+            SafariView(url: AppLinks.termsOfServiceURL).ignoresSafeArea()
+        }
     }
 }
 

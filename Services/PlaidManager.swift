@@ -18,6 +18,8 @@ class PlaidManager {
     var connectedInstitutionName: String? = nil
     var showBudgetSetup: Bool = false
     var lastConnectionTime: Date? = nil
+    /// Non-nil when the last link or exchange attempt failed. Views observe this to show an error alert.
+    var linkError: String? = nil
     private var client: SupabaseClient { SupabaseManager.shared.client }
 
     private init() {}
@@ -42,10 +44,18 @@ class PlaidManager {
         }
     }
 
+    // MARK: - Trust bridge gate
+    /// Returns true if the trust bridge should be shown before initiating Plaid.
+    /// Each call site is responsible for presenting the bridge in its own context.
+    func shouldShowTrustBridge() -> Bool {
+        !UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen)
+    }
+
     // MARK: - Step 1: 获取 link token，触发 Plaid Link
     func startLinkFlow() async {
         guard !isConnecting else { return }
         isConnecting = true
+        linkError = nil
         defer { isConnecting = false }
 
         do {
@@ -84,6 +94,7 @@ class PlaidManager {
             #if DEBUG
             print("🏦 [PlaidManager] startLinkFlow decode error: \(decodingError)")
             #endif
+            linkError = "Connection failed. Please try again."
         } catch let error as FunctionsError {
             if case .httpError(let code, _) = error {
                 // 403 PREMIUM_REQUIRED → 触发 Paywall（生产路径）
@@ -96,11 +107,15 @@ class PlaidManager {
                 #if DEBUG
                 print("🏦 [PlaidManager] startLinkFlow HTTP \(code)")
                 #endif
+                linkError = "Connection failed (error \(code)). Please try again."
+            } else {
+                linkError = "Connection failed. Please try again."
             }
         } catch {
             #if DEBUG
             print("🏦 [PlaidManager] startLinkFlow error: \(error)")
             #endif
+            linkError = "Connection failed. Please check your internet and try again."
         }
     }
 
@@ -153,6 +168,7 @@ class PlaidManager {
                 hasLinkedBank = true
                 connectedInstitutionName = response.data.institution_name ?? institutionName
                 lastConnectionTime = Date()
+                linkError = nil
                 #if DEBUG
                 print("🏦 [PlaidManager] Bank linked — accounts=\(response.data.accounts_linked)")
                 #endif
@@ -161,16 +177,21 @@ class PlaidManager {
             #if DEBUG
             print("🏦 [PlaidManager] exchangePublicToken decode error: \(decodingError)")
             #endif
+            linkError = "Bank account linked but data sync failed. Please reconnect."
         } catch let fnError as FunctionsError {
             if case .httpError(let code, _) = fnError {
                 #if DEBUG
                 print("🏦 [PlaidManager] exchangePublicToken HTTP \(code)")
                 #endif
+                linkError = "Account sync failed (error \(code)). Please try reconnecting."
+            } else {
+                linkError = "Account sync failed. Please try reconnecting."
             }
         } catch {
             #if DEBUG
             print("🏦 [PlaidManager] exchangePublicToken error: \(error)")
             #endif
+            linkError = "Account sync failed. Please check your connection and try again."
         }
     }
 

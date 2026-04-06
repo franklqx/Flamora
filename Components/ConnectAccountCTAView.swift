@@ -18,6 +18,7 @@ struct ConnectAccountCTAView: View {
     let bottomPadding: CGFloat
 
     @Environment(PlaidManager.self) private var plaidManager
+    @State private var showTrustBridge = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -81,7 +82,13 @@ struct ConnectAccountCTAView: View {
 
                     Spacer(minLength: AppSpacing.xl)
 
-                    Button(action: { Task { await plaidManager.startLinkFlow() } }) {
+                    Button(action: {
+                        if plaidManager.shouldShowTrustBridge() {
+                            showTrustBridge = true
+                        } else {
+                            Task { await plaidManager.startLinkFlow() }
+                        }
+                    }) {
                         HStack(spacing: AppSpacing.sm) {
                             if plaidManager.isConnecting {
                                 ProgressView().tint(AppColors.textInverse)
@@ -111,6 +118,13 @@ struct ConnectAccountCTAView: View {
                 .padding(.bottom, AppSpacing.lg)
                 .padding(.top, AppSpacing.lg)
             }
+        }
+        .sheet(isPresented: $showTrustBridge, onDismiss: {
+            if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {
+                Task { await plaidManager.startLinkFlow() }
+            }
+        }) {
+            PlaidTrustBridgeView()
         }
     }
 }

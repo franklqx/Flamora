@@ -13,6 +13,7 @@ struct BS_AccountSelectionView: View {
     @Bindable var viewModel: BudgetSetupViewModel
     @Environment(PlaidManager.self) private var plaidManager
     @Environment(SubscriptionManager.self) private var subscriptionManager
+    @State private var showTrustBridge = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -47,11 +48,27 @@ struct BS_AccountSelectionView: View {
 
             stickyBottomCTA
         }
+        .alert("Bank Connection Failed", isPresented: Binding(
+            get: { plaidManager.linkError != nil },
+            set: { if !$0 { plaidManager.linkError = nil } }
+        )) {
+            Button("Try Again") { Task { await plaidManager.startLinkFlow() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(plaidManager.linkError ?? "")
+        }
         .onAppear {
             Task { await viewModel.loadAccounts() }
         }
         .onChange(of: plaidManager.lastConnectionTime) { _, _ in
             Task { await viewModel.refreshAccountsAfterNewConnection() }
+        }
+        .sheet(isPresented: $showTrustBridge, onDismiss: {
+            if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {
+                Task { await plaidManager.startLinkFlow() }
+            }
+        }) {
+            PlaidTrustBridgeView()
         }
     }
 
@@ -230,7 +247,11 @@ struct BS_AccountSelectionView: View {
                 subscriptionManager.showPaywall = true
                 return
             }
-            Task { await plaidManager.startLinkFlow() }
+            if plaidManager.shouldShowTrustBridge() {
+                showTrustBridge = true
+            } else {
+                Task { await plaidManager.startLinkFlow() }
+            }
         } label: {
             HStack(spacing: AppSpacing.sm) {
                 Image(systemName: "plus.circle.fill")
