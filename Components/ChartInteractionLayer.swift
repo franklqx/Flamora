@@ -98,7 +98,7 @@ struct ChartInteractionLayer: UIViewRepresentable {
             onRelease: {}
         )
         .frame(height: 200)
-        .background(Color.blue.opacity(0.2))
+        .background(AppColors.chartBlue.opacity(0.2))
     }
 }
 #endif
