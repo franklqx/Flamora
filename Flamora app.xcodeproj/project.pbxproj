@@ -110,6 +110,7 @@
 		CDAA000B2FA0000000000001 /* InvestmentAllocationBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA000A2FA0000000000001 /* InvestmentAllocationBuilder.swift */; };
 		CDBB00022FA1000000000001 /* CashAccountsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00012FA1000000000001 /* CashAccountsCard.swift */; };
 		CDBB00042FA1000000000001 /* CashAccountDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00032FA1000000000001 /* CashAccountDetailView.swift */; };
+		C0827AD0E7B54B73916CC9E1 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3D88B1E877C494CB82A4469 /* AppConfig.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -232,6 +233,8 @@
 		CDAA000A2FA0000000000001 /* InvestmentAllocationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentAllocationBuilder.swift; sourceTree = "<group>"; };
 		CDBB00012FA1000000000001 /* CashAccountsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountsCard.swift; sourceTree = "<group>"; };
 		CDBB00032FA1000000000001 /* CashAccountDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountDetailView.swift; sourceTree = "<group>"; };
+		8E03E4A8398A47FD9CC3F0BF /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		F3D88B1E877C494CB82A4469 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -365,6 +368,7 @@
 		1508998B2F30F60F003DDFBF = {
 			isa = PBXGroup;
 			children = (
+				8E03E4A8398A47FD9CC3F0BF /* Config.xcconfig */,
 				CDAA00032FA0000000000001 /* Helpers */,
 				1571A1D72F3C2A2C0024A729 /* Services */,
 				150899962F30F60F003DDFBF /* Flamora app */,
@@ -391,6 +395,7 @@
 		1571A1D72F3C2A2C0024A729 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				F3D88B1E877C494CB82A4469 /* AppConfig.swift */,
 				12123E442F48D7E20011B385 /* PlaidLinkPresenter.swift */,
 				12123E352F4859CB0011B385 /* PlaidManager.swift */,
 				12123E362F4859CB0011B385 /* SubscriptionManager.swift */,
@@ -772,6 +777,7 @@
 				124C46632F56F65E00E4EA8B /* OB_BackButton.swift in Sources */,
 				124C46642F56F65E00E4EA8B /* OB_OnboardingHeader.swift in Sources */,
 				AA5B00052F38500000001005 /* SupabaseManager.swift in Sources */,
+				C0827AD0E7B54B73916CC9E1 /* AppConfig.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -928,6 +934,7 @@
 		};
 		150899B82F30F611003DDFBF /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8E03E4A8398A47FD9CC3F0BF /* Config.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -962,6 +969,7 @@
 		};
 		150899B92F30F611003DDFBF /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8E03E4A8398A47FD9CC3F0BF /* Config.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;

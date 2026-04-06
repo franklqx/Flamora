@@ -1,1 +1,8 @@
 .DS_Store
+
+# 本地配置文件（包含真实 secrets，不提交）
+Config.xcconfig
+
+# Xcode
+xcuserdata/
+*.xcuserstate

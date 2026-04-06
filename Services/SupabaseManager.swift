@@ -19,8 +19,8 @@ class SupabaseManager {
 
     private init() {
         client = SupabaseClient(
-            supabaseURL: URL(string: "https://vnyalfpmopvoswccewju.supabase.co")!,
-            supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZueWFsZnBtb3B2b3N3Y2Nld2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxODg2ODgsImV4cCI6MjA4NTc2NDY4OH0.LWeaM9vRRoh0i-lUcMRV0BjTZHKVDvI8XGWRIcJajG4",
+            supabaseURL: URL(string: AppConfig.supabaseURL)!,
+            supabaseKey: AppConfig.supabaseAnonKey,
             options: .init(
                 auth: .init(
                     redirectToURL: URL(string: "com.flamora.app://auth-callback"),

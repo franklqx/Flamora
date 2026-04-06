@@ -24,7 +24,6 @@ class PlaidManager {
 
     // MARK: - 从 user-profile 加载银行连接状态
     func loadStatus() async {
-        print("🏦 [PlaidManager] loadStatus() called")
         do {
             let session = try await client.auth.session
             let options = FunctionInvokeOptions(
@@ -33,9 +32,13 @@ class PlaidManager {
             let response: UserProfileResponse = try await client.functions.invoke("get-user-profile", options: options)
             hasLinkedBank = response.data.has_linked_bank
             connectedInstitutionName = response.data.plaid_institution_name
-            print("🏦 [PlaidManager] loadStatus → hasLinkedBank=\(hasLinkedBank), institution=\(connectedInstitutionName ?? "nil")")
+            #if DEBUG
+            print("🏦 [PlaidManager] loadStatus — hasLinkedBank=\(hasLinkedBank)")
+            #endif
         } catch {
-            print("🏦 [PlaidManager] ❌ loadStatus error: \(error)")
+            #if DEBUG
+            print("🏦 [PlaidManager] loadStatus error: \(error)")
+            #endif
         }
     }
 
@@ -45,27 +48,23 @@ class PlaidManager {
         isConnecting = true
         defer { isConnecting = false }
 
-        print("🏦 [PlaidManager] ── startLinkFlow() BEGIN ──")
-
         do {
             let session = try await client.auth.session
-            let tokenPrefix = String(session.accessToken.prefix(20))
-            let tokenSuffix = String(session.accessToken.suffix(6))
-            print("🏦 [PlaidManager] Auth session OK. accessToken: \(tokenPrefix)...\(tokenSuffix)")
-
             let options = FunctionInvokeOptions(
                 headers: ["Authorization": "Bearer \(session.accessToken)"],
                 body: EmptyBody()
             )
 
-            print("🏦 [PlaidManager] Calling Edge Function: create-link-token")
             let response: CreateLinkTokenResponse = try await client.functions.invoke("create-link-token", options: options)
             let linkToken = response.data.link_token
-            print("🏦 [PlaidManager] Decoded link_token: \(linkToken)")
-            print("🏦 [PlaidManager] Token expiration: \(response.data.expiration)")
-            print("🏦 [PlaidManager] Token environment: \(linkToken.hasPrefix("link-sandbox") ? "SANDBOX ✅" : linkToken.hasPrefix("link-production") ? "PRODUCTION ⚠️" : "UNKNOWN ❓")")
 
-            print("🏦 [PlaidManager] Handing token to PlaidLinkPresenter → UIWindow overlay")
+            #if DEBUG
+            // 仅输出 token 环境类型，不输出 token 本身
+            let env = linkToken.hasPrefix("link-sandbox") ? "SANDBOX" :
+                      linkToken.hasPrefix("link-production") ? "PRODUCTION" : "UNKNOWN"
+            print("🏦 [PlaidManager] create-link-token OK — env=\(env)")
+            #endif
+
             await MainActor.run {
                 PlaidLinkPresenter.shared.present(
                     token: linkToken,
@@ -82,34 +81,31 @@ class PlaidManager {
             }
 
         } catch let decodingError as DecodingError {
-            print("🏦 [PlaidManager] ❌ JSON decode failed: \(decodingError)")
+            #if DEBUG
+            print("🏦 [PlaidManager] startLinkFlow decode error: \(decodingError)")
+            #endif
         } catch let error as FunctionsError {
-            print("🏦 [PlaidManager] ❌ FunctionsError: \(error)")
-            if case .httpError(let code, let data) = error {
-                let body = String(data: data, encoding: .utf8) ?? "non-UTF8 (\(data.count) bytes)"
-                print("🏦 [PlaidManager] ❌ HTTP \(code) body: \(body)")
-
-                // 如果后端返回 403 PREMIUM_REQUIRED，触发 Paywall
+            if case .httpError(let code, _) = error {
+                // 403 PREMIUM_REQUIRED → 触发 Paywall（生产路径）
                 if code == 403 {
                     await MainActor.run {
                         SubscriptionManager.shared.showPaywall = true
                     }
                     return
                 }
+                #if DEBUG
+                print("🏦 [PlaidManager] startLinkFlow HTTP \(code)")
+                #endif
             }
         } catch {
-            print("🏦 [PlaidManager] ❌ startLinkFlow error: \(error)")
+            #if DEBUG
+            print("🏦 [PlaidManager] startLinkFlow error: \(error)")
+            #endif
         }
-
-        print("🏦 [PlaidManager] ── startLinkFlow() END ──")
     }
 
     // MARK: - Step 3: 交换 public token
     func exchangePublicToken(publicToken: String, institutionId: String, institutionName: String, selectedAccountIds: [String] = []) async {
-        print("🏦 [PlaidManager] ── exchangePublicToken() BEGIN ──")
-        print("🏦 [PlaidManager] publicToken prefix: \(String(publicToken.prefix(30)))...")
-        print("🏦 [PlaidManager] institution: \(institutionName) (\(institutionId))")
-        print("🏦 [PlaidManager] selected account IDs: \(selectedAccountIds)")
         do {
             // Proactively refresh if token is near expiry — mirrors APIService.authenticatedRequest.
             // User may spend several minutes inside Plaid Link UI; token can expire before we return.
@@ -117,13 +113,11 @@ class PlaidManager {
             do {
                 let current = try await client.auth.session
                 if current.expiresAt <= Date().timeIntervalSince1970 + 60 {
-                    print("🏦 [PlaidManager] Token near expiry — proactive refresh before exchange")
                     accessToken = try await client.auth.refreshSession().accessToken
                 } else {
                     accessToken = current.accessToken
                 }
             } catch {
-                print("🏦 [PlaidManager] Session fetch failed — attempting refresh: \(error)")
                 accessToken = try await client.auth.refreshSession().accessToken
             }
 
@@ -141,10 +135,10 @@ class PlaidManager {
             do {
                 response = try await client.functions.invoke("exchange-public-token", options: options)
             } catch let fnError as FunctionsError {
-                if case .httpError(let code, let data) = fnError, code == 401 {
-                    let errBody = String(data: data, encoding: .utf8) ?? "non-UTF8 (\(data.count) bytes)"
-                    print("🏦 [PlaidManager] ⚠️ 401 from exchange-public-token — body: \(errBody)")
-                    print("🏦 [PlaidManager] Refreshing session and retrying exchange-public-token…")
+                if case .httpError(let code, _) = fnError, code == 401 {
+                    #if DEBUG
+                    print("🏦 [PlaidManager] 401 from exchange-public-token — refreshing and retrying")
+                    #endif
                     let retryToken = try await client.auth.refreshSession().accessToken
                     let retryOptions = FunctionInvokeOptions(
                         headers: ["Authorization": "Bearer \(retryToken)"],
@@ -159,23 +153,25 @@ class PlaidManager {
                 hasLinkedBank = true
                 connectedInstitutionName = response.data.institution_name ?? institutionName
                 lastConnectionTime = Date()
-                print("🏦 [PlaidManager] ✅ Bank linked! institution=\(connectedInstitutionName ?? "?"), accounts=\(response.data.accounts_linked)")
-            } else {
-                print("🏦 [PlaidManager] ❌ exchangePublicToken: success=false in response")
+                #if DEBUG
+                print("🏦 [PlaidManager] Bank linked — accounts=\(response.data.accounts_linked)")
+                #endif
             }
         } catch let decodingError as DecodingError {
-            print("🏦 [PlaidManager] ❌ exchangePublicToken decode error: \(decodingError)")
+            #if DEBUG
+            print("🏦 [PlaidManager] exchangePublicToken decode error: \(decodingError)")
+            #endif
         } catch let fnError as FunctionsError {
-            if case .httpError(let code, let data) = fnError {
-                let errBody = String(data: data, encoding: .utf8) ?? "non-UTF8 (\(data.count) bytes)"
-                print("🏦 [PlaidManager] ❌ exchangePublicToken HTTP \(code) — body: \(errBody)")
-            } else {
-                print("🏦 [PlaidManager] ❌ exchangePublicToken FunctionsError: \(fnError)")
+            if case .httpError(let code, _) = fnError {
+                #if DEBUG
+                print("🏦 [PlaidManager] exchangePublicToken HTTP \(code)")
+                #endif
             }
         } catch {
-            print("🏦 [PlaidManager] ❌ exchangePublicToken error: \(error)")
+            #if DEBUG
+            print("🏦 [PlaidManager] exchangePublicToken error: \(error)")
+            #endif
         }
-        print("🏦 [PlaidManager] ── exchangePublicToken() END ──")
     }
 
     // MARK: - 断开银行连接
@@ -192,7 +188,9 @@ class PlaidManager {
             UserDefaults.standard.set(false, forKey: FlamoraStorageKey.budgetSetupCompleted)
             TabContentCache.shared.clearAfterBankDisconnect()
         } catch {
-            print("PlaidManager.disconnectBank error: \(error)")
+            #if DEBUG
+            print("🏦 [PlaidManager] disconnectBank error: \(error)")
+            #endif
         }
     }
 }

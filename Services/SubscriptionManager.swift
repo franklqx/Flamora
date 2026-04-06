@@ -21,20 +21,21 @@ class SubscriptionManager {
 
     // MARK: - App 启动时调用
     static func configure() {
-        Purchases.configure(withAPIKey: "test_CTvrBqscaqNCibGtSMxCUeXbmae")
+        Purchases.configure(withAPIKey: AppConfig.revenueCatAPIKey)
     }
 
     // MARK: - 检查订阅状态
     func checkStatus() async {
-        print("🔍 [SubscriptionManager] checkStatus() called")
         do {
             let info = try await Purchases.shared.customerInfo()
-            print("🔍 [SubscriptionManager] all entitlements: \(info.entitlements.all.keys)")
-            print("🔍 [SubscriptionManager] checking entitlement 'Flamora Pro': \(info.entitlements["Flamora Pro"]?.isActive ?? false)")
             isPremium = info.entitlements[entitlementId]?.isActive == true
-            print("🔍 [SubscriptionManager] isPremium = \(isPremium)")
+            #if DEBUG
+            print("🔍 [SubscriptionManager] checkStatus — isPremium=\(isPremium)")
+            #endif
         } catch {
-            print("🔍 [SubscriptionManager] ❌ checkStatus error: \(error)")
+            #if DEBUG
+            print("🔍 [SubscriptionManager] checkStatus error: \(error)")
+            #endif
             isPremium = false
         }
     }
@@ -45,7 +46,9 @@ class SubscriptionManager {
             _ = try await Purchases.shared.logIn(userId)
             await checkStatus()
         } catch {
-            print("RevenueCat login error: \(error)")
+            #if DEBUG
+            print("🔍 [SubscriptionManager] loginUser error: \(error)")
+            #endif
         }
     }
 
@@ -55,7 +58,9 @@ class SubscriptionManager {
             do {
                 _ = try await Purchases.shared.logOut()
             } catch {
-                print("RevenueCat logout error: \(error)")
+                #if DEBUG
+                print("🔍 [SubscriptionManager] logoutUser error: \(error)")
+                #endif
             }
             isPremium = false
         }

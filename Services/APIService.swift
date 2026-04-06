@@ -12,21 +12,19 @@ import Supabase
 class APIService {
     static let shared = APIService()
     
-    private let baseURL = "https://vnyalfpmopvoswccewju.supabase.co/functions/v1"
-    private let anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZueWFsZnBtb3B2b3N3Y2Nld2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxODg2ODgsImV4cCI6MjA4NTc2NDY4OH0.LWeaM9vRRoh0i-lUcMRV0BjTZHKVDvI8XGWRIcJajG4"
+    private var baseURL: String { AppConfig.supabaseFunctionsBaseURL }
+    private var anonKey: String { AppConfig.supabaseAnonKey }
     
     private init() {}
     
     // MARK: - Create User Profile
     func createUserProfile(data: OnboardingData) async throws -> CreateProfileResponse {
-        print("🔑 currentUserId: \(String(describing: SupabaseManager.shared.currentUserId))")
-
         let url = URL(string: "\(baseURL)/create-user-profile")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue(anonKey, forHTTPHeaderField: "apikey")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
+
         // 转换 fireType 到后端需要的格式
         let lifestyleValue: String
         switch data.fireType.lowercased() {
@@ -39,12 +37,10 @@ class APIService {
         default:
             lifestyleValue = "current"
         }
-        
+
         // 使用 OnboardingData 里在登录时存入的 userId（最可靠的来源）
         let userId = data.userId
-        print("🔑 User ID: \(userId)")
         let finalUserId = userId.lowercased()
-        print("🔑 最终 userId: \(finalUserId)")
 
         // 构建请求体
         let body: [String: Any] = [
@@ -129,16 +125,18 @@ class APIService {
             throw APIError.invalidResponse
         }
 
-        // On 401, log response body and retry once with refreshed session
+        // On 401, refresh session and retry once
         if httpResponse.statusCode == 401 {
+            let function = request.url?.lastPathComponent ?? "unknown"
+            #if DEBUG
             let bodyText = String(data: data, encoding: .utf8) ?? "(\(data.count) bytes)"
-            guard let originalURL = request.url else {
-                print("❌ [APIService] 401 response body: \(bodyText)")
-                throw APIError.httpError(401)
-            }
-            let function = originalURL.lastPathComponent
             print("⚠️ [APIService] 401 for \(function) — body: \(bodyText)")
             print("⚠️ [APIService] Refreshing session and retrying...")
+            #endif
+            guard request.url != nil else {
+                throw APIError.httpError(401)
+            }
+            let _ = function // suppress unused warning in release
             let refreshedSession = try await SupabaseManager.shared.client.auth.refreshSession()
             var retryRequest = request
             retryRequest.setValue("Bearer \(refreshedSession.accessToken)", forHTTPHeaderField: "Authorization")
@@ -147,8 +145,10 @@ class APIService {
                 throw APIError.invalidResponse
             }
             guard (200...299).contains(retryHttp.statusCode) else {
+                #if DEBUG
                 let retryBody = String(data: retryData, encoding: .utf8) ?? "(\(retryData.count) bytes)"
                 print("❌ [APIService] Retry also failed with \(retryHttp.statusCode) — body: \(retryBody)")
+                #endif
                 if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: retryData) {
                     throw APIError.serverError(errorResponse.error.message)
                 }
@@ -238,23 +238,17 @@ class APIService {
         category: String?,
         subcategory: String?
     ) async throws -> APITransaction {
-        print("🔄 [API] updateClassification start — id:\(transactionId) cat:\(category ?? "nil") sub:\(subcategory ?? "nil") onMain:\(Thread.isMainThread)")
         var payload: [String: Any] = ["transaction_id": transactionId]
         if let category { payload["flamora_category"] = category }
         if let subcategory { payload["flamora_subcategory"] = subcategory }
-        print("🔄 [API] payload keys: \(payload.keys.sorted())")
         let body: Data
         do {
             body = try JSONSerialization.data(withJSONObject: payload, options: [])
         } catch {
-            print("❌ [API] JSONSerialization failed: \(error)")
             throw error
         }
-        print("🔄 [API] body ready (\(body.count) bytes), building auth request...")
         let request = try await authenticatedRequest(function: "update-transaction-classification", body: body)
-        print("🔄 [API] auth request built, performing network call...")
         let result: APITransaction = try await perform(request)
-        print("✅ [API] updateClassification success — id:\(result.id) cat:\(result.flamoraCategory ?? "nil")")
         return result
     }
 

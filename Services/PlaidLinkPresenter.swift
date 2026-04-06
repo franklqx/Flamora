@@ -59,7 +59,9 @@ final class PlaidLinkPresenter {
                 let institutionId   = linkSuccess.metadata.institution.id
                 let institutionName = linkSuccess.metadata.institution.name
                 let selectedAccountIds = linkSuccess.metadata.accounts.map { $0.id }
-                print("🔗 [PlaidLinkPresenter] ✅ onSuccess — \(institutionName) (\(institutionId)), selected accounts: \(selectedAccountIds)")
+                #if DEBUG
+                print("🔗 [PlaidLinkPresenter] onSuccess — accounts count: \(selectedAccountIds.count)")
+                #endif
                 DispatchQueue.main.async {
                     self?.tearDown {
                         onSuccess(publicToken, institutionId, institutionName, selectedAccountIds)
