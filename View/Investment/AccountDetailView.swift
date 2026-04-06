@@ -687,7 +687,7 @@ private struct AccountHistoryLineChart: View {
 
                 if let last = points.last {
                     Circle()
-                        .fill(Color.white)
+                        .fill(AppColors.textPrimary)
                         .frame(width: 8, height: 8)
                         .overlay(
                             Circle()
