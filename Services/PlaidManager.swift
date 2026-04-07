@@ -9,6 +9,7 @@ import Foundation
 import Supabase
 internal import Functions
 
+@MainActor
 @Observable
 class PlaidManager {
     static let shared = PlaidManager()

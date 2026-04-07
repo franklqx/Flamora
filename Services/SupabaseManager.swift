@@ -9,6 +9,7 @@ import Foundation
 import Supabase
 import RevenueCat
 
+@MainActor
 @Observable
 class SupabaseManager {
     static let shared = SupabaseManager()
@@ -117,4 +118,3 @@ class SupabaseManager {
         }
     }
 }
-

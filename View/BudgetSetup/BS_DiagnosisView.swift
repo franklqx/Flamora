@@ -277,7 +277,7 @@ struct BS_DiagnosisView: View {
                 .frame(height: AppRadius.button)
             
             Button {
-                viewModel.goToStep(.spendingBreakdown)
+                viewModel.goToStep(.choosePath)
             } label: {
                 Text("Continue")
                     .font(.sheetPrimaryButton)

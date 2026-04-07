@@ -1,43 +1,65 @@
 // supabase/functions/save-fire-goal/index.ts
 //
-// UPDATED v2: Unified 9% return rate, Phase 0/1/2 (was 0/2/3),
-// added phase_sub field, expanded selected_plan options
+// v3: Spending-based goal setup (v1 minimum flow)
+//
+// Breaking change from v2:
+//   - target_retirement_age is now OPTIONAL (was required)
+//   - current_age is now OPTIONAL (was required)
+//   - retirement_spending_monthly + lifestyle_preset are the new v1 minimum fields
+//   - fire_number can be provided by client OR computed server-side from spending
+//   - selected_plan accepts new values: 'steady' | 'recommended' | 'accelerate' | 'current' | 'plan_a' | 'plan_b'
+//
+// Backward compat:
+//   - Old requests with current_age + target_retirement_age + selected_plan (old values) still work
+//   - fire_number, if provided by client, is used as-is (skip server computation)
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders, handleCors } from '../_shared/cors.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { computeFireNumber } from '../_shared/fire-math.ts'
 
 interface SaveFireGoalRequest {
-  current_age: number
-  target_retirement_age: number
-  desired_monthly_expenses: number
-  fire_number: number
-  required_monthly_contribution: number
-  required_savings_rate: number
+  // v1 minimum — spending-based goal
+  retirement_spending_monthly?: number
+  lifestyle_preset?: 'lean' | 'current' | 'fat'
 
-  // Which plan the user chose
-  selected_plan: 'current' | 'plan_a' | 'plan_b' | 'recommended'
+  // Client-computed or passed through
+  fire_number?: number
 
-  // Phase / strategy from calculate-fire-goal
-  adjustment_phase?: number           // 0, 1, or 2
-  adjustment_phase_sub?: string       // NEW: '0a', '0b', '0c', '0d', '1', '2'
+  // Optional (used if provided; not required in v1)
+  current_age?: number
+  target_retirement_age?: number
+  required_monthly_contribution?: number
+  required_savings_rate?: number
+
+  // Plan selection (expanded set of accepted values)
+  selected_plan?: 'steady' | 'recommended' | 'accelerate' | 'current' | 'plan_a' | 'plan_b' | 'recommended_legacy'
+
+  // Assumption overrides (fall back to constants if absent)
+  withdrawal_rate_assumption?: number
+  inflation_assumption?: number
+  return_assumption?: number
+
+  // Legacy fields — accepted silently for backward compat
+  desired_monthly_expenses?: number       // old name for retirement_spending_monthly
+  adjustment_phase?: number
+  adjustment_phase_sub?: string
   adjustment_strategy?: string
 }
+
+const DEFAULT_WITHDRAWAL_RATE = 0.04
+const DEFAULT_INFLATION        = 0.03
+const DEFAULT_RETURN_RATE      = 0.07
 
 serve(async (req) => {
   const corsResponse = handleCors(req)
   if (corsResponse) return corsResponse
 
   try {
-    // ============================================================
-    // 1. Auth
-    // ============================================================
+    // ── 1. Auth ──────────────────────────────────────────────
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ success: false, error: { code: 'UNAUTHORIZED', message: 'Missing Authorization header' } }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return errorResponse(401, 'UNAUTHORIZED', 'Missing Authorization header')
     }
 
     const supabaseAuth = createClient(
@@ -45,13 +67,9 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } }
     )
-
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser()
     if (authError || !user) {
-      return new Response(
-        JSON.stringify({ success: false, error: { code: 'UNAUTHORIZED', message: 'Invalid token' } }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return errorResponse(401, 'UNAUTHORIZED', 'Invalid token')
     }
 
     const supabase = createClient(
@@ -59,52 +77,79 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // ============================================================
-    // 2. Parse & validate
-    // ============================================================
+    // ── 2. Parse & resolve fields ─────────────────────────────
     const body: SaveFireGoalRequest = await req.json()
 
-    const validationError = validateInput(body)
-    if (validationError) {
-      return new Response(
-        JSON.stringify({ success: false, error: validationError }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    // Support legacy field name
+    const retirementSpending =
+      body.retirement_spending_monthly ?? body.desired_monthly_expenses
+
+    // Compute fire_number if not provided
+    const withdrawalRate = body.withdrawal_rate_assumption ?? DEFAULT_WITHDRAWAL_RATE
+    let fireNumber = body.fire_number
+    if (!fireNumber || fireNumber <= 0) {
+      if (retirementSpending && retirementSpending > 0) {
+        fireNumber = computeFireNumber(retirementSpending, withdrawalRate)
+      } else {
+        return errorResponse(400, 'MISSING_GOAL',
+          'Provide either fire_number or retirement_spending_monthly')
+      }
     }
 
-    // ============================================================
-    // 3. Deactivate existing active goals
-    // ============================================================
-    const { error: deactivateError } = await supabase
+    // required_savings_rate defaults to 0 when absent (v1 flow computes this later)
+    const savingsRate = body.required_savings_rate ?? 0
+
+    // Validate optional age fields only when both are provided
+    if (
+      body.current_age != null &&
+      body.target_retirement_age != null &&
+      body.target_retirement_age <= body.current_age
+    ) {
+      return errorResponse(400, 'INVALID_RETIREMENT_AGE',
+        'target_retirement_age must be greater than current_age')
+    }
+
+    // ── 3. Deactivate existing active goals ───────────────────
+    await supabase
       .from('fire_goals')
       .update({ is_active: false })
       .eq('user_id', user.id)
       .eq('is_active', true)
 
-    if (deactivateError) {
-      console.error('Error deactivating old goals:', deactivateError)
-    }
-
-    // ============================================================
-    // 4. Insert new FIRE goal
-    // ============================================================
+    // ── 4. Insert new FIRE goal ───────────────────────────────
     const { data: fireGoal, error: insertError } = await supabase
       .from('fire_goals')
       .insert({
-        user_id: user.id,
-        current_age: body.current_age,
-        target_retirement_age: body.target_retirement_age,
-        desired_monthly_expenses: body.desired_monthly_expenses,
-        fire_number: body.fire_number,
-        required_monthly_contribution: body.required_monthly_contribution,
-        required_savings_rate: body.required_savings_rate,
-        adjustment_phase: body.adjustment_phase ?? 0,
-        adjustment_phase_sub: body.adjustment_phase_sub ?? '0b',   // NEW
-        adjustment_strategy: body.adjustment_strategy ?? 'goal_achievable',
-        user_selected_plan: body.selected_plan,
-        assumed_annual_return: 0.09,                                // CHANGED: was 0.08
-        assumed_inflation_rate: 0.03,
-        assumed_withdrawal_rate: 0.04,
+        user_id:                      user.id,
+        fire_number:                  fireNumber,
+        required_savings_rate:        savingsRate,
+        required_monthly_contribution: body.required_monthly_contribution ?? 0,
+
+        // Spending-based fields (v1)
+        retirement_spending_monthly:  retirementSpending ?? null,
+        lifestyle_preset:             body.lifestyle_preset ?? null,
+
+        // Optional age fields
+        current_age:                  body.current_age ?? null,
+        target_retirement_age:        body.target_retirement_age ?? null,
+
+        // Backward-compat field (desired_monthly_expenses kept for old reads)
+        desired_monthly_expenses:     retirementSpending ?? null,
+
+        // Assumptions
+        withdrawal_rate_assumption:   withdrawalRate,
+        inflation_assumption:         body.inflation_assumption ?? DEFAULT_INFLATION,
+        return_assumption:            body.return_assumption    ?? DEFAULT_RETURN_RATE,
+        assumed_annual_return:        body.return_assumption    ?? DEFAULT_RETURN_RATE,
+        assumed_inflation_rate:       body.inflation_assumption ?? DEFAULT_INFLATION,
+        assumed_withdrawal_rate:      withdrawalRate,
+
+        // Plan / strategy metadata
+        user_selected_plan:           body.selected_plan ?? null,
+        adjustment_phase:             body.adjustment_phase ?? 0,
+        adjustment_phase_sub:         body.adjustment_phase_sub ?? '0b',
+        adjustment_strategy:          body.adjustment_strategy ?? 'goal_achievable',
+
         is_active: true,
       })
       .select()
@@ -112,63 +157,47 @@ serve(async (req) => {
 
     if (insertError) {
       console.error('Error inserting fire goal:', insertError)
-      return new Response(
-        JSON.stringify({ success: false, error: { code: 'INSERT_ERROR', message: 'Failed to save FIRE goal', details: insertError.message } }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return errorResponse(500, 'INSERT_ERROR', 'Failed to save FIRE goal')
     }
 
-    // ============================================================
-    // 5. Return
-    // ============================================================
+    // ── 5. Return ─────────────────────────────────────────────
     return new Response(
       JSON.stringify({
         success: true,
         data: {
-          goal_id: fireGoal.id,
-          user_id: fireGoal.user_id,
-          target_retirement_age: fireGoal.target_retirement_age,
-          fire_number: fireGoal.fire_number,
-          required_savings_rate: fireGoal.required_savings_rate,
+          goal_id:                     fireGoal.id,
+          user_id:                     fireGoal.user_id,
+          fire_number:                 fireGoal.fire_number,
+          retirement_spending_monthly: fireGoal.retirement_spending_monthly,
+          lifestyle_preset:            fireGoal.lifestyle_preset,
+          required_savings_rate:       fireGoal.required_savings_rate,
           required_monthly_contribution: fireGoal.required_monthly_contribution,
-          selected_plan: fireGoal.user_selected_plan,
-          adjustment_phase: fireGoal.adjustment_phase,
-          adjustment_phase_sub: fireGoal.adjustment_phase_sub,     // NEW
-          is_active: fireGoal.is_active,
+          target_retirement_age:       fireGoal.target_retirement_age,
+          current_age:                 fireGoal.current_age,
+          selected_plan:               fireGoal.user_selected_plan,
+          adjustment_phase:            fireGoal.adjustment_phase,
+          adjustment_phase_sub:        fireGoal.adjustment_phase_sub,
+          withdrawal_rate_assumption:  fireGoal.withdrawal_rate_assumption,
+          inflation_assumption:        fireGoal.inflation_assumption,
+          return_assumption:           fireGoal.return_assumption,
+          is_active:                   fireGoal.is_active,
         },
         meta: {
           timestamp: new Date().toISOString(),
           user_id: user.id,
-          return_rate_assumption: 0.09,                             // NEW
         },
       }),
       { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
     console.error('Error in save-fire-goal:', error)
-    return new Response(
-      JSON.stringify({ success: false, error: { code: 'INTERNAL_SERVER_ERROR', message: error.message || 'An unexpected error occurred' } }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return errorResponse(500, 'INTERNAL_SERVER_ERROR', error.message)
   }
 })
 
-function validateInput(body: SaveFireGoalRequest) {
-  if (!body.current_age || body.current_age < 18 || body.current_age > 100) {
-    return { code: 'INVALID_AGE', message: 'Age must be between 18 and 100' }
-  }
-  if (!body.target_retirement_age || body.target_retirement_age <= body.current_age) {
-    return { code: 'INVALID_RETIREMENT_AGE', message: 'Target retirement age must be greater than current age' }
-  }
-  if (!body.fire_number || body.fire_number <= 0) {
-    return { code: 'INVALID_FIRE_NUMBER', message: 'FIRE number must be greater than 0' }
-  }
-  if (body.required_savings_rate < 0) {
-    return { code: 'INVALID_RATE', message: 'Savings rate must be >= 0' }  // CHANGED: removed upper cap of 100 (Phase 0a can have rate=0)
-  }
-  const validPlans = ['current', 'plan_a', 'plan_b', 'recommended']
-  if (!body.selected_plan || !validPlans.includes(body.selected_plan)) {
-    return { code: 'INVALID_PLAN', message: 'selected_plan must be one of: current, plan_a, plan_b, recommended' }
-  }
-  return null
+function errorResponse(status: number, code: string, message: string): Response {
+  return new Response(
+    JSON.stringify({ success: false, error: { code, message } }),
+    { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
 }

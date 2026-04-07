@@ -2,9 +2,9 @@
 //  BS_ChoosePathView.swift
 //  Flamora app
 //
-//  Budget Setup — Step 4: Choose Your Path
-//  V2: Three plan cards (Steady / Recommended / Accelerate)
-//  with difficulty dots, dark inset stats, expandable compound growth bars
+//  Budget Setup — Step 5: Choose Your Plan
+//  V3: Three plan cards (Steady / Recommended / Accelerate) with inline FIRE expand.
+//  Expand shows: savings target / FIRE date / FIRE age / spending ceiling / tradeoff note.
 //
 
 import SwiftUI
@@ -13,8 +13,6 @@ struct BS_ChoosePathView: View {
     @Bindable var viewModel: BudgetSetupViewModel
 
     @State private var showContent = false
-    @State private var showCustom = false
-    @State private var customBudgetAmount: Double = 0
 
     private let goldColor = AppColors.budgetGold
 
@@ -32,7 +30,6 @@ struct BS_ChoosePathView: View {
                     if viewModel.isLoadingPlans {
                         loadingSection
                     } else if let plans = viewModel.plansResponse {
-                        // Plan cards
                         planCard(plan: plans.plans.steady, name: "Steady", type: .steady,
                                  difficulty: 1, difficultyLabel: "Easy", difficultyColor: AppColors.budgetTeal)
                             .padding(.horizontal, AppSpacing.lg)
@@ -46,16 +43,6 @@ struct BS_ChoosePathView: View {
                                  difficulty: 3, difficultyLabel: "Ambitious", difficultyColor: AppColors.budgetOrange)
                             .padding(.horizontal, AppSpacing.lg)
 
-                        // Custom option
-                        customPlanToggle
-                            .padding(.horizontal, AppSpacing.lg)
-
-                        if showCustom {
-                            customPlanSection
-                                .padding(.horizontal, AppSpacing.lg)
-                        }
-
-                        // Disclaimer
                         assumptionsNote
                             .padding(.horizontal, AppSpacing.lg)
                     }
@@ -67,11 +54,14 @@ struct BS_ChoosePathView: View {
             .offset(y: showContent ? 0 : AppSpacing.md)
             .onAppear {
                 withAnimation(.easeOut(duration: 0.5)) { showContent = true }
+                if viewModel.plansResponse == nil {
+                    Task { await viewModel.loadPlans() }
+                }
             }
 
             stickyBottomCTA
         }
-        .alert("Couldn’t continue", isPresented: Binding(
+        .alert("Couldn't continue", isPresented: Binding(
             get: { viewModel.spendingPlanError != nil },
             set: { if !$0 { viewModel.spendingPlanError = nil } }
         )) {
@@ -85,22 +75,14 @@ struct BS_ChoosePathView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Choose Your Monthly Budget")
+            Text("Choose Your Plan")
                 .font(.cardFigurePrimary)
                 .foregroundStyle(AppColors.textPrimary)
 
-            Group {
-                let avgExpense = viewModel.spendingStats?.avgMonthlyExpenses ?? 0
-                if avgExpense > 0 {
-                    Text("Choose how much to spend each month. You currently spend \(Text("$\(formattedInt(avgExpense))/mo").fontWeight(.semibold).foregroundStyle(AppColors.overlayWhiteOnGlass)) on average.")
-                        .foregroundStyle(AppColors.textSecondary)
-                } else {
-                    Text("Choose how much to spend each month.")
-                        .foregroundStyle(AppColors.textSecondary)
-                }
-            }
-            .font(.bodySmall)
-            .lineSpacing(3)
+            Text("Pick the savings rate that fits your life. Tap a plan to see your estimated FIRE date.")
+                .font(.bodySmall)
+                .foregroundStyle(AppColors.textSecondary)
+                .lineSpacing(3)
         }
     }
 
@@ -129,7 +111,6 @@ struct BS_ChoosePathView: View {
         Button {
             withAnimation(.easeOut(duration: 0.3)) {
                 viewModel.selectedPlanType = type
-                showCustom = false
             }
         } label: {
             VStack(alignment: .leading, spacing: AppSpacing.cardGap) {
@@ -186,7 +167,7 @@ struct BS_ChoosePathView: View {
                     }
                 }
 
-                // Hero Budget/Mo number
+                // Hero: Monthly spend
                 VStack(spacing: AppSpacing.xs) {
                     Text("MONTHLY BUDGET")
                         .font(.cardHeader)
@@ -211,9 +192,9 @@ struct BS_ChoosePathView: View {
                 .background(AppColors.backgroundPrimary.opacity(0.3))
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
 
-                // Growth tip card (only when selected)
+                // Inline FIRE expand (only when selected)
                 if isSelected {
-                    growthTipCard(plan: plan, planType: type)
+                    fireDetailExpand(plan: plan)
                         .transition(.opacity.combined(with: .offset(y: 4)))
                 }
             }
@@ -229,282 +210,91 @@ struct BS_ChoosePathView: View {
         .buttonStyle(.plain)
     }
 
-    @ViewBuilder
-    private func statColumn(label: String, value: String) -> some View {
-        VStack(spacing: AppSpacing.xs) {
-            Text(label)
-                .font(.miniLabel)
-                .tracking(0.5)
-                .foregroundStyle(AppColors.textTertiary)
-            Text(value)
-                .font(.figureSecondarySemibold)
-                .foregroundStyle(AppColors.textPrimary)
-                .monospacedDigit()
-        }
-        .frame(maxWidth: .infinity)
-    }
+    // MARK: - FIRE Detail Expand
 
     @ViewBuilder
-    private func statColumnSmall(label: String, value: String) -> some View {
-        VStack(spacing: AppSpacing.xs) {
-            Text(label)
-                .font(.label)
-                .tracking(0.8)
-                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
-            Text(value)
-                .font(.bodySemibold)
-                .foregroundStyle(AppColors.textPrimary)
-                .monospacedDigit()
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - Growth Tip Card
-
-    @ViewBuilder
-    private func growthTipCard(plan: PlanDetail, planType: BudgetSetupViewModel.PlanSelection) -> some View {
-        let monthlySave = plan.monthlySave
-        let g10y = nominalGrowth8pct(monthly: monthlySave, years: 10)
-        let greenLabel = AppColors.budgetGreenLabel
-        let saveColor = AppColors.budgetGreenLabel
-
-        let subText: String = {
-            switch planType {
-            case .steady:
-                let passiveIncome = g10y * 0.08 / 12
-                return "That's like earning an extra $\(formattedCompact(passiveIncome))/mo in passive income."
-            case .recommended:
-                return "Every $1 you save today is worth $2.16 in a decade."
-            case .accelerate:
-                return "You're closing in on passive income covering all expenses."
-            case .custom:
-                return "Your savings are growing toward financial independence."
-            }
-        }()
-
+    private func fireDetailExpand(plan: PlanDetail) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack(spacing: AppSpacing.sm - 2) {
-                Text("✨")
-                    .font(.caption)
-                Text("YOUR POTENTIAL GROWTH")
-                    .font(.cardRowMeta)
-                    .fontWeight(.semibold)
-                    .tracking(0.6)
-                    .foregroundStyle(greenLabel)
+            // FIRE date + age row
+            if plan.officialFireDate != nil || plan.officialFireAge != nil {
+                HStack(spacing: 0) {
+                    if let fireDate = plan.officialFireDate {
+                        expandStat(label: "FIRE DATE", value: formattedFireDate(fireDate))
+                    }
+                    if plan.officialFireDate != nil && plan.officialFireAge != nil {
+                        Rectangle().fill(AppColors.overlayWhiteStroke).frame(width: 1, height: AppSpacing.lg)
+                    }
+                    if let age = plan.officialFireAge {
+                        expandStat(label: "RETIRE AT", value: "Age \(age)")
+                    }
+                }
+                .padding(.vertical, AppSpacing.sm)
+                .background(AppColors.backgroundPrimary.opacity(0.3))
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
             }
 
-        Text("\(Text("$\(formattedCompact(monthlySave))/mo").fontWeight(.bold).foregroundStyle(saveColor)) invested at 8% annual return, grows to \(Text("$\(formattedCompact(g10y))").fontWeight(.bold).foregroundStyle(AppColors.textPrimary)) in 10 years.")
-            .font(.bodySmall)
-            .foregroundStyle(AppColors.overlayWhiteOnGlass)
-            .lineSpacing(3)
+            // Spending ceiling
+            if let ceiling = plan.spendingCeilingMonthly {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("SPENDING CEILING")
+                            .font(.label)
+                            .tracking(0.8)
+                            .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                        Text("$\(formattedInt(ceiling))/mo")
+                            .font(.bodySemibold)
+                            .foregroundStyle(AppColors.textPrimary)
+                            .monospacedDigit()
+                    }
+                    Spacer()
+                }
+                .padding(AppSpacing.sm)
+                .background(AppColors.backgroundPrimary.opacity(0.3))
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+            }
 
-            Text(subText)
-                .font(.footnoteRegular)
-                .foregroundStyle(AppColors.overlayWhiteOnPhoto)
-                .lineSpacing(3)
+            // Tradeoff note
+            if let note = plan.tradeoffNote, !note.isEmpty {
+                HStack(alignment: .top, spacing: AppSpacing.sm - 2) {
+                    Image(systemName: "info.circle")
+                        .font(.footnoteRegular)
+                        .foregroundStyle(AppColors.textTertiary)
+                        .padding(.top, 1)
+                    Text(note)
+                        .font(.footnoteRegular)
+                        .foregroundStyle(AppColors.overlayWhiteOnPhoto)
+                        .lineSpacing(3)
+                }
+            }
+
+            // Positioning copy (fallback if no tradeoff note)
+            if plan.tradeoffNote == nil || plan.tradeoffNote?.isEmpty == true,
+               let copy = plan.positioningCopy, !copy.isEmpty {
+                Text(copy)
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.overlayWhiteOnPhoto)
+                    .lineSpacing(3)
+            }
         }
         .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             LinearGradient(
-                colors: [
-                    AppColors.budgetGreenDarkStart.opacity(0.35),
-                    AppColors.budgetGreenDarkEnd.opacity(0.25)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+                colors: [AppColors.overlayWhiteWash, AppColors.overlayWhiteWash.opacity(0.5)],
+                startPoint: .topLeading, endPoint: .bottomTrailing
             )
         )
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(AppColors.budgetGreenStroke.opacity(0.2), lineWidth: 1)
-        )
-    }
-
-    private func nominalGrowth8pct(monthly: Double, years: Int) -> Double {
-        monthly * 12 * (pow(1.08, Double(years)) - 1) / 0.08
-    }
-
-    // MARK: - Custom Plan
-
-    private var customPlanToggle: some View {
-        Button {
-            withAnimation(.easeOut(duration: 0.3)) {
-                showCustom.toggle()
-                if showCustom {
-                    viewModel.selectedPlanType = .custom
-                }
-            }
-        } label: {
-            HStack {
-                Text(showCustom ? "Custom budget" : "Or set a custom amount")
-                    .font(.bodySmallSemibold)
-                    .foregroundStyle(AppColors.overlayWhiteAt60)
-                Spacer()
-                Image(systemName: showCustom ? "chevron.up" : "chevron.down")
-                    .font(.caption)
-                    .foregroundStyle(AppColors.textTertiary)
-            }
-            .padding(AppSpacing.md)
-            .background(AppColors.surfaceElevated)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.lg)
-                    .stroke(
-                        viewModel.selectedPlanType == .custom ? AppColors.textPrimary : AppColors.borderLight,
-                        lineWidth: viewModel.selectedPlanType == .custom ? 2 : 1
-                    )
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var customPlanSection: some View {
-        let income = viewModel.spendingStats?.avgMonthlyIncome ?? viewModel.monthlyIncome
-        let avgExpense = viewModel.spendingStats?.avgMonthlyExpenses ?? income * 0.8
-        // 月均必需支出下限（API avg_monthly_fixed）；用于自定义预算危险区判断
-        let monthlyNeedsBaseline = viewModel.spendingStats?.avgMonthlyFixed ?? avgExpense * 0.5
-        let sliderMin = max(0, roundedDown(min(monthlyNeedsBaseline * 0.9, avgExpense * 0.65)))
-        let sliderMax = max(roundedUp(max(avgExpense * 1.25, income * 0.95)), sliderMin + 200)
-        let budget = customBudgetAmount > 0 ? customBudgetAmount : sliderMin
-        let monthlySave = max(0, income - budget)
-        let savingsRate = income > 0 ? monthlySave / income * 100 : 0
-        let g10y = nominalGrowth8pct(monthly: monthlySave, years: 10)
-
-        // Determine zone
-        let zone: CustomZone = {
-            if budget <= monthlyNeedsBaseline { return .danger }
-            if budget <= monthlyNeedsBaseline * 1.4 { return .warning }
-            if budget < avgExpense * 0.7 { return .ambitious }
-            return .healthy
-        }()
-
-        return VStack(spacing: AppSpacing.md) {
-            // Budget display
-            VStack(spacing: AppSpacing.sm) {
-                Text("MONTHLY BUDGET")
-                    .font(.cardHeader)
-                    .tracking(1.5)
-                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
-
-                Text("$\(formattedInt(budget))")
-                    .font(.currencyHero)
-                    .foregroundStyle(zone == .danger ? AppColors.error : AppColors.textPrimary)
-                    .monospacedDigit()
-                    .animation(.easeOut(duration: 0.15), value: customBudgetAmount)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, AppSpacing.xs)
-
-            // Slider
-            Slider(value: $customBudgetAmount, in: sliderMin...sliderMax, step: 10)
-                .tint(AppColors.overlayWhiteAt60)
-                .accessibilityLabel("Monthly budget slider")
-                .accessibilityValue("$\(formattedInt(budget))")
-
-            HStack {
-                Text("$\(formattedCompact(sliderMin))").font(.cardRowMeta).foregroundStyle(AppColors.textTertiary)
-                Spacer()
-                Text("$\(formattedCompact(sliderMax))").font(.cardRowMeta).foregroundStyle(AppColors.textTertiary)
-            }
-
-            // Stats row
-            HStack(spacing: 0) {
-                statColumnSmall(label: "SAVE/MO", value: "$\(formattedInt(monthlySave))")
-                Rectangle().fill(AppColors.overlayWhiteStroke).frame(width: 1, height: AppSpacing.lg)
-                statColumnSmall(label: "RATE", value: formattedPct(savingsRate))
-            }
-            .padding(.vertical, AppSpacing.sm + AppSpacing.xs)
-            .background(AppColors.backgroundPrimary.opacity(0.3))
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-            .animation(.easeOut(duration: 0.15), value: customBudgetAmount)
-
-            // Zone feedback card
-            customZoneCard(zone: zone, budget: budget, avgExpense: avgExpense, g10y: g10y, monthlySave: monthlySave)
-                .transition(.opacity.combined(with: .offset(y: 4)))
-                .animation(.easeOut(duration: 0.25), value: zone)
-        }
-        .padding(AppSpacing.md)
-        .background(AppColors.overlayWhiteWash)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
                 .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
         )
-        .transition(.opacity.combined(with: .move(edge: .top)))
-        .onAppear {
-            if customBudgetAmount == 0 {
-                let initial = viewModel.plansResponse?.plans.recommended.monthlySpend ?? avgExpense * 0.85
-                customBudgetAmount = min(max(roundedToNearest10(initial), sliderMin), sliderMax)
-            }
-        }
-        .onChange(of: customBudgetAmount) { _, newBudget in
-            if income > 0 {
-                viewModel.customSavingsRate = max(0, (income - newBudget) / income * 100)
-            }
-        }
-    }
-
-    enum CustomZone { case danger, warning, ambitious, healthy }
-
-    @ViewBuilder
-    private func customZoneCard(zone: CustomZone, budget: Double, avgExpense: Double, g10y: Double, monthlySave: Double) -> some View {
-        let config: (bg: [Color], border: Color, icon: String, label: String) = {
-            switch zone {
-            case .danger:
-                return ([AppColors.budgetDangerStart.opacity(0.4), AppColors.budgetDangerEnd.opacity(0.3)],
-                        AppColors.error.opacity(0.3), "⚠️", "NOT ACHIEVABLE")
-            case .warning:
-                return ([AppColors.budgetWarningStart.opacity(0.4), AppColors.budgetWarningEnd.opacity(0.3)],
-                        AppColors.warning.opacity(0.3), "💪", "VERY AGGRESSIVE")
-            case .ambitious:
-                return ([AppColors.budgetAmbitiousStart.opacity(0.4), AppColors.budgetAmbitiousEnd.opacity(0.3)],
-                        AppColors.accentBlueBright.opacity(0.3), "🎯", "AMBITIOUS BUT DOABLE")
-            case .healthy:
-                return ([AppColors.budgetGreenDarkStart.opacity(0.35), AppColors.budgetGreenDarkEnd.opacity(0.25)],
-                        AppColors.budgetGreenStroke.opacity(0.2), "✨", "YOUR POTENTIAL GROWTH")
-            }
-        }()
-
-        let bodyText: String = {
-            switch zone {
-            case .danger:
-                return "This budget is below your needs (essential spending) of $\(formattedInt(viewModel.spendingStats?.avgMonthlyFixed ?? 0))/mo and isn't achievable."
-            case .warning:
-                return "This leaves very little buffer above your needs. You'd need to cut most wants spending."
-            case .ambitious:
-                return "You're spending less than 70% of your average. This is doable with discipline and a clear plan."
-            case .healthy:
-                return "Investing $\(formattedCompact(monthlySave))/mo at 8% annual return grows to $\(formattedCompact(g10y)) in 10 years."
-            }
-        }()
-
-        VStack(alignment: .leading, spacing: AppSpacing.sm - 2) {
-            HStack(spacing: AppSpacing.sm - 2) {
-                Text(config.icon).font(.caption)
-                Text(config.label)
-                    .font(.cardRowMeta)
-                    .fontWeight(.semibold)
-                    .tracking(0.6)
-                    .foregroundStyle(AppColors.overlayWhiteOnGlass)
-            }
-            Text(bodyText)
-                .font(.footnoteRegular)
-                .foregroundStyle(AppColors.overlayWhiteOnPhoto)
-                .lineSpacing(3)
-        }
-        .padding(AppSpacing.sm + AppSpacing.xs)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(LinearGradient(colors: config.bg, startPoint: .topLeading, endPoint: .bottomTrailing))
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-        .overlay(RoundedRectangle(cornerRadius: AppRadius.md).stroke(config.border, lineWidth: 1))
     }
 
     // MARK: - Assumptions Note
 
     private var assumptionsNote: some View {
-        Text("Growth projections assume 8% annual return (5.5% after inflation) based on S&P 500 historical performance.")
+        Text("FIRE date estimates use the 4% withdrawal rule and assume 5.5% real annual returns. Results are projections, not guarantees.")
             .font(.cardRowMeta)
             .foregroundStyle(AppColors.textTertiary)
             .lineSpacing(3)
@@ -518,19 +308,15 @@ struct BS_ChoosePathView: View {
                 .frame(height: AppRadius.button)
 
             Button {
-                // 必须先等 generate-spending-plan 完成再进确认页，否则 spendingPlan 为 nil，saveFinalBudget 会静默失败。
                 Task {
                     await viewModel.loadSpendingPlan()
                     guard viewModel.spendingPlan != nil else { return }
-                    await MainActor.run {
-                        viewModel.goToStep(.confirm)
-                    }
+                    await MainActor.run { viewModel.goToStep(.confirm) }
                 }
             } label: {
                 Group {
                     if viewModel.isLoadingSpendingPlan {
-                        ProgressView()
-                            .tint(AppColors.textInverse)
+                        ProgressView().tint(AppColors.textInverse)
                     } else {
                         Text("Continue")
                             .font(.sheetPrimaryButton)
@@ -552,6 +338,37 @@ struct BS_ChoosePathView: View {
         }
     }
 
+    // MARK: - Sub-views
+
+    @ViewBuilder
+    private func statColumnSmall(label: String, value: String) -> some View {
+        VStack(spacing: AppSpacing.xs) {
+            Text(label)
+                .font(.label)
+                .tracking(0.8)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+            Text(value)
+                .font(.bodySemibold)
+                .foregroundStyle(AppColors.textPrimary)
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private func expandStat(label: String, value: String) -> some View {
+        VStack(spacing: AppSpacing.xs) {
+            Text(label)
+                .font(.label)
+                .tracking(0.8)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+            Text(value)
+                .font(.bodySemibold)
+                .foregroundStyle(AppColors.textPrimary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     // MARK: - Formatters
 
     private func formattedInt(_ value: Double) -> String {
@@ -563,31 +380,18 @@ struct BS_ChoosePathView: View {
 
     private func formattedPct(_ value: Double) -> String {
         let rounded = (value * 10).rounded() / 10
-        if rounded == rounded.rounded() {
-            return "\(Int(rounded))%"
-        }
+        if rounded == rounded.rounded() { return "\(Int(rounded))%" }
         return String(format: "%.1f%%", rounded)
     }
 
-    private func formattedCompact(_ value: Double) -> String {
-        if value >= 1_000_000 {
-            return String(format: "%.1fM", value / 1_000_000)
-        } else if value >= 1_000 {
-            return "\(Int(value / 1_000))K"
-        }
-        return formattedInt(value)
-    }
-
-    private func roundedToNearest10(_ value: Double) -> Double {
-        (value / 10).rounded() * 10
-    }
-
-    private func roundedDown(_ value: Double) -> Double {
-        floor(value / 10) * 10
-    }
-
-    private func roundedUp(_ value: Double) -> Double {
-        ceil(value / 10) * 10
+    /// Converts "2031-04" → "Apr 2031"
+    private func formattedFireDate(_ isoMonth: String) -> String {
+        let parts = isoMonth.split(separator: "-")
+        guard parts.count >= 2, let year = parts.first.map(String.init),
+              let monthNum = Int(parts[1]) else { return isoMonth }
+        let months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+        guard monthNum >= 1, monthNum <= 12 else { return isoMonth }
+        return "\(months[monthNum - 1]) \(year)"
     }
 }
 

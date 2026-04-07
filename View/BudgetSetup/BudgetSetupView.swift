@@ -3,7 +3,7 @@
 //  Flamora app
 //
 //  Budget Setup — Main container with step navigation
-//  V2: loading → diagnosis → spendingBreakdown → choosePath → confirm
+//  V3: goalSetup → accountSelection → loading → accountsReview → diagnosis → choosePath → confirm
 //
 
 import SwiftUI
@@ -17,42 +17,49 @@ struct BudgetSetupView: View {
         ZStack {
             AppColors.backgroundPrimary.ignoresSafeArea()
 
-            switch viewModel.currentStep {
-            case .accountSelection:
-                BS_AccountSelectionView(viewModel: viewModel)
+            if viewModel.isResumingState {
+                BudgetSetupBootstrapView()
+            } else {
+                switch viewModel.currentStep {
+                case .goalSetup:
+                    BS_GoalSetupView(viewModel: viewModel)
 
-            case .loading:
-                BS_LoadingView(viewModel: viewModel) {
-                    viewModel.goToStep(.diagnosis)
+                case .accountSelection:
+                    BS_AccountSelectionView(viewModel: viewModel)
+
+                case .loading:
+                    BS_LoadingView(viewModel: viewModel) {
+                        viewModel.goToStep(viewModel.postLoadingStep)
+                    }
+
+                case .accountsReview:
+                    BS_AccountsReviewView(viewModel: viewModel)
+
+                case .diagnosis:
+                    BS_DiagnosisView(viewModel: viewModel)
+
+                case .choosePath:
+                    BS_ChoosePathView(viewModel: viewModel)
+
+                case .confirm:
+                    BS_ConfirmView(viewModel: viewModel, onComplete: {
+                        dismiss()
+                    })
                 }
-                
-            case .diagnosis:
-                BS_DiagnosisView(viewModel: viewModel)
-
-            case .spendingBreakdown:
-                BS_SpendingBreakdownView(viewModel: viewModel)
-
-            case .choosePath:
-                BS_ChoosePathView(viewModel: viewModel)
-                
-            case .spendingPlan:
-                // Removed from flow — redirect to confirm
-                BS_ConfirmView(viewModel: viewModel, onComplete: { dismiss() })
-
-            case .confirm:
-                BS_ConfirmView(viewModel: viewModel, onComplete: {
-                    dismiss()
-                })
             }
 
+        }
+        .overlay(alignment: .top) {
             BudgetSetupNavigationBar(
-                showsBack: viewModel.currentStep != .accountSelection && viewModel.currentStep != .loading,
+                showsBack: viewModel.currentStep != .goalSetup && viewModel.currentStep != .loading,
                 onBack: { viewModel.goBack() },
                 onClose: { showDiscardConfirmation = true }
             )
             .padding(.horizontal, AppSpacing.lg)
             .padding(.top, AppSpacing.md)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+        .task {
+            await viewModel.resumeFromSetupState()
         }
         .alert("Discard this setup?", isPresented: $showDiscardConfirmation) {
             Button("Keep Editing", role: .cancel) {}
@@ -102,4 +109,18 @@ private struct BudgetSetupNavigationBar: View {
 
 #Preview {
     BudgetSetupView()
+}
+
+private struct BudgetSetupBootstrapView: View {
+    var body: some View {
+        VStack(spacing: AppSpacing.md) {
+            ProgressView()
+                .tint(AppColors.textPrimary)
+            Text("Loading your setup...")
+                .font(.bodySmall)
+                .foregroundStyle(AppColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(AppColors.backgroundPrimary.ignoresSafeArea())
+    }
 }

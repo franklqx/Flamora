@@ -120,6 +120,14 @@ struct PlanDetail: Codable, Identifiable {
     let feasibility: String               // "easy", "moderate", "challenging", "extreme"
     let status: String                    // "on_track", "breakeven", "deficit"
 
+    // v3 FIRE-aware fields — optional so existing decoders don't break
+    var spendingCeilingMonthly: Double? = nil  // alias for monthlySpend
+    var officialFireDate: String? = nil
+    var officialFireAge: Int? = nil
+    var fireYearsVsBaseline: Double? = nil
+    var tradeoffNote: String? = nil
+    var positioningCopy: String? = nil
+
     // .convertFromSnakeCase capitalises the letter after a digit boundary:
     // "projection_1y" → "projection1Y" (capital Y), "gain_vs_baseline_10y" → "gainVsBaseline10Y".
     enum CodingKeys: String, CodingKey {
@@ -129,12 +137,18 @@ struct PlanDetail: Codable, Identifiable {
         case flexibleSpend
         case extraPerMonth
         case flexibleCompressionPct
-        case projection1y          = "projection1Y"
-        case projection5y          = "projection5Y"
-        case projection10y         = "projection10Y"
-        case gainVsBaseline10y     = "gainVsBaseline10Y"
+        case projection1y             = "projection1Y"
+        case projection5y             = "projection5Y"
+        case projection10y            = "projection10Y"
+        case gainVsBaseline10y        = "gainVsBaseline10Y"
         case feasibility
         case status
+        case spendingCeilingMonthly   = "spending_ceiling_monthly"
+        case officialFireDate         = "official_fire_date"
+        case officialFireAge          = "official_fire_age"
+        case fireYearsVsBaseline      = "fire_years_vs_baseline"
+        case tradeoffNote             = "tradeoff_note"
+        case positioningCopy          = "positioning_copy"
     }
 }
 
@@ -205,15 +219,22 @@ struct GeneratePlansRequest: Encodable {
     let avgMonthlyFlexible: Double
     let currentNetWorth: Double
     let currentAge: Int
+    // v3: optional — server fetches from fire_goals if nil
+    var fireNumber: Double? = nil
+    var retirementSpendingMonthly: Double? = nil
+    var returnAssumption: Double? = nil
 
     enum CodingKeys: String, CodingKey {
-        case currentSavingsRate = "current_savings_rate"
-        case avgMonthlyIncome = "avg_monthly_income"
-        case avgMonthlySavings = "avg_monthly_savings"
-        case avgMonthlyFixed = "avg_monthly_fixed"
-        case avgMonthlyFlexible = "avg_monthly_flexible"
-        case currentNetWorth = "current_net_worth"
-        case currentAge = "current_age"
+        case currentSavingsRate        = "current_savings_rate"
+        case avgMonthlyIncome          = "avg_monthly_income"
+        case avgMonthlySavings         = "avg_monthly_savings"
+        case avgMonthlyFixed           = "avg_monthly_fixed"
+        case avgMonthlyFlexible        = "avg_monthly_flexible"
+        case currentNetWorth           = "current_net_worth"
+        case currentAge                = "current_age"
+        case fireNumber                = "fire_number"
+        case retirementSpendingMonthly = "retirement_spending_monthly"
+        case returnAssumption          = "return_assumption"
     }
 }
 
@@ -364,4 +385,51 @@ struct UserProfileForBudget: Codable {
     let plaidNetWorth: Double?
     let hasLinkedBank: Bool
     let currencyCode: String
+}
+
+// MARK: - save-fire-goal v1 (spending-based, no target age required)
+
+struct SaveFireGoalRequest: Encodable {
+    // v1 minimum required
+    let retirementSpendingMonthly: Double
+    let lifestylePreset: String           // "lean" | "current" | "fat"
+
+    // Optional — provide for FIRE date computation accuracy
+    var fireNumber: Double? = nil
+    var currentAge: Int? = nil
+    var targetRetirementAge: Int? = nil
+
+    // Assumption overrides (server uses defaults if absent)
+    var withdrawalRateAssumption: Double? = nil
+    var inflationAssumption: Double? = nil
+    var returnAssumption: Double? = nil
+
+    enum CodingKeys: String, CodingKey {
+        case retirementSpendingMonthly  = "retirement_spending_monthly"
+        case lifestylePreset            = "lifestyle_preset"
+        case fireNumber                 = "fire_number"
+        case currentAge                 = "current_age"
+        case targetRetirementAge        = "target_retirement_age"
+        case withdrawalRateAssumption   = "withdrawal_rate_assumption"
+        case inflationAssumption        = "inflation_assumption"
+        case returnAssumption           = "return_assumption"
+    }
+}
+
+struct SaveFireGoalResponse: Codable {
+    let goalId: String
+    let fireNumber: Double
+    let retirementSpendingMonthly: Double?
+    let lifestylePreset: String?
+    let requiredSavingsRate: Double
+    let isActive: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case goalId                     = "goal_id"
+        case fireNumber                 = "fire_number"
+        case retirementSpendingMonthly  = "retirement_spending_monthly"
+        case lifestylePreset            = "lifestyle_preset"
+        case requiredSavingsRate        = "required_savings_rate"
+        case isActive                   = "is_active"
+    }
 }

@@ -2,41 +2,30 @@
 //  JourneyView.swift
 //  Flamora app
 //
-//  Journey 主页面 - 参考图风格重排
+//  Phase 4 Home rebuild shell:
+//  - Act 1: official Hero + guided card or action strip
+//  - Act 2: sandbox shell
 //
 
 import SwiftUI
 
-// MARK: - Daily Quote Data
-
-private let dailyQuotes: [String] = [
-    "It's not about being rich\nIt's about being free.",
-    "Financial freedom is available to those who learn about it and work for it.",
-    "Do not save what is left after spending,\nbut spend what is left after saving."
-]
-
 struct JourneyView: View {
+    @State private var setupState: HomeSetupStateResponse?
+    @State private var homeHero: HomeHeroModel?
     @State private var netWorthSummary = APINetWorthSummary.empty
     @State private var apiBudget = APIMonthlyBudget.empty
-    @State private var fireGoal: APIFireGoal? = nil
-    /// 已连接银行时由 `get-spending-summary` 推导的当年各月储蓄，供 `SavingsRateCard` 迷你图；nil 时迷你图为空柱。
-    @State private var savingsByYearForChart: [Int: [Double?]]?
-    /// 当月 `get-spending-summary`，供 BudgetPlanCard 使用与 CashflowView 同口径的实际支出。
     @State private var currentMonthSummary: APISpendingSummary?
-    /// 按时间范围缓存的真实投资历史曲线，供首页 PortfolioCard 使用（与 InvestmentView 共用同一套数据）。
-    @State private var portfolioHistoryCache: [String: [PortfolioDataPoint]] = [:]
-    @State private var quoteIndex: Int = 0
-    @State private var quoteVisible: Bool = true
-    @State private var loadError = false
+    @State private var loadErrorMessage: String?
+    @State private var isLoadingData = false
+    @State private var needsReloadAfterCurrentPass = false
+    @State private var hasCompletedInitialHomeLoad = false
+
     var onFireTapped: (() -> Void)? = nil
     var onInvestmentTapped: (() -> Void)? = nil
     var onOpenCashflowDestination: ((CashflowJourneyDestination) -> Void)? = nil
     let bottomPadding: CGFloat
 
     @Environment(PlaidManager.self) private var plaidManager
-    @Environment(SubscriptionManager.self) private var subscriptionManager
-    @AppStorage(FlamoraStorageKey.budgetSetupCompleted) private var budgetSetupCompleted: Bool = false
-    @State private var showTrustBridge = false
 
     init(
         bottomPadding: CGFloat = 0,
@@ -51,358 +40,534 @@ struct JourneyView: View {
     }
 
     var body: some View {
-        ZStack {
-            Color.clear
+        GeometryReader { proxy in
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: AppSpacing.lg) {
+                    if let loadErrorMessage {
+                        ErrorBanner(
+                            message: loadErrorMessage,
+                            onRetry: { Task { await loadData() } }
+                        )
+                    }
 
-            GeometryReader { proxy in
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: AppSpacing.lg) {
-                        if loadError {
-                            ErrorBanner(
-                                message: "Couldn't load your data.",
-                                onRetry: { Task { await loadData() } }
+                    if hasCompletedInitialHomeLoad {
+                        FIRECountdownCard(
+                            hero: homeHero,
+                            stage: homeSetupStage,
+                            onPrimaryAction: openSetupFlow
+                        )
+
+                        if homeSetupStage.needsGuidedCard {
+                            GuidedSetupCard(
+                                stage: homeSetupStage,
+                                onPrimaryAction: openSetupFlow
+                            )
+                        } else {
+                            HomeActionStrip(
+                                saveStatus: saveStatusText,
+                                budgetStatus: budgetStatusText,
+                                investStatus: investStatusText,
+                                onSaveTapped: { onOpenCashflowDestination?(.savingsOverview) },
+                                onBudgetTapped: { onOpenCashflowDestination?(.totalSpending) },
+                                onInvestTapped: onInvestmentTapped
                             )
                         }
-                        FIRECountdownCard(
-                            fireGoal: fireGoal,
-                            isConnected: plaidManager.hasLinkedBank,
-                            onConnectTapped: {
-                                guard subscriptionManager.isPremium else {
-                                    subscriptionManager.showPaywall = true
-                                    return
-                                }
-                                if plaidManager.shouldShowTrustBridge() {
-                                    showTrustBridge = true
-                                } else {
-                                    Task { await plaidManager.startLinkFlow() }
-                                }
-                            }
+
+                        HomeSandboxShell(
+                            stage: homeSetupStage,
+                            hero: homeHero,
+                            onOpenSimulator: onFireTapped
                         )
-
-                        PortfolioCard(
-                            portfolioBalance: netWorthSummary.breakdown.investmentTotal ?? 0,
-                            gainAmount: netWorthSummary.growthAmount ?? 0,
-                            gainPercentage: netWorthSummary.growthPercentage ?? 0,
-                            realChartData: plaidManager.hasLinkedBank ? { [portfolioHistoryCache] range in
-                                portfolioHistoryCache[journeyRangeKey(range)]
-                            } : nil,
-                            isConnected: plaidManager.hasLinkedBank,
-                            onConnectTapped: {
-                                guard subscriptionManager.isPremium else {
-                                    subscriptionManager.showPaywall = true
-                                    return
-                                }
-                                if plaidManager.shouldShowTrustBridge() {
-                                    showTrustBridge = true
-                                } else {
-                                    Task { await plaidManager.startLinkFlow() }
-                                }
-                            }
-                        )
-
-                        if quoteVisible {
-                            dailyQuoteCard
-                        }
-
-                        VStack(alignment: .leading, spacing: AppSpacing.md) {
-                            Text("Plan")
-                                .font(.h4)
-                                .foregroundStyle(AppColors.textPrimary)
-                                .padding(.horizontal, AppSpacing.screenPadding)
-
-                            VStack(spacing: AppSpacing.cardGap) {
-                                BudgetPlanCard(
-                                    apiBudget: apiBudget,
-                                    daysLeft: daysLeftInCurrentMonth,
-                                    summaryNeedsSpent: currentMonthSummary?.needs.total,
-                                    summaryWantsSpent: currentMonthSummary?.wants.total,
-                                    onSetupBudget: { plaidManager.showBudgetSetup = true },
-                                    action: { onOpenCashflowDestination?(.totalSpending) }
-                                )
-                                if hasBudgetData {
-                                    SavingsRateCard(
-                                        apiBudget: apiBudget,
-                                        isConnected: true
-                                    ) {
-                                        onOpenCashflowDestination?(.savingsOverview)
-                                    }
-                                }
-                            }
-                        }
+                    } else {
+                        initialLoadingShell
                     }
-                    .frame(minHeight: proxy.size.height, alignment: .top)
-                    .padding(.bottom, max(bottomPadding, AppSpacing.lg))
-                    .padding(.top, AppSpacing.md)
                 }
+                .frame(minHeight: proxy.size.height, alignment: .top)
+                .padding(.top, AppSpacing.md)
+                .padding(.bottom, max(bottomPadding, AppSpacing.lg))
             }
         }
         .animation(nil, value: bottomPadding)
-        .alert("Bank Connection Failed", isPresented: Binding(
-            get: { plaidManager.linkError != nil },
-            set: { if !$0 { plaidManager.linkError = nil } }
-        )) {
-            Button("Try Again") { Task { await plaidManager.startLinkFlow() } }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text(plaidManager.linkError ?? "")
-        }
         .task { await loadData() }
-
         .onChange(of: plaidManager.lastConnectionTime) { _, _ in
-            print("📍 [Flow] lastConnectionTime changed")
             Task { await loadData() }
         }
         .onChange(of: plaidManager.hasLinkedBank) { _, _ in
-            print("📍 [Flow] hasLinkedBank changed → \(plaidManager.hasLinkedBank)")
             Task { await loadData() }
         }
         .onReceive(NotificationCenter.default.publisher(for: .savingsCheckInDidPersist)) { _ in
             Task { await loadData() }
         }
-        .sheet(isPresented: $showTrustBridge, onDismiss: {
-            if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {
-                Task { await plaidManager.startLinkFlow() }
-            }
-        }) {
-            PlaidTrustBridgeView()
-        }
     }
 }
 
-// MARK: - Calendar helpers
+// MARK: - View State
 
 private extension JourneyView {
-    /// 当月剩余天数（含今日），替代 MockData 固定值（阶段 0 / 路线图 0.4）。
-    var daysLeftInCurrentMonth: Int {
-        let cal = Calendar.current
-        let now = Date()
-        guard let range = cal.range(of: .day, in: .month, for: now) else { return 0 }
-        let day = cal.component(.day, from: now)
-        return range.count - day + 1
+    var homeSetupStage: HomeSetupStage {
+        if let stage = setupState?.setupStage { return stage }
+        return plaidManager.hasLinkedBank ? .accountsLinked : .noGoal
     }
-}
 
-// MARK: - Daily Quote
-
-private extension JourneyView {
-    var dailyQuoteCard: some View {
-        ZStack(alignment: .topTrailing) {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                Text("DAILY QUOTE")
-                    .font(.cardHeader)
-                    .foregroundStyle(AppColors.textPrimary)
-                    .tracking(AppTypography.Tracking.cardHeader)
-
-                Text(dailyQuotes[quoteIndex])
-                    .font(.quoteBody)
-                    .foregroundStyle(AppColors.textPrimary)
-                    .lineSpacing(4)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                HStack(spacing: AppSpacing.sm) {
-                    HStack(spacing: AppSpacing.sm) {
-                        ForEach(0..<dailyQuotes.count, id: \.self) { i in
-                            Capsule()
-                                .fill(i == quoteIndex ? AppColors.textPrimary : AppColors.overlayWhiteForegroundSoft)
-                                .frame(width: i == quoteIndex ? 20 : 6, height: 3)
-                                .animation(.easeInOut(duration: 0.2), value: quoteIndex)
-                        }
-                    }
-                    Text("\(quoteIndex + 1)/\(dailyQuotes.count)")
-                        .font(.caption)
-                        .foregroundStyle(AppColors.textSecondary)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, AppSpacing.cardPadding)
-            .padding(.vertical, AppSpacing.cardPadding)
-            .background(
-                GeometryReader { geo in
-                    ZStack {
-                        Image("AppBackground")
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: geo.size.width, height: geo.size.height * 4.0)
-                            .offset(y: -geo.size.height * 3.0)
-                        LinearGradient(
-                            colors: [AppColors.overlayBlackSoft, AppColors.overlayBlackMid],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    }
-                }
-                .allowsHitTesting(false)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.lg)
-                    .stroke(AppColors.dailyQuoteAccent.opacity(0.20), lineWidth: 0.75)
-                    .allowsHitTesting(false)
-            )
-
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    quoteIndex = (quoteIndex + 1) % dailyQuotes.count
-                }
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.smallLabel)
-                    .foregroundStyle(AppColors.overlayWhiteOnPhoto)
-                    .frame(width: 28, height: 28)
-            }
-            .buttonStyle(.plain)
-            .padding(.top, AppSpacing.sm + 2)
-            .padding(.trailing, AppSpacing.sm + 2)
+    var saveStatusText: String {
+        let actual = currentMonthSummary?.savings.actual ?? apiBudget.savingsActual ?? 0
+        if let target = homeHero?.savingsTargetMonthly, target > 0 {
+            return "\(compactCurrency(actual)) / \(compactCurrency(target))"
         }
-        .padding(.horizontal, AppSpacing.screenPadding)
+        if actual > 0 {
+            return "\(compactCurrency(actual)) saved"
+        }
+        return "Track savings"
+    }
+
+    var budgetStatusText: String {
+        let planned = apiBudget.needsBudget + apiBudget.wantsBudget
+        let actual = (currentMonthSummary?.needs.total ?? 0) + (currentMonthSummary?.wants.total ?? 0)
+
+        guard planned > 0 else { return "Build your plan" }
+
+        let delta = ((actual - planned) / planned) * 100
+        if abs(delta) < 1 { return "On plan" }
+        if delta > 0 { return "\(Int(delta.rounded()))% over plan" }
+        return "\(Int(abs(delta).rounded()))% under plan"
+    }
+
+    var investStatusText: String {
+        if let growth = netWorthSummary.growthAmount {
+            let prefix = growth >= 0 ? "+" : "-"
+            return "\(prefix)\(compactCurrency(abs(growth))) this month"
+        }
+        if let total = netWorthSummary.breakdown.investmentTotal, total > 0 {
+            return "\(compactCurrency(total)) invested"
+        }
+        return "View portfolio"
+    }
+
+    func compactCurrency(_ value: Double) -> String {
+        if value >= 1_000_000 { return String(format: "$%.1fM", value / 1_000_000) }
+        if value >= 1_000 { return String(format: "$%.0fK", value / 1_000) }
+        return String(format: "$%.0f", value)
+    }
+
+    func openSetupFlow() {
+        plaidManager.showBudgetSetup = true
     }
 }
 
 // MARK: - Data Loading
 
 private extension JourneyView {
-    var hasBudgetData: Bool {
-        budgetSetupCompleted
-        && plaidManager.hasLinkedBank
-        && (apiBudget.needsBudget + apiBudget.wantsBudget + apiBudget.savingsBudget) > 0
-        && apiBudget.selectedPlan != nil
-    }
-
+    @MainActor
     func loadData() async {
-        print("📍 [Flow] loadData started — hasLinkedBank=\(plaidManager.hasLinkedBank)")
-        loadError = false
-        let monthStr = currentMonthString
-        async let nwTask = fetchNetWorth()
-        async let fireTask = fetchFireGoal()
-
-        guard plaidManager.hasLinkedBank else {
-            let (nw, fire) = await (nwTask, fireTask)
-            if let nw {
-                netWorthSummary = nw
-                print("📍 [Flow] net worth loaded (no bank) — accounts: \(nw.accounts.count)")
-            } else {
-                print("📍 [Flow] ❌ net worth fetch returned nil (no bank)")
-            }
-            apiBudget = .empty
-            fireGoal = fire
-            savingsByYearForChart = nil
-            currentMonthSummary = nil
-            portfolioHistoryCache = [:]
-            print("📍 [Flow] loadData skipped budget fetch — hasLinkedBank=false")
+        if isLoadingData {
+            needsReloadAfterCurrentPass = true
             return
         }
 
-        // 优先用缓存填充，避免首帧空白
-        if portfolioHistoryCache.isEmpty {
-            portfolioHistoryCache = TabContentCache.shared.portfolioHistory
-        }
-        if savingsByYearForChart == nil {
-            savingsByYearForChart = TabContentCache.shared.cashflowSavingsByYear
-        }
+        isLoadingData = true
+        needsReloadAfterCurrentPass = false
+        let shouldLoadExecution = plaidManager.hasLinkedBank
 
-        async let budgetTask = fetchBudget(month: monthStr)
-        async let spendingDataTask = fetchSpendingData()
-        async let portfolioHistoryTask = fetchAllPortfolioHistory()
-        let (nw, budget, fire, spendingData, portfolioHistory) = await (nwTask, budgetTask, fireTask, spendingDataTask, portfolioHistoryTask)
-
-        if let nw {
-            netWorthSummary = nw
-            let hasInv = nw.accounts.contains { $0.type == "investment" }
-            print("📍 [Flow] net worth loaded — accounts: \(nw.accounts.count), total: \(nw.totalNetWorth), hasInvestment: \(hasInv)")
-        } else {
-            print("📍 [Flow] ❌ net worth fetch returned nil")
-            loadError = true
-        }
-        if let budget {
-            apiBudget = budget
-            FlamoraStorageKey.migrateBudgetSetupIfNeeded(budget: budget, hasLinkedBank: true)
-            print("📍 [Flow] budget loaded — selectedPlan=\(budget.selectedPlan ?? "nil"), needs=\(budget.needsBudget), wants=\(budget.wantsBudget), savings=\(budget.savingsBudget)")
-        } else {
-            print("📍 [Flow] budget fetch returned nil (no budget in DB for \(monthStr))")
-        }
-        fireGoal = fire
-        savingsByYearForChart = spendingData.savingsByYear
-        currentMonthSummary = spendingData.currentMonthSummary
-        portfolioHistoryCache = portfolioHistory
-        // 写入共享缓存，供 InvestmentView / CashflowView 复用
-        TabContentCache.shared.setPortfolioHistory(portfolioHistory)
-        if let savings = spendingData.savingsByYear {
-            TabContentCache.shared.setCashflowSavingsByYear(savings)
-        }
-        print("📍 [Flow] hasBudgetData=\(hasBudgetData), hasLinkedBank=\(plaidManager.hasLinkedBank)")
-    }
-
-    /// 统一拉取多月 summary，返回储蓄趋势与当月 summary（与 CashflowView 同口径）。
-    private func fetchSpendingData() async -> (savingsByYear: [Int: [Double?]]?, currentMonthSummary: APISpendingSummary?) {
-        let cal = Calendar.current
-        let year = cal.component(.year, from: Date())
-        let through = cal.component(.month, from: Date())
-        let summaries = await CashflowAPICharts.fetchMonthlySummaries(year: year, throughMonth: through)
-        guard !summaries.isEmpty else { return (nil, nil) }
-        let savingsByYear = CashflowAPICharts.savingsMonthlyAmountsByYear(summaries: summaries, year: year)
-        let currentSummary = summaries[through - 1]
-        return (savingsByYear, currentSummary)
-    }
-
-    private func fetchAllPortfolioHistory() async -> [String: [PortfolioDataPoint]] {
-        let ranges = ["1w", "1m", "3m", "ytd", "all"]
-        var result: [String: [PortfolioDataPoint]] = [:]
-        await withTaskGroup(of: (String, [PortfolioDataPoint]).self) { group in
-            for r in ranges {
-                group.addTask {
-                    let pts = (try? await APIService.shared.getPortfolioHistory(range: r))?.points
-                        .map { PortfolioDataPoint(date: journeyParseDate($0.date), value: $0.value) } ?? []
-                    return (r, pts)
-                }
+        defer {
+            isLoadingData = false
+            if needsReloadAfterCurrentPass {
+                needsReloadAfterCurrentPass = false
+                Task { await loadData() }
             }
-            for await (r, pts) in group { result[r] = pts }
         }
-        return result
+
+        loadErrorMessage = nil
+
+        let monthStr = currentMonthString
+        let state = await fetchSetupState()
+        // Only update setupState on success — keeping the last known value on 401/error
+        // prevents homeSetupStage from flipping mid-scroll, which freezes the ScrollView.
+        if let state { setupState = state }
+        if !hasCompletedInitialHomeLoad { hasCompletedInitialHomeLoad = true }
+
+        let shouldLoadHero = (state ?? setupState)?.setupStage == .active
+        async let netWorthTask = fetchNetWorth()
+        async let executionTask = fetchExecutionData(month: monthStr, shouldLoad: shouldLoadExecution)
+        async let heroTask: HomeHeroModel? = shouldLoadHero ? fetchHomeHero() : nil
+
+        let (hero, netWorth, executionData) = await (heroTask, netWorthTask, executionTask)
+
+        homeHero = hero
+
+        if let netWorth {
+            netWorthSummary = netWorth
+        }
+
+        apiBudget = executionData.budget ?? .empty
+        currentMonthSummary = executionData.summary
+
+        // Show error banner only if we have no cached state at all (completely cold start failure).
+        // When we have a cached setupState, the UI is still usable — no need to show the banner.
+        if state == nil && setupState == nil {
+            loadErrorMessage = "Couldn't load your home state."
+        }
     }
 
-    private func fetchNetWorth() async -> APINetWorthSummary? {
+    func fetchSetupState() async -> HomeSetupStateResponse? {
         do {
-            return try await APIService.shared.getNetWorthSummary()
+            return try await APIService.shared.getSetupState()
         } catch {
-            print("📍 [Flow] ❌ fetchNetWorth error: \(error)")
+            print("❌ [Journey] getSetupState failed: \(error)")
             return nil
         }
     }
-    private func fetchBudget(month: String) async -> APIMonthlyBudget? {
+
+    func fetchHomeHero() async -> HomeHeroModel? {
+        do {
+            return try await APIService.shared.getHomeHero()
+        } catch {
+            print("⚠️ [Journey] getHomeHero failed: \(error)")
+            return nil
+        }
+    }
+
+    func fetchNetWorth() async -> APINetWorthSummary? {
+        do {
+            return try await APIService.shared.getNetWorthSummary()
+        } catch {
+            print("⚠️ [Journey] getNetWorthSummary failed: \(error)")
+            return nil
+        }
+    }
+
+    func fetchExecutionData(month: String, shouldLoad: Bool) async -> (budget: APIMonthlyBudget?, summary: APISpendingSummary?) {
+        guard shouldLoad else { return (nil, nil) }
+
+        async let budgetTask = fetchBudget(month: month)
+        async let summaryTask = fetchCurrentMonthSummary(month: month)
+        return await (budgetTask, summaryTask)
+    }
+
+    func fetchBudget(month: String) async -> APIMonthlyBudget? {
         try? await APIService.shared.getMonthlyBudget(month: month)
     }
-    private func fetchFireGoal() async -> APIFireGoal? {
-        try? await APIService.shared.getActiveFireGoal()
+
+    func fetchCurrentMonthSummary(month: String) async -> APISpendingSummary? {
+        try? await APIService.shared.getSpendingSummary(month: month)
     }
 
     var currentMonthString: String {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM"
-        return f.string(from: Date())
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM"
+        return formatter.string(from: Date())
     }
 }
 
-// MARK: - Portfolio range helpers (file-private, mirrors InvestmentView)
+private extension JourneyView {
+    var initialLoadingShell: some View {
+        VStack(spacing: AppSpacing.lg) {
+            FIRECountdownCard(hero: nil, stage: .accountsLinked, onPrimaryAction: nil)
 
-private func journeyRangeKey(_ range: PortfolioTimeRange) -> String {
-    switch range {
-    case .oneWeek:     return "1w"
-    case .oneMonth:    return "1m"
-    case .threeMonths: return "3m"
-    case .ytd:         return "ytd"
-    case .all:         return "all"
+            RoundedRectangle(cornerRadius: AppRadius.card)
+                .fill(AppColors.surfaceElevated)
+                .frame(height: 132)
+                .overlay(
+                    ProgressView()
+                        .tint(AppColors.textPrimary)
+                )
+                .padding(.horizontal, AppSpacing.screenPadding)
+        }
     }
-}
-
-private func journeyParseDate(_ str: String) -> Date {
-    let f = DateFormatter()
-    f.dateFormat = "yyyy-MM-dd"
-    f.locale = Locale(identifier: "en_US_POSIX")
-    return f.date(from: str) ?? Date()
 }
 
 #Preview {
     JourneyView(onFireTapped: {})
         .environment(PlaidManager.shared)
         .environment(SubscriptionManager.shared)
+}
+
+// MARK: - Supporting Blocks
+
+private struct GuidedSetupCard: View {
+    let stage: HomeSetupStage
+    var onPrimaryAction: (() -> Void)? = nil
+
+    var body: some View {
+        let content = GuidedSetupCardContent.content(for: stage)
+
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack(spacing: AppSpacing.sm) {
+                Text("NEXT STEP")
+                    .font(.cardHeader)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .tracking(AppTypography.Tracking.cardHeader)
+
+                Capsule()
+                    .fill(AppColors.overlayWhiteStroke)
+                    .frame(width: 1, height: 10)
+
+                Text(stageBadge)
+                    .font(.miniLabel)
+                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+            }
+
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text(content.title)
+                    .font(.h4)
+                    .foregroundStyle(AppColors.textPrimary)
+
+                Text(content.body)
+                    .font(.bodySmall)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .lineSpacing(3)
+            }
+
+            if let onPrimaryAction {
+                Button(action: onPrimaryAction) {
+                    Text(content.ctaLabel)
+                        .font(.bodySmallSemibold)
+                        .foregroundStyle(AppColors.textInverse)
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, AppSpacing.sm)
+                        .background(
+                            LinearGradient(
+                                colors: AppColors.gradientFire,
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(AppColors.surfaceElevated)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.card)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+        )
+        .padding(.horizontal, AppSpacing.screenPadding)
+    }
+
+    private var stageBadge: String {
+        switch stage {
+        case .noGoal: return "GOAL"
+        case .goalSet: return "CONNECT"
+        case .accountsLinked: return "REVIEW"
+        case .snapshotPending: return "SNAPSHOT"
+        case .planPending: return "PLAN"
+        case .active: return "READY"
+        }
+    }
+}
+
+private struct HomeActionStrip: View {
+    let saveStatus: String
+    let budgetStatus: String
+    let investStatus: String
+    var onSaveTapped: (() -> Void)? = nil
+    var onBudgetTapped: (() -> Void)? = nil
+    var onInvestTapped: (() -> Void)? = nil
+
+    var body: some View {
+        HStack(spacing: AppSpacing.sm) {
+            actionItem(title: "Save", value: saveStatus, action: onSaveTapped)
+            actionItem(title: "Budget", value: budgetStatus, action: onBudgetTapped)
+            actionItem(title: "Invest", value: investStatus, action: onInvestTapped)
+        }
+        .padding(.horizontal, AppSpacing.screenPadding)
+    }
+
+    @ViewBuilder
+    private func actionItem(title: String, value: String, action: (() -> Void)?) -> some View {
+        Button(action: { action?() }) {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text(title.uppercased())
+                    .font(.miniLabel)
+                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+
+                Text(value)
+                    .font(.bodySmallSemibold)
+                    .foregroundStyle(AppColors.textPrimary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(AppSpacing.md)
+            .background(AppColors.surfaceElevated)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.md)
+                    .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct HomeSandboxShell: View {
+    let stage: HomeSetupStage
+    let hero: HomeHeroModel?
+    var onOpenSimulator: (() -> Void)? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Capsule()
+                .fill(AppColors.overlayWhiteStroke)
+                .frame(width: 40, height: 4)
+                .frame(maxWidth: .infinity)
+                .padding(.top, AppSpacing.sm)
+
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text(stage == .active ? "SANDBOX" : "DEMO SIMULATOR")
+                        .font(.cardHeader)
+                        .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                        .tracking(AppTypography.Tracking.cardHeader)
+
+                    Text(stage == .active ? "Test your future without changing your official path." : "Try the FIRE simulator before finishing setup.")
+                        .font(.h4)
+                        .foregroundStyle(AppColors.textPrimary)
+                }
+
+                Spacer()
+
+                if stage != .active {
+                    Text("DEMO")
+                        .font(.miniLabel)
+                        .foregroundStyle(AppColors.textInverse)
+                        .padding(.horizontal, AppSpacing.sm)
+                        .padding(.vertical, 4)
+                        .background(AppColors.accentAmber)
+                        .clipShape(Capsule())
+                }
+            }
+
+            Text(stage == .active ? "Your Hero stays official. This second act is where you test what changes could move your FIRE date." : "Use sample data and quick what-if controls to feel the product magic before your real data is ready.")
+                .font(.bodySmall)
+                .foregroundStyle(AppColors.overlayWhiteOnGlass)
+                .lineSpacing(3)
+
+            sandboxResultCard
+            sandboxChartPlaceholder
+
+            if let onOpenSimulator {
+                Button(action: onOpenSimulator) {
+                    HStack(spacing: AppSpacing.sm) {
+                        Image(systemName: "sparkles")
+                        Text(stage == .active ? "Open Sandbox" : "Try Demo Simulator")
+                    }
+                    .font(.bodySmallSemibold)
+                    .foregroundStyle(AppColors.textInverse)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(
+                        LinearGradient(
+                            colors: stage == .active ? AppColors.gradientFire : [AppColors.accentBlue, AppColors.accentPurple],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.top, AppSpacing.sm)
+        .padding(.bottom, AppSpacing.cardPadding)
+        .background(
+            LinearGradient(
+                colors: [AppColors.backgroundSecondary, AppColors.surface],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+        )
+        .padding(.horizontal, AppSpacing.screenPadding)
+    }
+
+    private var sandboxResultCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text(stage == .active ? "OFFICIAL PATH" : "SAMPLE PATH")
+                .font(.miniLabel)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+
+            Text(hero?.displayFireDate ?? "Mar 2042")
+                .font(.h3)
+                .foregroundStyle(AppColors.textPrimary)
+
+            Text(stage == .active ? "Your simulator changes stay here until you explicitly apply them." : "This preview uses sample data and does not change your official progress.")
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.textSecondary)
+                .lineSpacing(2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(AppSpacing.md)
+        .background(AppColors.overlayWhiteWash)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+        )
+    }
+
+    private var sandboxChartPlaceholder: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text("CURRENT VS ADJUSTED")
+                .font(.miniLabel)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+
+            ZStack(alignment: .bottomLeading) {
+                RoundedRectangle(cornerRadius: AppRadius.md)
+                    .fill(AppColors.overlayWhiteWash)
+                    .frame(height: 132)
+
+                Path { path in
+                    path.move(to: CGPoint(x: 16, y: 100))
+                    path.addCurve(
+                        to: CGPoint(x: 260, y: 40),
+                        control1: CGPoint(x: 80, y: 80),
+                        control2: CGPoint(x: 190, y: 55)
+                    )
+                }
+                .stroke(AppColors.overlayWhiteForegroundMuted, style: StrokeStyle(lineWidth: 2, dash: [6, 6]))
+
+                Path { path in
+                    path.move(to: CGPoint(x: 16, y: 108))
+                    path.addCurve(
+                        to: CGPoint(x: 280, y: 24),
+                        control1: CGPoint(x: 90, y: 92),
+                        control2: CGPoint(x: 210, y: 36)
+                    )
+                }
+                .stroke(
+                    LinearGradient(
+                        colors: stage == .active ? AppColors.gradientFire : [AppColors.accentBlue, AppColors.accentPurple],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    lineWidth: 3
+                )
+                .padding(.bottom, AppSpacing.xs)
+            }
+
+            HStack(spacing: AppSpacing.md) {
+                legendDot(color: AppColors.overlayWhiteForegroundMuted, label: "Current")
+                legendDot(color: stage == .active ? AppColors.budgetOrange : AppColors.accentBlue, label: "Adjusted")
+            }
+        }
+    }
+
+    private func legendDot(color: Color, label: String) -> some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(color)
+                .frame(width: 8, height: 8)
+            Text(label)
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.textSecondary)
+        }
+    }
 }

@@ -8,12 +8,14 @@
 import Foundation
 internal import Auth
 import Supabase
+internal import Functions
 
 class APIService {
     static let shared = APIService()
     
     private var baseURL: String { AppConfig.supabaseFunctionsBaseURL }
     private var anonKey: String { AppConfig.supabaseAnonKey }
+    private var client: SupabaseClient { SupabaseManager.shared.client }
     
     private init() {}
     
@@ -85,6 +87,34 @@ class APIService {
     private struct APIResponse<T: Decodable>: Decodable {
         let success: Bool
         let data: T
+    }
+
+    private func invokeFunction<T: Decodable, Body: Encodable>(
+        _ function: String,
+        body: Body
+    ) async throws -> T {
+        // Proactively refresh session if token is expiring within 60s (mirrors authenticatedRequest).
+        let session: Session
+        do {
+            let current = try await client.auth.session
+            if current.expiresAt <= Date().timeIntervalSince1970 + 60 {
+                session = try await client.auth.refreshSession()
+            } else {
+                session = current
+            }
+        } catch {
+            session = try await client.auth.refreshSession()
+        }
+        let options = FunctionInvokeOptions(
+            headers: ["Authorization": "Bearer \(session.accessToken)"],
+            body: body
+        )
+        let response: APIResponse<T> = try await client.functions.invoke(function, options: options)
+        return response.data
+    }
+
+    private func invokeFunction<T: Decodable>(_ function: String) async throws -> T {
+        try await invokeFunction(function, body: EmptyJSONBody())
     }
 
      func authenticatedRequest(
@@ -283,6 +313,37 @@ class APIService {
         let request = try await authenticatedRequest(function: "calculate-avg-spending", body: body)
         return try await perform(request)
     }
+
+    // MARK: - v2 Home / Plan System
+
+    /// Fetch the official Hero model (v2 extended get-active-fire-goal response).
+    /// Returns `HomeHeroModel` with FIRE date, active plan metadata, and progress status.
+    func getHomeHero() async throws -> HomeHeroModel {
+        try await invokeFunction("get-active-fire-goal")
+    }
+
+    /// Fetch the current setup stage for the Home state machine (S0–S5).
+    func getSetupState() async throws -> HomeSetupStateResponse {
+        try await invokeFunction("get-setup-state")
+    }
+
+    /// Apply a chosen plan to become the official active plan.
+    func applySelectedPlan(data: ApplyPlanRequest) async throws -> ActivePlanModel {
+        try await invokeFunction("apply-selected-plan", body: data)
+    }
+
+    /// Preview simulator — powers demo and official sandbox modes.
+    /// Never writes to official state.
+    func previewSimulator(data: SimulatorPreviewRequest) async throws -> SimulatorPreviewModel {
+        try await invokeFunction("preview-simulator", body: data)
+    }
+
+    /// Mark a setup step as completed in user_setup_state.
+    /// Phase 2: backed by `mark-setup-step` Edge Function (not yet deployed).
+    /// Accepted steps: "accounts_reviewed" | "snapshot_reviewed"
+    func markSetupStep(_ step: String) async throws {
+        let _: EmptySuccessResponse = try await invokeFunction("mark-setup-step", body: MarkSetupStepRequest(step: step))
+    }
 }
 
 // MARK: - API Errors
@@ -305,6 +366,10 @@ enum APIError: Error, LocalizedError {
         }
     }
 }
+
+private struct EmptyJSONBody: Encodable {}
+private struct MarkSetupStepRequest: Encodable { let step: String }
+private struct EmptySuccessResponse: Decodable {}
 
 // MARK: - New API Response Models
 

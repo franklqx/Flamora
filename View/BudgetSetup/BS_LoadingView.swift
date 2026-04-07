@@ -219,7 +219,7 @@ struct BS_LoadingView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 guard loadAttempt == attempt else { return }
                 if viewModel.allLoadingComplete {
-                    onComplete()
+                    completeAndNavigate()
                 } else if viewModel.loadingError != nil {
                     // Body switches to errorView automatically via observation
                 } else {
@@ -233,7 +233,7 @@ struct BS_LoadingView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             guard loadAttempt == attempt else { return }  // stale poll from a previous attempt
             if viewModel.allLoadingComplete {
-                onComplete()
+                completeAndNavigate()
             } else if viewModel.loadingError != nil {
                 // Body switches to errorView automatically via observation
             } else if showError {
@@ -251,6 +251,14 @@ struct BS_LoadingView: View {
             guard !viewModel.allLoadingComplete, viewModel.loadingError == nil else { return }
             showError = true
         }
+    }
+
+    /// Increments loadAttempt BEFORE calling onComplete. This is critical: it invalidates
+    /// all pending DispatchQueue blocks (timeout, polls) so they cannot write to @State
+    /// after the view has been removed from the hierarchy (freed pointer crash pattern).
+    private func completeAndNavigate() {
+        loadAttempt += 1
+        onComplete()
     }
 
     private func retryLoading() {

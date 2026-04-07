@@ -754,32 +754,58 @@ struct MockData {
 }
 // MARK: - 🔥 Backend API Models (Phase 0 - 后端数据契约)
 
-/// 对应后端 GET /active-fire-goal
+/// 对应后端 GET /active-fire-goal (v1 + v2 fields)
+/// v1 fields preserved for backward compat. New fields are optional.
+/// Phase 3 will migrate FIRECountdownCard to HomeHeroModel and remove this struct.
 struct APIFireGoal: Codable {
     let goalId: String
     let fireNumber: Double
     let currentNetWorth: Double
     let gapToFire: Double
     let requiredSavingsRate: Double
-    let targetRetirementAge: Int
-    let currentAge: Int
-    let yearsRemaining: Int
+
+    // Age fields: optional in v1 — goals created without target_retirement_age will have nil
+    let targetRetirementAge: Int?
+    let currentAge: Int?
+    let yearsRemaining: Int          // legacy: target_retirement_age - current_age (0 if ages absent)
+
     let progressPercentage: Double
     let onTrack: Bool
     let createdAt: String
 
+    // v2 Hero fields — present only after get-active-fire-goal is updated
+    // Default nil so existing callsites (mock data, previews) compile unchanged.
+    var officialFireDate: String? = nil
+    var officialFireAge: Int? = nil
+    var officialYearsRemaining: Int? = nil
+    var progressStatus: String? = nil
+    var activePlanType: String? = nil
+    var activePlanLabel: String? = nil
+    var savingsTargetMonthly: Double? = nil
+    var retirementSpendingMonthly: Double? = nil
+    var lifestylePreset: String? = nil
+
     enum CodingKeys: String, CodingKey {
-        case goalId = "goal_id"
-        case fireNumber = "fire_number"
-        case currentNetWorth = "current_net_worth"
-        case gapToFire = "gap_to_fire"
-        case requiredSavingsRate = "required_savings_rate"
-        case targetRetirementAge = "target_retirement_age"
-        case currentAge = "current_age"
-        case yearsRemaining = "years_remaining"
-        case progressPercentage = "progress_percentage"
-        case onTrack = "on_track"
-        case createdAt = "created_at"
+        case goalId                    = "goal_id"
+        case fireNumber                = "fire_number"
+        case currentNetWorth           = "current_net_worth"
+        case gapToFire                 = "gap_to_fire"
+        case requiredSavingsRate       = "required_savings_rate"
+        case targetRetirementAge       = "target_retirement_age"
+        case currentAge                = "current_age"
+        case yearsRemaining            = "years_remaining"
+        case progressPercentage        = "progress_percentage"
+        case onTrack                   = "on_track"
+        case createdAt                 = "created_at"
+        case officialFireDate          = "official_fire_date"
+        case officialFireAge           = "official_fire_age"
+        case officialYearsRemaining    = "official_years_remaining"
+        case progressStatus            = "progress_status"
+        case activePlanType            = "active_plan_type"
+        case activePlanLabel           = "active_plan_label"
+        case savingsTargetMonthly      = "savings_target_monthly"
+        case retirementSpendingMonthly = "retirement_spending_monthly"
+        case lifestylePreset           = "lifestyle_preset"
     }
 }
 

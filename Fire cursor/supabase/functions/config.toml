@@ -51,3 +51,21 @@ verify_jwt = false
 
 [functions.handle-plaid-webhook]
 verify_jwt = false
+
+[functions.save-fire-goal]
+verify_jwt = false
+
+[functions.get-active-fire-goal]
+verify_jwt = false
+
+[functions.get-setup-state]
+verify_jwt = false
+
+[functions.apply-selected-plan]
+verify_jwt = false
+
+[functions.preview-simulator]
+verify_jwt = false
+
+[functions.mark-setup-step]
+verify_jwt = false

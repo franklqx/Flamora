@@ -1,48 +1,57 @@
 // supabase/functions/generate-plans/index.ts
 //
-// V2 Budget Module — Step 3
-// Generates three budget plans (Steady / Recommended / Accelerate)
-// based on flexible expense compression.
-// Shows investment growth projections at 1, 5, 10 years.
+// V3 Budget Module — Plan generation
+// Generates Steady / Recommended / Accelerate plans.
+// Each plan now includes:
+//   - official_fire_date / official_fire_age (projected at that plan's savings rate)
+//   - spending_ceiling_monthly (= monthly_spend, aliased for clarity)
+//   - tradeoff_note (human-readable delta vs baseline)
+//   - positioning_copy (Hero voice one-liner)
+//   - fire_years_vs_baseline (years saved relative to "do nothing")
 //
-// Replaces: calculate-fire-goal (V1)
+// All new fields are additive — old iOS clients that ignore unknown keys are unaffected.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders, handleCors } from '../_shared/cors.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+  computeFireDate,
+  computeFireNumber,
+  getPositioningCopy,
+  buildTradeoffNote,
+} from '../_shared/fire-math.ts'
 
-// ============================================================
-// Global assumptions
-// ============================================================
+// ── Global assumptions ────────────────────────────────────────
+const NOMINAL_ANNUAL_RETURN = 0.08
+const INFLATION_RATE        = 0.025
+const REAL_ANNUAL_RETURN    = 0.055
+const MONTHLY_REAL_RATE     = REAL_ANNUAL_RETURN / 12
 
-const NOMINAL_ANNUAL_RETURN = 0.08       // 8% nominal (S&P 500 long-run avg)
-const INFLATION_RATE = 0.025             // 2.5% annual
-const REAL_ANNUAL_RETURN = 0.055         // ~5.5% real return
-const MONTHLY_REAL_RATE = REAL_ANNUAL_RETURN / 12
+// Flexible compression ratios
+const COMPRESSION_STEADY      = 0.10
+const COMPRESSION_RECOMMENDED = 0.25
+const COMPRESSION_ACCELERATE  = 0.40
 
-// Flexible compression ratios for the three plans
-const COMPRESSION_STEADY = 0.10          // cut 10% of flexible spending
-const COMPRESSION_RECOMMENDED = 0.25     // cut 25%
-const COMPRESSION_ACCELERATE = 0.40      // cut 40%
-
-// ============================================================
-// Types
-// ============================================================
-
+// ── Types ─────────────────────────────────────────────────────
 interface GeneratePlansRequest {
   current_savings_rate: number
   avg_monthly_income: number
   avg_monthly_savings: number
   avg_monthly_fixed: number
   avg_monthly_flexible: number
-  current_net_worth: number
-  current_age: number
+  current_net_worth?: number
+  current_age?: number
+  // New optional: if provided, enables FIRE date projection per plan
+  fire_number?: number
+  retirement_spending_monthly?: number
+  return_assumption?: number    // override (default: REAL_ANNUAL_RETURN)
 }
 
 interface PlanDetail {
   savings_rate: number
   monthly_save: number
   monthly_spend: number
+  spending_ceiling_monthly: number  // NEW: alias for monthly_spend, clearer name
   flexible_spend: number
   extra_per_month: number
   flexible_compression_pct: number
@@ -52,30 +61,28 @@ interface PlanDetail {
   gain_vs_baseline_10y: number
   feasibility: 'easy' | 'moderate' | 'challenging' | 'extreme'
   status: 'on_track' | 'breakeven' | 'deficit'
+  // NEW: FIRE-aware fields
+  official_fire_date: string | null
+  official_fire_age: number | null
+  fire_years_vs_baseline: number | null
+  tradeoff_note: string
+  positioning_copy: string
 }
 
-// ============================================================
-// Core math
-// ============================================================
+// ── Core portfolio math ───────────────────────────────────────
 
-function projectPortfolio(
-  monthlySavings: number,
-  startingPortfolio: number,
-  years: number
-): number {
+function projectPortfolio(monthlySavings: number, startingPortfolio: number, years: number): number {
   let portfolio = startingPortfolio
   const totalMonths = Math.round(years * 12)
-
   for (let m = 0; m < totalMonths; m++) {
     portfolio = portfolio * (1 + MONTHLY_REAL_RATE) + monthlySavings
   }
-
   return Math.round(portfolio * 100) / 100
 }
 
 function classifyFeasibility(planRate: number, currentRate: number): PlanDetail['feasibility'] {
   const jump = planRate - currentRate
-  if (jump <= 5) return 'easy'
+  if (jump <= 5)  return 'easy'
   if (jump <= 15) return 'moderate'
   if (jump <= 30) return 'challenging'
   return 'extreme'
@@ -88,33 +95,31 @@ function determineStatus(monthlySave: number, currentRate: number): PlanDetail['
 }
 
 function getUserTier(currentRate: number): string {
-  if (currentRate < 0) return 'in_debt'
+  if (currentRate < 0)  return 'in_debt'
   if (currentRate < 10) return 'beginner'
   if (currentRate <= 30) return 'intermediate'
   return 'advanced'
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max)
+function clamp(v: number, min: number, max: number): number {
+  return Math.min(Math.max(v, min), max)
 }
 
-function round2(value: number): number {
-  return Math.round(value * 100) / 100
-}
+function round2(v: number): number { return Math.round(v * 100) / 100 }
+function roundMoney(v: number): number { return Math.round(v / 10) * 10 }
+function roundRate(v: number): number { return Math.round(v * 10) / 10 }
 
-function roundMoney(value: number): number {
-  return Math.round(value / 10) * 10
-}
+// ── Plan generation ───────────────────────────────────────────
 
-function roundRate(value: number): number {
-  return Math.round(value * 10) / 10
-}
-
-// ============================================================
-// Plan generation
-// ============================================================
-
-function generateAllPlans(input: GeneratePlansRequest) {
+function generateAllPlans(
+  input: Required<Pick<GeneratePlansRequest,
+    'current_savings_rate' | 'avg_monthly_income' | 'avg_monthly_savings' |
+    'avg_monthly_fixed' | 'avg_monthly_flexible' | 'current_net_worth' | 'current_age'
+  >> & {
+    fire_number: number | null
+    return_assumption: number
+  }
+) {
   const {
     current_savings_rate: currentRate,
     avg_monthly_income: income,
@@ -122,217 +127,241 @@ function generateAllPlans(input: GeneratePlansRequest) {
     avg_monthly_fixed: fixed,
     avg_monthly_flexible: flexible,
     current_net_worth: netWorth,
+    fire_number: fireNumber,
+    return_assumption: returnRate,
   } = input
 
-  // Step 1: Compute optimisable space
+  const currentAge = input.current_age
+
+  // ── Rate computation (unchanged from v2) ──
   const maxPossibleSavings = income - fixed
-  const maxPossibleRate = income > 0 ? (maxPossibleSavings / income) * 100 : 0
+  const maxPossibleRate    = income > 0 ? (maxPossibleSavings / income) * 100 : 0
 
-  // Step 2: Raw rates from flexible compression
-  let steadyRate = ((currentSavings + flexible * COMPRESSION_STEADY) / income) * 100
+  let steadyRate      = ((currentSavings + flexible * COMPRESSION_STEADY)      / income) * 100
   let recommendedRate = ((currentSavings + flexible * COMPRESSION_RECOMMENDED) / income) * 100
-  let accelerateRate = ((currentSavings + flexible * COMPRESSION_ACCELERATE) / income) * 100
+  let accelerateRate  = ((currentSavings + flexible * COMPRESSION_ACCELERATE)  / income) * 100
 
-  // Step 3: Handle negative savings rate
   if (currentRate < 0) {
-    steadyRate = Math.max(0, steadyRate)
-    recommendedRate = Math.max(5, recommendedRate)
-    accelerateRate = Math.max(10, accelerateRate)
+    steadyRate      = Math.max(0,  steadyRate)
+    recommendedRate = Math.max(5,  recommendedRate)
+    accelerateRate  = Math.max(10, accelerateRate)
   } else {
-    // Step 4: Floors and caps for positive savings rate
-
-    // Steady: never recommend saving LESS than current rate
     const steadyFloor = Math.max(5, currentRate)
     steadyRate = Math.max(steadyRate, steadyFloor)
     const steadyCap = Math.max(
       maxPossibleRate * 0.6,
       currentRate + (flexible * COMPRESSION_STEADY / income) * 100
     )
-    steadyRate = Math.min(steadyRate, steadyCap)
-
-    // Recommended
+    steadyRate      = Math.min(steadyRate, steadyCap)
     recommendedRate = clamp(recommendedRate, 10, maxPossibleRate * 0.8)
-
-    // Accelerate
-    accelerateRate = clamp(accelerateRate, 20, maxPossibleRate * 0.95)
+    accelerateRate  = clamp(accelerateRate, 20, maxPossibleRate * 0.95)
   }
 
-  // Step 5: Ensure monotonic ordering (min 3% gap)
-  if (recommendedRate <= steadyRate + 3) {
-    recommendedRate = steadyRate + 3
-  }
-  if (accelerateRate <= recommendedRate + 3) {
-    accelerateRate = recommendedRate + 3
-  }
+  if (recommendedRate <= steadyRate + 3) recommendedRate = steadyRate + 3
+  if (accelerateRate  <= recommendedRate + 3) accelerateRate = recommendedRate + 3
 
-  // Re-apply caps after gap adjustment
   if (currentRate >= 0) {
     recommendedRate = Math.min(recommendedRate, maxPossibleRate * 0.8)
-    accelerateRate = Math.min(accelerateRate, maxPossibleRate * 0.95)
+    accelerateRate  = Math.min(accelerateRate,  maxPossibleRate * 0.95)
   }
+  if (recommendedRate <= steadyRate)   recommendedRate = steadyRate + 2
+  if (accelerateRate  <= recommendedRate) accelerateRate = recommendedRate + 2
 
-  // Final safety: if caps caused ordering violations
-  if (recommendedRate <= steadyRate) {
-    recommendedRate = steadyRate + 2
-  }
-  if (accelerateRate <= recommendedRate) {
-    accelerateRate = recommendedRate + 2
-  }
-
-  // Step 6: Compute "Do nothing" baseline
+  // ── Baseline ──
   const baselineSave = roundMoney(Math.max(0, currentSavings))
   const baseline = {
-    savings_rate: roundRate(currentRate),
-    monthly_save: baselineSave,
-    projection_1y: projectPortfolio(baselineSave, netWorth, 1),
-    projection_5y: projectPortfolio(baselineSave, netWorth, 5),
+    savings_rate:   roundRate(currentRate),
+    monthly_save:   baselineSave,
+    projection_1y:  projectPortfolio(baselineSave, netWorth, 1),
+    projection_5y:  projectPortfolio(baselineSave, netWorth, 5),
     projection_10y: projectPortfolio(baselineSave, netWorth, 10),
   }
 
-  // Step 7: Build each plan
-  function buildPlan(rate: number): PlanDetail {
-    const monthlySave = roundMoney(income * (rate / 100))
+  // Baseline FIRE years (for tradeoff notes)
+  const baselineFireResult = fireNumber
+    ? computeFireDate(netWorth, fireNumber, baselineSave, returnRate, currentAge)
+    : null
+
+  // ── Build each plan ──
+  function buildPlan(
+    rate: number,
+    planType: 'steady' | 'recommended' | 'accelerate'
+  ): PlanDetail {
+    const monthlySave  = roundMoney(income * (rate / 100))
     const monthlySpend = roundMoney(income - monthlySave)
     const flexibleSpend = roundMoney(Math.max(0, monthlySpend - fixed))
-    const extra = roundMoney(monthlySave - baseline.monthly_save)
+    const extra         = roundMoney(monthlySave - baseline.monthly_save)
     const compressionPct = flexible > 0
       ? round2((1 - flexibleSpend / flexible) * 100)
       : 0
 
-    const p1y = projectPortfolio(monthlySave, netWorth, 1)
-    const p5y = projectPortfolio(monthlySave, netWorth, 5)
+    const p1y  = projectPortfolio(monthlySave, netWorth, 1)
+    const p5y  = projectPortfolio(monthlySave, netWorth, 5)
     const p10y = projectPortfolio(monthlySave, netWorth, 10)
 
+    // FIRE date projection for this plan
+    let officialFireDate: string | null  = null
+    let officialFireAge: number | null   = null
+    let fireYearsVsBaseline: number | null = null
+
+    if (fireNumber) {
+      const fireResult = computeFireDate(netWorth, fireNumber, monthlySave, returnRate, currentAge)
+      officialFireDate = fireResult.fireDate !== 'Unknown' ? fireResult.fireDate : null
+      officialFireAge  = fireResult.fireAge
+
+      if (baselineFireResult && baselineFireResult.yearsRemaining < 99) {
+        fireYearsVsBaseline = baselineFireResult.yearsRemaining - fireResult.yearsRemaining
+      }
+    }
+
+    const tradeoffNote = buildTradeoffNote(
+      extra,
+      baselineFireResult?.yearsRemaining ?? 99,
+      fireNumber
+        ? computeFireDate(netWorth, fireNumber, monthlySave, returnRate, currentAge).yearsRemaining
+        : 99
+    )
+
     return {
-      savings_rate: roundRate(rate),
-      monthly_save: monthlySave,
-      monthly_spend: monthlySpend,
-      flexible_spend: flexibleSpend,
-      extra_per_month: extra,
-      flexible_compression_pct: compressionPct,
-      projection_1y: p1y,
-      projection_5y: p5y,
-      projection_10y: p10y,
-      gain_vs_baseline_10y: round2(p10y - baseline.projection_10y),
-      feasibility: classifyFeasibility(rate, currentRate),
-      status: determineStatus(monthlySave, currentRate),
+      savings_rate:              roundRate(rate),
+      monthly_save:              monthlySave,
+      monthly_spend:             monthlySpend,
+      spending_ceiling_monthly:  monthlySpend,     // alias
+      flexible_spend:            flexibleSpend,
+      extra_per_month:           extra,
+      flexible_compression_pct:  compressionPct,
+      projection_1y:             p1y,
+      projection_5y:             p5y,
+      projection_10y:            p10y,
+      gain_vs_baseline_10y:      round2(p10y - baseline.projection_10y),
+      feasibility:               classifyFeasibility(rate, currentRate),
+      status:                    determineStatus(monthlySave, currentRate),
+      official_fire_date:        officialFireDate,
+      official_fire_age:         officialFireAge,
+      fire_years_vs_baseline:    fireYearsVsBaseline,
+      tradeoff_note:             tradeoffNote,
+      positioning_copy:          getPositioningCopy(planType),
     }
   }
 
   const plans = {
-    steady: buildPlan(steadyRate),
-    recommended: buildPlan(recommendedRate),
-    accelerate: buildPlan(accelerateRate),
+    steady:      buildPlan(steadyRate,      'steady'),
+    recommended: buildPlan(recommendedRate, 'recommended'),
+    accelerate:  buildPlan(accelerateRate,  'accelerate'),
   }
 
-  // Step 8: Critical check — if even accelerate is deficit, fixed > income
   const critical = plans.accelerate.status === 'deficit'
 
   return { baseline, plans, maxPossibleRate, critical }
 }
 
-// ============================================================
-// Main handler
-// ============================================================
+// ── Handler ───────────────────────────────────────────────────
 
 serve(async (req) => {
   const corsResponse = handleCors(req)
   if (corsResponse) return corsResponse
 
   try {
-    // ============================================================
-    // 1. Auth
-    // ============================================================
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ success: false, error: { code: 'UNAUTHORIZED', message: 'Missing Authorization header' } }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    if (!authHeader) return errorResponse(401, 'UNAUTHORIZED', 'Missing Authorization header')
 
     const supabaseAuth = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } }
     )
-    
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser()
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ success: false, error: { code: 'UNAUTHORIZED', message: 'Invalid token' } }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    if (authError || !user) return errorResponse(401, 'UNAUTHORIZED', 'Invalid token')
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // ============================================================
-    // 2. Parse request
-    // ============================================================
     const body: GeneratePlansRequest = await req.json()
 
-    // Validate required fields
     if (!body.avg_monthly_income || body.avg_monthly_income <= 0) {
-      return new Response(
-        JSON.stringify({ success: false, error: { code: 'INVALID_INPUT', message: 'avg_monthly_income must be > 0' } }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return errorResponse(400, 'INVALID_INPUT', 'avg_monthly_income must be > 0')
     }
 
-    // ============================================================
-    // 3. Get user profile for net worth and age (if not provided)
-    // ============================================================
-    let netWorth = body.current_net_worth
+    // Resolve net worth, age, and fire_number — client values take priority
+    let netWorth   = body.current_net_worth
     let currentAge = body.current_age
+    let fireNumber = body.fire_number
 
-    if (netWorth === undefined || netWorth === null || currentAge === undefined || currentAge === null) {
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('age, current_net_worth, plaid_net_worth')
-        .eq('user_id', user.id)
-        .single()
+    // Fetch profile + active goal in parallel when any field is missing
+    if (
+      netWorth   == null ||
+      currentAge == null ||
+      fireNumber == null
+    ) {
+      const [profileResult, goalResult] = await Promise.all([
+        supabase
+          .from('user_profiles')
+          .select('age, current_net_worth, plaid_net_worth')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+        supabase
+          .from('fire_goals')
+          .select('fire_number, retirement_spending_monthly, withdrawal_rate_assumption, return_assumption, current_age')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .maybeSingle(),
+      ])
 
-      if (netWorth === undefined || netWorth === null) {
-        netWorth = profile?.plaid_net_worth ?? profile?.current_net_worth ?? 0
+      if (netWorth == null) {
+        netWorth = profileResult.data?.plaid_net_worth
+          ?? profileResult.data?.current_net_worth
+          ?? 0
       }
-      if (currentAge === undefined || currentAge === null) {
-        currentAge = profile?.age ?? 30
+      if (currentAge == null) {
+        currentAge = profileResult.data?.age ?? goalResult.data?.current_age ?? null
+      }
+      if (fireNumber == null) {
+        const goal = goalResult.data
+        if (goal?.fire_number > 0) {
+          fireNumber = goal.fire_number
+        } else if (goal?.retirement_spending_monthly > 0) {
+          fireNumber = computeFireNumber(
+            goal.retirement_spending_monthly,
+            goal.withdrawal_rate_assumption ?? 0.04
+          )
+        } else if (body.retirement_spending_monthly) {
+          fireNumber = computeFireNumber(body.retirement_spending_monthly)
+        }
       }
     }
 
-    // ============================================================
-    // 4. Generate plans
-    // ============================================================
-    const input: GeneratePlansRequest = {
-      ...body,
-      current_net_worth: netWorth,
-      current_age: currentAge,
-    }
+    const returnRate = body.return_assumption ?? REAL_ANNUAL_RETURN
 
-    const { baseline, plans, maxPossibleRate, critical } = generateAllPlans(input)
+    const { baseline, plans, maxPossibleRate, critical } = generateAllPlans({
+      current_savings_rate:   body.current_savings_rate,
+      avg_monthly_income:     body.avg_monthly_income,
+      avg_monthly_savings:    body.avg_monthly_savings,
+      avg_monthly_fixed:      body.avg_monthly_fixed,
+      avg_monthly_flexible:   body.avg_monthly_flexible,
+      current_net_worth:      netWorth    ?? 0,
+      current_age:            currentAge  ?? 30,
+      fire_number:            fireNumber  ?? null,
+      return_assumption:      returnRate,
+    })
 
-    // ============================================================
-    // 5. Return
-    // ============================================================
     return new Response(
       JSON.stringify({
         success: true,
         data: {
           baseline,
           plans,
-          user_tier: getUserTier(body.current_savings_rate),
+          user_tier:       getUserTier(body.current_savings_rate),
           max_possible_rate: round2(maxPossibleRate),
           critical,
-          current_net_worth: netWorth,
-          current_age: currentAge,
+          current_net_worth: netWorth    ?? 0,
+          current_age:       currentAge  ?? null,
+          fire_number:       fireNumber  ?? null,
           assumptions: {
             nominal_return: NOMINAL_ANNUAL_RETURN,
-            inflation: INFLATION_RATE,
-            real_return: REAL_ANNUAL_RETURN,
+            inflation:      INFLATION_RATE,
+            real_return:    returnRate,
           },
         },
         meta: { timestamp: new Date().toISOString(), user_id: user.id },
@@ -341,9 +370,13 @@ serve(async (req) => {
     )
   } catch (error) {
     console.error('Error in generate-plans:', error)
-    return new Response(
-      JSON.stringify({ success: false, error: { code: 'INTERNAL_SERVER_ERROR', message: error.message || 'An unexpected error occurred' } }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return errorResponse(500, 'INTERNAL_SERVER_ERROR', error.message)
   }
 })
+
+function errorResponse(status: number, code: string, message: string): Response {
+  return new Response(
+    JSON.stringify({ success: false, error: { code, message } }),
+    { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+}

@@ -8,6 +8,7 @@
 import Foundation
 import RevenueCat
 
+@MainActor
 @Observable
 class SubscriptionManager {
     static let shared = SubscriptionManager()

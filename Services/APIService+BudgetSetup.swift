@@ -11,7 +11,7 @@ import Foundation
 
 extension APIService {
 
-    // MARK: - Account Selection (Step 0)
+    // MARK: - Account Selection
 
     /// Fetch user's connected Plaid accounts
     func getPlaidAccounts() async throws -> PlaidAccountsResponse {
@@ -19,7 +19,17 @@ extension APIService {
         return try await perform(request)
     }
 
-    // MARK: - Step 1: Loading
+    // MARK: - Goal Setup (v1 minimum — no target age required)
+
+    /// Save a FIRE goal using the v1 spending-based minimum input.
+    /// `targetRetirementAge` is optional — omit it in v1 onboarding.
+    func saveFireGoal(data: SaveFireGoalRequest) async throws -> SaveFireGoalResponse {
+        let body = try JSONEncoder().encode(data)
+        let request = try await authenticatedRequest(function: "save-fire-goal", body: body)
+        return try await perform(request)
+    }
+
+    // MARK: - Loading / Profile
 
     /// Fetch user profile for budget setup context
     func getUserProfileForBudget() async throws -> UserProfileForBudget {
@@ -41,18 +51,20 @@ extension APIService {
         return try await perform(request)
     }
 
-    // MARK: - Step 3: Choose your path
+    // MARK: - Plan Generation
 
-    /// Generate three savings plans based on spending stats
+    /// Generate Steady / Recommended / Accelerate plans.
+    /// Pass `fireNumber` or `retirementSpendingMonthly` in the request to enable
+    /// FIRE date projections per plan (server fetches from fire_goals if absent).
     func generatePlans(data: GeneratePlansRequest) async throws -> PlansResponse {
         let body = try JSONEncoder().encode(data)
         let request = try await authenticatedRequest(function: "generate-plans", body: body)
         return try await perform(request)
     }
 
-    // MARK: - Step 4: Spending plan
+    // MARK: - Spending Plan (budget derivation)
 
-    /// Translate selected savings rate into a concrete monthly budget
+    /// Translate selected savings rate into a concrete monthly budget.
     func generateSpendingPlan(data: GenerateSpendingPlanRequest) async throws -> SpendingPlanResponse {
         let body = try JSONEncoder().encode(data)
         let request = try await authenticatedRequest(function: "generate-spending-plan", body: body)

@@ -2,72 +2,30 @@
 //  SimulatorView.swift
 //  Flamora app
 //
-//  Simulator Main + Edit Profile Sheet
+//  Step 5 sandbox simulator:
+//  - Demo mode before full setup
+//  - Official preview after plan activation
+//  - Never mutates official Hero data
 //
 
 import SwiftUI
 
-/// 模拟器高级假设（与后端用户画像解耦；非 MockData）。
-private enum SimulatorAdvancedDefaults {
-    static let inflationRate: Double = 3.0
-    static let forecastGrowthRate: Double = 7.0
-}
-
-struct SimulatorSettings {
-    var age: Int
-    var monthlyIncome: Double
-    var monthlyContribution: Double
-    var expectedBudget: Double
-    var currentInvestment: Double
-    var inflation: Double
-    var growthRate: Double
-
-    static func from(_ data: SimulatorData) -> SimulatorSettings {
-        SimulatorSettings(
-            age: data.currentProfile.age,
-            monthlyIncome: data.currentProfile.monthlyIncome,
-            monthlyContribution: data.currentProfile.monthlyContribution,
-            expectedBudget: data.currentProfile.expectedBudget,
-            currentInvestment: data.currentProfile.currentInvestment,
-            inflation: data.advancedSettings.inflationRate,
-            growthRate: data.advancedSettings.forecastGrowthRate
-        )
-    }
-
-    static func fromAPI() -> SimulatorSettings {
-        let profile = MockData.apiUserProfile
-        let fireGoal = MockData.apiFireGoal
-        return SimulatorSettings(
-            age: fireGoal.currentAge,
-            monthlyIncome: profile.monthlyIncome,
-            monthlyContribution: profile.monthlyIncome - profile.currentMonthlyExpenses,
-            expectedBudget: profile.currentMonthlyExpenses,
-            currentInvestment: fireGoal.currentNetWorth,
-            inflation: SimulatorAdvancedDefaults.inflationRate,
-            growthRate: SimulatorAdvancedDefaults.forecastGrowthRate
-        )
-    }
-}
-
 struct SimulatorView: View {
     @Binding var displayState: SimulatorDisplayState
-    @State private var settings: SimulatorSettings = .fromAPI()
-    @State private var showEditor = false
-    @State private var isPulsing = false
+
     let isFireOn: Bool
     let onFireToggle: (() -> Void)?
     let bottomPadding: CGFloat
 
-    private var progressFraction: Double {
-        let target = computedFireCalculation.targetAmount
-        let current = computedFireCalculation.currentNetWorth
-        guard target > 0 else { return 0 }
-        return min(max(current / target, 0), 1)
-    }
+    @State private var preview: SimulatorPreviewModel?
+    @State private var setupStage: HomeSetupStage?
+    @State private var controls = SimulatorControlState()
+    @State private var didSeedControls = false
+    @State private var showAdvanced = false
+    @State private var errorMessage: String?
+    @State private var previewTask: Task<Void, Never>?
 
-    private var progressPercentText: String {
-        String(format: "%.0f%%", progressFraction * 100)
-    }
+    @Environment(PlaidManager.self) private var plaidManager
 
     init(
         displayState: Binding<SimulatorDisplayState>,
@@ -76,41 +34,31 @@ struct SimulatorView: View {
         onFireToggle: (() -> Void)? = nil
     ) {
         _displayState = displayState
+        self.bottomPadding = bottomPadding
         self.isFireOn = isFireOn
         self.onFireToggle = onFireToggle
-        self.bottomPadding = bottomPadding
     }
 
     var body: some View {
         ZStack {
-            Color.clear  // 与其他页面一致，不额外添加黑色层
+            AppColors.backgroundPrimary.ignoresSafeArea()
 
             switch displayState {
-            case .overview:
-                overviewContent
-            case .loading:
+            case .overview, .loading:
                 loadingContent
             case .results:
                 resultsContent
             }
         }
-        .animation(nil, value: bottomPadding)
-        .fullScreenCover(isPresented: $showEditor) {
-            SimulatorEditProfileView(
-                settings: $settings,
-                onClose: { showEditor = false },
-                onLaunch: {
-                    showEditor = false
-                    runSimulation()
-                }
-            )
+        .animation(.easeInOut(duration: 0.2), value: displayState)
+        .task { await bootstrapIfNeeded() }
+        .onChange(of: controls) { _, _ in
+            guard displayState == .results else { return }
+            schedulePreviewRefresh()
         }
-    }
-
-    private func runSimulation() {
-        displayState = .loading
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-            displayState = .results
+        .onDisappear {
+            previewTask?.cancel()
+            previewTask = nil
         }
     }
 }
@@ -121,730 +69,680 @@ enum SimulatorDisplayState {
     case results
 }
 
-// MARK: - Main Content
 private extension SimulatorView {
-    var overviewContent: some View {
-        GeometryReader { proxy in
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 24) {
-                    heroTitle
-
-                    circularProgress
-                        .padding(.vertical, 16)
-
-                    detailedAnalysis
-
-                    GradientButton(title: "Enter simulator") {
-                        showEditor = true
-                    }
-                    .padding(.top, 8)
-
-                }
-                .frame(minHeight: proxy.size.height, alignment: .top)
-                .padding(.bottom, max(bottomPadding, AppSpacing.lg))
-                .padding(.top, AppSpacing.md)
-            }
+    var simulatorMode: SimulatorMode {
+        if (setupStage ?? .accountsLinked) == .active {
+            return .officialPreview
         }
-    }
-
-    var heroTitle: some View {
-        let fireAge = computedFireCalculation.fireAge
-
-        let ageGradient = LinearGradient(
-            colors: AppColors.gradientFire,
-            startPoint: .leading,
-            endPoint: .trailing
-        )
-
-        return HStack(spacing: 6) {
-            Text("FIRE by age")
-                .font(.cardFigurePrimary)
-                .foregroundStyle(AppColors.textPrimary)
-
-            Text("\(fireAge)")
-                .font(.cardFigurePrimary)
-                .foregroundStyle(ageGradient)
-        }
-        .frame(maxWidth: .infinity, alignment: .center)
-        .multilineTextAlignment(.center)
-        .padding(.horizontal, AppSpacing.screenPadding)
-    }
-
-    var circularProgress: some View {
-        CircularProgressView(
-            progress: progressFraction,
-            percentText: progressPercentText
-        )
-    }
-
-    var detailedAnalysis: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("DETAILED WEALTH ANALYSIS")
-                .font(.cardHeader)
-                .foregroundColor(AppColors.textTertiary)
-                .tracking(1.5)
-                .padding(.horizontal, AppSpacing.screenPadding)
-
-            AnalysisCard(icon: "target", title: "Target Amount", value: formatCurrency(computedFireCalculation.targetAmount))
-            AnalysisCard(icon: "dollarsign.circle.fill", title: "Current Net Worth", value: formatCurrency(computedFireCalculation.currentNetWorth))
-            AnalysisCard(icon: "creditcard.fill", title: "Ideal Monthly Spending", value: formatCurrency(computedFireCalculation.idealMonthlySpending))
-        }
+        return .demo
     }
 
     var loadingContent: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: AppSpacing.lg) {
             Spacer()
 
             ZStack {
                 Circle()
-                    .stroke(AppColors.surfaceBorder, style: StrokeStyle(lineWidth: 2, dash: [6, 6]))
+                    .stroke(AppColors.overlayWhiteStroke, style: StrokeStyle(lineWidth: 2, dash: [5, 8]))
                     .frame(width: 220, height: 220)
 
                 Circle()
                     .fill(AppColors.surfaceElevated)
                     .frame(width: 140, height: 140)
                     .overlay(
-                        FlameIcon(size: 64, color: AppColors.textPrimary)
+                        Image(systemName: simulatorMode == .demo ? "sparkles" : "flame.fill")
+                            .font(.system(size: 40, weight: .semibold))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: simulatorMode == .demo
+                                        ? [AppColors.accentBlue, AppColors.accentPurple]
+                                        : AppColors.gradientFire,
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
                     )
-                    .shadow(color: AppColors.brandSecondary.opacity(0.25), radius: 30)
-                    .scaleEffect(isPulsing ? 1.06 : 0.94)
-                    .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: isPulsing)
             }
-            .onAppear { isPulsing = true }
-            .onDisappear { isPulsing = false }
 
-            VStack(spacing: 8) {
-                Text("Simulating your future…")
+            VStack(spacing: AppSpacing.sm) {
+                Text(simulatorMode == .demo ? "Loading demo simulator…" : "Loading your sandbox…")
                     .font(.detailTitle)
                     .foregroundStyle(AppColors.textPrimary)
 
-                Text("ANALYZING CONTRIBUTION PATTERNS…")
-                    .font(.footnoteSemibold)
-                    .foregroundColor(AppColors.textTertiary)
-                    .tracking(1.5)
+                Text(simulatorMode == .demo
+                     ? "This uses sample data so you can test ideas before setup is complete."
+                     : "Your official Hero stays fixed while the sandbox builds preview paths.")
+                    .font(.bodySmall)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, AppSpacing.screenPadding)
+            }
+
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.warning)
+                    .padding(.horizontal, AppSpacing.screenPadding)
             }
 
             Spacer()
         }
-        .padding(.horizontal, 24)
+        .padding(.bottom, max(bottomPadding, AppSpacing.lg))
     }
 
     var resultsContent: some View {
-        GeometryReader { proxy in
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 24) {
-                    resultsTitle
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                simulatorHeader
+                resultCard
+                comparisonGraph
+                controlsSection
 
-                    resultsChart
-
-                    resultsCards
-
-                    GradientButton(title: "Save Simulation") {
-                        displayState = .overview
-                    }
-                    .padding(.top, 8)
-
-                }
-                .frame(minHeight: proxy.size.height, alignment: .top)
-                .padding(.bottom, max(bottomPadding, AppSpacing.lg))
-                .padding(.top, AppSpacing.md)
-                .padding(.horizontal, AppSpacing.screenPadding)
-            }
-        }
-    }
-
-    var resultsTitle: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("You will reach financial")
-                .font(.cardFigurePrimary)
-                .foregroundStyle(AppColors.textPrimary)
-
-            Text("independence at age \(computedFireCalculation.fireAge)")
-                .font(.cardFigurePrimary)
-                .foregroundStyle(AppColors.textPrimary)
-
-            Text("Detailed FIRE progress analysis")
-                .font(.supportingText)
-                .foregroundColor(AppColors.textTertiary)
-        }
-    }
-
-    var resultsChart: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            GeometryReader { proxy in
-                let width = proxy.size.width
-                let height = proxy.size.height
-
-                ZStack {
-                    Path { path in
-                        path.move(to: CGPoint(x: 0, y: height * 0.7))
-                        path.addCurve(
-                            to: CGPoint(x: width * 0.55, y: height * 0.35),
-                            control1: CGPoint(x: width * 0.2, y: height * 0.55),
-                            control2: CGPoint(x: width * 0.35, y: height * 0.35)
-                        )
-                        path.addCurve(
-                            to: CGPoint(x: width, y: height * 0.75),
-                            control1: CGPoint(x: width * 0.75, y: height * 0.45),
-                            control2: CGPoint(x: width * 0.9, y: height * 0.7)
-                        )
-                    }
-                    .stroke(
-                        LinearGradient(
-                            colors: [AppColors.accentBlueBright, AppColors.warning],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        ),
-                        style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                if let errorMessage {
+                    ErrorBanner(
+                        message: errorMessage,
+                        onRetry: { schedulePreviewRefresh(immediate: true) }
                     )
-
-                    Circle()
-                        .stroke(AppColors.textPrimary, lineWidth: 3)
-                        .frame(width: 14, height: 14)
-                        .position(x: width * 0.55, y: height * 0.35)
-
-                    Path { path in
-                        path.move(to: CGPoint(x: width * 0.55, y: height * 0.35))
-                        path.addLine(to: CGPoint(x: width * 0.55, y: height))
-                    }
-                    .stroke(AppColors.surfaceBorder, style: StrokeStyle(lineWidth: 1, dash: [4, 6]))
                 }
             }
-            .frame(height: 220)
+            .padding(.top, AppSpacing.md)
+            .padding(.bottom, max(bottomPadding, AppSpacing.xl))
+        }
+    }
 
-            HStack {
-                Text("Age \(settings.age)")
-                    .font(.footnoteRegular)
-                    .foregroundColor(AppColors.textTertiary)
+    var simulatorHeader: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.sm) {
+                Text(simulatorMode == .demo ? "DEMO SIMULATOR" : "SANDBOX")
+                    .font(.cardHeader)
+                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                    .tracking(AppTypography.Tracking.cardHeader)
+
+                if simulatorMode == .demo {
+                    Text("DEMO")
+                        .font(.miniLabel)
+                        .foregroundStyle(AppColors.textInverse)
+                        .padding(.horizontal, AppSpacing.sm)
+                        .padding(.vertical, 4)
+                        .background(AppColors.accentAmber)
+                        .clipShape(Capsule())
+                }
 
                 Spacer()
 
-                Text("Age \(computedFireCalculation.fireAge) (FIRE)")
-                    .font(.footnoteSemibold)
-                    .foregroundStyle(AppColors.textPrimary)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 6)
-                    .background(AppColors.surfaceElevated)
-                    .clipShape(Capsule())
-
-                Spacer()
-
-                Text("Age 90")
-                    .font(.footnoteRegular)
-                    .foregroundColor(AppColors.textTertiary)
+                Button(action: { onFireToggle?() }) {
+                    Image(systemName: "xmark")
+                        .font(.bodySmallSemibold)
+                        .foregroundStyle(AppColors.textPrimary)
+                        .frame(width: 34, height: 34)
+                        .background(AppColors.surfaceElevated)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
             }
-        }
-    }
 
-    var resultsCards: some View {
-        let fireAge = computedFireCalculation.fireAge
-        let yearsUntilFire = max(fireAge - settings.age, 0)
-        let fireYear = Calendar.current.component(.year, from: Date()) + yearsUntilFire
-
-        return HStack(spacing: 16) {
-            resultStatCard(
-                title: "FIRE DATE",
-                value: "\(fireYear)",
-                subvalue: "Age \(fireAge)",
-                accent: AppColors.warning
-            )
-
-            resultStatCard(
-                title: "TOTAL WEALTH",
-                value: formatCurrency(computedFireCalculation.targetAmount),
-                subvalue: "At milestone",
-                accent: AppColors.accentBlueBright
-            )
-        }
-    }
-
-    func resultStatCard(title: String, value: String, subvalue: String, accent: Color) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.smallLabel)
-                .foregroundColor(AppColors.textTertiary)
-                .tracking(1.2)
-
-            Text(value)
-                .font(.h3)
+            Text(simulatorMode == .demo
+                 ? "Play with sample assumptions before your full setup is ready."
+                 : "Test changes here without changing the official path shown on Home.")
+                .font(.h4)
                 .foregroundStyle(AppColors.textPrimary)
 
-            Text(subvalue)
+            Text(simulatorMode == .demo
+                 ? "This second act is a preview playground. Your official Hero stays untouched."
+                 : "Your official Hero remains real. Only the adjusted path below changes.")
+                .font(.bodySmall)
+                .foregroundStyle(AppColors.textSecondary)
+                .lineSpacing(3)
+        }
+        .padding(.horizontal, AppSpacing.screenPadding)
+    }
+
+    var resultCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text(simulatorMode == .demo ? "SAMPLE RESULT" : "IF APPLIED")
+                .font(.miniLabel)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+
+            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                Text(preview?.previewFireDate ?? "—")
+                    .font(.largeTitle.weight(.bold))
+                    .foregroundStyle(AppColors.textPrimary)
+
+                Spacer()
+
+                deltaBadge
+            }
+
+            HStack(spacing: AppSpacing.sm) {
+                statPill(
+                    title: "Current path",
+                    value: preview?.officialFireDate ?? (simulatorMode == .demo ? "Sample" : "—")
+                )
+                statPill(
+                    title: "Adjusted path",
+                    value: preview?.previewFireDate ?? "—"
+                )
+            }
+
+            Text(resultSupportingCopy)
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.textSecondary)
+                .lineSpacing(2)
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(AppColors.surfaceElevated)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.card)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+        )
+        .padding(.horizontal, AppSpacing.screenPadding)
+    }
+
+    @ViewBuilder
+    var deltaBadge: some View {
+        if let preview {
+            let faster = preview.deltaMonths < 0
+            Text(deltaLabel(for: preview))
                 .font(.bodySmallSemibold)
-                .foregroundColor(accent)
+                .foregroundStyle(faster ? AppColors.success : AppColors.warning)
+                .padding(.horizontal, AppSpacing.md)
+                .padding(.vertical, AppSpacing.sm)
+                .background((faster ? AppColors.success : AppColors.warning).opacity(0.12))
+                .clipShape(Capsule())
+        }
+    }
+
+    func statPill(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title.uppercased())
+                .font(.miniLabel)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+            Text(value)
+                .font(.bodySmallSemibold)
+                .foregroundStyle(AppColors.textPrimary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppSpacing.md)
-        .background(AppColors.surface)
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
-        )
-        .cornerRadius(AppRadius.lg)
+        .background(AppColors.overlayWhiteWash)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
     }
-}
 
-// MARK: - Edit Profile Full Screen
-private struct SimulatorEditProfileView: View {
-    @Binding var settings: SimulatorSettings
-    let onClose: () -> Void
-    let onLaunch: () -> Void
-
-    @State private var showAdvanced = false
-    @State private var activeField: SettingField?
-
-    var body: some View {
-        ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
-
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 24) {
-                    header
-
-                    titleSection
-
-                    settingsSection
-
-                    advancedSection
-
-                    GradientButton(title: "Launch simulation") {
-                        onLaunch()
-                    }
-                    .padding(.top, 8)
-
-                    Color.clear.frame(height: 24)
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 24)
-            }
+    var resultSupportingCopy: String {
+        guard let preview else {
+            return "Use the controls below to compare your current path against a new scenario."
         }
-        .sheet(item: $activeField) { field in
-            SettingEditorSheet(
-                field: field,
-                settings: $settings
+
+        if preview.isDemoMode {
+            return "Demo mode uses sample data. It helps you feel the product without changing your official progress."
+        }
+
+        if preview.deltaMonths == 0 {
+            return "This scenario keeps your FIRE timing roughly unchanged. Try bigger savings or lower retirement spending."
+        }
+
+        if preview.deltaMonths < 0 {
+            return "This scenario reaches FIRE earlier than your current official plan, but it does not change the Hero until you explicitly apply it later."
+        }
+
+        return "This scenario pushes FIRE further out than your official plan. The Home Hero still stays official."
+    }
+
+    func deltaLabel(for preview: SimulatorPreviewModel) -> String {
+        if preview.deltaMonths == 0 {
+            return "No change"
+        }
+        let direction = preview.deltaMonths < 0 ? "earlier" : "later"
+        return "\(abs(preview.deltaMonths)) mo \(direction)"
+    }
+
+    var comparisonGraph: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack {
+                Text("CURRENT VS ADJUSTED")
+                    .font(.miniLabel)
+                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                Spacer()
+                legend
+            }
+
+            PreviewPathChart(
+                officialPath: preview?.officialPath ?? [],
+                adjustedPath: preview?.adjustedPath ?? []
             )
+            .frame(height: 230)
+
+            Text(simulatorMode == .demo
+                 ? "Demo mode shows one sample path and one adjusted path."
+                 : "The solid line is your official path. The brighter line is this sandbox scenario.")
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.textSecondary)
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.card)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+        )
+        .padding(.horizontal, AppSpacing.screenPadding)
+    }
+
+    var legend: some View {
+        HStack(spacing: AppSpacing.md) {
+            legendItem(color: AppColors.surfaceBorder, text: "Current")
+            legendItem(color: AppColors.accentBlueBright, text: "Adjusted")
         }
     }
-}
 
-private extension SimulatorEditProfileView {
-    var header: some View {
-        HStack(spacing: 10) {
-            FlameIcon(size: 18, color: AppColors.brandPrimary)
-
-            Text("PREDICT")
-                .font(.inlineFigureBold)
-                .foregroundColor(AppColors.textSecondary)
-                .tracking(2)
-
-            Spacer()
-
-            Button(action: onClose) {
-                Image(systemName: "xmark")
-                    .font(.bodySemibold)
-                    .foregroundColor(AppColors.textSecondary)
-                    .frame(width: 28, height: 28)
-            }
-            .buttonStyle(.plain)
+    func legendItem(color: Color, text: String) -> some View {
+        HStack(spacing: 6) {
+            Capsule()
+                .fill(color)
+                .frame(width: 18, height: 3)
+            Text(text)
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.textSecondary)
         }
     }
 
-    var titleSection: some View {
-        Text("Edit your Profile")
-            .font(.largeTitle.bold())
-            .foregroundStyle(AppColors.textPrimary)
-            .padding(.top, 8)
-    }
+    var controlsSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text("QUICK ADJUSTMENTS")
+                .font(.miniLabel)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
 
-    var settingsSection: some View {
-        VStack(spacing: 0) {
-            SettingRow(title: "Current age", value: "\(settings.age)", unit: "years") {
-                activeField = .age
+            VStack(spacing: AppSpacing.sm) {
+                MoneyStepperRow(
+                    title: "Monthly savings",
+                    value: controls.savingsMonthly,
+                    range: 0...20_000,
+                    step: 250
+                ) { controls.savingsMonthly = $0 }
+
+                MoneyStepperRow(
+                    title: "Retirement spending",
+                    value: controls.retirementSpending,
+                    range: 1_500...25_000,
+                    step: 250
+                ) { controls.retirementSpending = $0 }
             }
-            divider
 
-            SettingRow(title: "Current monthly income", value: formatCurrency(settings.monthlyIncome), unit: "/mo") {
-                activeField = .income
-            }
-            divider
-
-            SettingRow(title: "Monthly Contribution", value: formatCurrency(settings.monthlyContribution), unit: "/mo") {
-                activeField = .contribution
-            }
-            divider
-
-            SettingRow(title: "Expected budget", value: formatCurrency(settings.expectedBudget), unit: "/mo") {
-                activeField = .budget
-            }
-            divider
-
-            SettingRow(title: "Current Investment amount", value: formatCurrency(settings.currentInvestment), unit: "") {
-                activeField = .investment
-            }
-        }
-        .padding(.top, 8)
-    }
-
-    var advancedSection: some View {
-        VStack(spacing: 16) {
             Button {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
                     showAdvanced.toggle()
                 }
             } label: {
                 HStack {
-                    Text("Advanced settings")
-                        .font(.body.weight(.semibold))
+                    Text("Advanced assumptions")
+                        .font(.bodySmallSemibold)
                         .foregroundStyle(AppColors.textPrimary)
-
                     Spacer()
-
                     Image(systemName: showAdvanced ? "chevron.up" : "chevron.down")
                         .font(.bodySmallSemibold)
-                        .foregroundColor(AppColors.textSecondary)
+                        .foregroundStyle(AppColors.textSecondary)
                 }
-                .padding(.vertical, 12)
-                .padding(.horizontal, 18)
-                .background(AppColors.surface)
-                .overlay(
-                    Capsule()
-                        .stroke(AppColors.surfaceBorder, lineWidth: 1)
-                )
-                .clipShape(Capsule())
+                .padding(AppSpacing.md)
+                .background(AppColors.overlayWhiteWash)
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
             }
             .buttonStyle(.plain)
 
             if showAdvanced {
-                VStack(spacing: 0) {
-                    SettingRow(title: "Inflation", value: formatPercent(settings.inflation), unit: "") {
-                        activeField = .inflation
-                    }
-                    divider
+                VStack(spacing: AppSpacing.sm) {
+                    PercentStepperRow(
+                        title: "Return rate",
+                        value: controls.returnRate,
+                        range: 1...12,
+                        step: 0.5
+                    ) { controls.returnRate = $0 }
 
-                    SettingRow(title: "Forecast Growth Rate", value: formatPercent(settings.growthRate), unit: "") {
-                        activeField = .growthRate
-                    }
+                    PercentStepperRow(
+                        title: "Inflation",
+                        value: controls.inflationRate,
+                        range: 1...8,
+                        step: 0.5
+                    ) { controls.inflationRate = $0 }
+
+                    PercentStepperRow(
+                        title: "Withdrawal rule",
+                        value: controls.withdrawalRate,
+                        range: 2.5...6,
+                        step: 0.25
+                    ) { controls.withdrawalRate = $0 }
+
+                    OptionalAgeRow(
+                        title: "Target age",
+                        value: controls.targetAge
+                    ) { controls.targetAge = $0 }
                 }
             }
         }
-        .padding(.top, 4)
-    }
-
-    var divider: some View {
-        Divider()
-            .overlay(AppColors.surfaceElevated)
-            .padding(.vertical, 4)
-    }
-
-    func formatCurrency(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        formatter.maximumFractionDigits = 0
-        formatter.minimumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "$0"
-    }
-
-    func formatPercent(_ value: Double) -> String {
-        String(format: "%.1f%%", value)
+        .padding(AppSpacing.cardPadding)
+        .background(AppColors.surfaceElevated)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.card)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+        )
+        .padding(.horizontal, AppSpacing.screenPadding)
     }
 }
 
-// MARK: - Setting Row
-private struct SettingRow: View {
+private extension SimulatorView {
+    @MainActor
+    func bootstrapIfNeeded() async {
+        guard preview == nil else { return }
+        displayState = .loading
+        errorMessage = nil
+
+        let state = try? await APIService.shared.getSetupState()
+        setupStage = state?.setupStage ?? (plaidManager.hasLinkedBank ? .accountsLinked : .noGoal)
+        await refreshPreview(immediate: true)
+    }
+
+    func schedulePreviewRefresh(immediate: Bool = false) {
+        previewTask?.cancel()
+        previewTask = Task {
+            if !immediate {
+                try? await Task.sleep(for: .milliseconds(220))
+            }
+            guard !Task.isCancelled else { return }
+            await refreshPreview(immediate: immediate)
+        }
+    }
+
+    @MainActor
+    func refreshPreview(immediate: Bool) async {
+        if preview == nil || immediate {
+            displayState = .loading
+        }
+
+        do {
+            let data = try await APIService.shared.previewSimulator(data: buildRequest())
+            preview = data
+            seedControlsIfNeeded(from: data)
+            errorMessage = nil
+            displayState = .results
+        } catch {
+            errorMessage = "Couldn't refresh this scenario."
+            displayState = .results
+        }
+    }
+
+    func buildRequest() -> SimulatorPreviewRequest {
+        switch simulatorMode {
+        case .demo:
+            var req = SimulatorPreviewRequest.demo(
+                retirementSpending: max(controls.retirementSpending, 4500),
+                netWorth: 75_000,
+                sandboxSavings: controls.savingsMonthly
+            )
+            req.sandboxRetirementSpending = controls.retirementSpending
+            req.sandboxReturnRate = controls.returnRate / 100
+            req.sandboxInflationRate = controls.inflationRate / 100
+            req.sandboxWithdrawalRate = controls.withdrawalRate / 100
+            req.sandboxTargetAge = controls.targetAge
+            return req
+
+        case .officialPreview:
+            return .officialPreview(
+                sandboxSavings: controls.savingsMonthly,
+                sandboxSpending: controls.retirementSpending,
+                sandboxReturn: controls.returnRate / 100,
+                sandboxWithdrawal: controls.withdrawalRate / 100,
+                sandboxTargetAge: controls.targetAge
+            )
+        }
+    }
+
+    func seedControlsIfNeeded(from data: SimulatorPreviewModel) {
+        guard !didSeedControls else { return }
+        let effective = data.effectiveInputs
+
+        controls = SimulatorControlState(
+            savingsMonthly: effective?.savingsMonthly ?? 1_800,
+            retirementSpending: effective?.retirementSpending ?? 5_000,
+            returnRate: (effective?.returnRate ?? 0.07) * 100,
+            inflationRate: 3.0,
+            withdrawalRate: (effective?.withdrawalRate ?? 0.04) * 100,
+            targetAge: effective?.currentAge.map { $0 + 15 }
+        )
+        didSeedControls = true
+    }
+}
+
+private enum SimulatorMode {
+    case demo
+    case officialPreview
+}
+
+private struct SimulatorControlState: Equatable {
+    var savingsMonthly: Double = 1_800
+    var retirementSpending: Double = 5_000
+    var returnRate: Double = 7.0
+    var inflationRate: Double = 3.0
+    var withdrawalRate: Double = 4.0
+    var targetAge: Int? = nil
+}
+
+private struct MoneyStepperRow: View {
     let title: String
-    let value: String
-    let unit: String
-    let action: () -> Void
+    let value: Double
+    let range: ClosedRange<Double>
+    let step: Double
+    let onChange: (Double) -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack {
-                Text(title)
-                    .font(.bodyRegular)
-                    .foregroundColor(AppColors.textSecondary)
-
-                Spacer()
-
-                HStack(spacing: 6) {
-                    Text(value)
-                        .font(.body.bold())
-                        .foregroundStyle(AppColors.textPrimary)
-
-                    if !unit.isEmpty {
-                        Text(unit)
-                            .font(.bodyRegular)
-                            .foregroundColor(AppColors.textTertiary)
-                    }
-
-                    Image(systemName: "chevron.down")
-                        .font(.bodySmallSemibold)
-                        .foregroundColor(AppColors.textTertiary)
-                }
+        ControlRow(
+            title: title,
+            valueText: formatCurrency(value)
+        ) {
+            HStack(spacing: AppSpacing.sm) {
+                stepButton(symbol: "minus") { onChange(max(range.lowerBound, value - step)) }
+                stepButton(symbol: "plus") { onChange(min(range.upperBound, value + step)) }
             }
-            .padding(.vertical, 16)
+        }
+    }
+
+    private func stepButton(symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.bodySmallSemibold)
+                .foregroundStyle(AppColors.textPrimary)
+                .frame(width: 32, height: 32)
+                .background(AppColors.surface)
+                .clipShape(Circle())
         }
         .buttonStyle(.plain)
     }
 }
 
-// MARK: - Editing Sheet
-private enum SettingField: String, Identifiable {
-    case age
-    case income
-    case contribution
-    case budget
-    case investment
-    case inflation
-    case growthRate
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .age: return "Current age"
-        case .income: return "Current monthly income"
-        case .contribution: return "Monthly Contribution"
-        case .budget: return "Expected budget"
-        case .investment: return "Current Investment amount"
-        case .inflation: return "Inflation"
-        case .growthRate: return "Forecast Growth Rate"
-        }
-    }
-
-    var suffix: String {
-        switch self {
-        case .age: return "years"
-        case .income, .contribution, .budget: return "/mo"
-        case .investment: return ""
-        case .inflation, .growthRate: return "%"
-        }
-    }
-}
-
-private struct SettingEditorSheet: View {
-    let field: SettingField
-    @Binding var settings: SimulatorSettings
-    @Environment(\.dismiss) private var dismiss
-    @State private var inputValue: String
-
-    init(field: SettingField, settings: Binding<SimulatorSettings>) {
-        self.field = field
-        self._settings = settings
-
-        let currentValue: String
-        switch field {
-        case .age:
-            currentValue = String(settings.wrappedValue.age)
-        case .income:
-            currentValue = String(format: "%.0f", settings.wrappedValue.monthlyIncome)
-        case .contribution:
-            currentValue = String(format: "%.0f", settings.wrappedValue.monthlyContribution)
-        case .budget:
-            currentValue = String(format: "%.0f", settings.wrappedValue.expectedBudget)
-        case .investment:
-            currentValue = String(format: "%.0f", settings.wrappedValue.currentInvestment)
-        case .inflation:
-            currentValue = String(format: "%.1f", settings.wrappedValue.inflation)
-        case .growthRate:
-            currentValue = String(format: "%.1f", settings.wrappedValue.growthRate)
-        }
-        _inputValue = State(initialValue: currentValue)
-    }
+private struct PercentStepperRow: View {
+    let title: String
+    let value: Double
+    let range: ClosedRange<Double>
+    let step: Double
+    let onChange: (Double) -> Void
 
     var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 16) {
-                Text(field.title)
-                    .font(.statRowSemibold)
-                    .foregroundStyle(AppColors.textPrimary)
-
-                HStack {
-                    TextField("Enter value", text: $inputValue)
-                        .keyboardType(.decimalPad)
-                        .textFieldStyle(.roundedBorder)
-
-                    if !field.suffix.isEmpty {
-                        Text(field.suffix)
-                            .font(.bodyRegular)
-                            .foregroundColor(AppColors.textSecondary)
-                    }
-                }
-
-                Spacer()
-            }
-            .padding(24)
-            .background(AppColors.backgroundPrimary)
-            .navigationTitle("Edit")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        applyValue()
-                        dismiss()
-                    }
-                }
-            }
-        }
-        .presentationDetents([.medium])
-    }
-
-    private func applyValue() {
-        switch field {
-        case .age:
-            if let value = Int(inputValue) {
-                settings.age = max(0, value)
-            }
-        case .income:
-            if let value = Double(inputValue) {
-                settings.monthlyIncome = max(0, value)
-            }
-        case .contribution:
-            if let value = Double(inputValue) {
-                settings.monthlyContribution = max(0, value)
-            }
-        case .budget:
-            if let value = Double(inputValue) {
-                settings.expectedBudget = max(0, value)
-            }
-        case .investment:
-            if let value = Double(inputValue) {
-                settings.currentInvestment = max(0, value)
-            }
-        case .inflation:
-            if let value = Double(inputValue) {
-                settings.inflation = max(0, value)
-            }
-        case .growthRate:
-            if let value = Double(inputValue) {
-                settings.growthRate = max(0, value)
+        ControlRow(
+            title: title,
+            valueText: String(format: "%.2g%%", value)
+        ) {
+            HStack(spacing: AppSpacing.sm) {
+                stepButton(symbol: "minus") { onChange(max(range.lowerBound, value - step)) }
+                stepButton(symbol: "plus") { onChange(min(range.upperBound, value + step)) }
             }
         }
     }
-}
 
-// MARK: - Derived Calculation
-private extension SimulatorView {
-    var computedFireCalculation: FireCalculation {
-        let annualSpend = settings.expectedBudget * 12
-        let targetAmount = annualSpend * 25
-        let currentNetWorth = settings.currentInvestment
-        let monthlySavings = max(settings.monthlyContribution, 0)
-        let required = max(targetAmount - currentNetWorth, 0)
-        let yearsToFire = monthlySavings > 0 ? Int(ceil(required / (monthlySavings * 12))) : 99
-        let fireAge = settings.age + yearsToFire
-        let progress = targetAmount > 0 ? Int(min(max(currentNetWorth / targetAmount, 0), 1) * 100) : 0
-
-        return FireCalculation(
-            targetAmount: targetAmount,
-            currentNetWorth: currentNetWorth,
-            idealMonthlySpending: settings.expectedBudget,
-            fireAge: fireAge,
-            fireDate: "",
-            progressPercent: progress
-        )
-    }
-}
-
-// MARK: - Formatting
-private extension SimulatorView {
-    func formatCurrency(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        formatter.maximumFractionDigits = 0
-        formatter.minimumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "$0"
-    }
-
-    func formatPercent(_ value: Double) -> String {
-        String(format: "%.1f%%", value)
-    }
-
-    func gradientText(_ text: String) -> some View {
-        LinearGradient(
-            colors: [
-                AppColors.accentPurple,
-                AppColors.accentPink,
-                AppColors.accentAmber
-            ],
-            startPoint: .leading,
-            endPoint: .trailing
-        )
-        .mask(
-            Text(text)
-        )
-    }
-}
-
-// MARK: - Circular Progress
-private struct CircularProgressView: View {
-    let progress: Double
-    let percentText: String
-
-    private let circleSize: CGFloat = 220
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .stroke(AppColors.progressTrack, lineWidth: 14)
-
-            Circle()
-                .trim(from: 0, to: progress)
-                .stroke(
-                    LinearGradient(
-                        colors: [AppColors.accentPurple, AppColors.accentPink],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    style: StrokeStyle(lineWidth: 14, lineCap: .round)
-                )
-                .rotationEffect(.degrees(-90))
-        }
-        .frame(width: circleSize, height: circleSize)
-        .overlay(centerContent)
-    }
-
-    private var centerContent: some View {
-        VStack(spacing: 8) {
-            ZStack {
-                Image("FlameIcon")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 44, height: 44)
-                    .opacity(0.25)
-                    .blur(radius: 6)
-
-                LinearGradient(
-                    colors: [AppColors.accentPurple, AppColors.accentPink, AppColors.accentAmber],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-                .mask(
-                    Image("FlameIcon")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 44, height: 44)
-                )
-                .shadow(color: AppColors.accentPink.opacity(0.6), radius: 10)
-            }
-            .frame(height: 44)
-
-            Text(percentText)
-                .font(.h1)
+    private func stepButton(symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.bodySmallSemibold)
                 .foregroundStyle(AppColors.textPrimary)
+                .frame(width: 32, height: 32)
+                .background(AppColors.surface)
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+    }
+}
 
-            Text("ACHIEVED")
-                .font(.miniLabel)
-                .foregroundColor(AppColors.textTertiary)
-                .tracking(2)
+private struct OptionalAgeRow: View {
+    let title: String
+    let value: Int?
+    let onChange: (Int?) -> Void
+
+    var body: some View {
+        ControlRow(
+            title: title,
+            valueText: value.map { "\($0)" } ?? "Off"
+        ) {
+            HStack(spacing: AppSpacing.sm) {
+                Button("Clear") { onChange(nil) }
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(AppColors.textSecondary)
+
+                stepButton(symbol: "minus") {
+                    onChange(max((value ?? 55) - 1, 35))
+                }
+
+                stepButton(symbol: "plus") {
+                    onChange(min((value ?? 55) + 1, 80))
+                }
+            }
+        }
+    }
+
+    private func stepButton(symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.bodySmallSemibold)
+                .foregroundStyle(AppColors.textPrimary)
+                .frame(width: 32, height: 32)
+                .background(AppColors.surface)
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct ControlRow<Trailing: View>: View {
+    let title: String
+    let valueText: String
+    @ViewBuilder let trailing: () -> Trailing
+
+    var body: some View {
+        HStack(spacing: AppSpacing.md) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title.uppercased())
+                    .font(.miniLabel)
+                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                Text(valueText)
+                    .font(.bodySmallSemibold)
+                    .foregroundStyle(AppColors.textPrimary)
+            }
+
+            Spacer()
+
+            trailing()
+        }
+        .padding(AppSpacing.md)
+        .background(AppColors.overlayWhiteWash)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+    }
+}
+
+private struct PreviewPathChart: View {
+    let officialPath: [SimulatorDataPoint]
+    let adjustedPath: [SimulatorDataPoint]
+
+    var body: some View {
+        GeometryReader { proxy in
+            let points = combinedPoints(in: proxy.size)
+
+            ZStack(alignment: .bottomLeading) {
+                RoundedRectangle(cornerRadius: AppRadius.md)
+                    .fill(AppColors.backgroundSecondary)
+
+                VStack(spacing: 0) {
+                    ForEach(0..<4, id: \.self) { _ in
+                        Rectangle()
+                            .fill(AppColors.overlayWhiteStroke)
+                            .frame(height: 1)
+                        Spacer()
+                    }
+                }
+                .padding(.vertical, AppSpacing.md)
+                .padding(.horizontal, AppSpacing.sm)
+
+                if points.adjusted.count > 1 {
+                    path(points.adjusted)
+                        .stroke(
+                            LinearGradient(
+                                colors: [AppColors.accentBlueBright, AppColors.warning],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ),
+                            style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round)
+                        )
+                }
+
+                if points.official.count > 1 {
+                    path(points.official)
+                        .stroke(
+                            AppColors.surfaceBorder,
+                            style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round, dash: [7, 6])
+                        )
+                }
+            }
+        }
+    }
+
+    private func combinedPoints(in size: CGSize) -> (official: [CGPoint], adjusted: [CGPoint]) {
+        let combined = (officialPath + adjustedPath).map(\.netWorth)
+        let maxValue = max(combined.max() ?? 1, 1)
+        let minValue = min(combined.min() ?? 0, 0)
+        let range = max(maxValue - minValue, 1)
+
+        func normalize(_ series: [SimulatorDataPoint]) -> [CGPoint] {
+            guard series.count > 1 else { return [] }
+            let width = size.width
+            let height = size.height
+            return series.enumerated().map { index, point in
+                let x = CGFloat(index) / CGFloat(series.count - 1) * width
+                let normalized = (point.netWorth - minValue) / range
+                let y = height - CGFloat(normalized) * (height - 12) - 6
+                return CGPoint(x: x, y: y)
+            }
+        }
+
+        return (normalize(officialPath), normalize(adjustedPath))
+    }
+
+    private func path(_ points: [CGPoint]) -> Path {
+        Path { path in
+            guard let first = points.first else { return }
+            path.move(to: first)
+            for point in points.dropFirst() {
+                path.addLine(to: point)
+            }
         }
     }
 }
 
-// MARK: - Preview
+private func formatCurrency(_ value: Double) -> String {
+    let formatter = NumberFormatter()
+    formatter.numberStyle = .currency
+    formatter.currencyCode = "USD"
+    formatter.maximumFractionDigits = 0
+    formatter.minimumFractionDigits = 0
+    return formatter.string(from: NSNumber(value: value)) ?? "$0"
+}
+
 #Preview {
     SimulatorView(displayState: .constant(.overview))
+        .environment(PlaidManager.shared)
 }

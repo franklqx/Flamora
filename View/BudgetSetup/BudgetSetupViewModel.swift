@@ -2,38 +2,49 @@
 //  BudgetSetupViewModel.swift
 //  Flamora app
 //
-//  V2 ViewModel for Budget Setup flow
-//  - Step 1: Loading (calculate-spending-stats + AI diagnosis)
-//  - Step 2: Financial Snapshot (income/expenses/savings + AI insights)
-//  - Step 3: Spending Breakdown（Needs vs Wants；API 仍为 fixed/flexible 字段）
-//  - Step 4: Choose your path (generate-plans → 3 plans + baseline)
-//  - Step 5: Spending plan (ring chart + optional category budgets)
-//  - Step 6: Confirm & save
+//  V3 ViewModel for Budget Setup flow
+//  Step 0: Goal Setup (retirement spending + lifestyle preset)
+//  Step 1: Connect Accounts (Plaid)
+//  Step 2: Loading (calculate-spending-stats + AI diagnosis)
+//  Step 3: Accounts Review (confirm linked accounts)
+//  Step 4: Financial Snapshot (diagnosis)
+//  Step 5: Choose Plan (3 cards: Steady / Recommended / Accelerate)
+//  Step 6: Apply Plan (confirm + apply-selected-plan)
 //
 
 import Foundation
 import SwiftUI
 
+@MainActor
 @Observable
 class BudgetSetupViewModel {
     private let budgetRoundingUnit: Double = 10
-    
+
     // MARK: - Navigation
-    
+
     enum Step: Int, CaseIterable {
-        case accountSelection = 0
-        case loading = 1
-        case diagnosis = 2
-        case spendingBreakdown = 3
-        case choosePath = 4
-        case spendingPlan = 5
-        case confirm = 6
+        case goalSetup       = 0
+        case accountSelection = 1
+        case loading         = 2
+        case accountsReview  = 3
+        case diagnosis       = 4
+        case choosePath      = 5
+        case confirm         = 6
     }
 
-    var currentStep: Step = .accountSelection
+    var currentStep: Step = .goalSetup
     var isNavigatingForward = true
+    var postLoadingStep: Step = .accountsReview
+    var isResumingState = true
 
-    // MARK: - Step 0: Account Selection
+    // MARK: - Step 0: Goal Setup
+
+    var retirementSpendingMonthly: Double = 0
+    var lifestylePreset: String = "current"   // "lean" | "current" | "fat"
+    var isSavingGoal = false
+    var goalSaveError: String?
+
+    // MARK: - Step 1: Account Selection
 
     var plaidAccounts: [PlaidAccountItem] = []
     var selectedAccountIds: Set<String> = []
@@ -84,42 +95,30 @@ class BudgetSetupViewModel {
         case steady
         case recommended
         case accelerate
-        case custom
     }
-    
+
     var selectedPlanType: PlanSelection = .recommended
-    var customSavingsRate: Double = 20
-    
+
     var selectedPlan: PlanDetail? {
         guard let plans = plansResponse?.plans else { return nil }
         switch selectedPlanType {
-        case .steady: return plans.steady
-        case .recommended: return plans.recommended
-        case .accelerate: return plans.accelerate
-        case .custom: return buildCustomPlan()
+        case .steady:       return plans.steady
+        case .recommended:  return plans.recommended
+        case .accelerate:   return plans.accelerate
         }
     }
-    
+
     var baseline: BaselinePlan? { plansResponse?.baseline }
     var userTier: String { plansResponse?.userTier ?? "beginner" }
 
     var selectedPlanName: String {
         switch selectedPlanType {
-        case .steady: return "Steady"
-        case .recommended: return "Recommended"
-        case .accelerate: return "Accelerate"
-        case .custom: return "Custom"
+        case .steady:       return "Steady"
+        case .recommended:  return "Recommended"
+        case .accelerate:   return "Accelerate"
         }
     }
 
-    /// Compound growth from extra monthly savings only (not existing portfolio).
-    /// Formula: FV = monthlyExtra × 12 × ((1.055^years - 1) / 0.055)
-    func compoundGrowth(monthlyExtra: Double, years: Int) -> Double {
-        let realReturn = 0.055
-        let annualContribution = monthlyExtra * 12
-        return annualContribution * ((pow(1 + realReturn, Double(years)) - 1) / realReturn)
-    }
-    
     // MARK: - Step 4: Spending Plan
     
     var spendingPlan: SpendingPlanResponse?
@@ -171,59 +170,6 @@ class BudgetSetupViewModel {
         return locale.currencySymbol ?? "$"
     }
     
-    // MARK: - Custom Plan (client-side calculation)
-    
-    private func buildCustomPlan() -> PlanDetail {
-        let income = spendingStats?.avgMonthlyIncome ?? monthlyIncome
-        let savings = spendingStats?.avgMonthlySavings ?? 0
-        let fixed = spendingStats?.avgMonthlyFixed ?? 0
-        let flexible = spendingStats?.avgMonthlyFlexible ?? 0
-        let rate = customSavingsRate
-        
-        let monthlySaveRaw = income * (rate / 100)
-        let monthlySpendRaw = income - monthlySaveRaw
-        let flexibleSpendRaw = max(0, monthlySpendRaw - fixed)
-        let monthlySave = roundBudgetAmount(monthlySaveRaw)
-        let monthlySpend = roundBudgetAmount(monthlySpendRaw)
-        let flexibleSpend = roundBudgetAmount(flexibleSpendRaw)
-        let extra = roundBudgetAmount(monthlySave - roundBudgetAmount(savings))
-        let compressionPct = flexible > 0 ? (1 - flexibleSpend / flexible) * 100 : 0
-        
-        let p1y = projectPortfolio(monthlySavings: monthlySave, startingPortfolio: currentNetWorth, years: 1)
-        let p5y = projectPortfolio(monthlySavings: monthlySave, startingPortfolio: currentNetWorth, years: 5)
-        let p10y = projectPortfolio(monthlySavings: monthlySave, startingPortfolio: currentNetWorth, years: 10)
-        
-        let baselineP10y = baseline?.projection10y ?? projectPortfolio(
-            monthlySavings: max(0, savings),
-            startingPortfolio: currentNetWorth,
-            years: 10
-        )
-        
-        let currentRate = spendingStats?.currentSavingsRate ?? 0
-        let jump = rate - currentRate
-        let feasibility: String = {
-            if jump <= 5 { return "easy" }
-            if jump <= 15 { return "moderate" }
-            if jump <= 30 { return "challenging" }
-            return "extreme"
-        }()
-        
-        return PlanDetail(
-            savingsRate: roundPercentage(rate),
-            monthlySave: monthlySave,
-            monthlySpend: monthlySpend,
-            flexibleSpend: flexibleSpend,
-            extraPerMonth: extra,
-            flexibleCompressionPct: compressionPct,
-            projection1y: p1y,
-            projection5y: p5y,
-            projection10y: p10y,
-            gainVsBaseline10y: p10y - baselineP10y,
-            feasibility: feasibility,
-            status: monthlySave < 0 ? "deficit" : (currentRate < 0 && monthlySave >= 0 ? "breakeven" : "on_track")
-        )
-    }
-
     private func roundBudgetAmount(_ value: Double) -> Double {
         (value / budgetRoundingUnit).rounded() * budgetRoundingUnit
     }
@@ -283,6 +229,9 @@ class BudgetSetupViewModel {
     }
 
     func loadInitialData() async {
+        isLoadingProfile = true
+        isLoadingStats = true
+        isLoadingDiagnosis = true
         loadingError = nil
         
         async let profileTask: () = loadProfile()
@@ -389,10 +338,10 @@ class BudgetSetupViewModel {
     
     func loadPlans() async {
         guard let stats = spendingStats else { return }
-        
+
         isLoadingPlans = true
         do {
-            let requestBody = GeneratePlansRequest(
+            var requestBody = GeneratePlansRequest(
                 currentSavingsRate: stats.currentSavingsRate,
                 avgMonthlyIncome: stats.avgMonthlyIncome,
                 avgMonthlySavings: stats.avgMonthlySavings,
@@ -401,15 +350,16 @@ class BudgetSetupViewModel {
                 currentNetWorth: currentNetWorth,
                 currentAge: currentAge
             )
-            
+            // Pass retirement spending so backend can compute fire_number and per-plan FIRE dates
+            if retirementSpendingMonthly > 0 {
+                requestBody.retirementSpendingMonthly = retirementSpendingMonthly
+            }
+
             let body = try JSONEncoder().encode(requestBody)
             let request = try await APIService.shared.authenticatedRequest(function: "generate-plans", body: body)
             let response: PlansResponse = try await APIService.shared.perform(request)
             plansResponse = response
-            
-            // Initialize custom rate to recommended plan's rate
-            customSavingsRate = response.plans.recommended.savingsRate
-            
+
             isLoadingPlans = false
             print("✅ [BudgetSetup] loadPlans success")
             print("   Steady: \(response.plans.steady.savingsRate)%, Recommended: \(response.plans.recommended.savingsRate)%, Accelerate: \(response.plans.accelerate.savingsRate)%")
@@ -417,6 +367,117 @@ class BudgetSetupViewModel {
         } catch {
             print("❌ [BudgetSetup] loadPlans error: \(error)")
             isLoadingPlans = false
+        }
+    }
+
+    // MARK: - Goal Setup API
+
+    func saveFireGoal() async -> Bool {
+        guard retirementSpendingMonthly > 0 else {
+            goalSaveError = "Please enter your expected monthly spending in retirement."
+            return false
+        }
+        isSavingGoal = true
+        goalSaveError = nil
+        do {
+            let request = SaveFireGoalRequest(
+                retirementSpendingMonthly: retirementSpendingMonthly,
+                lifestylePreset: lifestylePreset
+            )
+            _ = try await APIService.shared.saveFireGoal(data: request)
+            isSavingGoal = false
+            return true
+        } catch {
+            print("❌ [BudgetSetup] saveFireGoal error: \(error)")
+            goalSaveError = "Failed to save your goal. Please try again."
+            isSavingGoal = false
+            return false
+        }
+    }
+
+    // MARK: - Apply Plan API
+
+    func applyPlan() async -> Bool {
+        guard let plan = selectedPlan else { return false }
+        do {
+            let request = ApplyPlanRequest.from(planDetail: plan, planType: selectedPlanType.rawValue)
+            _ = try await APIService.shared.applySelectedPlan(data: request)
+            try await APIService.shared.markSetupStep("snapshot_reviewed")
+            print("✅ [BudgetSetup] applyPlan success")
+            return true
+        } catch {
+            print("❌ [BudgetSetup] applyPlan error: \(error)")
+            return false
+        }
+    }
+
+    /// Finalize the setup flow in a safer order:
+    /// 1. Save the derived monthly budget
+    /// 2. Apply the chosen plan as the official active plan
+    ///
+    /// This avoids the worse failure mode where an official active plan is written
+    /// but the budget layer never saves.
+    func finalizeSetup() async -> Bool {
+        let budgetSaved = await saveFinalBudget()
+        guard budgetSaved else { return false }
+
+        let planApplied = await applyPlan()
+        if !planApplied {
+            saveError = "Your budget was saved, but we couldn't activate this plan. Please try again."
+        }
+        return planApplied
+    }
+
+    /// Continue from Connected Accounts Review.
+    /// If initial stats are already loaded, go straight to diagnosis.
+    /// Otherwise, enter loading and continue to diagnosis after loading completes.
+    func continueFromAccountsReview() async {
+        do {
+            try await APIService.shared.markSetupStep("accounts_reviewed")
+        } catch {
+            print("⚠️ [BudgetSetup] mark accounts_reviewed failed: \(error)")
+        }
+
+        await MainActor.run {
+            if spendingStats != nil && diagnosis != nil && loadingError == nil {
+                goToStep(.diagnosis)
+            } else {
+                prepareLoading(nextStep: .diagnosis)
+                goToStep(.loading)
+            }
+        }
+    }
+
+    // MARK: - Setup Resume
+
+    /// Reads the server-side setup state and advances currentStep to the correct resume point.
+    func resumeFromSetupState() async {
+        defer { isResumingState = false }
+        do {
+            let state = try await APIService.shared.getSetupState()
+            switch state.resumeStage {
+            case .noGoal:
+                currentStep = .goalSetup
+            case .goalSet:
+                currentStep = .accountSelection
+            case .accountsLinked:
+                if plaidAccounts.isEmpty {
+                    await loadAccounts()
+                }
+                currentStep = .accountsReview
+            case .snapshotPending:
+                prepareLoading(nextStep: .diagnosis)
+                currentStep = .loading
+            case .planPending:
+                prepareLoading(nextStep: .choosePath)
+                currentStep = .loading
+            case .active:
+                prepareLoading(nextStep: .choosePath)
+                currentStep = .loading
+            }
+            print("✅ [BudgetSetup] resumeFromSetupState → \(state.resumeStage)")
+        } catch {
+            print("⚠️ [BudgetSetup] resumeFromSetupState failed (starting fresh): \(error)")
         }
     }
     
@@ -549,6 +610,14 @@ class BudgetSetupViewModel {
     }
     
     // MARK: - Navigation
+
+    func prepareLoading(nextStep: Step) {
+        postLoadingStep = nextStep
+        loadingError = nil
+        isLoadingProfile = true
+        isLoadingStats = true
+        isLoadingDiagnosis = true
+    }
     
     func goToStep(_ step: Step) {
         isNavigatingForward = step.rawValue > currentStep.rawValue
@@ -558,13 +627,9 @@ class BudgetSetupViewModel {
     }
     
     func goBack() {
-        var targetRaw = currentStep.rawValue - 1
-        // Skip spendingPlan (step 5) — removed from the flow
-        if targetRaw == Step.spendingPlan.rawValue {
-            targetRaw -= 1
-        }
+        let targetRaw = currentStep.rawValue - 1
         guard let previous = Step(rawValue: targetRaw),
-              previous.rawValue >= Step.accountSelection.rawValue else { return }
+              previous.rawValue >= Step.goalSetup.rawValue else { return }
         isNavigatingForward = false
         withAnimation(.easeOut(duration: 0.3)) {
             currentStep = previous

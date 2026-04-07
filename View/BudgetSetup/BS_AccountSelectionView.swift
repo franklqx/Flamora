@@ -287,6 +287,7 @@ struct BS_AccountSelectionView: View {
 
             VStack(spacing: AppSpacing.sm) {
                 Button {
+                    viewModel.prepareLoading(nextStep: .accountsReview)
                     viewModel.goToStep(.loading)
                 } label: {
                     Text("Continue (\(viewModel.selectedTransactionAccountCount) selected)")

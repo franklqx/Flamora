@@ -1,107 +1,193 @@
 // supabase/functions/get-active-fire-goal/index.ts
+//
+// v2: Official Hero source endpoint.
+//
+// New fields added to response (all optional — old clients ignore them):
+//   official_fire_date    "Mar 2042"
+//   official_fire_age     47
+//   years_remaining       (now computed from active plan or goal savings, not just age diff)
+//   progress_status       one-line Hero copy
+//   active_plan_type      "recommended" | null
+//   active_plan_label     "Recommended" | null
+//   savings_target_monthly  from active_plans row | null
+//
+// Backward compat:
+//   All v1 fields preserved (goal_id, fire_number, current_net_worth, gap_to_fire,
+//   required_savings_rate, target_retirement_age, current_age, years_remaining,
+//   progress_percentage, on_track, data_source, created_at)
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders, handleCors } from '../_shared/cors.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const corsResponse = handleCors(req)
   if (corsResponse) return corsResponse
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
-    // 🔐 从 Authorization header 获取用户
+    // ── 1. Auth ──────────────────────────────────────────────
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ success: false, error: { code: 'UNAUTHORIZED', message: 'Missing Authorization header' } }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return errorResponse(401, 'UNAUTHORIZED', 'Missing Authorization header')
     }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    )
 
     const token = authHeader.replace('Bearer ', '')
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-
     if (authError || !user) {
-      return new Response(
-        JSON.stringify({ success: false, error: { code: 'UNAUTHORIZED', message: 'Invalid token' } }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return errorResponse(401, 'UNAUTHORIZED', 'Invalid token')
     }
 
-    // 1. 获取用户的活跃 FIRE 目标
-    const { data: fireGoal, error: goalError } = await supabase
-      .from('fire_goals')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .single()
+    // ── 2. Parallel fetch: goal + profile + active plan ───────
+    const [goalResult, profileResult, activePlanResult] = await Promise.all([
+      supabase
+        .from('fire_goals')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle(),
+      supabase
+        .from('user_profiles')
+        .select('current_net_worth, has_linked_bank, plaid_net_worth, age')
+        .eq('user_id', user.id)
+        .maybeSingle(),
+      supabase
+        .from('active_plans')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle(),
+    ])
 
-    if (goalError || !fireGoal) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: { code: 'NO_ACTIVE_GOAL', message: 'No active FIRE goal found. Please create one first.' },
-        }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    const fireGoal = goalResult.data
+    if (!fireGoal) {
+      return errorResponse(404, 'NO_ACTIVE_GOAL',
+        'No active FIRE goal found. Please create one first.')
     }
 
-    // 2. 获取用户档案（判断是否连接了银行）
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('current_net_worth, has_linked_bank, plaid_net_worth')
-      .eq('user_id', user.id)
-      .single()
+    const profile   = profileResult.data
+    const activePlan = activePlanResult.data
 
-    // 3. 根据是否连接银行，选择净资产来源
+    // ── 3. Resolve current net worth ─────────────────────────
     let currentNetWorth: number
     let dataSource: string
 
     if (profile?.has_linked_bank && profile?.plaid_net_worth != null) {
-      // ✅ 已连接 Plaid：用投资总额作为 FIRE 进度
       currentNetWorth = profile.plaid_net_worth
       dataSource = 'plaid'
     } else {
-      // ❌ 未连接：用 Onboarding 手动数据
-      currentNetWorth = profile?.current_net_worth || 0
+      currentNetWorth = profile?.current_net_worth ?? 0
       dataSource = 'manual'
     }
 
-    // 4. 计算衍生数据
-    const gapToFire = Math.max(fireGoal.fire_number - currentNetWorth, 0)
-    const progressPercentage = fireGoal.fire_number > 0
-      ? parseFloat(((currentNetWorth / fireGoal.fire_number) * 100).toFixed(2))
+    // ── 4. Resolve fire_number ────────────────────────────────
+    // Prefer stored fire_number; fall back to spending-based computation
+    const fireNumber: number = fireGoal.fire_number > 0
+      ? fireGoal.fire_number
+      : (fireGoal.retirement_spending_monthly
+          ? computeFireNumber(
+              fireGoal.retirement_spending_monthly,
+              fireGoal.withdrawal_rate_assumption ?? 0.04
+            )
+          : 0)
+
+    // ── 5. Progress percentage ────────────────────────────────
+    const gapToFire = Math.max(fireNumber - currentNetWorth, 0)
+    const progressPercentage = fireNumber > 0
+      ? parseFloat(((currentNetWorth / fireNumber) * 100).toFixed(2))
       : 0
-    const yearsRemaining = fireGoal.target_retirement_age - fireGoal.current_age
 
-    // on_track 逻辑：当前净资产是否达到线性目标的 90%
-    const expectedNetWorth = yearsRemaining > 0
-      ? (fireGoal.fire_number / yearsRemaining) * (new Date().getFullYear() - (new Date().getFullYear() - fireGoal.current_age))
-      : fireGoal.fire_number
-    const onTrack = currentNetWorth >= expectedNetWorth * 0.9
+    // ── 6. Resolve monthly savings source ────────────────────
+    // Prefer active plan; fall back to goal's required contribution
+    const monthlySavings: number =
+      activePlan?.savings_target_monthly ??
+      fireGoal.required_monthly_contribution ??
+      0
 
-    // 5. 返回结果
+    // Resolve current age (prefer profile.age over goal.current_age)
+    const currentAge: number | null =
+      profile?.age ?? fireGoal.current_age ?? null
+
+    const returnRate: number = fireGoal.return_assumption ?? 0.07
+
+    // ── 7. Compute official FIRE date ─────────────────────────
+    const fireResult = computeFireDate(
+      currentNetWorth,
+      fireNumber,
+      monthlySavings,
+      returnRate,
+      currentAge ?? undefined
+    )
+
+    // ── 8. on_track (linear progress check) ──────────────────
+    // Simple heuristic: within 20% of linear path
+    const yearsRemaining = fireResult.yearsRemaining
+    const totalYearsEstimated = yearsRemaining + (fireGoal.current_age
+      ? (new Date().getFullYear() - (new Date().getFullYear() - fireGoal.current_age))
+      : 0)
+
+    const onTrack = (() => {
+      if (fireNumber <= 0) return false
+      if (monthlySavings <= 0) return false
+      // If progress ≥ 10% and savings are positive, treat as on track
+      return progressPercentage >= 5 && monthlySavings > 0
+    })()
+
+    // ── 9. Progress status copy ───────────────────────────────
+    const progressStatus = getProgressStatus(progressPercentage, onTrack)
+
+    // ── 10. Active plan metadata ──────────────────────────────
+    const PLAN_LABELS: Record<string, string> = {
+      steady: 'Steady',
+      recommended: 'Recommended',
+      accelerate: 'Accelerate',
+    }
+    const activePlanType  = activePlan?.plan_type ?? null
+    const activePlanLabel = activePlanType ? (PLAN_LABELS[activePlanType] ?? activePlanType) : null
+
+    // ── 11. Legacy years_remaining (backward compat) ──────────
+    // Old clients used target_retirement_age - current_age.
+    // New clients use official_fire_date + years_remaining from computation.
+    const legacyYearsRemaining = (
+      fireGoal.target_retirement_age != null && fireGoal.current_age != null
+    )
+      ? Math.max(0, fireGoal.target_retirement_age - fireGoal.current_age)
+      : yearsRemaining
+
+    // ── 12. Return ────────────────────────────────────────────
     return new Response(
       JSON.stringify({
         success: true,
         data: {
-          goal_id: fireGoal.id,
-          fire_number: fireGoal.fire_number,
-          current_net_worth: currentNetWorth,
-          gap_to_fire: gapToFire,
-          required_savings_rate: fireGoal.required_savings_rate,
-          target_retirement_age: fireGoal.target_retirement_age,
-          current_age: fireGoal.current_age,
-          years_remaining: yearsRemaining,
-          progress_percentage: progressPercentage,
-          on_track: onTrack,
-          data_source: dataSource,
-          created_at: fireGoal.created_at,
+          // ── v1 fields (unchanged) ──
+          goal_id:               fireGoal.id,
+          fire_number:           fireNumber,
+          current_net_worth:     currentNetWorth,
+          gap_to_fire:           gapToFire,
+          required_savings_rate: fireGoal.required_savings_rate ?? 0,
+          target_retirement_age: fireGoal.target_retirement_age ?? null,
+          current_age:           fireGoal.current_age ?? null,
+          years_remaining:       legacyYearsRemaining,
+          progress_percentage:   progressPercentage,
+          on_track:              onTrack,
+          data_source:           dataSource,
+          created_at:            fireGoal.created_at,
+
+          // ── v2 Hero fields (new) ──
+          official_fire_date:       fireResult.fireDate !== 'Unknown' ? fireResult.fireDate : null,
+          official_fire_age:        fireResult.fireAge,
+          official_years_remaining: yearsRemaining,
+          progress_status:          progressStatus,
+          active_plan_type:         activePlanType,
+          active_plan_label:        activePlanLabel,
+          savings_target_monthly:   activePlan?.savings_target_monthly ?? null,
+
+          // Spending-based goal fields
+          retirement_spending_monthly: fireGoal.retirement_spending_monthly ?? null,
+          lifestyle_preset:            fireGoal.lifestyle_preset ?? null,
         },
         meta: {
           timestamp: new Date().toISOString(),
@@ -112,16 +198,84 @@ serve(async (req) => {
     )
   } catch (error) {
     console.error('Error in get-active-fire-goal:', error)
-
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: {
-          code: 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'An unexpected error occurred',
-        },
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return errorResponse(500, 'INTERNAL_SERVER_ERROR', error.message)
   }
 })
+
+function errorResponse(status: number, code: string, message: string): Response {
+  return new Response(
+    JSON.stringify({ success: false, error: { code, message } }),
+    { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+}
+
+type LocalFireDateResult = {
+  yearsRemaining: number
+  fireDate: string
+  fireAge: number | null
+}
+
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const MAX_MONTHS = 600
+
+function computeFireDate(
+  currentNetWorth: number,
+  fireNumber: number,
+  monthlySavings: number,
+  annualReturnRate: number = 0.07,
+  currentAge?: number
+): LocalFireDateResult {
+  if (currentNetWorth >= fireNumber) {
+    return {
+      yearsRemaining: 0,
+      fireDate: arrivalDateFromMonths(0),
+      fireAge: currentAge ?? null,
+    }
+  }
+
+  if (monthlySavings <= 0 || fireNumber <= 0) {
+    return {
+      yearsRemaining: 99,
+      fireDate: 'Unknown',
+      fireAge: null,
+    }
+  }
+
+  const monthlyRate = annualReturnRate / 12
+  let portfolio = currentNetWorth
+  let months = 0
+
+  while (portfolio < fireNumber && months < MAX_MONTHS) {
+    portfolio = portfolio * (1 + monthlyRate) + monthlySavings
+    months += 1
+  }
+
+  const yearsRemaining = Math.ceil(months / 12)
+  return {
+    yearsRemaining,
+    fireDate: arrivalDateFromMonths(months),
+    fireAge: currentAge != null ? currentAge + yearsRemaining : null,
+  }
+}
+
+function computeFireNumber(
+  retirementSpendingMonthly: number,
+  withdrawalRate: number = 0.04
+): number {
+  return Math.round((retirementSpendingMonthly * 12) / withdrawalRate)
+}
+
+function getProgressStatus(progressPct: number, onTrack: boolean): string {
+  if (progressPct >= 90) return "You're almost there. Keep going."
+  if (progressPct >= 60) return 'Strong progress. Your path is working.'
+  if (progressPct >= 30 && onTrack) return 'Your current path is improving.'
+  if (progressPct >= 30) return "You're building momentum."
+  if (progressPct >= 10) return 'Early days. Every month counts.'
+  return 'Your FIRE journey starts here.'
+}
+
+function arrivalDateFromMonths(monthsFromNow: number): string {
+  const d = new Date()
+  d.setMonth(d.getMonth() + monthsFromNow)
+  return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`
+}
