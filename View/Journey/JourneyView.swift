@@ -63,6 +63,22 @@ struct JourneyView: View {
                                 onRetry: { Task { await loadData() } }
                             )
                         }
+                        FIRECountdownCard(
+                            fireGoal: fireGoal,
+                            isConnected: plaidManager.hasLinkedBank,
+                            onConnectTapped: {
+                                guard subscriptionManager.isPremium else {
+                                    subscriptionManager.showPaywall = true
+                                    return
+                                }
+                                if plaidManager.shouldShowTrustBridge() {
+                                    showTrustBridge = true
+                                } else {
+                                    Task { await plaidManager.startLinkFlow() }
+                                }
+                            }
+                        )
+
                         PortfolioCard(
                             portfolioBalance: netWorthSummary.breakdown.investmentTotal ?? 0,
                             gainAmount: netWorthSummary.growthAmount ?? 0,

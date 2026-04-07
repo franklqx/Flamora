@@ -58,6 +58,7 @@
 		152BE08A2F67A67200CACBBC /* NoDelayScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152BE0892F67A67100CACBBC /* NoDelayScrollView.swift */; };
 		152C19792F5D3C2C007E68AA /* OB_EditableAmountDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152C19782F5D3C2C007E68AA /* OB_EditableAmountDisplay.swift */; };
 		153CA3182F34E952001ED98E /* PortfolioCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3172F34E952001ED98E /* PortfolioCard.swift */; };
+		468A105E0AD44511A1EFC2E0 /* FIRECountdownCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3AE291F3C594B4B8D1E5239 /* FIRECountdownCard.swift */; };
 		153CA31A2F34EDEC001ED98E /* TopHeaderBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3192F34EDEC001ED98E /* TopHeaderBar.swift */; };
 		153CA31C2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA31B2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift */; };
 		153CA3212F34E960001ED98E /* DailyQuoteCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153CA3202F34E960001ED98E /* DailyQuoteCard.swift */; };
@@ -185,6 +186,7 @@
 		152BE0892F67A67100CACBBC /* NoDelayScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoDelayScrollView.swift; sourceTree = "<group>"; };
 		152C19782F5D3C2C007E68AA /* OB_EditableAmountDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_EditableAmountDisplay.swift; sourceTree = "<group>"; };
 		153CA3172F34E952001ED98E /* PortfolioCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioCard.swift; sourceTree = "<group>"; };
+		D3AE291F3C594B4B8D1E5239 /* FIRECountdownCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIRECountdownCard.swift; sourceTree = "<group>"; };
 		153CA3192F34EDEC001ED98E /* TopHeaderBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopHeaderBar.swift; sourceTree = "<group>"; };
 		153CA31B2F35098A001ED98E /* HeaderVisibilityPreferenceKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeaderVisibilityPreferenceKey.swift; sourceTree = "<group>"; };
 		153CA3202F34E960001ED98E /* DailyQuoteCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyQuoteCard.swift; sourceTree = "<group>"; };
@@ -435,6 +437,7 @@
 			isa = PBXGroup;
 			children = (
 				153CA3172F34E952001ED98E /* PortfolioCard.swift */,
+				D3AE291F3C594B4B8D1E5239 /* FIRECountdownCard.swift */,
 				153CA3202F34E960001ED98E /* DailyQuoteCard.swift */,
 				153CA3242F34E963001ED98F /* SavingsRateCard.swift */,
 				153CA32A2F34E965001ED990 /* BudgetPlanCard.swift */,
@@ -715,6 +718,7 @@
 				15E21AA62F3248F500A9BB60 /* JourneyView.swift in Sources */,
 				1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */,
 				153CA3182F34E952001ED98E /* PortfolioCard.swift in Sources */,
+				468A105E0AD44511A1EFC2E0 /* FIRECountdownCard.swift in Sources */,
 				153CA3212F34E960001ED98E /* DailyQuoteCard.swift in Sources */,
 				153CA3272F34E963001ED98F /* SavingsRateCard.swift in Sources */,
 				153CA32B2F34E965001ED990 /* BudgetPlanCard.swift in Sources */,
