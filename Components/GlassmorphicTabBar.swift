@@ -9,28 +9,33 @@
 
 import SwiftUI
 
+enum MainTabItem: Int {
+    case cashflow = 0
+    case investment = 1
+    case settings = 2
+}
+
 struct GlassmorphicTabBar: View {
-    @Binding var selectedTab: Int
+    @Binding var selectedTab: MainTabItem
+    let onTabTapped: (MainTabItem) -> Void
     @Namespace private var tabIndicator
 
-    private let tabs: [(icon: String, label: String)] = [
-        ("house", "Home"),
-        ("creditcard", "Cash"),
-        ("chart.pie", "Invest")
+    private let tabs: [(item: MainTabItem, icon: String, label: String)] = [
+        (.cashflow, "creditcard", "Cash Flow"),
+        (.investment, "chart.pie", "Investment"),
+        (.settings, "gearshape", "Settings")
     ]
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(tabs.indices, id: \.self) { i in
+            ForEach(tabs.indices, id: \.self) { index in
                 GlassTabButton(
-                    icon: tabs[i].icon,
-                    label: tabs[i].label,
-                    isSelected: selectedTab == i,
+                    icon: tabs[index].icon,
+                    label: tabs[index].label,
+                    isSelected: selectedTab == tabs[index].item,
                     namespace: tabIndicator
                 ) {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        selectedTab = i
-                    }
+                    onTabTapped(tabs[index].item)
                 }
             }
         }
@@ -81,7 +86,8 @@ private struct GlassTabButton: View {
         VStack {
             Spacer()
             GlassmorphicTabBar(
-                selectedTab: .constant(0)
+                selectedTab: .constant(.cashflow),
+                onTabTapped: { _ in }
             )
         }
     }

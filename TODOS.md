@@ -1,6 +1,6 @@
 # Flamora — TODOS
 
-Maintained by /plan-ceo-review. Last updated: 2026-04-06.
+Maintained by /plan-ceo-review. Last updated: 2026-04-07.
 
 ---
 
@@ -15,6 +15,20 @@ Maintained by /plan-ceo-review. Last updated: 2026-04-06.
 
 ---
 
+## P1 — Home/Plan Rebuild Phase 2–6 (from 2026-04-07 CEO review)
+
+- [ ] **JourneyView setupState 缓存** — `getSetupState()` 失败时回退使用 `@AppStorage` 缓存的上次 setupState，避免已设目标用户看到 "Set your FIRE goal" CTA。文件: `JourneyView.swift:107–109`。方案：将 setupState 序列化后存入 AppStorage，失败时读缓存。
+
+- [ ] **applySelectedPlan 后 Home 刷新** — BudgetSetupView dismiss 时通知 JourneyView 刷新 setupState，避免用户 apply 计划后仍看到 "Choose a plan" CTA。文件: `BudgetSetupView.swift` dismiss callback + `JourneyView` refresh trigger。
+
+- [ ] **BS_ChoosePathView Reality Check Card** — 当 `generate-plans` 的三条路径均超过合理年限（建议 >60 年），显示 Reality Check Card："基于你当前的净资产和收入，FIRE 在当前假设下需要超过 40 年。你可以调整退休花销目标，或先看 Simulator。" 两个 CTA：返回修改目标 / 打开 Simulator。文件: `BS_ChoosePathView.swift`。后端 `feasibility` 字段已可用。
+
+- [ ] **BS_DiagnosisView 空数据状态** — 当 Plaid 账号没有足够交易历史（`generate-financial-diagnosis` 返回 $0 收入），Snapshot 页面显示专用空状态："我们还没有足够的交易记录。连接有至少 2 个月账单的账户，或手动输入月收入。" 两个 CTA：添加账户 / 手动输入。文件: `BS_DiagnosisView.swift`。
+
+- [ ] **Apply Plan 触觉反馈 + count-up 动画** — 用户点击"使用这个计划"成功后：`UIImpactFeedbackGenerator(.medium)` 轻震 + FIRE 日期数字从旧值 count-up 到新值（SwiftUI `.animation` + 数字递增）。文件: `BS_ConfirmView.swift` apply 成功回调。
+
+---
+
 ## P2 — v2 Features (post-launch)
 
 - [ ] **Initial Financial Snapshot ("Issue Zero")** — APPROVED for v2. Triggered immediately when user connects their first bank account. Shows: spending trends for available months, income overview, investment growth rate vs 7% benchmark. Ends with teaser: "Starting next month, you'll receive monthly FIRE reports + an annual summary." Same Edge Function as monthly report, different trigger. Prerequisite for monthly report build.
@@ -22,6 +36,8 @@ Maintained by /plan-ceo-review. Last updated: 2026-04-06.
 - [ ] **Monthly FIRE Progress Report** — APPROVED for v2. Build: Supabase Edge Function `generate-monthly-report` (aggregates transactions, computes FIRE date delta, calls Groq/Haiku for AI insight), Supabase `monthly_reports` table, iOS `MonthlyReportView.swift`. Trigger: pg_cron on 1st of month + APNs push. See CEO plan `2026-04-06-monthly-fire-report.md` for full spec.
 
 - [ ] **Annual FIRE Wrapped** — APPROVED for v2. Same data as monthly report, yearly window. Hero metric: FIRE date change over the year. Shareable image via SwiftUI `ImageRenderer` (iOS 16+). Show partial year for users < 12 months. Bundle with monthly report build.
+
+- [ ] **Simulator 分享功能** — Simulator 结果页加「分享这个场景」按钮，用 SwiftUI `ImageRenderer` 生成一张包含 FIRE 日期、delta、当前 vs 调整路径图表的分享图。增长渠道——用户把 FIRE 场景发给朋友是口碑传播。技术风险：ImageRenderer 在 iOS 16+，需真机测试渲染效果（模拟器渲染与真机有差异）。文件: `SimulatorView.swift`。先决条件：Phase 4 Simulator 重建完成。P2。
 
 - [ ] **FIRE date backend precision** — `yearsRemaining: Int` is whole years only. Edge Function `get-active-fire-goal` should return `estimated_fire_date` (ISO 8601) or `months_remaining: Int`. `APIFireGoal` model needs new field. `FIRECountdownCard.fireDateLabel()` updates to use precise value. Required before FIRE date delta in monthly report is accurate.
 

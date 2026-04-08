@@ -23,43 +23,39 @@ struct SettingsView: View {
 
     @AppStorage(FlamoraStorageKey.budgetSetupCompleted) private var budgetSetupCompleted: Bool = false
     @State private var currentBudget: APIMonthlyBudget = .empty
+    let isEmbeddedInSheet: Bool
+
+    init(isEmbeddedInSheet: Bool = false) {
+        self.isEmbeddedInSheet = isEmbeddedInSheet
+    }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                AppColors.backgroundPrimary.ignoresSafeArea()
-
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: AppSpacing.sectionGap) {
-                        profileSection
-                        subscriptionSection
-                        if plaidManager.hasLinkedBank { bankSection }
-                        budgetSection
-                        signOutSection
-                        legalSection
-                    }
-                    .padding(AppSpacing.cardPadding)
-                    .padding(.bottom, AppSpacing.xl)
+        Group {
+            if isEmbeddedInSheet {
+                settingsBody
+            } else {
+                NavigationStack {
+                    settingsBody
+                        .navigationTitle("Settings")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button("Done") { dismiss() }
+                                    .foregroundStyle(AppColors.textPrimary)
+                                    .fontWeight(.semibold)
+                            }
+                        }
                 }
             }
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .foregroundStyle(AppColors.textPrimary)
-                        .fontWeight(.semibold)
-                }
-            }
-            .preferredColorScheme(.dark)
-            .task {
-                if budgetSetupCompleted {
-                    let formatter = DateFormatter()
-                    formatter.dateFormat = "yyyy-MM"
-                    let month = formatter.string(from: Date())
-                    if let b = try? await APIService.shared.getMonthlyBudget(month: month) {
-                        currentBudget = b
-                    }
+        }
+        .preferredColorScheme(.dark)
+        .task {
+            if budgetSetupCompleted {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM"
+                let month = formatter.string(from: Date())
+                if let b = try? await APIService.shared.getMonthlyBudget(month: month) {
+                    currentBudget = b
                 }
             }
         }
@@ -82,6 +78,27 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Your bank account will be disconnected and automatic transaction syncing will stop.")
+        }
+    }
+}
+
+private extension SettingsView {
+    var settingsBody: some View {
+        ZStack {
+            AppColors.backgroundPrimary.ignoresSafeArea()
+
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: AppSpacing.sectionGap) {
+                    profileSection
+                    subscriptionSection
+                    if plaidManager.hasLinkedBank { bankSection }
+                    budgetSection
+                    signOutSection
+                    legalSection
+                }
+                .padding(AppSpacing.cardPadding)
+                .padding(.bottom, AppSpacing.xl)
+            }
         }
     }
 }
