@@ -2,20 +2,26 @@
 //  MainTabView.swift
 //  Flamora app
 //
-//  主导航容器 - 管理 Tab 切换
+//  主导航容器 - Home hero + draggable sheet
 //
 
 import SwiftUI
 internal import Auth
 
 struct MainTabView: View {
-    @State private var selectedTab = 0
-    @State private var tabBeforeSimulator = 0
+    @State private var selectedTab: MainTabItem = .cashflow
+    @State private var highlightedTab: MainTabItem = .cashflow
     @State private var isSimulatorShown = false
-    @State private var simulatorDisplayState: SimulatorDisplayState = .overview
-    @State private var showSettings = false
-    @State private var flipAngle: Double = 0
-    @State private var journeyCashflowSecondary: CashflowJourneyDestination? = nil
+    @State private var showsHomeSheet = true
+    @State private var simulatorDisplayState: SimulatorDisplayState = .results
+    @State private var showNotifications = false
+    @State private var simulatorTransitionTask: Task<Void, Never>?
+
+    @State private var sheetHeight = HomeLayout.sheetDefault
+    @State private var sheetDragStartHeight = HomeLayout.sheetDefault
+    @State private var isSheetDragging = false
+
+    @State private var heroSnapshot = HomeHeroSnapshot.empty
 
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(PlaidManager.self) private var plaidManager
@@ -24,140 +30,699 @@ struct MainTabView: View {
         ZStack(alignment: .top) {
             AppBackgroundView()
 
-            // 内容区域 — 参与翻转，header 不参与
-            ZStack {
-                // Tab 视图树始终保留在层级中（不随 isSimulatorShown 销毁），切换仅改变可见性
-                ZStack {
-                    JourneyContainerView(
-                        onFireTapped: flipPage,
-                        onInvestmentTapped: { selectedTab = 2 },
-                        onOpenCashflowDestination: { journeyCashflowSecondary = $0 }
-                    )
-                    .opacity(selectedTab == 0 ? 1 : 0)
-                    .allowsHitTesting(selectedTab == 0)
-
-                    CashflowView()
-                        .opacity(selectedTab == 1 ? 1 : 0)
-                        .allowsHitTesting(selectedTab == 1)
-
-                    InvestmentView()
-                        .opacity(selectedTab == 2 ? 1 : 0)
-                        .allowsHitTesting(selectedTab == 2)
-                }
-                .background(Color.clear)
-                .transaction { $0.animation = nil }
-                .opacity(isSimulatorShown ? 0 : 1)
-                .allowsHitTesting(!isSimulatorShown)
-
-                // 模拟器覆盖层 — 仅在展开时渲染
-                if isSimulatorShown {
-                    AppColors.backgroundPrimary.ignoresSafeArea()
-                        .zIndex(1)
-                    SimulatorView(
-                        displayState: $simulatorDisplayState,
-                        bottomPadding: 0,
-                        isFireOn: true,
-                        onFireToggle: flipPage
-                    )
-                    .zIndex(2)
-                }
-            }
-            // 用透明占位把内容推到 header 下方
-            .safeAreaInset(edge: .top, spacing: 0) {
-                Color.clear.frame(height: TopHeaderBar.height)
-            }
-            .rotation3DEffect(
-                .degrees(flipAngle),
-                axis: (x: 0, y: 1, z: 0),
-                perspective: 0.3
+            HomeHeroCardSurface(
+                snapshot: heroSnapshot,
+                heroHeight: currentHeroHeight,
+                compactProgress: heroCompactProgress,
+                flipAngle: heroFlipAngle,
+                isSimulatorShown: isSimulatorShown,
+                onHeroUpdated: { heroSnapshot = $0 }
             )
-            .opacity(abs(flipAngle) >= 90 ? 0 : 1)
+            .zIndex(60)
 
-            // 静态顶部导航 — 永远不参与翻转
             TopHeaderBar(
-                pageTitle: pageTitleFor(selectedTab),
-                leftAction: headerLeftAction,
-                onSettingsTapped: { showSettings = true },
-                isVisible: !isSimulatorShown || simulatorDisplayState != .loading
+                onNotificationTapped: { showNotifications = true },
+                isVisible: true
             )
-            .zIndex(10)
+            .zIndex(80)
+
+            if showsHomeSheet {
+                HomeBottomSheet(
+                    height: sheetHeight,
+                    selectedTab: selectedTab,
+                    sheetDragGesture: sheetDragGesture
+                )
+                .zIndex(20)
+            }
+
+            if isSimulatorShown {
+                simulatorOverlay
+                    .zIndex(40)
+                    .transition(.opacity)
+            }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            GlassmorphicTabBar(selectedTab: $selectedTab)
-                .ignoresSafeArea(edges: .bottom)
-                .opacity(showTabBar ? 1 : 0)
-                .allowsHitTesting(showTabBar)
+            GlassmorphicTabBar(
+                selectedTab: $highlightedTab,
+                onTabTapped: handleTabTap
+            )
+            .ignoresSafeArea(edges: .bottom)
+            .opacity(tabBarOpacity)
+            .offset(y: tabBarOffsetY)
+            .allowsHitTesting(tabBarOpacity > 0.02)
         }
         .ignoresSafeArea(.keyboard, edges: .all)
         .fullScreenCover(isPresented: Binding(
             get: { plaidManager.showBudgetSetup },
             set: { plaidManager.showBudgetSetup = $0 }
         ), onDismiss: {
-            print("📍 [Flow] fullScreenCover dismissed")
-            // Budget Setup 关闭后更新时间戳，触发 JourneyView 重新加载数据
             plaidManager.lastConnectionTime = Date()
         }) {
             BudgetSetupView()
         }
-        .sheet(isPresented: $showSettings) {
-            SettingsView()
-                .environment(subscriptionManager)
-                .environment(plaidManager)
+        .sheet(isPresented: $showNotifications) {
+            NotificationsView()
         }
-        .fullScreenCover(item: $journeyCashflowSecondary) { destination in
-            switch destination {
-            case .totalSpending:
-                TotalSpendingDetailContainer()
-                    .environment(plaidManager)
-            case .savingsOverview:
-                SavingsTargetDetailView2Container()
-                    .environment(plaidManager)
+        .onDisappear {
+            simulatorTransitionTask?.cancel()
+        }
+    }
+}
+
+private extension MainTabView {
+    var simulatorOverlay: some View {
+        AppColors.backgroundPrimary
+            .ignoresSafeArea()
+            .overlay {
+                SimulatorView(
+                    displayState: $simulatorDisplayState,
+                    bottomPadding: 0,
+                    isFireOn: true,
+                    onFireToggle: exitSimulator,
+                    showResultCard: false,
+                    contentTopPadding: TopHeaderBar.height + AppSpacing.md + HomeLayout.heroFullHeight + AppSpacing.md
+                )
+            }
+            .gesture(
+                DragGesture(minimumDistance: 20)
+                    .onEnded { value in
+                        if value.translation.height < -44 {
+                            exitSimulator()
+                        }
+                    }
+            )
+    }
+
+    var sheetDragGesture: AnyGesture<DragGesture.Value> {
+        AnyGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    if !isSheetDragging {
+                        isSheetDragging = true
+                        sheetDragStartHeight = sheetHeight
+                    }
+                    let nextHeight = sheetDragStartHeight - value.translation.height
+                    sheetHeight = clampSheetHeight(nextHeight)
+                }
+                .onEnded { value in
+                    isSheetDragging = false
+
+                    let draggedDownDistance = value.translation.height
+                    let predictedDownDistance = value.predictedEndTranslation.height
+                    let shouldSnapToSimulatorByDistance = draggedDownDistance > HomeLayout.sheetSnapDistanceToSimulator
+                    let shouldSnapToSimulatorByMomentum = predictedDownDistance > HomeLayout.sheetPredictedSnapDistanceToSimulator
+
+                    if sheetHeight < HomeLayout.sheetDefault * HomeLayout.sheetToSimulatorThreshold
+                        || shouldSnapToSimulatorByDistance
+                        || shouldSnapToSimulatorByMomentum {
+                        enterSimulator()
+                        return
+                    }
+                    if sheetHeight > HomeLayout.sheetDefault * 1.15 {
+                        withAnimation(HomeLayout.springAnimation) {
+                            sheetHeight = HomeLayout.sheetTall
+                        }
+                    } else {
+                        withAnimation(HomeLayout.springAnimation) {
+                            sheetHeight = HomeLayout.sheetDefault
+                        }
+                    }
+                }
+        )
+    }
+
+    var heroFlipAngle: Double {
+        if isSimulatorShown { return -180 }
+        let progress = max(0, min(1, 1 - (sheetHeight / HomeLayout.sheetDefault)))
+        return -180 * progress
+    }
+
+    var currentHeroHeight: CGFloat {
+        if isSimulatorShown { return HomeLayout.heroFullHeight }
+        let compactProgress = heroCompactProgress
+        return HomeLayout.heroFullHeight
+            - ((HomeLayout.heroFullHeight - HomeLayout.heroCompactHeight) * compactProgress)
+    }
+
+    var heroCompactProgress: CGFloat {
+        guard !isSimulatorShown, sheetHeight > HomeLayout.sheetDefault else { return 0 }
+        return max(
+            0,
+            min(
+                1,
+                (sheetHeight - HomeLayout.sheetDefault)
+                    / (HomeLayout.compactDoneHeight - HomeLayout.sheetDefault)
+            )
+        )
+    }
+
+    var tabBarHideProgress: CGFloat {
+        guard !isSimulatorShown else { return 1 }
+        let distance = HomeLayout.sheetDefault - sheetHeight
+        let threshold = HomeLayout.sheetDefault * 0.45
+        if distance <= 0 { return 0 }
+        return max(0, min(1, distance / threshold))
+    }
+
+    var tabBarOpacity: CGFloat {
+        if isSimulatorShown { return 0 }
+        return 1 - tabBarHideProgress
+    }
+
+    var tabBarOffsetY: CGFloat {
+        if isSimulatorShown { return 48 }
+        return 32 * tabBarHideProgress
+    }
+
+    func clampSheetHeight(_ value: CGFloat) -> CGFloat {
+        max(0, min(HomeLayout.sheetTall + 30, value))
+    }
+
+    func enterSimulator() {
+        simulatorTransitionTask?.cancel()
+        withAnimation(HomeLayout.springAnimation) {
+            sheetHeight = 0
+        }
+
+        simulatorTransitionTask = Task {
+            try? await Task.sleep(for: .milliseconds(180))
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                simulatorDisplayState = .results
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    isSimulatorShown = true
+                }
+                showsHomeSheet = false
             }
         }
     }
 
-    private var showTabBar: Bool {
-        !isSimulatorShown
+    func exitSimulator() {
+        simulatorTransitionTask?.cancel()
+        showsHomeSheet = true
+        sheetHeight = 0
+        withAnimation(.easeInOut(duration: 0.16)) {
+            isSimulatorShown = false
+        }
+        withAnimation(HomeLayout.springAnimation) {
+            simulatorDisplayState = .results
+            sheetHeight = HomeLayout.sheetDefault
+        }
     }
 
-    private func pageTitleFor(_ tab: Int) -> String {
-        if isSimulatorShown { return "Simulator" }
+    func handleTabTap(_ tab: MainTabItem) {
         switch tab {
-        case 0: return "Home"
-        case 1: return "Cash Flow"
-        case 2: return "Investment"
-        default: return "Home"
+        case .cashflow, .investment, .settings:
+            withAnimation(HomeLayout.springAnimation) {
+                selectedTab = tab
+                highlightedTab = tab
+            }
+        }
+    }
+}
+
+private enum HomeLayout {
+    static let heroFullHeight: CGFloat = 212
+    static let heroCompactHeight: CGFloat = 34
+    static let sheetDefault: CGFloat = 520
+    static let sheetTall: CGFloat = 702
+    static let compactDoneHeight: CGFloat = 660
+    static let sheetToSimulatorThreshold: CGFloat = 0.72
+    static let sheetSnapDistanceToSimulator: CGFloat = 96
+    static let sheetPredictedSnapDistanceToSimulator: CGFloat = 150
+    static let springAnimation = Animation.spring(response: 0.42, dampingFraction: 0.82)
+}
+
+private struct HomeBottomSheet: View {
+    let height: CGFloat
+    let selectedTab: MainTabItem
+    let sheetDragGesture: AnyGesture<DragGesture.Value>
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Capsule()
+                    .fill(AppColors.surfaceBorder)
+                    .frame(width: 36, height: 4)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 24)
+            .contentShape(Rectangle())
+            .highPriorityGesture(sheetDragGesture)
+
+            Group {
+                switch selectedTab {
+                case .cashflow:
+                    CashflowView()
+                case .investment:
+                    InvestmentView()
+                case .settings:
+                    SettingsView(isEmbeddedInSheet: true)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: height, alignment: .top)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.xl)
+                .fill(AppColors.textPrimary)
+        )
+        .clipShape(
+            RoundedRectangle(cornerRadius: AppRadius.xl)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.xl)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 0.5)
+        )
+        .shadow(color: AppColors.cardShadow, radius: 14, y: -2)
+        .frame(maxHeight: .infinity, alignment: .bottom)
+        .ignoresSafeArea(edges: .bottom)
+    }
+}
+
+private struct HomeHeroCardSurface: View {
+    let snapshot: HomeHeroSnapshot
+    let heroHeight: CGFloat
+    let compactProgress: CGFloat
+    let flipAngle: Double
+    let isSimulatorShown: Bool
+    let onHeroUpdated: (HomeHeroSnapshot) -> Void
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            ZStack(alignment: .top) {
+                HomeHeroCardHost(onHeroUpdated: onHeroUpdated)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .scaleEffect(
+                        x: 1,
+                        y: max(0.42, 1 - (compactProgress * 0.58)),
+                        anchor: .top
+                    )
+                    .opacity(frontFaceOpacity)
+
+                HeroBackFaceCard(snapshot: snapshot)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .rotation3DEffect(
+                        .degrees(180),
+                        axis: (x: 1, y: 0, z: 0),
+                        anchor: .center,
+                        perspective: 0.75
+                    )
+                    .opacity(backFaceOpacity)
+            }
+            .rotation3DEffect(
+                .degrees(flipAngle),
+                axis: (x: 1, y: 0, z: 0),
+                anchor: .center,
+                perspective: 0.75
+            )
+            .animation(HomeLayout.springAnimation, value: flipAngle)
+
+            if compactProgress > 0.01 && !isSimulatorShown {
+                HeroCompactStrip(snapshot: snapshot)
+                    .opacity(pow(compactProgress, 1.25))
+                    .padding(.horizontal, AppSpacing.screenPadding)
+                    .padding(.top, 2)
+            }
+        }
+        .frame(height: heroHeight, alignment: .top)
+        .clipped()
+        .padding(.top, TopHeaderBar.height + AppSpacing.md)
+    }
+
+    var flipProgress: Double {
+        max(0, min(1, -flipAngle / 180))
+    }
+
+    var frontFaceOpacity: Double {
+        if isSimulatorShown { return 0 }
+        return flipProgress < 0.5 ? max(0.2, 1 - (compactProgress * 0.5)) : 0
+    }
+
+    var backFaceOpacity: Double {
+        if isSimulatorShown { return 1 }
+        return flipProgress >= 0.5 ? 1 : 0
+    }
+}
+
+private struct HeroCompactStrip: View {
+    let snapshot: HomeHeroSnapshot
+
+    var body: some View {
+        HStack(spacing: AppSpacing.sm) {
+            Text(snapshot.progressLabel)
+                .font(.footnoteBold)
+                .foregroundStyle(AppColors.textPrimary)
+
+            Capsule()
+                .fill(AppColors.overlayWhiteStroke)
+                .frame(width: 1, height: 12)
+
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(AppColors.overlayWhiteStroke)
+                        .frame(height: 3)
+
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(
+                            LinearGradient(
+                                colors: AppColors.gradientFire,
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: proxy.size.width * snapshot.progressFraction, height: 3)
+                }
+            }
+            .frame(height: 3)
+
+            Capsule()
+                .fill(AppColors.overlayWhiteStroke)
+                .frame(width: 1, height: 12)
+
+            Text(snapshot.fireDateLabel)
+                .font(.caption)
+                .foregroundStyle(AppColors.overlayWhiteOnGlass)
+        }
+        .padding(.horizontal, AppSpacing.md)
+        .frame(height: HomeLayout.heroCompactHeight)
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+        )
+    }
+}
+
+private struct HeroBackFaceCard: View {
+    let snapshot: HomeHeroSnapshot
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.sm) {
+                Text("ADJUSTED SCENARIO")
+                    .font(.miniLabel)
+                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                Spacer(minLength: 0)
+                Text(snapshot.progressLabel)
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(AppColors.accentAmber)
+                    .padding(.horizontal, AppSpacing.sm)
+                    .padding(.vertical, 5)
+                    .background(AppColors.warning.opacity(0.14))
+                    .clipShape(Capsule())
+            }
+
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text("Projected FIRE date")
+                    .font(.caption)
+                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                Text(snapshot.fireDateLabel)
+                    .font(.h2)
+                    .foregroundStyle(AppColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+            }
+
+            Rectangle()
+                .fill(AppColors.overlayWhiteStroke)
+                .frame(height: 1)
+
+            HStack(alignment: .top, spacing: AppSpacing.sm) {
+                metricTile(
+                    title: "Official path",
+                    value: snapshot.fireDateLabel,
+                    caption: "locked",
+                    tint: AppColors.accentBlueBright
+                )
+                metricTile(
+                    title: "Preview progress",
+                    value: snapshot.progressLabel,
+                    caption: "sandbox only",
+                    tint: AppColors.accentAmber
+                )
+            }
+        }
+        .padding(AppSpacing.cardPadding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(
+            LinearGradient(
+                colors: [
+                    AppColors.backgroundSecondary,
+                    AppColors.surface,
+                    AppColors.backgroundSecondary
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.card)
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            AppColors.overlayWhiteStroke,
+                            AppColors.accentBlue.opacity(0.35),
+                            AppColors.accentAmber.opacity(0.3)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
+        .overlay(alignment: .top) {
+            LinearGradient(
+                colors: [AppColors.overlayWhiteMid, .clear],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 36)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
+            .allowsHitTesting(false)
+        }
+        .padding(.horizontal, AppSpacing.screenPadding)
+    }
+
+    private func metricTile(title: String, value: String, caption: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text(title.uppercased())
+                .font(.miniLabel)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+
+            Text(value)
+                .font(.footnoteSemibold)
+                .foregroundStyle(AppColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.88)
+
+            Text(caption)
+                .font(.caption)
+                .foregroundStyle(AppColors.overlayWhiteOnGlass)
+        }
+        .frame(maxWidth: .infinity, minHeight: 70, alignment: .topLeading)
+        .padding(AppSpacing.sm)
+        .background(
+            LinearGradient(
+                colors: [
+                    tint.opacity(0.16),
+                    AppColors.overlayWhiteWash
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .stroke(tint.opacity(0.24), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+    }
+}
+
+private struct HomeHeroSnapshot: Equatable {
+    let progressFraction: CGFloat
+    let progressLabel: String
+    let fireDateLabel: String
+
+    static let empty = HomeHeroSnapshot(
+        progressFraction: 0.28,
+        progressLabel: "28%",
+        fireDateLabel: "Mar 2042"
+    )
+}
+
+private struct HomeHeroCardHost: View {
+    @State private var setupState: HomeSetupStateResponse?
+    @State private var homeHero: HomeHeroModel?
+    @State private var isLoadingData = false
+    @State private var needsReloadAfterCurrentPass = false
+
+    let onHeroUpdated: (HomeHeroSnapshot) -> Void
+
+    @Environment(PlaidManager.self) private var plaidManager
+
+    var body: some View {
+        FIRECountdownCard(
+            hero: homeHero,
+            stage: homeSetupStage,
+            onPrimaryAction: { plaidManager.showBudgetSetup = true },
+            fixedHeight: HomeLayout.heroFullHeight
+        )
+        .task { await loadData() }
+        .onChange(of: plaidManager.lastConnectionTime) { _, _ in
+            Task { await loadData() }
+        }
+        .onChange(of: plaidManager.hasLinkedBank) { _, _ in
+            Task { await loadData() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .savingsCheckInDidPersist)) { _ in
+            Task { await loadData() }
+        }
+        .onAppear {
+            syncSnapshot(hero: homeHero)
+        }
+    }
+}
+
+private extension HomeHeroCardHost {
+    var homeSetupStage: HomeSetupStage {
+        if let stage = setupState?.setupStage { return stage }
+        return plaidManager.hasLinkedBank ? .accountsLinked : .noGoal
+    }
+
+    @MainActor
+    func loadData() async {
+        if isLoadingData {
+            needsReloadAfterCurrentPass = true
+            return
+        }
+
+        isLoadingData = true
+        needsReloadAfterCurrentPass = false
+
+        defer {
+            isLoadingData = false
+            if needsReloadAfterCurrentPass {
+                needsReloadAfterCurrentPass = false
+                Task { await loadData() }
+            }
+        }
+
+        let state = await fetchSetupState()
+        if let state {
+            setupState = state
+        }
+
+        let shouldLoadHero = (state ?? setupState)?.setupStage == .active
+        let nextHero = shouldLoadHero ? await fetchHomeHero() : nil
+        homeHero = nextHero
+        syncSnapshot(hero: nextHero)
+    }
+
+    func fetchSetupState() async -> HomeSetupStateResponse? {
+        do {
+            return try await APIService.shared.getSetupState()
+        } catch {
+            return nil
         }
     }
 
-    private var headerLeftAction: HeaderLeftAction {
-        if isSimulatorShown, case .results = simulatorDisplayState {
-            return .close(action: { simulatorDisplayState = .overview })
+    func fetchHomeHero() async -> HomeHeroModel? {
+        do {
+            return try await APIService.shared.getHomeHero()
+        } catch {
+            return nil
         }
-        return .flame(isActive: isSimulatorShown, action: flipPage)
     }
 
-    private func flipPage() {
-        let opening = !isSimulatorShown
-        // 第一阶段：当前页翻转消失
-        withAnimation(.easeIn(duration: 0.2)) {
-            flipAngle = 90
+    func syncSnapshot(hero: HomeHeroModel?) {
+        guard let hero else {
+            onHeroUpdated(.empty)
+            return
         }
-        // 中点切换内容，再翻转出来
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            if opening {
-                tabBeforeSimulator = selectedTab
-                isSimulatorShown = true
-            } else {
-                isSimulatorShown = false
-                selectedTab = tabBeforeSimulator
-                simulatorDisplayState = .overview
+        let percent = max(0, min(100, hero.progressPercentage))
+        onHeroUpdated(
+            HomeHeroSnapshot(
+                progressFraction: CGFloat(percent / 100),
+                progressLabel: "\(Int(percent.rounded()))%",
+                fireDateLabel: hero.displayFireDate ?? "Estimating"
+            )
+        )
+    }
+}
+
+private struct NotificationsView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                AppColors.backgroundPrimary.ignoresSafeArea()
+
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: AppSpacing.sectionGap) {
+                        reportSection(
+                            title: "Monthly Reports",
+                            icon: "calendar",
+                            message: "Your monthly summaries will appear here."
+                        )
+
+                        reportSection(
+                            title: "Annual Reports",
+                            icon: "chart.bar.doc.horizontal",
+                            message: "Your annual reviews will appear here."
+                        )
+                    }
+                    .padding(AppSpacing.cardPadding)
+                    .padding(.bottom, AppSpacing.xl)
+                }
             }
-            flipAngle = -90
-            // 第二阶段：新页翻转进入
-            withAnimation(.easeOut(duration: 0.2)) {
-                flipAngle = 0
+            .navigationTitle("Notifications")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundStyle(AppColors.textPrimary)
+                        .fontWeight(.semibold)
+                }
             }
+            .preferredColorScheme(.dark)
+        }
+    }
+
+    private func reportSection(title: String, icon: String, message: String) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sectionLabelGap) {
+            Text(title.uppercased())
+                .font(.miniLabel)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+
+            HStack(spacing: AppSpacing.md) {
+                Image(systemName: icon)
+                    .font(.h4)
+                    .foregroundStyle(AppColors.textPrimary)
+                    .frame(width: 34, height: 34)
+                    .background(AppColors.overlayWhiteWash)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm))
+
+                Text(message)
+                    .font(.bodySmall)
+                    .foregroundStyle(AppColors.textSecondary)
+
+                Spacer(minLength: 0)
+            }
+            .padding(AppSpacing.cardPadding)
+            .background(AppColors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.card)
+                    .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+            )
         }
     }
 }

@@ -16,14 +16,17 @@ struct SimulatorView: View {
     let isFireOn: Bool
     let onFireToggle: (() -> Void)?
     let bottomPadding: CGFloat
+    let showResultCard: Bool
+    let contentTopPadding: CGFloat
 
     @State private var preview: SimulatorPreviewModel?
     @State private var setupStage: HomeSetupStage?
     @State private var controls = SimulatorControlState()
     @State private var didSeedControls = false
-    @State private var showAdvanced = false
     @State private var errorMessage: String?
     @State private var previewTask: Task<Void, Never>?
+    @State private var editingField: SimulatorEditableField?
+    @State private var editInput = ""
 
     @Environment(PlaidManager.self) private var plaidManager
 
@@ -31,12 +34,16 @@ struct SimulatorView: View {
         displayState: Binding<SimulatorDisplayState>,
         bottomPadding: CGFloat = 0,
         isFireOn: Bool = true,
-        onFireToggle: (() -> Void)? = nil
+        onFireToggle: (() -> Void)? = nil,
+        showResultCard: Bool = true,
+        contentTopPadding: CGFloat = TopHeaderBar.height + AppSpacing.md
     ) {
         _displayState = displayState
         self.bottomPadding = bottomPadding
         self.isFireOn = isFireOn
         self.onFireToggle = onFireToggle
+        self.showResultCard = showResultCard
+        self.contentTopPadding = contentTopPadding
     }
 
     var body: some View {
@@ -91,7 +98,7 @@ private extension SimulatorView {
                     .frame(width: 140, height: 140)
                     .overlay(
                         Image(systemName: simulatorMode == .demo ? "sparkles" : "flame.fill")
-                            .font(.system(size: 40, weight: .semibold))
+                            .font(.display)
                             .foregroundStyle(
                                 LinearGradient(
                                     colors: simulatorMode == .demo
@@ -131,70 +138,53 @@ private extension SimulatorView {
     }
 
     var resultsContent: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                simulatorHeader
-                resultCard
+        GeometryReader { proxy in
+            let compactLayout = proxy.size.height < 780
+            let chartHeight = compactLayout
+                ? max(148, min(198, proxy.size.height * 0.29))
+                : max(170, min(220, proxy.size.height * 0.31))
+
+            VStack(alignment: .leading, spacing: compactLayout ? AppSpacing.xs : AppSpacing.sm) {
+                if showResultCard {
+                    resultCard
+                }
                 comparisonGraph
+                    .frame(height: chartHeight)
                 controlsSection
 
-                if let errorMessage {
-                    ErrorBanner(
-                        message: errorMessage,
-                        onRetry: { schedulePreviewRefresh(immediate: true) }
-                    )
+                if !compactLayout {
+                    swipeUpHint
                 }
             }
-            .padding(.top, AppSpacing.md)
-            .padding(.bottom, max(bottomPadding, AppSpacing.xl))
+            .padding(.top, contentTopPadding)
+            .padding(.bottom, max(bottomPadding, compactLayout ? AppSpacing.xs : AppSpacing.sm))
+        }
+        .alert(
+            "Edit Value",
+            isPresented: Binding(
+                get: { editingField != nil },
+                set: { if !$0 { editingField = nil } }
+            )
+        ) {
+            TextField("Value", text: $editInput)
+            Button("Save") { commitManualEdit() }
+            Button("Cancel", role: .cancel) { editingField = nil }
+        } message: {
+            Text(editingField?.displayTitle ?? "")
         }
     }
 
-    var simulatorHeader: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack(spacing: AppSpacing.sm) {
-                Text(simulatorMode == .demo ? "DEMO SIMULATOR" : "SANDBOX")
-                    .font(.cardHeader)
-                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
-                    .tracking(AppTypography.Tracking.cardHeader)
-
-                if simulatorMode == .demo {
-                    Text("DEMO")
-                        .font(.miniLabel)
-                        .foregroundStyle(AppColors.textInverse)
-                        .padding(.horizontal, AppSpacing.sm)
-                        .padding(.vertical, 4)
-                        .background(AppColors.accentAmber)
-                        .clipShape(Capsule())
-                }
-
-                Spacer()
-
-                Button(action: { onFireToggle?() }) {
-                    Image(systemName: "xmark")
-                        .font(.bodySmallSemibold)
-                        .foregroundStyle(AppColors.textPrimary)
-                        .frame(width: 34, height: 34)
-                        .background(AppColors.surfaceElevated)
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
-            }
-
-            Text(simulatorMode == .demo
-                 ? "Play with sample assumptions before your full setup is ready."
-                 : "Test changes here without changing the official path shown on Home.")
-                .font(.h4)
-                .foregroundStyle(AppColors.textPrimary)
-
-            Text(simulatorMode == .demo
-                 ? "This second act is a preview playground. Your official Hero stays untouched."
-                 : "Your official Hero remains real. Only the adjusted path below changes.")
-                .font(.bodySmall)
-                .foregroundStyle(AppColors.textSecondary)
-                .lineSpacing(3)
+    var swipeUpHint: some View {
+        VStack(spacing: 6) {
+            Capsule()
+                .fill(AppColors.overlayWhiteOnGlass)
+                .frame(width: 44, height: 4)
+            Text("Swipe up to return")
+                .font(.caption)
+                .foregroundStyle(AppColors.overlayWhiteOnGlass)
         }
-        .padding(.horizontal, AppSpacing.screenPadding)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 2)
     }
 
     var resultCard: some View {
@@ -297,9 +287,12 @@ private extension SimulatorView {
     }
 
     var comparisonGraph: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
+        let officialSeries = displayOfficialPath
+        let adjustedSeries = displayAdjustedPath
+
+        return VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack {
-                Text("CURRENT VS ADJUSTED")
+                Text(showsOfficialSeries ? "PLAN VS ADJUSTED" : "LIVE ADJUSTED PATH")
                     .font(.miniLabel)
                     .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
                 Spacer()
@@ -307,30 +300,38 @@ private extension SimulatorView {
             }
 
             PreviewPathChart(
-                officialPath: preview?.officialPath ?? [],
-                adjustedPath: preview?.adjustedPath ?? []
+                officialPath: officialSeries,
+                adjustedPath: adjustedSeries,
+                currentProgressLabel: currentProgressLabel
             )
-            .frame(height: 230)
-
-            Text(simulatorMode == .demo
-                 ? "Demo mode shows one sample path and one adjusted path."
-                 : "The solid line is your official path. The brighter line is this sandbox scenario.")
-                .font(.footnoteRegular)
-                .foregroundStyle(AppColors.textSecondary)
+            .frame(maxHeight: .infinity)
         }
-        .padding(AppSpacing.cardPadding)
-        .background(AppColors.surface)
+        .padding(panelPadding)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.10),
+                    Color(hex: "#A7F3D0").opacity(0.06),
+                    Color(hex: "#93C5FD").opacity(0.05)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                .stroke(Color.white.opacity(0.16), lineWidth: 1)
         )
+        .shadow(color: Color.white.opacity(0.03), radius: 8, y: -1)
         .padding(.horizontal, AppSpacing.screenPadding)
     }
 
     var legend: some View {
         HStack(spacing: AppSpacing.md) {
-            legendItem(color: AppColors.surfaceBorder, text: "Current")
+            if showsOfficialSeries {
+                legendItem(color: AppColors.surfaceBorder, text: "Plan baseline")
+            }
             legendItem(color: AppColors.accentBlueBright, text: "Adjusted")
         }
     }
@@ -346,90 +347,303 @@ private extension SimulatorView {
         }
     }
 
+    var displayOfficialPath: [SimulatorDataPoint] {
+        guard showsOfficialSeries else { return [] }
+        if let official = preview?.officialPath, official.count > 1 {
+            return official
+        }
+        return fallbackTrendPath(
+            seedNetWorth: controls.investableAssets,
+            monthlyInvestment: controls.savingsMonthly * 0.9,
+            annualReturnPercent: controls.returnRate * 0.92
+        )
+    }
+
+    var displayAdjustedPath: [SimulatorDataPoint] {
+        if let adjusted = preview?.adjustedPath, adjusted.count > 1 {
+            return adjusted
+        }
+        return fallbackTrendPath(
+            seedNetWorth: controls.investableAssets,
+            monthlyInvestment: controls.savingsMonthly,
+            annualReturnPercent: controls.returnRate
+        )
+    }
+
+    func fallbackTrendPath(
+        seedNetWorth: Double,
+        monthlyInvestment: Double,
+        annualReturnPercent: Double
+    ) -> [SimulatorDataPoint] {
+        let startYear = max(2026, Calendar.current.component(.year, from: .now))
+        let safeSeed = max(seedNetWorth, 1_000)
+        let safeMonthly = max(monthlyInvestment, 0)
+        let annualRate = max(0.01, annualReturnPercent / 100)
+        let monthlyRate = annualRate / 12
+
+        var points: [SimulatorDataPoint] = []
+        var running = safeSeed
+
+        for offset in 0...8 {
+            if offset > 0 {
+                for _ in 0..<12 {
+                    running += safeMonthly
+                    running *= (1 + monthlyRate)
+                }
+            }
+            points.append(
+                SimulatorDataPoint(
+                    year: startYear + offset,
+                    netWorth: running
+                )
+            )
+        }
+
+        return points
+    }
+
+    var showsOfficialSeries: Bool {
+        simulatorMode == .officialPreview
+    }
+
+    var currentProgressLabel: String {
+        guard let targetAge = preview?.previewFireAge, targetAge > controls.currentAge else {
+            return "Age \(controls.currentAge)"
+        }
+        let ratio = Double(controls.currentAge) / Double(targetAge)
+        let percent = min(99, max(1, Int((ratio * 100).rounded())))
+        return "Age \(controls.currentAge) · \(percent)%"
+    }
+
     var controlsSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("QUICK ADJUSTMENTS")
-                .font(.miniLabel)
-                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.xs) {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.caption)
+                    .foregroundStyle(AppColors.successAlt)
+                Text("SCENARIO CONTROLS")
+                    .font(.miniLabel)
+                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+            }
 
-            VStack(spacing: AppSpacing.sm) {
-                MoneyStepperRow(
-                    title: "Monthly savings",
-                    value: controls.savingsMonthly,
+            LazyVGrid(columns: gridColumns, spacing: gridCellGap) {
+                compactControlCell(
+                    title: "Monthly Investment",
+                    valueText: formatCurrency(controls.savingsMonthly),
                     range: 0...20_000,
-                    step: 250
-                ) { controls.savingsMonthly = $0 }
+                    step: 250,
+                    currentValue: controls.savingsMonthly,
+                    onChange: { controls.savingsMonthly = $0 },
+                    onEdit: {
+                        editingField = .monthlyInvestment
+                        editInput = String(Int(controls.savingsMonthly.rounded()))
+                    }
+                )
 
-                MoneyStepperRow(
-                    title: "Retirement spending",
-                    value: controls.retirementSpending,
+                compactControlCell(
+                    title: "Investable Assets",
+                    valueText: formatCurrency(controls.investableAssets),
+                    range: 0...2_500_000,
+                    step: 5_000,
+                    currentValue: controls.investableAssets,
+                    onChange: { controls.investableAssets = $0 },
+                    onEdit: {
+                        editingField = .investableAssets
+                        editInput = String(Int(controls.investableAssets.rounded()))
+                    }
+                )
+
+                compactControlCell(
+                    title: "Expected Return",
+                    valueText: String(format: "%.1f%%", controls.returnRate),
+                    range: 1...12,
+                    step: 0.5,
+                    currentValue: controls.returnRate,
+                    onChange: { controls.returnRate = $0 },
+                    onEdit: {
+                        editingField = .expectedReturn
+                        editInput = String(format: "%.1f", controls.returnRate)
+                    }
+                )
+
+                compactControlCell(
+                    title: "Monthly Expenses",
+                    valueText: formatCurrency(controls.retirementSpending),
                     range: 1_500...25_000,
-                    step: 250
-                ) { controls.retirementSpending = $0 }
-            }
+                    step: 250,
+                    currentValue: controls.retirementSpending,
+                    onChange: { controls.retirementSpending = $0 },
+                    onEdit: {
+                        editingField = .monthlyExpenses
+                        editInput = String(Int(controls.retirementSpending.rounded()))
+                    }
+                )
 
-            Button {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                    showAdvanced.toggle()
-                }
-            } label: {
-                HStack {
-                    Text("Advanced assumptions")
-                        .font(.bodySmallSemibold)
-                        .foregroundStyle(AppColors.textPrimary)
-                    Spacer()
-                    Image(systemName: showAdvanced ? "chevron.up" : "chevron.down")
-                        .font(.bodySmallSemibold)
-                        .foregroundStyle(AppColors.textSecondary)
-                }
-                .padding(AppSpacing.md)
-                .background(AppColors.overlayWhiteWash)
-                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-            }
-            .buttonStyle(.plain)
+                compactControlCell(
+                    title: "Withdrawal Rate",
+                    valueText: String(format: "%.2f%%", controls.withdrawalRate),
+                    range: 2.5...6,
+                    step: 0.25,
+                    currentValue: controls.withdrawalRate,
+                    onChange: { controls.withdrawalRate = $0 },
+                    onEdit: {
+                        editingField = .withdrawalRate
+                        editInput = String(format: "%.2f", controls.withdrawalRate)
+                    }
+                )
 
-            if showAdvanced {
-                VStack(spacing: AppSpacing.sm) {
-                    PercentStepperRow(
-                        title: "Return rate",
-                        value: controls.returnRate,
-                        range: 1...12,
-                        step: 0.5
-                    ) { controls.returnRate = $0 }
-
-                    PercentStepperRow(
-                        title: "Inflation",
-                        value: controls.inflationRate,
-                        range: 1...8,
-                        step: 0.5
-                    ) { controls.inflationRate = $0 }
-
-                    PercentStepperRow(
-                        title: "Withdrawal rule",
-                        value: controls.withdrawalRate,
-                        range: 2.5...6,
-                        step: 0.25
-                    ) { controls.withdrawalRate = $0 }
-
-                    OptionalAgeRow(
-                        title: "Target age",
-                        value: controls.targetAge
-                    ) { controls.targetAge = $0 }
-                }
+                compactControlCell(
+                    title: "Current Age",
+                    valueText: "\(controls.currentAge)",
+                    range: 18...70,
+                    step: 1,
+                    currentValue: Double(controls.currentAge),
+                    onChange: { controls.currentAge = Int($0.rounded()) },
+                    onEdit: {
+                        editingField = .currentAge
+                        editInput = "\(controls.currentAge)"
+                    }
+                )
             }
         }
-        .padding(AppSpacing.cardPadding)
-        .background(AppColors.surfaceElevated)
+        .padding(panelPadding)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.10),
+                    Color(hex: "#D1FAE5").opacity(0.06),
+                    Color(hex: "#BFDBFE").opacity(0.04)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1)
         )
+        .shadow(color: Color.white.opacity(0.03), radius: 8, y: -1)
         .padding(.horizontal, AppSpacing.screenPadding)
     }
 }
 
 private extension SimulatorView {
+    var isCompactPhone: Bool {
+        UIScreen.main.bounds.height <= 812
+    }
+
+    var panelPadding: CGFloat {
+        isCompactPhone ? AppSpacing.sm : AppSpacing.md
+    }
+
+    var gridCellGap: CGFloat {
+        isCompactPhone ? 6 : AppSpacing.xs
+    }
+
+    var controlButtonSize: CGFloat {
+        isCompactPhone ? 40 : 44
+    }
+
+    var controlCellPadding: CGFloat {
+        isCompactPhone ? 6 : 8
+    }
+
+    var controlRowGap: CGFloat {
+        isCompactPhone ? 4 : 6
+    }
+
+    var gridColumns: [GridItem] {
+        [
+            GridItem(.flexible(), spacing: gridCellGap),
+            GridItem(.flexible(), spacing: gridCellGap)
+        ]
+    }
+
+    @ViewBuilder
+    func compactControlCell(
+        title: String,
+        valueText: String,
+        range: ClosedRange<Double>,
+        step: Double,
+        currentValue: Double,
+        onChange: @escaping (Double) -> Void,
+        onEdit: @escaping () -> Void
+    ) -> some View {
+        VStack(alignment: .leading, spacing: controlRowGap) {
+            Text(title.uppercased())
+                .font(.miniLabel)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .padding(.leading, 2)
+
+            HStack(spacing: 6) {
+                Button {
+                    let next = max(range.lowerBound, currentValue - step)
+                    onChange(next)
+                } label: {
+                    Image(systemName: "minus")
+                        .font(.footnoteSemibold)
+                        .frame(width: controlButtonSize, height: controlButtonSize)
+                        .background(Color.white.opacity(0.06))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppRadius.sm)
+                                .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm))
+                }
+                .buttonStyle(.plain)
+
+                Button(action: onEdit) {
+                    Text(valueText)
+                        .font(.footnoteSemibold)
+                        .foregroundStyle(AppColors.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .frame(maxWidth: .infinity, minHeight: controlButtonSize)
+                        .background(Color.white.opacity(0.07))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppRadius.sm)
+                                .stroke(Color.white.opacity(0.20), lineWidth: 1)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm))
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    let next = min(range.upperBound, currentValue + step)
+                    onChange(next)
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.footnoteSemibold)
+                        .frame(width: controlButtonSize, height: controlButtonSize)
+                        .foregroundStyle(AppColors.successAlt)
+                        .background(Color.white.opacity(0.06))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppRadius.sm)
+                                .stroke(AppColors.successAlt.opacity(0.35), lineWidth: 1)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(controlCellPadding)
+        .background(
+            LinearGradient(
+                colors: [Color.white.opacity(0.05), Color.white.opacity(0.03)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+        )
+    }
+
     @MainActor
     func bootstrapIfNeeded() async {
         guard preview == nil else { return }
@@ -475,24 +689,26 @@ private extension SimulatorView {
         case .demo:
             var req = SimulatorPreviewRequest.demo(
                 retirementSpending: max(controls.retirementSpending, 4500),
-                netWorth: 75_000,
+                netWorth: controls.investableAssets,
                 sandboxSavings: controls.savingsMonthly
             )
+            req.officialAge = controls.currentAge
             req.sandboxRetirementSpending = controls.retirementSpending
             req.sandboxReturnRate = controls.returnRate / 100
-            req.sandboxInflationRate = controls.inflationRate / 100
             req.sandboxWithdrawalRate = controls.withdrawalRate / 100
-            req.sandboxTargetAge = controls.targetAge
             return req
 
         case .officialPreview:
-            return .officialPreview(
+            var req = SimulatorPreviewRequest.officialPreview(
                 sandboxSavings: controls.savingsMonthly,
                 sandboxSpending: controls.retirementSpending,
                 sandboxReturn: controls.returnRate / 100,
                 sandboxWithdrawal: controls.withdrawalRate / 100,
-                sandboxTargetAge: controls.targetAge
+                sandboxTargetAge: nil
             )
+            req.officialNetWorth = controls.investableAssets
+            req.officialAge = controls.currentAge
+            return req
         }
     }
 
@@ -503,12 +719,43 @@ private extension SimulatorView {
         controls = SimulatorControlState(
             savingsMonthly: effective?.savingsMonthly ?? 1_800,
             retirementSpending: effective?.retirementSpending ?? 5_000,
+            investableAssets: effective?.netWorth ?? 310_000,
             returnRate: (effective?.returnRate ?? 0.07) * 100,
-            inflationRate: 3.0,
             withdrawalRate: (effective?.withdrawalRate ?? 0.04) * 100,
-            targetAge: effective?.currentAge.map { $0 + 15 }
+            currentAge: effective?.currentAge ?? 33
         )
         didSeedControls = true
+    }
+
+    func commitManualEdit() {
+        guard let field = editingField else { return }
+        switch field {
+        case .monthlyInvestment:
+            if let value = Double(editInput) {
+                controls.savingsMonthly = min(max(0, value), 20_000)
+            }
+        case .investableAssets:
+            if let value = Double(editInput) {
+                controls.investableAssets = min(max(0, value), 2_500_000)
+            }
+        case .expectedReturn:
+            if let value = Double(editInput) {
+                controls.returnRate = min(max(1, value), 12)
+            }
+        case .monthlyExpenses:
+            if let value = Double(editInput) {
+                controls.retirementSpending = min(max(1_500, value), 25_000)
+            }
+        case .withdrawalRate:
+            if let value = Double(editInput) {
+                controls.withdrawalRate = min(max(2.5, value), 6)
+            }
+        case .currentAge:
+            if let value = Int(editInput) {
+                controls.currentAge = min(max(18, value), 70)
+            }
+        }
+        editingField = nil
     }
 }
 
@@ -520,144 +767,36 @@ private enum SimulatorMode {
 private struct SimulatorControlState: Equatable {
     var savingsMonthly: Double = 1_800
     var retirementSpending: Double = 5_000
+    var investableAssets: Double = 310_000
     var returnRate: Double = 7.0
-    var inflationRate: Double = 3.0
     var withdrawalRate: Double = 4.0
-    var targetAge: Int? = nil
+    var currentAge: Int = 33
 }
 
-private struct MoneyStepperRow: View {
-    let title: String
-    let value: Double
-    let range: ClosedRange<Double>
-    let step: Double
-    let onChange: (Double) -> Void
+private enum SimulatorEditableField {
+    case monthlyInvestment
+    case investableAssets
+    case expectedReturn
+    case monthlyExpenses
+    case withdrawalRate
+    case currentAge
 
-    var body: some View {
-        ControlRow(
-            title: title,
-            valueText: formatCurrency(value)
-        ) {
-            HStack(spacing: AppSpacing.sm) {
-                stepButton(symbol: "minus") { onChange(max(range.lowerBound, value - step)) }
-                stepButton(symbol: "plus") { onChange(min(range.upperBound, value + step)) }
-            }
+    var displayTitle: String {
+        switch self {
+        case .monthlyInvestment: return "Monthly Investment"
+        case .investableAssets: return "Investable Assets"
+        case .expectedReturn: return "Expected Return (%)"
+        case .monthlyExpenses: return "Monthly Expenses"
+        case .withdrawalRate: return "Withdrawal Rate (%)"
+        case .currentAge: return "Current Age"
         }
-    }
-
-    private func stepButton(symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.bodySmallSemibold)
-                .foregroundStyle(AppColors.textPrimary)
-                .frame(width: 32, height: 32)
-                .background(AppColors.surface)
-                .clipShape(Circle())
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-private struct PercentStepperRow: View {
-    let title: String
-    let value: Double
-    let range: ClosedRange<Double>
-    let step: Double
-    let onChange: (Double) -> Void
-
-    var body: some View {
-        ControlRow(
-            title: title,
-            valueText: String(format: "%.2g%%", value)
-        ) {
-            HStack(spacing: AppSpacing.sm) {
-                stepButton(symbol: "minus") { onChange(max(range.lowerBound, value - step)) }
-                stepButton(symbol: "plus") { onChange(min(range.upperBound, value + step)) }
-            }
-        }
-    }
-
-    private func stepButton(symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.bodySmallSemibold)
-                .foregroundStyle(AppColors.textPrimary)
-                .frame(width: 32, height: 32)
-                .background(AppColors.surface)
-                .clipShape(Circle())
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-private struct OptionalAgeRow: View {
-    let title: String
-    let value: Int?
-    let onChange: (Int?) -> Void
-
-    var body: some View {
-        ControlRow(
-            title: title,
-            valueText: value.map { "\($0)" } ?? "Off"
-        ) {
-            HStack(spacing: AppSpacing.sm) {
-                Button("Clear") { onChange(nil) }
-                    .font(.footnoteSemibold)
-                    .foregroundStyle(AppColors.textSecondary)
-
-                stepButton(symbol: "minus") {
-                    onChange(max((value ?? 55) - 1, 35))
-                }
-
-                stepButton(symbol: "plus") {
-                    onChange(min((value ?? 55) + 1, 80))
-                }
-            }
-        }
-    }
-
-    private func stepButton(symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.bodySmallSemibold)
-                .foregroundStyle(AppColors.textPrimary)
-                .frame(width: 32, height: 32)
-                .background(AppColors.surface)
-                .clipShape(Circle())
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-private struct ControlRow<Trailing: View>: View {
-    let title: String
-    let valueText: String
-    @ViewBuilder let trailing: () -> Trailing
-
-    var body: some View {
-        HStack(spacing: AppSpacing.md) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title.uppercased())
-                    .font(.miniLabel)
-                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
-                Text(valueText)
-                    .font(.bodySmallSemibold)
-                    .foregroundStyle(AppColors.textPrimary)
-            }
-
-            Spacer()
-
-            trailing()
-        }
-        .padding(AppSpacing.md)
-        .background(AppColors.overlayWhiteWash)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
     }
 }
 
 private struct PreviewPathChart: View {
     let officialPath: [SimulatorDataPoint]
     let adjustedPath: [SimulatorDataPoint]
+    let currentProgressLabel: String
 
     var body: some View {
         GeometryReader { proxy in
@@ -688,6 +827,22 @@ private struct PreviewPathChart: View {
                             ),
                             style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round)
                         )
+                }
+
+                if let currentPoint = points.adjusted.first {
+                    Circle()
+                        .fill(AppColors.accentBlueBright)
+                        .frame(width: 8, height: 8)
+                        .position(currentPoint)
+
+                    Text(currentProgressLabel)
+                        .font(.label)
+                        .foregroundStyle(AppColors.textSecondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 4)
+                        .background(AppColors.surface.opacity(0.9))
+                        .clipShape(Capsule())
+                        .position(x: min(proxy.size.width - 52, currentPoint.x + 52), y: max(12, currentPoint.y - 14))
                 }
 
                 if points.official.count > 1 {

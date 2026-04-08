@@ -12,6 +12,7 @@ struct FIRECountdownCard: View {
     let hero: HomeHeroModel?
     let stage: HomeSetupStage
     var onPrimaryAction: (() -> Void)? = nil
+    var fixedHeight: CGFloat? = nil
 
     var body: some View {
         ZStack {
@@ -47,6 +48,7 @@ struct FIRECountdownCard: View {
             }
             .padding(AppSpacing.cardPadding)
         }
+        .frame(height: fixedHeight, alignment: .top)
         .padding(.horizontal, AppSpacing.screenPadding)
     }
 }
