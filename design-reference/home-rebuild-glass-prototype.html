@@ -1,0 +1,2551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flamora Home Prototype</title>
+<style>
+  :root {
+    --ink: #111827;
+    --ink-soft: rgba(17, 24, 39, 0.66);
+    --ink-faint: rgba(17, 24, 39, 0.42);
+    --surface: #ffffff;
+    --surface-soft: #f8f9fc;
+    --surface-line: rgba(17, 24, 39, 0.07);
+    --hero-track: rgba(255, 255, 255, 0.16);
+    --fire-start: #a78bfa;
+    --fire-middle: #fca5a5;
+    --fire-end: #fcd34d;
+    --fire-gradient: linear-gradient(90deg, #a78bfa 0%, #fca5a5 56%, #fcd34d 100%);
+    --brand-purple-surface:
+      radial-gradient(circle at 18% 6%, rgba(196, 181, 253, 0.22), transparent 24%),
+      radial-gradient(circle at 82% 14%, rgba(167, 139, 250, 0.26), transparent 26%),
+      radial-gradient(circle at 56% 58%, rgba(252, 165, 165, 0.10), transparent 28%),
+      linear-gradient(180deg, #15162a 0%, #242b63 18%, #5a6fe0 42%, #d8dbff 68%, #f7f3ff 100%);
+    --hero-fade: var(--brand-purple-surface);
+    --shell-bg: linear-gradient(180deg, #f7f8fb 0%, #eef1f7 100%);
+    --phone-shadow: 0 34px 90px rgba(31, 40, 74, 0.16);
+    --page-shadow: 0 34px 90px rgba(31, 40, 74, 0.12);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+    background:
+      radial-gradient(circle at top, rgba(255, 255, 255, 0.92), transparent 22%),
+      linear-gradient(180deg, #f6f8fc 0%, #edf1f8 100%);
+    color: var(--ink);
+    font-family:
+      "SF Pro Text",
+      "SF Pro Display",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Helvetica Neue",
+      sans-serif;
+  }
+
+  body {
+    padding: 28px 16px 40px;
+  }
+
+  .shell {
+    max-width: 1220px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 430px minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+  }
+
+  .phone-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 8px;
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+
+  .meta strong {
+    color: var(--ink);
+  }
+
+  .phone {
+    position: relative;
+    width: 430px;
+    min-height: 920px;
+    padding: 14px;
+    border-radius: 52px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.32));
+    border: 1px solid rgba(255, 255, 255, 0.88);
+    box-shadow: var(--phone-shadow);
+    overflow: hidden;
+  }
+
+  .phone::before {
+    content: "";
+    position: absolute;
+    inset: 14px;
+    border-radius: 38px;
+    background: var(--shell-bg);
+  }
+
+  .screen {
+    position: relative;
+    height: 892px;
+    padding: 18px 0 18px;
+    border-radius: 38px;
+    overflow: hidden;
+  }
+
+  .app-view {
+    position: absolute;
+    inset: 48px 0 92px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms ease;
+  }
+
+  .app-view.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .statusbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    padding: 0 24px;
+    color: rgba(255, 255, 255, 0.98);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .island {
+    width: 108px;
+    height: 30px;
+    border-radius: 999px;
+    background: rgba(8, 10, 18, 0.96);
+  }
+
+  .hero-layer {
+    position: relative;
+    min-height: 308px;
+    padding: 18px 24px 100px;
+    border-radius: 0 0 22px 22px;
+    background: var(--hero-fade);
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    color: #ffffff;
+    overflow: hidden;
+    transition: min-height 320ms ease, padding 320ms ease, border-radius 320ms ease;
+  }
+
+  .phone.simulator-mode .hero-layer {
+    height: 760px;
+    min-height: 760px;
+    padding-bottom: 118px;
+    border-radius: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .phone.simulator-mode .hero-layer::-webkit-scrollbar {
+    display: none;
+  }
+
+  .phone.dragging-sheet .hero-layer,
+  .phone.dragging-sheet .hero-summary,
+  .phone.dragging-sheet .roadmap,
+  .phone.dragging-sheet .sim-graph,
+  .phone.dragging-sheet .sim-controls,
+  .phone.dragging-sheet .tabbar {
+    transition: none !important;
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 26px;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(16px);
+    overflow: hidden;
+  }
+
+  .brand-mark img {
+    width: 17px;
+    height: 17px;
+    display: block;
+    filter: brightness(0) invert(1);
+  }
+
+  .icon-button {
+    width: 38px;
+    height: 38px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.92);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .icon-button svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+  }
+
+  .hero-summary {
+    width: 100%;
+    max-height: 134px;
+    overflow: hidden;
+    transition: opacity 220ms ease, transform 220ms ease;
+  }
+
+  .phone.simulator-mode .hero-summary {
+    opacity: 0;
+    transform: translateY(-12px);
+    pointer-events: none;
+  }
+
+  .hero-title {
+    margin: 0 0 8px;
+    color: rgba(255, 255, 255, 0.94);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .hero-subtitle {
+    max-width: 244px;
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 13px;
+    line-height: 1.4;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  .hero-ghost-progress {
+    margin-top: 14px;
+  }
+
+  .hero-ghost-segments {
+    display: grid;
+    grid-template-columns: repeat(18, minmax(0, 1fr));
+    gap: 5px;
+    align-items: center;
+  }
+
+  .hero-ghost-segments span {
+    display: block;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .hero-ghost-segments span.active {
+    background: rgba(255, 255, 255, 0.5);
+  }
+
+  .hero-ghost-label {
+    margin-top: 8px;
+    text-align: right;
+    color: rgba(255, 255, 255, 0.36);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .sheet {
+    position: relative;
+    margin: -76px 0 0;
+    min-height: 610px;
+    padding: 16px 18px 116px;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.94);
+    box-shadow: 0 26px 72px rgba(20, 26, 47, 0.12);
+    touch-action: none;
+  }
+
+  .sheet-handle {
+    width: 50px;
+    height: 6px;
+    border-radius: 999px;
+    margin: 0 auto 16px;
+    background: rgba(17, 24, 39, 0.12);
+    cursor: pointer;
+  }
+
+  .sheet-peek-label {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    display: none;
+    min-width: 108px;
+    padding: 8px 14px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    text-align: center;
+    color: rgba(17, 24, 39, 0.52);
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 10px 28px rgba(17, 24, 39, 0.08);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .cash-view {
+    inset: 0 0 92px;
+    padding: 0;
+    background:
+      radial-gradient(circle at 18% 6%, rgba(196, 181, 253, 0.22), transparent 24%),
+      radial-gradient(circle at 82% 14%, rgba(167, 139, 250, 0.26), transparent 26%),
+      radial-gradient(circle at 56% 58%, rgba(252, 165, 165, 0.10), transparent 28%),
+      linear-gradient(180deg, #15162a 0%, #242b63 18%, #5a6fe0 42%, #d8dbff 68%, #f7f3ff 100%);
+    color: #ffffff;
+  }
+
+  .cash-hero-bg {
+    padding: 18px 24px 0;
+  }
+
+  .cash-hero-copy {
+    margin-top: 22px;
+  }
+
+  .cash-hero-copy h1 {
+    margin: 0;
+    font-size: 30px;
+    line-height: 0.98;
+    letter-spacing: -0.06em;
+    color: #ffffff;
+  }
+
+  .cash-stage {
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    top: 176px;
+    height: 500px;
+    overflow: hidden;
+  }
+
+  .cash-flow-card {
+    position: absolute;
+    inset: 0;
+    padding: 20px;
+    border-radius: 28px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(250, 246, 251, 0.74));
+    border: 1px solid rgba(255, 255, 255, 0.56);
+    box-shadow:
+      0 18px 40px rgba(71, 55, 101, 0.12),
+      0 2px 8px rgba(71, 55, 101, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(18px) saturate(1.05);
+    -webkit-backdrop-filter: blur(18px) saturate(1.05);
+    overflow: hidden;
+    transition: transform 520ms ease, opacity 520ms ease, filter 520ms ease;
+  }
+
+  .cash-flow-card.active {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    z-index: 2;
+    filter: blur(0);
+  }
+
+  .cash-flow-card.back {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.98);
+    z-index: 1;
+    filter: none;
+    pointer-events: none;
+  }
+
+  .cash-flow-card.back > * {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  .cash-flow-card.active > * {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 280ms ease, transform 280ms ease;
+  }
+
+  .cash-card-kicker {
+    display: block;
+    margin-bottom: 12px;
+    color: rgba(17, 24, 39, 0.34);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .cash-stage-header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .cash-stage-value {
+    font-size: 38px;
+    line-height: 0.92;
+    letter-spacing: -0.07em;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .cash-stage-copy {
+    margin-top: 6px;
+    color: rgba(17, 24, 39, 0.56);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .cash-chip {
+    padding: 8px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(17, 24, 39, 0.08);
+    color: rgba(17, 24, 39, 0.62);
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.82);
+  }
+
+  .cash-budget-grid {
+    display: grid;
+    gap: 16px;
+    margin-top: 18px;
+  }
+
+  .cash-budget-block {
+    padding: 16px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    backdrop-filter: blur(12px);
+  }
+
+  .cash-budget-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .cash-budget-top strong {
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(17, 24, 39, 0.6);
+  }
+
+  .cash-budget-top span {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    color: #111827;
+  }
+
+  .cash-budget-line {
+    height: 6px;
+    margin-top: 12px;
+    border-radius: 999px;
+    background: rgba(17, 24, 39, 0.08);
+    overflow: hidden;
+  }
+
+  .cash-budget-line i {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: inherit;
+    background: #111827;
+    transition: width 900ms ease;
+  }
+
+  .cash-flow-card.active .cash-budget-needs i {
+    width: 62%;
+    transition-delay: 120ms;
+  }
+
+  .cash-flow-card.active .cash-budget-wants i {
+    width: 38%;
+    transition-delay: 220ms;
+  }
+
+  .cash-budget-rows {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .cash-budget-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: rgba(17, 24, 39, 0.66);
+    font-size: 13px;
+  }
+
+  .cash-budget-row b {
+    color: #111827;
+    font-size: 13px;
+  }
+
+  .cash-savings-chart {
+    position: relative;
+    height: 182px;
+    margin-top: 18px;
+    padding-top: 26px;
+  }
+
+  .cash-savings-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 78px;
+    border-top: 1px dashed rgba(17, 24, 39, 0.12);
+  }
+
+  .cash-savings-bars {
+    position: absolute;
+    inset: 26px 0 22px;
+    display: grid;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+    gap: 8px;
+    align-items: end;
+  }
+
+  .cash-savings-bar {
+    height: 12px;
+    border-radius: 999px 999px 4px 4px;
+    background: rgba(17, 24, 39, 0.10);
+    transition:
+      height 460ms ease,
+      opacity 360ms ease,
+      background 360ms ease;
+    opacity: 0.7;
+  }
+
+  .cash-flow-card.active .cash-savings-bar {
+    height: var(--bar-height);
+    background: linear-gradient(180deg, rgba(17, 24, 39, 0.88), rgba(17, 24, 39, 0.72));
+    opacity: 1;
+  }
+
+  .cash-flow-card.active .cash-savings-bar:nth-child(1) { transition-delay: 40ms; }
+  .cash-flow-card.active .cash-savings-bar:nth-child(2) { transition-delay: 90ms; }
+  .cash-flow-card.active .cash-savings-bar:nth-child(3) { transition-delay: 140ms; }
+  .cash-flow-card.active .cash-savings-bar:nth-child(4) { transition-delay: 190ms; }
+  .cash-flow-card.active .cash-savings-bar:nth-child(5) { transition-delay: 240ms; }
+  .cash-flow-card.active .cash-savings-bar:nth-child(6) { transition-delay: 290ms; }
+  .cash-flow-card.active .cash-savings-bar:nth-child(7) { transition-delay: 340ms; }
+  .cash-flow-card.active .cash-savings-bar:nth-child(8) { transition-delay: 390ms; }
+  .cash-flow-card.active .cash-savings-bar:nth-child(9) { transition-delay: 440ms; }
+  .cash-flow-card.active .cash-savings-bar:nth-child(10) { transition-delay: 490ms; }
+
+  .cash-savings-months {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+    gap: 8px;
+    color: rgba(17, 24, 39, 0.34);
+    font-size: 10px;
+    text-align: center;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .cash-savings-stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(17, 24, 39, 0.08);
+  }
+
+  .cash-savings-stats div {
+    display: grid;
+    gap: 4px;
+  }
+
+  .cash-savings-stats span {
+    color: rgba(17, 24, 39, 0.42);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .cash-savings-stats strong {
+    color: #111827;
+    font-size: 22px;
+    letter-spacing: -0.05em;
+  }
+
+  .cash-flow-cta {
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    bottom: 52px;
+  }
+
+  .cash-primary-btn {
+    width: 100%;
+    height: 54px;
+    border: none;
+    border-radius: 18px;
+    background: #111111;
+    color: #ffffff;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    box-shadow: 0 16px 32px rgba(71, 55, 101, 0.12);
+    cursor: pointer;
+  }
+
+  .invest-view {
+    inset: 0 0 92px;
+    padding: 0;
+    background:
+      radial-gradient(circle at 16% 5%, rgba(196, 181, 253, 0.22), transparent 24%),
+      radial-gradient(circle at 84% 12%, rgba(167, 139, 250, 0.28), transparent 26%),
+      radial-gradient(circle at 58% 56%, rgba(252, 165, 165, 0.10), transparent 28%),
+      linear-gradient(180deg, #13152a 0%, #20275f 18%, #556add 42%, #d9dcff 68%, #f8f4ff 100%);
+    color: #ffffff;
+  }
+
+  .invest-hero-bg {
+    padding: 18px 24px 0;
+  }
+
+  .invest-hero-copy {
+    margin-top: 22px;
+  }
+
+  .invest-hero-copy h1 {
+    margin: 0;
+    font-size: 30px;
+    line-height: 0.98;
+    letter-spacing: -0.06em;
+    color: #ffffff;
+  }
+
+  .cash-view .brand-mark,
+  .invest-view .brand-mark {
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(18px);
+  }
+
+  .cash-view .brand-mark img,
+  .invest-view .brand-mark img {
+    filter: brightness(0) invert(1);
+  }
+
+  .cash-view .icon-button,
+  .invest-view .icon-button {
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(18px);
+  }
+
+  .invest-stage {
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    top: 174px;
+    height: 470px;
+    overflow: visible;
+  }
+
+  .invest-card {
+    position: absolute;
+    inset: 0;
+    padding: 22px 20px 18px;
+    border-radius: 28px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(249, 245, 251, 0.76));
+    border: 1px solid rgba(255, 255, 255, 0.58);
+    box-shadow:
+      0 18px 40px rgba(71, 55, 101, 0.12),
+      0 2px 8px rgba(71, 55, 101, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 0.74);
+    backdrop-filter: blur(18px) saturate(1.05);
+    -webkit-backdrop-filter: blur(18px) saturate(1.05);
+    overflow: hidden;
+  }
+
+  .invest-card-kicker {
+    display: block;
+    margin-bottom: 10px;
+    color: rgba(17, 24, 39, 0.34);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .invest-value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .invest-value-amount {
+    font-size: 40px;
+    line-height: 0.92;
+    letter-spacing: -0.07em;
+    font-weight: 700;
+    color: #111827;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .invest-value-change {
+    font-size: 13px;
+    font-weight: 700;
+    color: #2d9d5b;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 420ms ease, transform 420ms ease;
+  }
+
+  .invest-card.play .invest-value-change {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 520ms;
+  }
+
+  .invest-chart {
+    position: relative;
+    height: 176px;
+    margin-top: 18px;
+  }
+
+  .invest-chart svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .invest-line-path {
+    fill: none;
+    stroke: #111827;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 420;
+    stroke-dashoffset: 420;
+    transition: stroke-dashoffset 2200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .invest-card.play .invest-line-path {
+    stroke-dashoffset: 0;
+  }
+
+  .invest-line-dot {
+    fill: #111827;
+    opacity: 0;
+    transform-origin: 292px 50px;
+    transform: scale(0.3);
+    transition: opacity 420ms ease, transform 640ms ease;
+    transition-delay: 2140ms;
+  }
+
+  .invest-line-dot-halo {
+    fill: rgba(17, 24, 39, 0.12);
+    opacity: 0;
+    transform-origin: 292px 50px;
+    transform: scale(0.5);
+    transition: opacity 420ms ease, transform 1200ms ease;
+    transition-delay: 2200ms;
+  }
+
+  .invest-card.play .invest-line-dot,
+  .invest-card.play .invest-line-dot-halo {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .invest-periods {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 14px;
+    padding: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.38);
+    backdrop-filter: blur(12px);
+  }
+
+  .invest-footer-copy {
+    margin-top: 16px;
+    text-align: center;
+    color: rgba(17, 24, 39, 0.46);
+    font-size: 12px;
+    line-height: 1.4;
+    font-weight: 500;
+  }
+
+  .invest-period {
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    color: rgba(17, 24, 39, 0.48);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .invest-period.active {
+    background: #ffffff;
+    color: #111827;
+  }
+
+  .invest-flow-cta {
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    bottom: 82px;
+  }
+
+  .roadmap {
+    padding: 18px;
+    border-radius: 24px;
+    background: rgba(249, 250, 252, 0.98);
+    border: 1px solid var(--surface-line);
+    overflow: hidden;
+    transform-origin: top center;
+  }
+
+
+  .sheet-eyebrow {
+    display: block;
+    margin-bottom: 10px;
+    color: rgba(17, 24, 39, 0.48);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .roadmap h3 {
+    margin: 0;
+    font-size: 20px;
+    line-height: 1.04;
+    letter-spacing: -0.05em;
+  }
+
+  .step-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .step-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(17, 24, 39, 0.07);
+    cursor: pointer;
+  }
+
+  .step-item:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .step-index {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    color: var(--ink-soft);
+    background: rgba(17, 24, 39, 0.06);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .step-item.current .step-index {
+    background: #111111;
+    color: #ffffff;
+  }
+
+  .step-copy strong {
+    display: block;
+    margin-bottom: 3px;
+    font-size: 14px;
+  }
+
+  .step-copy span {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .step-arrow {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid rgba(17, 24, 39, 0.08);
+    background: #ffffff;
+    color: rgba(17, 24, 39, 0.54);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 140ms ease;
+  }
+
+  .step-arrow:hover {
+    transform: translateX(1px);
+  }
+
+  .step-arrow svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
+
+  .simulator-panel {
+    margin-top: 12px;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .sandbox-hero {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .sandbox-kicker {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .sandbox-title {
+    max-width: 312px;
+    margin: 14px 0 8px;
+    font-size: 34px;
+    line-height: 0.94;
+    letter-spacing: -0.06em;
+  }
+
+  .sim-header {
+    display: none;
+  }
+
+  .sim-header h3 {
+    margin: 0;
+    font-size: 26px;
+    line-height: 0.98;
+    letter-spacing: -0.05em;
+  }
+
+  .sim-header span {
+    display: block;
+    margin-top: 6px;
+    color: rgba(255, 255, 255, 0.54);
+    font-size: 12px;
+  }
+
+  .sim-close {
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.92);
+    font: inherit;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  .sim-graph {
+    position: relative;
+    padding-top: 8px;
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  .graph-box {
+    position: relative;
+    height: 210px;
+    padding: 4px 0 28px;
+    overflow: visible;
+  }
+
+  .graph-floor {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 28px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  .bar-grid {
+    position: absolute;
+    inset: 0 0 28px;
+    display: grid;
+    grid-template-columns: repeat(16, minmax(0, 1fr));
+    gap: 6px;
+    align-items: end;
+  }
+
+  .bar {
+    position: relative;
+    width: 100%;
+    border-radius: 999px 999px 4px 4px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.42));
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  }
+
+  .bar.soft {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.18));
+  }
+
+  .bar-callout {
+    position: absolute;
+    padding: 8px 10px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.84);
+    font-size: 12px;
+    font-weight: 700;
+    backdrop-filter: blur(8px);
+  }
+
+  .bar-callout.one {
+    right: 66px;
+    top: 28px;
+  }
+
+  .graph-axis {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: space-between;
+    color: rgba(255, 255, 255, 0.34);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .sim-controls {
+    margin-top: 18px;
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  .sim-details {
+    padding: 16px 18px 18px;
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(33, 37, 78, 0.94), rgba(25, 28, 61, 0.96));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow:
+      0 18px 36px rgba(9, 11, 28, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+  }
+
+  .sim-details h4 {
+    margin: 0 0 14px;
+    font-size: 20px;
+    letter-spacing: -0.04em;
+    color: rgba(255, 255, 255, 0.96);
+  }
+
+  .detail-list,
+  .advanced-block {
+    display: grid;
+  }
+
+  .detail-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    cursor: pointer;
+  }
+
+  .detail-row:last-child {
+    border-bottom: none;
+  }
+
+  .detail-label {
+    max-width: 54%;
+    color: rgba(255, 255, 255, 0.86);
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 600;
+  }
+
+  .detail-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .detail-value {
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.98);
+    font: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    cursor: pointer;
+  }
+
+  .detail-chevron {
+    width: 16px;
+    height: 16px;
+    color: rgba(255, 255, 255, 0.42);
+    display: block;
+  }
+
+  .detail-input {
+    display: none;
+    width: 44%;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.10);
+    color: #ffffff;
+    font: inherit;
+    font-size: 16px;
+    text-align: right;
+    outline: none;
+  }
+
+  .detail-row.editing .detail-right {
+    display: none;
+  }
+
+  .detail-row.editing .detail-input {
+    display: block;
+  }
+
+  .advanced-toggle {
+    margin: 16px auto 0;
+    min-width: 132px;
+    height: 32px;
+    padding: 0 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.68);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+
+  .advanced-toggle svg {
+    width: 14px;
+    height: 14px;
+    display: block;
+    transition: transform 160ms ease;
+  }
+
+  .advanced-toggle.open svg {
+    transform: rotate(180deg);
+  }
+
+  .advanced-block {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 220ms ease, opacity 180ms ease, margin-top 220ms ease;
+  }
+
+  .advanced-block.open {
+    max-height: 420px;
+    opacity: 1;
+    margin-top: 10px;
+  }
+
+  .bar {
+    cursor: pointer;
+  }
+
+  .bar.active {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.56));
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset, 0 0 24px rgba(255, 255, 255, 0.08);
+  }
+
+  .tabbar {
+    position: absolute;
+    left: 26px;
+    right: 26px;
+    bottom: 24px;
+    z-index: 12;
+    padding: 9px 10px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.68);
+    border: 1px solid rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(28px) saturate(1.2);
+    -webkit-backdrop-filter: blur(28px) saturate(1.2);
+    box-shadow:
+      0 18px 40px rgba(17, 24, 39, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.58);
+  }
+
+  .tabgrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .tab {
+    display: grid;
+    place-items: center;
+    gap: 4px;
+    padding: 11px 6px 9px;
+    border-radius: 18px;
+    color: rgba(17, 24, 39, 0.58);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+  }
+
+  .tab.active {
+    background: rgba(255, 255, 255, 0.72);
+    color: #111827;
+    box-shadow:
+      0 10px 24px rgba(17, 24, 39, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  }
+
+  .tab:hover {
+    transform: translateY(-1px);
+  }
+
+  .tab svg {
+    width: 20px;
+    height: 20px;
+    display: block;
+  }
+
+  .notes {
+    padding: 30px;
+    border-radius: 36px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(20px);
+    box-shadow: var(--page-shadow);
+  }
+
+  .notes .label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(17, 24, 39, 0.04);
+    color: rgba(17, 24, 39, 0.58);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .notes h1 {
+    margin: 18px 0 14px;
+    font-size: clamp(42px, 5vw, 74px);
+    line-height: 0.94;
+    letter-spacing: -0.07em;
+  }
+
+  .notes h1 span {
+    background: linear-gradient(135deg, #6056e8 0%, #fca5a5 56%, #fcd34d 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .notes p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.78;
+  }
+
+  .note-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .note {
+    padding: 16px 18px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.76);
+    border: 1px solid rgba(255, 255, 255, 0.88);
+  }
+
+  .note strong {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 14px;
+  }
+
+  .note span {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1.58;
+  }
+
+  .inspector {
+    margin-top: 18px;
+    padding: 16px 18px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+  }
+
+  .inspector strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .inspector p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .component-gallery {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 22px;
+  }
+
+  .component-card {
+    padding: 16px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+  }
+
+  .component-card strong {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+
+  .component-card span {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .mini-dark {
+    margin-top: 10px;
+    padding: 14px;
+    border-radius: 18px;
+    background: #17171d;
+    color: #ffffff;
+  }
+
+  .mini-kicker {
+    display: inline-flex;
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .mini-title {
+    margin-top: 10px;
+    font-size: 22px;
+    line-height: 0.95;
+    letter-spacing: -0.06em;
+  }
+
+  .mini-bars {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 4px;
+    align-items: end;
+    height: 84px;
+    margin-top: 12px;
+  }
+
+  .mini-bars div {
+    border-radius: 999px 999px 4px 4px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.34));
+  }
+
+  .mini-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 0;
+    border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+    font-size: 13px;
+  }
+
+  .mini-row:last-child {
+    border-bottom: none;
+    padding-bottom: 4px;
+  }
+
+  .mini-row b {
+    font-size: 16px;
+  }
+
+  .mini-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(17, 24, 39, 0.1);
+    background: rgba(17, 24, 39, 0.04);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-soft);
+  }
+
+  .mini-gradient {
+    margin-top: 10px;
+    padding: 14px;
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at 18% 8%, rgba(196, 181, 253, 0.24), transparent 26%),
+      radial-gradient(circle at 82% 16%, rgba(167, 139, 250, 0.28), transparent 24%),
+      radial-gradient(circle at 54% 70%, rgba(252, 165, 165, 0.10), transparent 28%),
+      linear-gradient(180deg, #15162a 0%, #242b63 18%, #5a6fe0 42%, #d8dbff 68%, #f7f3ff 100%);
+    min-height: 112px;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  }
+
+  .mini-gradient-strip {
+    height: 12px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #a78bfa 0%, #fca5a5 58%, #fcd34d 100%);
+  }
+
+  .mini-gradient-swatches {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .mini-swatch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  .mini-swatch i {
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    display: block;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.28) inset;
+  }
+
+  @media (max-width: 1080px) {
+    .shell {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 560px) {
+    body {
+      padding: 16px 10px 24px;
+    }
+
+    .phone {
+      width: 100%;
+      min-height: 920px;
+    }
+
+    .screen {
+      min-height: 892px;
+    }
+
+    .sim-header {
+      flex-direction: column;
+      align-items: start;
+    }
+
+    .detail-row {
+      align-items: start;
+    }
+
+    .detail-input {
+      width: 48%;
+    }
+
+    .component-gallery {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="shell">
+    <section class="phone-wrap">
+      <div class="meta">
+        <strong>iPhone 17 Pro Interactive Prototype</strong>
+        <span>S0 Home with full-screen Simulator transition</span>
+      </div>
+
+      <div class="phone">
+        <div class="screen">
+          <div class="statusbar">
+            <span>19:33</span>
+            <div class="island"></div>
+            <span>◔ ▂▃▅</span>
+          </div>
+
+          <section class="app-view home-view active" data-view="home">
+          <section class="hero-layer">
+            <div class="topbar">
+              <div class="brand">
+                <div class="brand-mark">
+                  <img src="../Flamora app/Assets.xcassets/FlameIcon.imageset/flame.png" alt="Flamora logo">
+                </div>
+              </div>
+
+              <button class="icon-button" id="settingsBtn" aria-label="Settings">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 8.8A3.2 3.2 0 1 1 12 15.2 3.2 3.2 0 0 1 12 8.8z" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M19 12a7 7 0 0 0-.08-1l2.03-1.58-1.92-3.32-2.47.84a7.8 7.8 0 0 0-1.74-1l-.4-2.57h-3.84l-.4 2.57a7.8 7.8 0 0 0-1.74 1l-2.47-.84L3.05 9.42 5.08 11A7 7 0 0 0 5 12c0 .34.03.67.08 1l-2.03 1.58 1.92 3.32 2.47-.84c.53.42 1.11.76 1.74 1l.4 2.57h3.84l.4-2.57c.63-.24 1.21-.58 1.74-1l2.47.84 1.92-3.32L18.92 13c.05-.33.08-.66.08-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="hero-summary">
+              <div class="hero-title">Your FIRE Journey</div>
+              <div class="hero-subtitle">Finish the set up to track your progress.</div>
+              <div class="hero-ghost-progress">
+                <div class="hero-ghost-segments" aria-hidden="true">
+                  <span class="active"></span>
+                  <span class="active"></span>
+                  <span class="active"></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <div class="hero-ghost-label">Freedom date</div>
+              </div>
+            </div>
+
+            <section class="simulator-panel" id="simulatorPanel">
+              <div class="sandbox-hero">
+                <div class="sandbox-kicker">Sandbox</div>
+                <div class="sandbox-title">You will be financial free by age 30.</div>
+              </div>
+
+              <div class="sim-header">
+                <div>
+                  <h3>Demo Simulator</h3>
+                  <span>Explore the path before your real data exists.</span>
+                </div>
+                <button class="sim-close" id="simCloseBtn" aria-label="Close simulator">×</button>
+              </div>
+
+              <div class="sim-graph">
+                <div class="graph-box">
+                  <div class="bar-callout one">$128,000 by age 30</div>
+                  <div class="bar-grid">
+                    <div class="bar soft" data-age="24" data-year="2026" data-value="$8,400" style="height: 12px;"></div>
+                    <div class="bar soft" data-age="24" data-year="2026" data-value="$11,100" style="height: 14px;"></div>
+                    <div class="bar soft" data-age="25" data-year="2027" data-value="$14,800" style="height: 16px;"></div>
+                    <div class="bar soft" data-age="25" data-year="2027" data-value="$18,900" style="height: 19px;"></div>
+                    <div class="bar soft" data-age="26" data-year="2028" data-value="$24,300" style="height: 24px;"></div>
+                    <div class="bar soft" data-age="26" data-year="2028" data-value="$31,700" style="height: 30px;"></div>
+                    <div class="bar soft" data-age="27" data-year="2029" data-value="$39,600" style="height: 38px;"></div>
+                    <div class="bar" data-age="27" data-year="2029" data-value="$48,200" style="height: 48px;"></div>
+                    <div class="bar" data-age="28" data-year="2030" data-value="$59,800" style="height: 62px;"></div>
+                    <div class="bar" data-age="28" data-year="2030" data-value="$73,200" style="height: 78px;"></div>
+                    <div class="bar" data-age="29" data-year="2031" data-value="$88,100" style="height: 96px;"></div>
+                    <div class="bar" data-age="29" data-year="2031" data-value="$103,600" style="height: 118px;"></div>
+                    <div class="bar" data-age="30" data-year="2032" data-value="$114,400" style="height: 144px;"></div>
+                    <div class="bar" data-age="30" data-year="2032" data-value="$121,700" style="height: 168px;"></div>
+                    <div class="bar" data-age="30" data-year="2032" data-value="$126,200" style="height: 188px;"></div>
+                    <div class="bar active" data-age="30" data-year="2032" data-value="$128,000" style="height: 202px;"></div>
+                  </div>
+                  <div class="graph-floor"></div>
+                  <div class="graph-axis">
+                    <span>2026</span>
+                    <span>2029</span>
+                    <span>2032</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sim-controls">
+                <section class="sim-details">
+                  <h4>Retirement Detail</h4>
+
+                  <div class="detail-list">
+                    <div class="detail-row" data-field="Current Age">
+                      <div class="detail-label">Current Age</div>
+                      <div class="detail-right">
+                        <button class="detail-value">24</button>
+                        <svg class="detail-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M8 10l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </div>
+                      <input class="detail-input" value="24" inputmode="numeric">
+                    </div>
+
+                    <div class="detail-row" data-field="Monthly Contribution">
+                      <div class="detail-label">Monthly Contribution</div>
+                      <div class="detail-right">
+                        <button class="detail-value">$1,800</button>
+                        <svg class="detail-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M8 10l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </div>
+                      <input class="detail-input" value="$1,800">
+                    </div>
+
+                    <div class="detail-row" data-field="Current Investment">
+                      <div class="detail-label">Current Investment</div>
+                      <div class="detail-right">
+                        <button class="detail-value">$42,000</button>
+                        <svg class="detail-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M8 10l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </div>
+                      <input class="detail-input" value="$42,000">
+                    </div>
+
+                    <div class="detail-row" data-field="Retire Monthly Expense">
+                      <div class="detail-label">Retire Monthly Expense</div>
+                      <div class="detail-right">
+                        <button class="detail-value">$3,600</button>
+                        <svg class="detail-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M8 10l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </div>
+                      <input class="detail-input" value="$3,600">
+                    </div>
+                  </div>
+
+                  <button class="advanced-toggle" id="advancedToggle" aria-expanded="false">
+                    <span>Advanced Details</span>
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M8 10l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+
+                  <div class="advanced-block" id="advancedBlock">
+                    <div class="detail-row" data-field="Expected Return">
+                      <div class="detail-label">Expected Return</div>
+                      <div class="detail-right">
+                        <button class="detail-value">7%</button>
+                        <svg class="detail-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M8 10l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </div>
+                      <input class="detail-input" value="7%">
+                    </div>
+
+                    <div class="detail-row" data-field="Inflation">
+                      <div class="detail-label">Inflation</div>
+                      <div class="detail-right">
+                        <button class="detail-value">2.5%</button>
+                        <svg class="detail-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M8 10l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </div>
+                      <input class="detail-input" value="2.5%">
+                    </div>
+
+                    <div class="detail-row" data-field="Withdrawal Rate">
+                      <div class="detail-label">Withdrawal Rate</div>
+                      <div class="detail-right">
+                        <button class="detail-value">4%</button>
+                        <svg class="detail-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M8 10l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </div>
+                      <input class="detail-input" value="4%">
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </section>
+          </section>
+
+          <section class="sheet">
+            <div class="sheet-handle" id="sheetHandle" aria-label="Open simulator"></div>
+            <div class="sheet-peek-label">Back to Home</div>
+
+            <section class="roadmap">
+              <span class="sheet-eyebrow">What happens next</span>
+              <h3>Three steps to unlock Home.</h3>
+
+              <div class="step-list">
+                <div class="step-item current" data-step="goal">
+                  <div class="step-index">1</div>
+                  <div class="step-copy">
+                    <strong>Set your FIRE goal</strong>
+                    <span>Tell Flamora what future you're aiming for.</span>
+                  </div>
+                  <button class="step-arrow" aria-label="Go to set goal">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M8 5l8 7-8 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+
+                <div class="step-item" data-step="accounts">
+                  <div class="step-index">2</div>
+                  <div class="step-copy">
+                    <strong>Connect your accounts</strong>
+                    <span>Bring in your real numbers when you're ready.</span>
+                  </div>
+                  <button class="step-arrow" aria-label="Go to connect accounts">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M8 5l8 7-8 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+
+                <div class="step-item" data-step="plan">
+                  <div class="step-index">3</div>
+                  <div class="step-copy">
+                    <strong>Choose your path</strong>
+                    <span>Apply the version of FIRE that fits your life.</span>
+                  </div>
+                  <button class="step-arrow" aria-label="Go to choose path">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M8 5l8 7-8 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </section>
+          </section>
+          </section>
+
+          <section class="app-view cash-view" data-view="cash">
+            <div class="cash-hero-bg">
+              <div class="topbar">
+                <div class="brand">
+                  <div class="brand-mark">
+                    <img src="../Flamora app/Assets.xcassets/FlameIcon.imageset/flame.png" alt="Flamora logo">
+                  </div>
+                </div>
+
+                <button class="icon-button" aria-label="Settings">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 8.8A3.2 3.2 0 1 1 12 15.2 3.2 3.2 0 0 1 12 8.8z" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M19 12a7 7 0 0 0-.08-1l2.03-1.58-1.92-3.32-2.47.84a7.8 7.8 0 0 0-1.74-1l-.4-2.57h-3.84l-.4 2.57a7.8 7.8 0 0 0-1.74 1l-2.47-.84L3.05 9.42 5.08 11A7 7 0 0 0 5 12c0 .34.03.67.08 1l-2.03 1.58 1.92 3.32 2.47-.84c.53.42 1.11.76 1.74 1l.4 2.57h3.84l.4-2.57c.63-.24 1.21-.58 1.74-1l2.47.84 1.92-3.32L18.92 13c.05-.33.08-.66.08-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="cash-hero-copy">
+                <h1>Cash Flow</h1>
+              </div>
+            </div>
+
+            <section class="cash-stage">
+              <article class="cash-flow-card active" data-cash-card="spending">
+                <span class="cash-card-kicker">Spending overview</span>
+                <div class="cash-stage-header">
+                  <div>
+                    <div class="cash-stage-value">$3,420</div>
+                    <div class="cash-stage-copy">Monthly spending split into needs and wants.</div>
+                  </div>
+                  <div class="cash-chip">Spending</div>
+                </div>
+
+                <div class="cash-budget-grid">
+                  <section class="cash-budget-block cash-budget-needs">
+                    <div class="cash-budget-top">
+                      <strong>Needs</strong>
+                      <span>$2,120</span>
+                    </div>
+                    <div class="cash-budget-line"><i></i></div>
+                    <div class="cash-budget-rows">
+                      <div class="cash-budget-row"><span>Rent</span><b>$1,480</b></div>
+                      <div class="cash-budget-row"><span>Groceries</span><b>$410</b></div>
+                      <div class="cash-budget-row"><span>Utilities</span><b>$230</b></div>
+                    </div>
+                  </section>
+
+                  <section class="cash-budget-block cash-budget-wants">
+                    <div class="cash-budget-top">
+                      <strong>Wants</strong>
+                      <span>$1,300</span>
+                    </div>
+                    <div class="cash-budget-line"><i></i></div>
+                    <div class="cash-budget-rows">
+                      <div class="cash-budget-row"><span>Dining</span><b>$420</b></div>
+                      <div class="cash-budget-row"><span>Shopping</span><b>$515</b></div>
+                      <div class="cash-budget-row"><span>Travel</span><b>$365</b></div>
+                    </div>
+                  </section>
+                </div>
+              </article>
+
+              <article class="cash-flow-card back" data-cash-card="saving">
+                <span class="cash-card-kicker">Saving overview</span>
+                <div class="cash-stage-header">
+                  <div>
+                    <div class="cash-stage-value">$20,200</div>
+                    <div class="cash-stage-copy">Total saved this year from consistent monthly habits.</div>
+                  </div>
+                  <div class="cash-chip">Saving</div>
+                </div>
+
+                <section class="cash-savings-chart">
+                  <div class="cash-savings-line"></div>
+                  <div class="cash-savings-bars">
+                    <div class="cash-savings-bar" style="--bar-height: 42px;"></div>
+                    <div class="cash-savings-bar" style="--bar-height: 58px;"></div>
+                    <div class="cash-savings-bar" style="--bar-height: 76px;"></div>
+                    <div class="cash-savings-bar" style="--bar-height: 48px;"></div>
+                    <div class="cash-savings-bar" style="--bar-height: 70px;"></div>
+                    <div class="cash-savings-bar" style="--bar-height: 86px;"></div>
+                    <div class="cash-savings-bar" style="--bar-height: 64px;"></div>
+                    <div class="cash-savings-bar" style="--bar-height: 96px;"></div>
+                    <div class="cash-savings-bar" style="--bar-height: 54px;"></div>
+                    <div class="cash-savings-bar" style="--bar-height: 18px;"></div>
+                  </div>
+                  <div class="cash-savings-months">
+                    <span>J</span><span>F</span><span>M</span><span>A</span><span>M</span>
+                    <span>J</span><span>J</span><span>A</span><span>S</span><span>O</span>
+                  </div>
+                </section>
+
+                <div class="cash-savings-stats">
+                  <div>
+                    <span>Target rate</span>
+                    <strong>20%</strong>
+                  </div>
+                  <div style="text-align:right;">
+                    <span>Target saving</span>
+                    <strong>$2,000</strong>
+                  </div>
+                </div>
+              </article>
+            </section>
+
+            <div class="cash-flow-cta">
+              <button class="cash-primary-btn">Connect accounts</button>
+            </div>
+          </section>
+
+          <section class="app-view invest-view" data-view="invest">
+            <div class="invest-hero-bg">
+              <div class="topbar">
+                <div class="brand">
+                  <div class="brand-mark">
+                    <img src="../Flamora app/Assets.xcassets/FlameIcon.imageset/flame.png" alt="Flamora logo">
+                  </div>
+                </div>
+
+                <button class="icon-button" aria-label="Settings">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 8.8A3.2 3.2 0 1 1 12 15.2 3.2 3.2 0 0 1 12 8.8z" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M19 12a7 7 0 0 0-.08-1l2.03-1.58-1.92-3.32-2.47.84a7.8 7.8 0 0 0-1.74-1l-.4-2.57h-3.84l-.4 2.57a7.8 7.8 0 0 0-1.74 1l-2.47-.84L3.05 9.42 5.08 11A7 7 0 0 0 5 12c0 .34.03.67.08 1l-2.03 1.58 1.92 3.32 2.47-.84c.53.42 1.11.76 1.74 1l.4 2.57h3.84l.4-2.57c.63-.24 1.21-.58 1.74-1l2.47.84 1.92-3.32L18.92 13c.05-.33.08-.66.08-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="invest-hero-copy">
+                <h1>Investment</h1>
+              </div>
+            </div>
+
+            <section class="invest-stage">
+              <article class="invest-card" id="investCard">
+                <span class="invest-card-kicker">Total Net Worth</span>
+                <div class="invest-value-row">
+                  <div class="invest-value-amount" id="investValue">$0</div>
+                  <div class="invest-value-change">+13.8%</div>
+                </div>
+
+                <section class="invest-chart">
+                  <svg viewBox="0 0 308 170" preserveAspectRatio="none" aria-hidden="true">
+                    <path class="invest-line-path" d="M8 154 C 42 152, 64 146, 92 132 C 118 120, 142 108, 162 102 C 188 94, 214 84, 240 72 C 262 62, 278 54, 292 46"/>
+                    <circle class="invest-line-dot-halo" cx="292" cy="46" r="12"></circle>
+                    <circle class="invest-line-dot" cx="292" cy="46" r="4.5"></circle>
+                  </svg>
+                </section>
+
+                <div class="invest-periods">
+                  <div class="invest-period">1W</div>
+                  <div class="invest-period active">1M</div>
+                  <div class="invest-period">3M</div>
+                  <div class="invest-period">YTD</div>
+                  <div class="invest-period">All</div>
+                </div>
+
+                <div class="invest-footer-copy">Track all your investment in one place</div>
+              </article>
+            </section>
+
+            <div class="invest-flow-cta">
+              <button class="cash-primary-btn">Connect accounts</button>
+            </div>
+          </section>
+
+          <div class="tabbar">
+            <div class="tabgrid">
+              <div class="tab active" data-tab="home">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 10.5L12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1v-8.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                </svg>
+                <span>Home</span>
+              </div>
+
+              <div class="tab" data-tab="cash">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <rect x="3.5" y="6" width="17" height="12" rx="2.5" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M15.5 12h2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                <span>Cash</span>
+              </div>
+
+              <div class="tab" data-tab="invest">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 4a8 8 0 1 0 8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  <path d="M12 12V4a8 8 0 0 1 8 8h-8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                </svg>
+                <span>Invest</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="notes">
+      <div class="label">Component Board</div>
+      <h1>Home, Cash, and Invest, <span>one file</span>.</h1>
+      <p>
+        This prototype now keeps multiple tabs in one HTML file. `Home` still contains the setup flow and simulator work, `Cash Flow` uses a rotating showcase card, and `Investment` now has its own onboarding-style portfolio card in the same phone shell.
+      </p>
+
+      <div class="component-gallery">
+        <article class="component-card">
+          <strong>Sandbox Hero</strong>
+          <span>This is the top result state. It lives flush against the dark background instead of sitting inside a card.</span>
+          <div class="mini-dark">
+            <div class="mini-kicker">Sandbox</div>
+            <div class="mini-title">You will be financial free by age 30.</div>
+          </div>
+        </article>
+
+        <article class="component-card">
+          <strong>Embedded Graph</strong>
+          <span>The bar chart is part of the background wall. Only the leading point needs the money and age label.</span>
+          <div class="mini-dark">
+            <div class="mini-bars" aria-hidden="true">
+              <div style="height: 10px;"></div>
+              <div style="height: 14px;"></div>
+              <div style="height: 20px;"></div>
+              <div style="height: 30px;"></div>
+              <div style="height: 42px;"></div>
+              <div style="height: 56px;"></div>
+              <div style="height: 72px;"></div>
+              <div style="height: 82px;"></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="component-card">
+          <strong>Retirement Detail</strong>
+          <span>Rows are no longer little cards. The left side is the variable, the right side is the editable value.</span>
+          <div class="mini-row">
+            <span>Current Age</span>
+            <b>24</b>
+          </div>
+          <div class="mini-row">
+            <span>Monthly Contribution</span>
+            <b>$1,800</b>
+          </div>
+          <div class="mini-row">
+            <span>Current Investment</span>
+            <b>$42,000</b>
+          </div>
+        </article>
+
+        <article class="component-card">
+          <strong>Advanced Details</strong>
+          <span>Secondary variables stay tucked away until the user wants more control.</span>
+          <div class="mini-pill">Advanced Details</div>
+        </article>
+
+        <article class="component-card">
+          <strong>Brand Gradient</strong>
+          <span>This is the deeper brand-led background direction for Cash Flow and Investment, using your purple, pink, and amber family instead of the cool blue cast.</span>
+          <div class="mini-gradient">
+            <div class="mini-gradient-strip"></div>
+            <div class="mini-gradient-swatches">
+              <div class="mini-swatch"><i style="background:#A78BFA;"></i><span>#A78BFA</span></div>
+              <div class="mini-swatch"><i style="background:#FCA5A5;"></i><span>#FCA5A5</span></div>
+              <div class="mini-swatch"><i style="background:#FCD34D;"></i><span>#FCD34D</span></div>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="inspector">
+        <strong id="inspectorTitle">Interactive notes</strong>
+        <p id="inspectorCopy">Use the bottom tabs to switch between Home, Cash Flow, and Investment inside the same prototype file. Home still supports the pull-down simulator interaction.</p>
+      </div>
+    </section>
+  </div>
+
+<script>
+  const phone = document.querySelector('.phone');
+  const views = document.querySelectorAll('.app-view');
+  const heroLayer = document.querySelector('.hero-layer');
+  const heroSummary = document.querySelector('.hero-summary');
+  const sheet = document.querySelector('.sheet');
+  const roadmap = document.querySelector('.roadmap');
+  const simulatorPanel = document.getElementById('simulatorPanel');
+  const sandboxHero = document.querySelector('.sandbox-hero');
+  const simGraph = document.querySelector('.sim-graph');
+  const simControls = document.querySelector('.sim-controls');
+  const tabbar = document.querySelector('.tabbar');
+  const sheetPeekLabel = document.querySelector('.sheet-peek-label');
+  const inspectorTitle = document.getElementById('inspectorTitle');
+  const inspectorCopy = document.getElementById('inspectorCopy');
+  const sheetHandle = document.getElementById('sheetHandle');
+  const simCloseBtn = document.getElementById('simCloseBtn');
+  const barCallout = document.querySelector('.bar-callout.one');
+  const advancedToggle = document.getElementById('advancedToggle');
+  const advancedBlock = document.getElementById('advancedBlock');
+  const cashFlowCards = document.querySelectorAll('.cash-flow-card');
+  const investCard = document.getElementById('investCard');
+  const investValue = document.getElementById('investValue');
+  const roadmapExpandedHeight = roadmap.scrollHeight;
+  const heroSummaryExpandedHeight = heroSummary.scrollHeight;
+  const simulatorExpandedHeight = 960;
+  const sandboxExpandedHeight = 122;
+  let currentProgress = 0;
+  let dragging = false;
+  let dragMoved = false;
+  let dragStartY = 0;
+  let dragStartProgress = 0;
+  let dragTravel = 0;
+  let animationFrame = null;
+  let currentTab = 'home';
+  let cashCardIndex = 0;
+  let cashCardTimer = null;
+  let investAnimationFrame = null;
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function setProgress(progress) {
+    const p = clamp(progress, 0, 1);
+    currentProgress = p;
+    phone.classList.toggle('simulator-mode', p > 0.02);
+
+    heroLayer.style.minHeight = `${308 + (452 * p)}px`;
+    heroLayer.style.borderRadius = `0 0 ${22 * (1 - p)}px ${22 * (1 - p)}px`;
+
+    heroSummary.style.opacity = `${1 - p}`;
+    heroSummary.style.transform = `translateY(${-14 * p}px)`;
+    heroSummary.style.maxHeight = `${heroSummaryExpandedHeight * (1 - p)}px`;
+
+    sandboxHero.style.opacity = `${p}`;
+    sandboxHero.style.maxHeight = `${sandboxExpandedHeight * p}px`;
+    sandboxHero.style.marginBottom = `${14 * p}px`;
+    sandboxHero.style.pointerEvents = p > 0.2 ? 'auto' : 'none';
+
+    simulatorPanel.style.opacity = `${p}`;
+    simulatorPanel.style.maxHeight = `${simulatorExpandedHeight * p}px`;
+    simulatorPanel.style.pointerEvents = p > 0.2 ? 'auto' : 'none';
+
+    const graphProgress = clamp((p - 0.16) / 0.84, 0, 1);
+    simGraph.style.opacity = `${graphProgress}`;
+    simGraph.style.transform = `translateY(${12 * (1 - graphProgress)}px)`;
+
+    const controlsProgress = clamp((p - 0.34) / 0.66, 0, 1);
+    simControls.style.opacity = `${controlsProgress}`;
+    simControls.style.transform = `translateY(${12 * (1 - controlsProgress)}px)`;
+
+    sheet.style.transform = `translateY(${98 * p}px)`;
+    const sheetRadius = 22 - (4 * p);
+    sheet.style.borderRadius = `${sheetRadius}px`;
+
+    roadmap.style.opacity = `${1 - p}`;
+    roadmap.style.maxHeight = `${roadmapExpandedHeight * (1 - p)}px`;
+    roadmap.style.transform = `scale(${1 - (0.03 * p)})`;
+    roadmap.style.pointerEvents = p > 0.6 ? 'none' : 'auto';
+
+    sheetPeekLabel.style.display = p > 0.72 ? 'block' : 'none';
+    sheetPeekLabel.style.opacity = `${clamp((p - 0.72) / 0.28, 0, 1)}`;
+
+    tabbar.style.opacity = `${1 - p}`;
+    tabbar.style.transform = `translateY(${16 * p}px)`;
+    tabbar.style.pointerEvents = p > 0.7 ? 'none' : 'auto';
+
+    if (p < 0.02) {
+      heroLayer.scrollTop = 0;
+    }
+  }
+
+  function animateTo(target) {
+    if (animationFrame) {
+      cancelAnimationFrame(animationFrame);
+    }
+
+    const start = currentProgress;
+    const delta = target - start;
+    const duration = 240;
+    const startTime = performance.now();
+
+    function tick(now) {
+      const elapsed = now - startTime;
+      const t = clamp(elapsed / duration, 0, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setProgress(start + (delta * eased));
+      if (t < 1) {
+        animationFrame = requestAnimationFrame(tick);
+      }
+    }
+
+    animationFrame = requestAnimationFrame(tick);
+  }
+
+  function renderCashCards() {
+    cashFlowCards.forEach((card, index) => {
+      card.classList.toggle('active', index === cashCardIndex);
+      card.classList.toggle('back', index !== cashCardIndex);
+    });
+  }
+
+  function stopCashAutoplay() {
+    if (cashCardTimer) {
+      clearInterval(cashCardTimer);
+      cashCardTimer = null;
+    }
+  }
+
+  function startCashAutoplay() {
+    stopCashAutoplay();
+    cashCardIndex = 0;
+    renderCashCards();
+    cashCardTimer = setInterval(() => {
+      cashCardIndex = (cashCardIndex + 1) % cashFlowCards.length;
+      renderCashCards();
+    }, 3200);
+  }
+
+  function stopInvestAnimation() {
+    if (investAnimationFrame) {
+      cancelAnimationFrame(investAnimationFrame);
+      investAnimationFrame = null;
+    }
+  }
+
+  function startInvestAnimation() {
+    stopInvestAnimation();
+    investCard.classList.remove('play');
+    investValue.textContent = '$0';
+
+    // Restart CSS transition timing for the line chart and dot.
+    void investCard.offsetWidth;
+    investCard.classList.add('play');
+
+    const target = 210150;
+    const duration = 2200;
+    const start = performance.now();
+
+    function tick(now) {
+      const t = clamp((now - start) / duration, 0, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const value = Math.round(target * eased);
+      investValue.textContent = `$${value.toLocaleString()}`;
+
+      if (t < 1) {
+        investAnimationFrame = requestAnimationFrame(tick);
+      } else {
+        investValue.textContent = '$210,150';
+        investAnimationFrame = null;
+      }
+    }
+
+    investAnimationFrame = requestAnimationFrame(tick);
+  }
+
+  function switchView(viewName) {
+    currentTab = viewName;
+    views.forEach((view) => {
+      view.classList.toggle('active', view.dataset.view === viewName);
+    });
+
+    document.querySelectorAll('.tab').forEach((item) => {
+      item.classList.toggle('active', item.dataset.tab === viewName);
+    });
+
+    if (viewName !== 'home') {
+      setProgress(0);
+    }
+
+    if (viewName === 'cash') {
+      startCashAutoplay();
+    } else {
+      stopCashAutoplay();
+    }
+
+    if (viewName === 'invest') {
+      startInvestAnimation();
+    } else {
+      stopInvestAnimation();
+      investCard.classList.remove('play');
+    }
+  }
+
+  function openSimulator() {
+    inspectorTitle.textContent = 'Demo Simulator';
+    inspectorCopy.textContent = 'The white sheet follows your drag while the dark simulator surface fills the screen. The sandbox result, graph, and controls appear based on how far you pull.';
+    animateTo(1);
+  }
+
+  function closeSimulator() {
+    inspectorTitle.textContent = 'Interactive notes';
+    inspectorCopy.textContent = 'Drag the white sheet down to enter Simulator mode. Drag it back up to return to Home. The transition should feel continuous, not tap-triggered.';
+    animateTo(0);
+  }
+
+  document.getElementById('settingsBtn').addEventListener('click', () => {
+    inspectorTitle.textContent = 'Settings';
+    inspectorCopy.textContent = 'Top right should open settings. This keeps the top chrome feeling like a real app, not a concept page.';
+  });
+
+  document.querySelectorAll('.step-item').forEach((step) => {
+    step.addEventListener('click', () => {
+      document.querySelectorAll('.step-item').forEach((item) => item.classList.remove('current'));
+      step.classList.add('current');
+      const copy = {
+        goal: 'Step 1 should open the goal setup flow. This is the first true action in S0.',
+        accounts: 'Step 2 should open the connect accounts flow once the user reaches it.',
+        plan: 'Step 3 should lead to choose your path after setup reaches that stage.'
+      };
+      inspectorTitle.textContent = step.querySelector('.step-copy strong').textContent;
+      inspectorCopy.textContent = copy[step.dataset.step];
+    });
+  });
+
+  document.querySelectorAll('.step-arrow').forEach((arrow) => {
+    arrow.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const step = arrow.closest('.step-item');
+      const copy = {
+        goal: 'Arrow tap should take users straight into the FIRE goal setup page.',
+        accounts: 'Arrow tap should take users into account connection.',
+        plan: 'Arrow tap should take users into path selection.'
+      };
+      inspectorTitle.textContent = step.querySelector('.step-copy strong').textContent;
+      inspectorCopy.textContent = copy[step.dataset.step];
+    });
+  });
+
+  document.querySelectorAll('.detail-row').forEach((row) => {
+    const valueButton = row.querySelector('.detail-value');
+    const input = row.querySelector('.detail-input');
+
+    function openEditor() {
+      row.classList.add('editing');
+      input.value = valueButton.textContent.trim();
+      input.focus();
+      input.select();
+    }
+
+    function commitInput() {
+      valueButton.textContent = input.value.trim() || valueButton.textContent.trim();
+      row.classList.remove('editing');
+      inspectorTitle.textContent = row.dataset.field;
+      inspectorCopy.textContent = `${row.dataset.field} updated to ${valueButton.textContent.trim()}.`;
+    }
+
+    row.addEventListener('click', (event) => {
+      if (event.target.closest('.detail-input')) {
+        return;
+      }
+      openEditor();
+    });
+
+    valueButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      openEditor();
+    });
+
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        commitInput();
+      }
+      if (event.key === 'Escape') {
+        row.classList.remove('editing');
+      }
+    });
+
+    input.addEventListener('blur', commitInput);
+  });
+
+  advancedToggle.addEventListener('click', () => {
+    const isOpen = advancedBlock.classList.toggle('open');
+    advancedToggle.classList.toggle('open', isOpen);
+    advancedToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    inspectorTitle.textContent = 'Advanced Details';
+    inspectorCopy.textContent = isOpen ? 'Advanced variables are expanded.' : 'Advanced variables are collapsed.';
+    if (isOpen) {
+      requestAnimationFrame(() => {
+        advancedBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    }
+  });
+
+  document.querySelectorAll('.bar').forEach((bar) => {
+    bar.addEventListener('click', () => {
+      document.querySelectorAll('.bar').forEach((item) => item.classList.remove('active'));
+      bar.classList.add('active');
+      barCallout.textContent = `${bar.dataset.value} by age ${bar.dataset.age}`;
+      inspectorTitle.textContent = `Age ${bar.dataset.age}`;
+      inspectorCopy.textContent = `Projected investment return reaches ${bar.dataset.value} around ${bar.dataset.year}.`;
+    });
+  });
+
+  function startDrag(event) {
+    if (currentTab !== 'home') {
+      return;
+    }
+    if (event.target.closest('.step-arrow')) {
+      return;
+    }
+    dragging = true;
+    dragMoved = false;
+    dragStartY = event.clientY;
+    dragStartProgress = currentProgress;
+    dragTravel = 0;
+    phone.classList.add('dragging-sheet');
+    if (animationFrame) {
+      cancelAnimationFrame(animationFrame);
+    }
+    sheet.setPointerCapture(event.pointerId);
+  }
+
+  function moveDrag(event) {
+    if (currentTab !== 'home') {
+      return;
+    }
+    if (!dragging) {
+      return;
+    }
+    const deltaY = event.clientY - dragStartY;
+    dragTravel = deltaY;
+    if (Math.abs(deltaY) > 3) {
+      dragMoved = true;
+    }
+    setProgress(dragStartProgress + (deltaY / 420));
+  }
+
+  function endDrag(event) {
+    if (currentTab !== 'home') {
+      return;
+    }
+    if (!dragging) {
+      return;
+    }
+    dragging = false;
+    phone.classList.remove('dragging-sheet');
+    sheet.releasePointerCapture(event.pointerId);
+
+    let target = 0;
+    if (dragStartProgress < 0.5) {
+      target = currentProgress > 0.76 ? 1 : 0;
+    } else {
+      target = currentProgress < 0.24 ? 0 : 1;
+    }
+
+    if (Math.abs(dragTravel) < 18) {
+      target = dragStartProgress < 0.5 ? 0 : 1;
+    }
+
+    animateTo(target);
+  }
+
+  sheet.addEventListener('pointerdown', startDrag);
+  sheet.addEventListener('pointermove', moveDrag);
+  sheet.addEventListener('pointerup', endDrag);
+  sheet.addEventListener('pointercancel', endDrag);
+
+  sheetHandle.addEventListener('click', () => {
+    if (currentTab !== 'home') {
+      return;
+    }
+    inspectorTitle.textContent = 'Drag to Open';
+    inspectorCopy.textContent = 'This handle is now only a visual affordance. Pull the white sheet down or push it back up to move between Home and Simulator.';
+  });
+
+  sheet.addEventListener('click', (event) => {
+    if (currentTab !== 'home') {
+      return;
+    }
+    if (dragMoved) {
+      dragMoved = false;
+      return;
+    }
+    if (!event.target.closest('.step-arrow')) {
+      inspectorTitle.textContent = 'Drag to Transition';
+      inspectorCopy.textContent = 'Tap no longer opens the simulator. Drag the white surface down to expand it, then push it back up to return.';
+    }
+  });
+
+  sheetPeekLabel.addEventListener('click', (event) => {
+    event.stopPropagation();
+    inspectorTitle.textContent = 'Drag to Return';
+    inspectorCopy.textContent = 'The white base stays visible as a return affordance, but the main interaction is dragging the sheet back upward.';
+  });
+
+  simCloseBtn.addEventListener('click', closeSimulator);
+
+  document.querySelectorAll('.tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const tabName = tab.dataset.tab;
+
+      if (tabName === 'home') {
+        switchView(tabName);
+        inspectorTitle.textContent = 'Home';
+        inspectorCopy.textContent = 'Home keeps the Hero, setup card, and pull-down simulator in the same prototype file.';
+        return;
+      }
+
+      if (tabName === 'cash') {
+        switchView(tabName);
+        inspectorTitle.textContent = 'Cash Flow';
+        inspectorCopy.textContent = 'Cash Flow now uses one full card at a time on a dark stage. Spending shows first, then Saving rotates in automatically.';
+        return;
+      }
+
+      if (tabName === 'invest') {
+        switchView(tabName);
+        inspectorTitle.textContent = 'Investment';
+        inspectorCopy.textContent = 'Investment now borrows the onboarding portfolio feel: one net worth card, a line chart draw, and a CTA underneath in the same prototype file.';
+      }
+    });
+  });
+
+  switchView('home');
+  renderCashCards();
+  setProgress(0);
+</script>
+</body>
+</html>
