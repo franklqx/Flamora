@@ -78,6 +78,10 @@ struct MainTabView: View {
     @State private var heroSnapshot = HomeHeroSnapshot.empty
     @State private var viewportHeight: CGFloat = 0
 
+    /// Shared with `HomeHeroCardHost` for journey strip + hero snapshot (single load path).
+    @State private var homeJourneySetupState: HomeSetupStateResponse?
+    @State private var homeJourneyHero: HomeHeroModel?
+
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(PlaidManager.self) private var plaidManager
 
@@ -95,11 +99,12 @@ struct MainTabView: View {
                 heroHeight: currentHeroHeight,
                 compactProgress: heroCompactProgress,
                 isSimulatorShown: homeState == .simulator,
-                heroContentHeight: layoutMetrics.heroFullHeight,
                 sheetExpansionProgress: homeState == .simulator
                     ? 1
                     : sheetDragNormalizedProgress(),
                 selectedTab: selectedTab,
+                setupState: $homeJourneySetupState,
+                homeHero: $homeJourneyHero,
                 onHeroUpdated: { heroSnapshot = $0 }
             )
             .zIndex(60)
@@ -136,21 +141,30 @@ struct MainTabView: View {
             guard h > 0 else { return }
             viewportHeight = h
             let next = HomeLayoutMetrics(usableHeight: h)
-            layoutMetrics = next
+            let oldDefault = layoutMetrics.sheetDefault
             if !isSheetDragging, homeState == .sheet {
-                sheetHeight = next.sheetDefault
-                sheetDragStartHeight = next.sheetDefault
+                if sheetHeight < oldDefault * 0.98 {
+                    let ratio = sheetHeight / max(oldDefault, 1)
+                    sheetHeight = next.sheetDefault * ratio
+                    sheetDragStartHeight = sheetHeight
+                } else {
+                    sheetHeight = next.sheetDefault
+                    sheetDragStartHeight = next.sheetDefault
+                }
             }
+            layoutMetrics = next
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             GlassmorphicTabBar(
                 selectedTab: $highlightedTab,
-                onTabTapped: handleTabTap
+                collapseProgress: tabBarCollapseProgress,
+                onTabTapped: handleTabTap,
+                onCollapsedChromeTap: collapsedChromeTap
             )
             .ignoresSafeArea(edges: .bottom)
             .opacity(tabBarOpacity)
             .offset(y: tabBarOffsetY)
-            .allowsHitTesting(tabBarOpacity > 0.02)
+            .allowsHitTesting(true)
         }
         .ignoresSafeArea(.keyboard, edges: .all)
         .fullScreenCover(isPresented: Binding(
@@ -222,14 +236,6 @@ private extension MainTabView {
                 fillsBackground: false
             )
         }
-            .highPriorityGesture(
-                DragGesture(minimumDistance: 20)
-                    .onEnded { value in
-                        if value.translation.height < -44 {
-                            exitSimulator()
-                        }
-                    }
-            )
     }
 
     var sheetDragGesture: AnyGesture<DragGesture.Value> {
@@ -256,6 +262,17 @@ private extension MainTabView {
                         || shouldSnapToSimulatorByDistance
                         || shouldSnapToSimulatorByMomentum {
                         enterSimulator()
+                        return
+                    }
+                    // Sheet 低于默认：收起态不自动回满高，仅吸附到稳定区间（需点左下圆恢复）
+                    if sheetHeight < layoutMetrics.sheetDefault * 0.98 {
+                        let lo = layoutMetrics.sheetDefault * HomeLayoutConstants.sheetCollapsedMinFraction
+                        let hi = layoutMetrics.sheetDefault * HomeLayoutConstants.sheetCollapsedMaxFraction
+                        let target = min(max(sheetHeight, lo), hi)
+                        withAnimation(HomeLayoutConstants.springAnimation) {
+                            sheetHeight = target
+                        }
+                        homeState = .sheet
                         return
                     }
                     if sheetHeight > layoutMetrics.sheetDefault * 1.15 {
@@ -298,7 +315,8 @@ private extension MainTabView {
         )
     }
 
-    var tabBarHideProgress: CGFloat {
+    /// 0 = 三键展开；1 = 仅左侧单圆（与 sheet 低于默认的距离相关）
+    var tabBarCollapseProgress: CGFloat {
         guard homeState != .simulator else { return 1 }
         let distance = layoutMetrics.sheetDefault - sheetHeight
         let threshold = layoutMetrics.sheetDefault * 0.45
@@ -307,17 +325,36 @@ private extension MainTabView {
     }
 
     var tabBarOpacity: CGFloat {
-        if homeState == .simulator { return 0 }
-        return 1 - tabBarHideProgress
+        1
     }
 
     var tabBarOffsetY: CGFloat {
-        if homeState == .simulator { return 48 }
-        return 32 * tabBarHideProgress
+        0
     }
 
     func clampSheetHeight(_ value: CGFloat) -> CGFloat {
-        max(0, min(layoutMetrics.sheetTall + 30, value))
+        let absoluteMax = layoutMetrics.sheetTall + 30
+        var v = max(0, min(absoluteMax, value))
+        if v < layoutMetrics.sheetDefault {
+            v = min(v, layoutMetrics.sheetDefault - 1)
+        }
+        return v
+    }
+
+    func restoreSheetFromCollapsed() {
+        withAnimation(HomeLayoutConstants.springAnimation) {
+            sheetHeight = layoutMetrics.sheetDefault
+            sheetDragStartHeight = layoutMetrics.sheetDefault
+        }
+        homeState = .sheet
+    }
+
+    func collapsedChromeTap() {
+        if homeState == .simulator {
+            exitSimulator()
+        } else {
+            restoreSheetFromCollapsed()
+        }
     }
 
     func enterSimulator() {
@@ -365,6 +402,9 @@ private enum HomeLayoutConstants {
     static let sheetSnapDistanceToSimulator: CGFloat = 96
     static let sheetPredictedSnapDistanceToSimulator: CGFloat = 150
     static let springAnimation = Animation.spring(response: 0.42, dampingFraction: 0.82)
+    /// 收起态松手时 sheet 高度吸附区间（相对 `sheetDefault`）
+    static let sheetCollapsedMinFraction: CGFloat = 0.32
+    static let sheetCollapsedMaxFraction: CGFloat = 0.96
 }
 
 private struct HomeBottomSheet: View {
@@ -443,11 +483,11 @@ private struct HomeHeroCardSurface: View {
     let heroHeight: CGFloat
     let compactProgress: CGFloat
     let isSimulatorShown: Bool
-    /// 与 `HomeLayoutMetrics.heroFullHeight` 一致，供未连接 Hero / FIRECountdown 固定高度
-    let heroContentHeight: CGFloat
     /// 0 = sheet at default; 1 = pulled toward simulator (HTML `.hero-layer` bottom radius eases to 0).
     let sheetExpansionProgress: CGFloat
     let selectedTab: MainTabItem
+    @Binding var setupState: HomeSetupStateResponse?
+    @Binding var homeHero: HomeHeroModel?
     let onHeroUpdated: (HomeHeroSnapshot) -> Void
 
     private var heroLayerBottomCornerRadius: CGFloat {
@@ -459,8 +499,9 @@ private struct HomeHeroCardSurface: View {
         ZStack(alignment: .top) {
             // No 3D flip (aligned with HTML: `.hero-summary` stays readable while sheet moves).
             HomeHeroCardHost(
+                setupState: $setupState,
+                homeHero: $homeHero,
                 selectedTab: selectedTab,
-                heroContentHeight: heroContentHeight,
                 onHeroUpdated: onHeroUpdated
             )
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -570,15 +611,15 @@ private struct HomeHeroSnapshot: Equatable {
 }
 
 private struct HomeHeroCardHost: View {
-    @State private var setupState: HomeSetupStateResponse?
-    @State private var homeHero: HomeHeroModel?
+    @Binding var setupState: HomeSetupStateResponse?
+    @Binding var homeHero: HomeHeroModel?
+
     @State private var isLoadingData = false
     @State private var needsReloadAfterCurrentPass = false
     @State private var savingsCheckInGeneration = 0
     @State private var budgetSetupDismissGeneration = 0
 
     let selectedTab: MainTabItem
-    let heroContentHeight: CGFloat
     let onHeroUpdated: (HomeHeroSnapshot) -> Void
 
     @Environment(PlaidManager.self) private var plaidManager
@@ -602,18 +643,8 @@ private struct HomeHeroCardHost: View {
             case .settings:
                 TabHeroTitleContent(title: "Settings")
             case .home:
-                if homeSetupStage == .noGoal || homeSetupStage == .goalSet {
-                    // 顶栏正下方、白底 sheet 之上（对齐 HTML：`.hero-summary` 贴在 hero 顶部，不沉到渐变区底部）
-                    UnconnectedHeroContent()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                } else {
-                    FIRECountdownCard(
-                        hero: homeHero,
-                        stage: homeSetupStage,
-                        onPrimaryAction: { plaidManager.showBudgetSetup = true },
-                        fixedHeight: heroContentHeight
-                    )
-                }
+                HomeJourneyProgressStrip.heroEmbedded(stage: homeSetupStage, homeHero: homeHero)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
             }
         }
         .task(id: heroReloadTrigger) {
@@ -787,48 +818,6 @@ private struct BrandHeroBackground: View {
     }
 }
 
-// MARK: - Unconnected Hero Content (HTML: .hero-summary for noGoal state)
-
-private struct UnconnectedHeroContent: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("YOUR FIRE JOURNEY")
-                .font(.inlineFigureBold)
-                .foregroundStyle(AppColors.heroTextPrimary)
-                .tracking(AppTypography.Tracking.miniUppercase)
-                .padding(.bottom, AppSpacing.sm)
-
-            Text("Finish the set up to track your progress.")
-                .font(.footnoteRegular)
-                .foregroundStyle(AppColors.heroTextFaint)
-                .lineSpacing(3)
-                .padding(.bottom, AppSpacing.md)
-
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                HStack(spacing: AppSpacing.xs) {
-                    ForEach(0..<15, id: \.self) { index in
-                        RoundedRectangle(cornerRadius: AppRadius.full)
-                            .fill(index < 3 ? AppColors.heroTrackFill : AppColors.heroTrack)
-                            .frame(height: 4)
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-
-                HStack {
-                    Spacer(minLength: 0)
-                    Text("Freedom date")
-                        .font(.label)
-                        .foregroundStyle(AppColors.heroTextHint)
-                        .tracking(AppTypography.Tracking.miniUppercase)
-                        .textCase(.uppercase)
-                }
-            }
-        }
-        .padding(.horizontal, AppSpacing.screenPadding)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-    }
-}
-
 // MARK: - Tab hero title (HTML: `.cash-hero-copy h1` / `.invest-hero-copy h1`)
 
 private struct TabHeroTitleContent: View {
@@ -944,7 +933,7 @@ private struct HomeRoadmapContent: View {
                     .foregroundStyle(AppColors.inkPrimary.opacity(0.54))
             }
         }
-        .padding(.vertical, 14)
+        .padding(.vertical, AppSpacing.rowItem)
         .overlay(alignment: .bottom) {
             if !isLast {
                 Rectangle()

@@ -2,9 +2,7 @@
 //  GlassmorphicTabBar.swift
 //  Flamora app
 //
-//  底部 Tab Bar - iOS 26 原生液态玻璃质感 (FabBar 尺寸)
-//  左侧胶囊：3个导航Tab（图标+标签）；右侧FAB圆圈：火焰按钮
-//  Simulator 激活时左侧胶囊滑出消失，只剩火焰 FAB
+//  底部 Tab Bar：三键胶囊；随 sheet 下拉 collapseProgress 增至 1 时收拢为左侧单圆（当前 Tab 图标），点击圆由外部恢复 sheet。
 //
 
 import SwiftUI
@@ -18,7 +16,12 @@ enum MainTabItem: Int {
 
 struct GlassmorphicTabBar: View {
     @Binding var selectedTab: MainTabItem
+    /// 0 = 三键展开；1 = 仅左侧单圆（当前 Tab）
+    var collapseProgress: CGFloat
     let onTabTapped: (MainTabItem) -> Void
+    /// Sheet 已收起到 default 以下时点击单圆恢复白卡高度
+    let onCollapsedChromeTap: () -> Void
+
     @Namespace private var tabIndicator
 
     private let tabs: [(item: MainTabItem, icon: String, label: String)] = [
@@ -27,26 +30,69 @@ struct GlassmorphicTabBar: View {
         (.investment, "chart.line.uptrend.xyaxis", "Invest"),
     ]
 
+    private var clampedProgress: CGFloat {
+        max(0, min(1, collapseProgress))
+    }
+
+    private var selectedIcon: String {
+        tabs.first { $0.item == selectedTab }?.icon ?? "house.fill"
+    }
+
+    private var collapsedAccessibilityLabel: String {
+        let name = tabs.first { $0.item == selectedTab }?.label ?? "Home"
+        return "Expand \(name)"
+    }
+
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(tabs.indices, id: \.self) { index in
-                GlassTabButton(
-                    icon: tabs[index].icon,
-                    label: tabs[index].label,
-                    isSelected: selectedTab == tabs[index].item,
-                    namespace: tabIndicator
-                ) {
-                    onTabTapped(tabs[index].item)
+        ZStack(alignment: .leading) {
+            HStack(spacing: 0) {
+                ForEach(tabs.indices, id: \.self) { index in
+                    GlassTabButton(
+                        icon: tabs[index].icon,
+                        label: tabs[index].label,
+                        isSelected: selectedTab == tabs[index].item,
+                        namespace: tabIndicator
+                    ) {
+                        onTabTapped(tabs[index].item)
+                    }
+                    .offset(x: collapseTabOffset(for: index))
                 }
             }
+            .padding(AppSpacing.xxs)
+            .glassEffect(.regular, in: .capsule)
+            .scaleEffect(
+                x: 1 - 0.16 * clampedProgress,
+                y: 1 - 0.05 * clampedProgress,
+                anchor: .leading
+            )
+            .offset(x: -28 * clampedProgress)
+            .opacity(Double(1 - clampedProgress))
+            .allowsHitTesting(clampedProgress < 0.5)
+
+            Button(action: onCollapsedChromeTap) {
+                Image(systemName: selectedIcon)
+                    .font(.chromeIconMedium)
+                    .foregroundStyle(AppColors.overlayWhiteOnGlass)
+                    .frame(width: AppSpacing.tabBarCollapsedCircle, height: AppSpacing.tabBarCollapsedCircle)
+                    .glassEffect(.regular, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(collapsedAccessibilityLabel)
+            .opacity(Double(clampedProgress))
+            .scaleEffect(0.88 + 0.12 * clampedProgress)
+            .allowsHitTesting(clampedProgress >= 0.5)
         }
-        .padding(2)
-        .glassEffect(.regular, in: .capsule)
-        .padding(.horizontal, 21)
+        .padding(.horizontal, AppSpacing.tabBarHorizontalInset)
         .padding(.bottom, 0)
-        .padding(.top, 2)
-        .frame(maxWidth: .infinity)
-        .contentShape(Rectangle())
+        .padding(.top, AppSpacing.xxs)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .animation(.easeInOut(duration: 0.28), value: clampedProgress)
+    }
+
+    /// 右侧 Tab 先向左收拢，强化「从右向左」进单圆的观感。
+    private func collapseTabOffset(for index: Int) -> CGFloat {
+        let order = CGFloat(tabs.count - 1 - index)
+        return -order * AppSpacing.sm * clampedProgress
     }
 }
 
@@ -88,7 +134,9 @@ private struct GlassTabButton: View {
             Spacer()
             GlassmorphicTabBar(
                 selectedTab: .constant(.home),
-                onTabTapped: { _ in }
+                collapseProgress: 0,
+                onTabTapped: { _ in },
+                onCollapsedChromeTap: {}
             )
         }
     }

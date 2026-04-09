@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct AppSpacing {
+    /// Tab 胶囊内边距等极紧间距
+    static let xxs: CGFloat = 2
     static let xs: CGFloat = 4
     static let sm: CGFloat = 8
     static let md: CGFloat = 16
@@ -20,14 +22,18 @@ struct AppSpacing {
     static let screenPadding: CGFloat = 16
     static let sectionGap: CGFloat = 24
     static let tabBarReserve: CGFloat = 84
+    /// 底部 Tab 条水平 inset（与历史 FabBar 一致）
+    static let tabBarHorizontalInset: CGFloat = 21
+    /// Sheet 收起态左侧单圆按钮边长
+    static let tabBarCollapsedCircle: CGFloat = 58
 
     /// Home hero / Journey 渐变区高度 — 308pt 对应 HTML min-height: 308px（MainTabView 动态分区时的回退）
     static let heroFullHeight: CGFloat = 308
 
-    /// Home 主列：渐变区约占可用高度 1/3（对齐 HTML .screen 892px 中 ~308px hero）
-    static let homeHeroRegionFraction: CGFloat = 1.0 / 3.0
-    /// 白底 sheet 约占可用高度 2/3（对齐 HTML .sheet min-height ~610px）
-    static let homeSheetRegionFraction: CGFloat = 2.0 / 3.0
+    /// Home 主列：渐变区收矮，主信息在 draggable sheet（与 Home roadmap + FIRE 进度合一）
+    static let homeHeroRegionFraction: CGFloat = 0.22
+    /// 白底 sheet 占剩余高度
+    static let homeSheetRegionFraction: CGFloat = 0.78
     /// 白底 sheet 上叠入 hero 的位移（HTML margin-top: -76px）
     static let homeSheetTopOverlap: CGFloat = 76
 

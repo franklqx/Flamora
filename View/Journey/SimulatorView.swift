@@ -68,9 +68,9 @@ struct SimulatorView: View {
             .ignoresSafeArea()
 
             switch displayState {
-            case .overview, .loading:
+            case .overview:
                 loadingContent
-            case .results:
+            case .loading, .results:
                 resultsContent
             }
         }
@@ -171,6 +171,16 @@ private extension SimulatorView {
                     )
                 } else {
                     VStack(alignment: .leading, spacing: compactLayout ? AppSpacing.xs : AppSpacing.sm) {
+                        if let errorMessage {
+                            Text(errorMessage)
+                                .font(.footnoteRegular)
+                                .foregroundStyle(AppColors.warning)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(AppSpacing.md)
+                                .background(AppColors.warning.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+                                .padding(.horizontal, AppSpacing.screenPadding)
+                        }
                         if showResultCard {
                             resultCard
                         }
@@ -207,7 +217,7 @@ private extension SimulatorView {
             Capsule()
                 .fill(AppColors.overlayWhiteOnGlass)
                 .frame(width: 44, height: 4)
-            Text(useHTMLPrototypeLayout ? "Back to Home" : "Swipe up to return")
+            Text(useHTMLPrototypeLayout ? "Tap the bottom-left circle to return" : "Swipe up to return")
                 .font(.caption)
                 .foregroundStyle(AppColors.overlayWhiteOnGlass)
         }
@@ -222,6 +232,17 @@ private extension SimulatorView {
     ) -> some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: compactLayout ? AppSpacing.sm : AppSpacing.md) {
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.footnoteRegular)
+                        .foregroundStyle(AppColors.warning)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(AppSpacing.md)
+                        .background(AppColors.warning.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+                        .padding(.horizontal, AppSpacing.screenPadding)
+                }
+
                 if showResultCard {
                     resultCard
                 }
@@ -1052,7 +1073,6 @@ private extension SimulatorView {
     @MainActor
     func bootstrapIfNeeded() async {
         guard preview == nil else { return }
-        displayState = .loading
         errorMessage = nil
 
         let state = await APIService.shared.getSetupStatePersistingCache()
@@ -1073,10 +1093,6 @@ private extension SimulatorView {
 
     @MainActor
     func refreshPreview(immediate: Bool) async {
-        if preview == nil || immediate {
-            displayState = .loading
-        }
-
         do {
             let data = try await APIService.shared.previewSimulator(data: buildRequest())
             preview = data
@@ -1294,6 +1310,6 @@ private struct PreviewPathChart: View {
 
 
 #Preview {
-    SimulatorView(displayState: .constant(.overview))
+    SimulatorView(displayState: .constant(.results))
         .environment(PlaidManager.shared)
 }

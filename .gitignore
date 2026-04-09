@@ -9,3 +9,4 @@ Config.xcconfig
 # Xcode
 xcuserdata/
 *.xcuserstate
+.gstack/

@@ -107,6 +107,7 @@
 		15FF6EE02F310A040005F482 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED82F3103F70005F482 /* Typography.swift */; };
 		18177349D8754A42810808DD /* PlaidTrustBridgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A896C70355034867B690BCB2 /* PlaidTrustBridgeView.swift */; };
 		468A105E0AD44511A1EFC2E0 /* FIRECountdownCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3AE291F3C594B4B8D1E5239 /* FIRECountdownCard.swift */; };
+		PH0D000A2F4000000000000A /* HomeJourneyProgressStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0D000B2F4000000000000B /* HomeJourneyProgressStrip.swift */; };
 		AA5B00032F38500000001003 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = AA5B00022F38500000001002 /* Supabase */; };
 		AA5B00052F38500000001005 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5B00042F38500000001004 /* SupabaseManager.swift */; };
 		AAOB00012F38500000000001 /* OnboardingData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00112F38500000000001 /* OnboardingData.swift */; };
@@ -219,6 +220,7 @@
 		15E21AAE2F324F1F00A9BB60 /* MonthIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthIndicator.swift; sourceTree = "<group>"; };
 		15E21AB02F32548A00A9BB60 /* SimulatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorView.swift; sourceTree = "<group>"; };
 		15E21AB22F3257B000A9BB60 /* CashflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowView.swift; sourceTree = "<group>"; };
+		CF10A0002F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowSpendingOverviewPrototypeCard.swift; sourceTree = "<group>"; };
 		15E21AB62F3257C600A9BB60 /* InvestmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentView.swift; sourceTree = "<group>"; };
 		15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassmorphicTabBar.swift; sourceTree = "<group>"; };
 		15E21ABA2F325A9D00A9BB60 /* JourneyContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyContainerView.swift; sourceTree = "<group>"; };
@@ -262,6 +264,7 @@
 		CDBB00012FA1000000000001 /* CashAccountsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountsCard.swift; sourceTree = "<group>"; };
 		CDBB00032FA1000000000001 /* CashAccountDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountDetailView.swift; sourceTree = "<group>"; };
 		D3AE291F3C594B4B8D1E5239 /* FIRECountdownCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIRECountdownCard.swift; sourceTree = "<group>"; };
+		PH0D000B2F4000000000000B /* HomeJourneyProgressStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeJourneyProgressStrip.swift; sourceTree = "<group>"; };
 		EB0000022F9A00000000EB01 /* ErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBanner.swift; sourceTree = "<group>"; };
 		F3D88B1E877C494CB82A4469 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -465,6 +468,7 @@
 			children = (
 				153CA3172F34E952001ED98E /* PortfolioCard.swift */,
 				D3AE291F3C594B4B8D1E5239 /* FIRECountdownCard.swift */,
+				PH0D000B2F4000000000000B /* HomeJourneyProgressStrip.swift */,
 				153CA3202F34E960001ED98E /* DailyQuoteCard.swift */,
 				153CA3242F34E963001ED98F /* SavingsRateCard.swift */,
 				153CA32A2F34E965001ED990 /* BudgetPlanCard.swift */,
@@ -502,6 +506,7 @@
 				15ABCD002F36A00000AABB01 /* IncomeDetailView.swift */,
 				15ABCD022F36B00000AABB02 /* TotalIncomeDetailView.swift */,
 				15E21AB22F3257B000A9BB60 /* CashflowView.swift */,
+				CF10A0002F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift */,
 				15E21AF02F33C40000A9BB60 /* BudgetCard.swift */,
 				15E21AEE2F33C3F600A9BB60 /* IncomeCard.swift */,
 				15E21AE22F33BBB600A9BB60 /* SavingsInputSheet.swift */,
@@ -756,6 +761,7 @@
 				1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */,
 				153CA3182F34E952001ED98E /* PortfolioCard.swift in Sources */,
 				468A105E0AD44511A1EFC2E0 /* FIRECountdownCard.swift in Sources */,
+				PH0D000A2F4000000000000A /* HomeJourneyProgressStrip.swift in Sources */,
 				153CA3212F34E960001ED98E /* DailyQuoteCard.swift in Sources */,
 				153CA3272F34E963001ED98F /* SavingsRateCard.swift in Sources */,
 				153CA32B2F34E965001ED990 /* BudgetPlanCard.swift in Sources */,
@@ -791,6 +797,7 @@
 				1571A1DA2F3C2A5B0024A729 /* OnboardingModels.swift in Sources */,
 				15E21AD92F3394B100A9BB60 /* FlameIcon.swift in Sources */,
 				15E21AB32F3257B000A9BB60 /* CashflowView.swift in Sources */,
+				CF10A0012F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift in Sources */,
 				12123E422F485B920011B385 /* PaywallSheet.swift in Sources */,
 				12123E432F485B920011B385 /* SettingsView.swift in Sources */,
 				12748F232F65CA7300410D60 /* BudgetSetupViewModel.swift in Sources */,
