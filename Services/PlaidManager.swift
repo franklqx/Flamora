@@ -274,6 +274,8 @@ struct ExchangeResponse: Decodable {
 
 enum FlamoraStorageKey {
     static let budgetSetupCompleted = "flamoraBudgetSetupCompleted"
+    /// JSON-encoded `HomeSetupStateResponse` from last successful `get-setup-state`; cleared on sign-out.
+    static let cachedHomeSetupState = "flamoraCachedHomeSetupStateJSON"
 
     /// 旧版未写入该标记但后端已有预算时，首次启动视为已完成，避免老用户被挡在「Build Your Plan」外。
     static func migrateBudgetSetupIfNeeded(budget: APIMonthlyBudget?, hasLinkedBank: Bool) {

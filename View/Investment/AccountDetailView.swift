@@ -578,7 +578,7 @@ struct AccountHistoryCard: View {
             .opacity(0.55)
             .overlay(
                 LinearGradient(
-                    colors: [Color.clear, Color.white.opacity(0.03), Color.clear],
+                    colors: [Color.clear, AppColors.overlayWhiteWash, Color.clear],
                     startPoint: .leading,
                     endPoint: .trailing
                 )

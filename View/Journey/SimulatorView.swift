@@ -18,6 +18,10 @@ struct SimulatorView: View {
     let bottomPadding: CGFloat
     let showResultCard: Bool
     let contentTopPadding: CGFloat
+    /// 与 `design-reference/home-rebuild-glass-prototype.html` 中 `.simulator-panel` 结构对齐（沙盒标题、柱状图、Retirement Detail 暗色面板）。
+    let useHTMLPrototypeLayout: Bool
+    /// When false, root is clear so a parent (e.g. `BrandHeroBackground` in `MainTabView`) provides the atmospheric gradient.
+    let fillsBackground: Bool
 
     @State private var preview: SimulatorPreviewModel?
     @State private var setupStage: HomeSetupStage?
@@ -27,6 +31,8 @@ struct SimulatorView: View {
     @State private var previewTask: Task<Void, Never>?
     @State private var editingField: SimulatorEditableField?
     @State private var editInput = ""
+    @State private var showAdvancedDetails = false
+    @State private var chartRevealAnimation = false
 
     @Environment(PlaidManager.self) private var plaidManager
 
@@ -36,7 +42,9 @@ struct SimulatorView: View {
         isFireOn: Bool = true,
         onFireToggle: (() -> Void)? = nil,
         showResultCard: Bool = true,
-        contentTopPadding: CGFloat = TopHeaderBar.height + AppSpacing.md
+        contentTopPadding: CGFloat = TopHeaderBar.height + AppSpacing.md,
+        useHTMLPrototypeLayout: Bool = false,
+        fillsBackground: Bool = true
     ) {
         _displayState = displayState
         self.bottomPadding = bottomPadding
@@ -44,11 +52,20 @@ struct SimulatorView: View {
         self.onFireToggle = onFireToggle
         self.showResultCard = showResultCard
         self.contentTopPadding = contentTopPadding
+        self.useHTMLPrototypeLayout = useHTMLPrototypeLayout
+        self.fillsBackground = fillsBackground
     }
 
     var body: some View {
         ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            Group {
+                if fillsBackground {
+                    AppColors.backgroundPrimary
+                } else {
+                    Color.clear
+                }
+            }
+            .ignoresSafeArea()
 
             switch displayState {
             case .overview, .loading:
@@ -140,20 +157,31 @@ private extension SimulatorView {
     var resultsContent: some View {
         GeometryReader { proxy in
             let compactLayout = proxy.size.height < 780
+            let isCompactPhone = proxy.size.height <= 812
             let chartHeight = compactLayout
                 ? max(148, min(198, proxy.size.height * 0.29))
                 : max(170, min(220, proxy.size.height * 0.31))
 
-            VStack(alignment: .leading, spacing: compactLayout ? AppSpacing.xs : AppSpacing.sm) {
-                if showResultCard {
-                    resultCard
-                }
-                comparisonGraph
-                    .frame(height: chartHeight)
-                controlsSection
+            Group {
+                if useHTMLPrototypeLayout {
+                    htmlPrototypeResults(
+                        chartHeight: chartHeight,
+                        compactLayout: compactLayout,
+                        isCompactPhone: isCompactPhone
+                    )
+                } else {
+                    VStack(alignment: .leading, spacing: compactLayout ? AppSpacing.xs : AppSpacing.sm) {
+                        if showResultCard {
+                            resultCard
+                        }
+                        comparisonGraph(isCompactPhone: isCompactPhone)
+                            .frame(height: chartHeight)
+                        controlsSection(isCompactPhone: isCompactPhone)
 
-                if !compactLayout {
-                    swipeUpHint
+                        if !compactLayout {
+                            swipeUpHint
+                        }
+                    }
                 }
             }
             .padding(.top, contentTopPadding)
@@ -179,12 +207,393 @@ private extension SimulatorView {
             Capsule()
                 .fill(AppColors.overlayWhiteOnGlass)
                 .frame(width: 44, height: 4)
-            Text("Swipe up to return")
+            Text(useHTMLPrototypeLayout ? "Back to Home" : "Swipe up to return")
                 .font(.caption)
                 .foregroundStyle(AppColors.overlayWhiteOnGlass)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 2)
+    }
+
+    func htmlPrototypeResults(
+        chartHeight: CGFloat,
+        compactLayout: Bool,
+        isCompactPhone: Bool
+    ) -> some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: compactLayout ? AppSpacing.sm : AppSpacing.md) {
+                if showResultCard {
+                    resultCard
+                }
+
+                htmlSandboxHeader
+
+                htmlSimSubheader
+
+                htmlBarGraphSection(chartHeight: chartHeight)
+                    .padding(.horizontal, AppSpacing.screenPadding)
+
+                htmlRetirementDetailPanel
+                    .padding(.horizontal, AppSpacing.screenPadding)
+
+                if !compactLayout {
+                    swipeUpHint
+                        .padding(.top, AppSpacing.sm)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var htmlSandboxHeader: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text("Sandbox")
+                .font(.cardHeader)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                .tracking(AppTypography.Tracking.cardHeader)
+
+            Text(sandboxHeadlineTitle)
+                .font(.portfolioHero)
+                .foregroundStyle(AppColors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, AppSpacing.screenPadding)
+    }
+
+    private var sandboxHeadlineTitle: String {
+        let age = preview?.previewFireAge ?? 30
+        return "You will be financial free by age \(age)."
+    }
+
+    private var htmlSimSubheader: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text("Demo Simulator")
+                    .font(.h3)
+                    .foregroundStyle(AppColors.textPrimary)
+                Text("Explore the path before your real data exists.")
+                    .font(.bodySmall)
+                    .foregroundStyle(AppColors.textSecondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, AppSpacing.screenPadding)
+    }
+
+    private func htmlBarGraphSection(chartHeight: CGFloat) -> some View {
+        let floorPad = AppSpacing.md
+        let barCount = barHeightsForHTMLChart.count
+        let horizontalPad = AppSpacing.sm
+        let barGap = AppSpacing.xs
+        return VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            ZStack(alignment: .topTrailing) {
+                // 柱宽随容器均分，从左缘铺满到右缘（与底部年份轴对齐）；勿用固定 5pt 宽 + 默认居中 ZStack，否则会挤在图中间偏右。
+                ZStack(alignment: .bottom) {
+                    GeometryReader { geo in
+                        let innerW = max(0, geo.size.width - horizontalPad * 2)
+                        let totalGaps = barGap * CGFloat(max(0, barCount - 1))
+                        // 均分剩余宽度；若极端窄屏下 (innerW - gaps) 为负，仍用公式保证柱群不强制撑破父级（避免再出现“居中窄条”）
+                        let barW = max(0, (innerW - totalGaps) / CGFloat(max(1, barCount)))
+
+                        ZStack(alignment: .bottom) {
+                            HStack(alignment: .bottom, spacing: barGap) {
+                                ForEach(0..<barCount, id: \.self) { index in
+                                    htmlBarCapsule(
+                                        width: barW,
+                                        height: max(
+                                            4,
+                                            barHeightsForHTMLChart[index] * (chartHeight - floorPad - AppSpacing.xs)
+                                        ),
+                                        isActive: index == barCount - 1,
+                                        isSoft: index < 7
+                                    )
+                                }
+                            }
+                            .frame(width: innerW, alignment: .leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, horizontalPad)
+                            .padding(.bottom, floorPad)
+                            .scaleEffect(x: 1, y: chartRevealAnimation ? 1 : 0.02, anchor: .bottom)
+                            .opacity(chartRevealAnimation ? 1 : 0)
+
+                            VStack {
+                                Spacer()
+                                Rectangle()
+                                    .fill(AppColors.heroTrack)
+                                    .frame(height: 1)
+                            }
+                            .padding(.horizontal, horizontalPad)
+                            .padding(.bottom, floorPad)
+                        }
+                    }
+                }
+                .frame(height: chartHeight)
+
+                htmlBarCalloutPill
+                    .padding(.top, AppSpacing.xs)
+                    .padding(.trailing, AppSpacing.lg)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack {
+                ForEach(0..<htmlAxisYearLabels.count, id: \.self) { index in
+                    Group {
+                        if index > 0 {
+                            Spacer(minLength: 0)
+                        }
+                        Text(htmlAxisYearLabels[index])
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(AppColors.heroTextHint)
+                    }
+                }
+            }
+            .padding(.horizontal, horizontalPad)
+        }
+        .padding(.vertical, AppSpacing.sm)
+        .onAppear {
+            chartRevealAnimation = false
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                chartRevealAnimation = true
+            }
+        }
+    }
+
+    /// Glass pill — single money + age label (HTML `.bar-callout.one`), on the chart wall only.
+    private var htmlBarCalloutPill: some View {
+        Text(htmlBarCalloutText)
+            .font(.inlineFigureBold)
+            .foregroundStyle(AppColors.simulatorCalloutForeground)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(AppColors.simulatorCalloutBubbleFill)
+                    .background {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                    }
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(AppColors.simulatorCalloutBubbleBorder, lineWidth: 1)
+            )
+    }
+
+    private func htmlBarCapsule(width: CGFloat, height: CGFloat, isActive: Bool, isSoft: Bool) -> some View {
+        let fill = monochromeBarFill(isActive: isActive, isSoft: isSoft)
+        return Capsule()
+            .fill(fill)
+            .overlay(
+                Capsule()
+                    .stroke(AppColors.overlayWhiteWash, lineWidth: 1)
+            )
+            .shadow(
+                color: isActive ? AppColors.overlayWhiteMid : .clear,
+                radius: isActive ? 12 : 0,
+                y: 0
+            )
+            .frame(width: width, height: height)
+    }
+
+    /// Prototype `.bar` / `.bar.soft` / `.bar.active`: white-only gradients, no accent hues.
+    private func monochromeBarFill(isActive: Bool, isSoft: Bool) -> LinearGradient {
+        if isActive {
+            return LinearGradient(
+                colors: [Color.white.opacity(1), Color.white.opacity(0.56)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+        if isSoft {
+            return LinearGradient(
+                colors: [Color.white.opacity(0.4), Color.white.opacity(0.18)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+        return LinearGradient(
+            colors: [Color.white.opacity(0.9), Color.white.opacity(0.42)],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+
+    private var htmlBarCalloutText: String {
+        let path = displayAdjustedPath
+        let lastNW = path.last?.netWorth ?? 128_000
+        let age = preview?.previewFireAge ?? 30
+        return "\(NumberFormatter.appCurrency(lastNW)) by age \(age)"
+    }
+
+    private var htmlAxisYearLabels: [String] {
+        let path = displayAdjustedPath
+        guard let first = path.first?.year, let last = path.last?.year, first <= last else {
+            return ["2026", "2029", "2032"]
+        }
+        let mid = first + (last - first) / 2
+        return ["\(first)", "\(mid)", "\(last)"]
+    }
+
+    private var barHeightsForHTMLChart: [CGFloat] {
+        let path = displayAdjustedPath
+        let target = 16
+        guard path.count > 1 else {
+            return (0..<target).map { i in
+                CGFloat(i + 1) / CGFloat(target)
+            }
+        }
+        let values = path.map(\.netWorth)
+        let minV = values.min() ?? 0
+        let maxV = values.max() ?? 1
+        let range = max(maxV - minV, 1)
+
+        return (0..<target).map { i in
+            let t = Double(i) / Double(target - 1)
+            let idx = t * Double(max(0, values.count - 1))
+            let lo = Int(floor(idx))
+            let hi = min(lo + 1, values.count - 1)
+            let frac = idx - Double(lo)
+            let v = values[lo] * (1 - frac) + values[hi] * frac
+            let norm = CGFloat((v - minV) / range)
+            return max(0.08, norm)
+        }
+    }
+
+    private var htmlRetirementDetailPanel: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text("Retirement Detail")
+                .font(.bodySmallSemibold)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+
+            VStack(spacing: 0) {
+                htmlDetailRow(
+                    label: "Current Age",
+                    value: "\(controls.currentAge)"
+                ) {
+                    editingField = .currentAge
+                    editInput = "\(controls.currentAge)"
+                }
+
+                htmlDetailRow(
+                    label: "Monthly Contribution",
+                    value: NumberFormatter.appCurrency(controls.savingsMonthly)
+                ) {
+                    editingField = .monthlyInvestment
+                    editInput = String(Int(controls.savingsMonthly.rounded()))
+                }
+
+                htmlDetailRow(
+                    label: "Current Investment",
+                    value: NumberFormatter.appCurrency(controls.investableAssets)
+                ) {
+                    editingField = .investableAssets
+                    editInput = String(Int(controls.investableAssets.rounded()))
+                }
+
+                htmlDetailRow(
+                    label: "Retire Monthly Expense",
+                    value: NumberFormatter.appCurrency(controls.retirementSpending)
+                ) {
+                    editingField = .monthlyExpenses
+                    editInput = String(Int(controls.retirementSpending.rounded()))
+                }
+            }
+
+            Button {
+                withAnimation(.easeInOut(duration: 0.22)) {
+                    showAdvancedDetails.toggle()
+                }
+            } label: {
+                HStack {
+                    Text("Advanced Details")
+                        .font(.bodySmallSemibold)
+                        .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                    Spacer()
+                    Image(systemName: "chevron.down")
+                        .font(.footnoteSemibold)
+                        .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                        .rotationEffect(.degrees(showAdvancedDetails ? 180 : 0))
+                }
+                .padding(.vertical, AppSpacing.xs)
+            }
+            .buttonStyle(.plain)
+
+            if showAdvancedDetails {
+                VStack(spacing: 0) {
+                    htmlDetailRow(
+                        label: "Expected Return",
+                        value: String(format: "%.1f%%", controls.returnRate)
+                    ) {
+                        editingField = .expectedReturn
+                        editInput = String(format: "%.1f", controls.returnRate)
+                    }
+
+                    htmlDetailStaticRow(label: "Inflation", value: "2.5%")
+
+                    htmlDetailRow(
+                        label: "Withdrawal Rate",
+                        value: String(format: "%.2f%%", controls.withdrawalRate)
+                    ) {
+                        editingField = .withdrawalRate
+                        editInput = String(format: "%.2f", controls.withdrawalRate)
+                    }
+                }
+            }
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(
+            LinearGradient(
+                colors: [AppColors.simDetailsBg1, AppColors.simDetailsBg2],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.card)
+                .stroke(AppColors.simDetailsBorder, lineWidth: 1)
+        )
+    }
+
+    private func htmlDetailRow(
+        label: String,
+        value: String,
+        onTap: @escaping () -> Void
+    ) -> some View {
+        Button(action: onTap) {
+            htmlDetailRowContent(label: label, value: value, showChevron: true)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func htmlDetailStaticRow(label: String, value: String) -> some View {
+        htmlDetailRowContent(label: label, value: value, showChevron: false)
+    }
+
+    private func htmlDetailRowContent(label: String, value: String, showChevron: Bool) -> some View {
+        HStack {
+            Text(label)
+                .font(.bodySmall)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+            Spacer()
+            HStack(spacing: AppSpacing.xs) {
+                Text(value)
+                    .font(.bodySmallSemibold)
+                    .foregroundStyle(AppColors.textPrimary)
+                if showChevron {
+                    Image(systemName: "chevron.down")
+                        .font(.footnoteSemibold)
+                        .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                }
+            }
+        }
+        .padding(.vertical, AppSpacing.sm)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(AppColors.simDetailsBorder)
+                .frame(height: 1)
+        }
     }
 
     var resultCard: some View {
@@ -232,14 +641,17 @@ private extension SimulatorView {
     @ViewBuilder
     var deltaBadge: some View {
         if let preview {
-            let faster = preview.deltaMonths < 0
             Text(deltaLabel(for: preview))
                 .font(.bodySmallSemibold)
-                .foregroundStyle(faster ? AppColors.success : AppColors.warning)
+                .foregroundStyle(preview.deltaMonths < 0 ? AppColors.success : AppColors.warning)
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.vertical, AppSpacing.sm)
-                .background((faster ? AppColors.success : AppColors.warning).opacity(0.12))
+                .background(
+                    (preview.deltaMonths < 0 ? AppColors.success : AppColors.warning).opacity(0.12)
+                )
                 .clipShape(Capsule())
+        } else {
+            EmptyView()
         }
     }
 
@@ -286,7 +698,7 @@ private extension SimulatorView {
         return "\(abs(preview.deltaMonths)) mo \(direction)"
     }
 
-    var comparisonGraph: some View {
+    func comparisonGraph(isCompactPhone: Bool) -> some View {
         let officialSeries = displayOfficialPath
         let adjustedSeries = displayAdjustedPath
 
@@ -306,11 +718,11 @@ private extension SimulatorView {
             )
             .frame(maxHeight: .infinity)
         }
-        .padding(panelPadding)
+        .padding(panelPadding(isCompactPhone: isCompactPhone))
         .background(
             LinearGradient(
                 colors: [
-                    Color.white.opacity(0.10),
+                    AppColors.glassBorder,
                     Color(hex: "#A7F3D0").opacity(0.06),
                     Color(hex: "#93C5FD").opacity(0.05)
                 ],
@@ -321,29 +733,18 @@ private extension SimulatorView {
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(Color.white.opacity(0.16), lineWidth: 1)
+                .stroke(AppColors.heroTrack, lineWidth: 1)
         )
-        .shadow(color: Color.white.opacity(0.03), radius: 8, y: -1)
+        .shadow(color: AppColors.overlayWhiteWash, radius: 8, y: -1)
         .padding(.horizontal, AppSpacing.screenPadding)
     }
 
     var legend: some View {
         HStack(spacing: AppSpacing.md) {
             if showsOfficialSeries {
-                legendItem(color: AppColors.surfaceBorder, text: "Plan baseline")
+                LegendItemView(color: AppColors.surfaceBorder, label: "Plan baseline", style: .dash)
             }
-            legendItem(color: AppColors.accentBlueBright, text: "Adjusted")
-        }
-    }
-
-    func legendItem(color: Color, text: String) -> some View {
-        HStack(spacing: 6) {
-            Capsule()
-                .fill(color)
-                .frame(width: 18, height: 3)
-            Text(text)
-                .font(.footnoteRegular)
-                .foregroundStyle(AppColors.textSecondary)
+            LegendItemView(color: AppColors.accentBlueBright, label: "Adjusted", style: .dash)
         }
     }
 
@@ -415,7 +816,7 @@ private extension SimulatorView {
         return "Age \(controls.currentAge) · \(percent)%"
     }
 
-    var controlsSection: some View {
+    func controlsSection(isCompactPhone: Bool) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack(spacing: AppSpacing.xs) {
                 Image(systemName: "slider.horizontal.3")
@@ -426,10 +827,11 @@ private extension SimulatorView {
                     .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
             }
 
-            LazyVGrid(columns: gridColumns, spacing: gridCellGap) {
+            LazyVGrid(columns: gridColumns(isCompactPhone: isCompactPhone), spacing: gridCellGap(isCompactPhone: isCompactPhone)) {
                 compactControlCell(
+                    isCompactPhone: isCompactPhone,
                     title: "Monthly Investment",
-                    valueText: formatCurrency(controls.savingsMonthly),
+                    valueText: NumberFormatter.appCurrency(controls.savingsMonthly),
                     range: 0...20_000,
                     step: 250,
                     currentValue: controls.savingsMonthly,
@@ -441,8 +843,9 @@ private extension SimulatorView {
                 )
 
                 compactControlCell(
+                    isCompactPhone: isCompactPhone,
                     title: "Investable Assets",
-                    valueText: formatCurrency(controls.investableAssets),
+                    valueText: NumberFormatter.appCurrency(controls.investableAssets),
                     range: 0...2_500_000,
                     step: 5_000,
                     currentValue: controls.investableAssets,
@@ -454,6 +857,7 @@ private extension SimulatorView {
                 )
 
                 compactControlCell(
+                    isCompactPhone: isCompactPhone,
                     title: "Expected Return",
                     valueText: String(format: "%.1f%%", controls.returnRate),
                     range: 1...12,
@@ -467,8 +871,9 @@ private extension SimulatorView {
                 )
 
                 compactControlCell(
+                    isCompactPhone: isCompactPhone,
                     title: "Monthly Expenses",
-                    valueText: formatCurrency(controls.retirementSpending),
+                    valueText: NumberFormatter.appCurrency(controls.retirementSpending),
                     range: 1_500...25_000,
                     step: 250,
                     currentValue: controls.retirementSpending,
@@ -480,6 +885,7 @@ private extension SimulatorView {
                 )
 
                 compactControlCell(
+                    isCompactPhone: isCompactPhone,
                     title: "Withdrawal Rate",
                     valueText: String(format: "%.2f%%", controls.withdrawalRate),
                     range: 2.5...6,
@@ -493,6 +899,7 @@ private extension SimulatorView {
                 )
 
                 compactControlCell(
+                    isCompactPhone: isCompactPhone,
                     title: "Current Age",
                     valueText: "\(controls.currentAge)",
                     range: 18...70,
@@ -506,11 +913,11 @@ private extension SimulatorView {
                 )
             }
         }
-        .padding(panelPadding)
+        .padding(panelPadding(isCompactPhone: isCompactPhone))
         .background(
             LinearGradient(
                 colors: [
-                    Color.white.opacity(0.10),
+                    AppColors.glassBorder,
                     Color(hex: "#D1FAE5").opacity(0.06),
                     Color(hex: "#BFDBFE").opacity(0.04)
                 ],
@@ -521,47 +928,45 @@ private extension SimulatorView {
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                .stroke(AppColors.glassPillStroke, lineWidth: 1)
         )
-        .shadow(color: Color.white.opacity(0.03), radius: 8, y: -1)
+        .shadow(color: AppColors.overlayWhiteWash, radius: 8, y: -1)
         .padding(.horizontal, AppSpacing.screenPadding)
     }
 }
 
 private extension SimulatorView {
-    var isCompactPhone: Bool {
-        UIScreen.main.bounds.height <= 812
-    }
-
-    var panelPadding: CGFloat {
+    func panelPadding(isCompactPhone: Bool) -> CGFloat {
         isCompactPhone ? AppSpacing.sm : AppSpacing.md
     }
 
-    var gridCellGap: CGFloat {
+    func gridCellGap(isCompactPhone: Bool) -> CGFloat {
         isCompactPhone ? 6 : AppSpacing.xs
     }
 
-    var controlButtonSize: CGFloat {
+    func controlButtonSize(isCompactPhone: Bool) -> CGFloat {
         isCompactPhone ? 40 : 44
     }
 
-    var controlCellPadding: CGFloat {
+    func controlCellPadding(isCompactPhone: Bool) -> CGFloat {
         isCompactPhone ? 6 : 8
     }
 
-    var controlRowGap: CGFloat {
+    func controlRowGap(isCompactPhone: Bool) -> CGFloat {
         isCompactPhone ? 4 : 6
     }
 
-    var gridColumns: [GridItem] {
-        [
-            GridItem(.flexible(), spacing: gridCellGap),
-            GridItem(.flexible(), spacing: gridCellGap)
+    func gridColumns(isCompactPhone: Bool) -> [GridItem] {
+        let gap = gridCellGap(isCompactPhone: isCompactPhone)
+        return [
+            GridItem(.flexible(), spacing: gap),
+            GridItem(.flexible(), spacing: gap)
         ]
     }
 
     @ViewBuilder
     func compactControlCell(
+        isCompactPhone: Bool,
         title: String,
         valueText: String,
         range: ClosedRange<Double>,
@@ -570,7 +975,7 @@ private extension SimulatorView {
         onChange: @escaping (Double) -> Void,
         onEdit: @escaping () -> Void
     ) -> some View {
-        VStack(alignment: .leading, spacing: controlRowGap) {
+        VStack(alignment: .leading, spacing: controlRowGap(isCompactPhone: isCompactPhone)) {
             Text(title.uppercased())
                 .font(.miniLabel)
                 .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
@@ -585,11 +990,11 @@ private extension SimulatorView {
                 } label: {
                     Image(systemName: "minus")
                         .font(.footnoteSemibold)
-                        .frame(width: controlButtonSize, height: controlButtonSize)
-                        .background(Color.white.opacity(0.06))
+                        .frame(width: controlButtonSize(isCompactPhone: isCompactPhone), height: controlButtonSize(isCompactPhone: isCompactPhone))
+                        .background(AppColors.cardTopHighlight)
                         .overlay(
                             RoundedRectangle(cornerRadius: AppRadius.sm)
-                                .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                                .stroke(AppColors.overlayWhiteHigh, lineWidth: 1)
                         )
                         .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm))
                 }
@@ -601,11 +1006,11 @@ private extension SimulatorView {
                         .foregroundStyle(AppColors.textPrimary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.72)
-                        .frame(maxWidth: .infinity, minHeight: controlButtonSize)
-                        .background(Color.white.opacity(0.07))
+                        .frame(maxWidth: .infinity, minHeight: controlButtonSize(isCompactPhone: isCompactPhone))
+                        .background(AppColors.overlayWhiteStroke)
                         .overlay(
                             RoundedRectangle(cornerRadius: AppRadius.sm)
-                                .stroke(Color.white.opacity(0.20), lineWidth: 1)
+                                .stroke(AppColors.overlayWhiteHigh, lineWidth: 1)
                         )
                         .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm))
                 }
@@ -617,9 +1022,9 @@ private extension SimulatorView {
                 } label: {
                     Image(systemName: "plus")
                         .font(.footnoteSemibold)
-                        .frame(width: controlButtonSize, height: controlButtonSize)
+                        .frame(width: controlButtonSize(isCompactPhone: isCompactPhone), height: controlButtonSize(isCompactPhone: isCompactPhone))
                         .foregroundStyle(AppColors.successAlt)
-                        .background(Color.white.opacity(0.06))
+                        .background(AppColors.cardTopHighlight)
                         .overlay(
                             RoundedRectangle(cornerRadius: AppRadius.sm)
                                 .stroke(AppColors.successAlt.opacity(0.35), lineWidth: 1)
@@ -629,10 +1034,10 @@ private extension SimulatorView {
                 .buttonStyle(.plain)
             }
         }
-        .padding(controlCellPadding)
+        .padding(controlCellPadding(isCompactPhone: isCompactPhone))
         .background(
             LinearGradient(
-                colors: [Color.white.opacity(0.05), Color.white.opacity(0.03)],
+                colors: [AppColors.overlayWhiteStroke, AppColors.overlayWhiteWash],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -640,7 +1045,7 @@ private extension SimulatorView {
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                .stroke(AppColors.simDetailsBorder, lineWidth: 1)
         )
     }
 
@@ -650,7 +1055,7 @@ private extension SimulatorView {
         displayState = .loading
         errorMessage = nil
 
-        let state = try? await APIService.shared.getSetupState()
+        let state = await APIService.shared.getSetupStatePersistingCache()
         setupStage = state?.setupStage ?? (plaidManager.hasLinkedBank ? .accountsLinked : .noGoal)
         await refreshPreview(immediate: true)
     }
@@ -803,8 +1208,7 @@ private struct PreviewPathChart: View {
             let points = combinedPoints(in: proxy.size)
 
             ZStack(alignment: .bottomLeading) {
-                RoundedRectangle(cornerRadius: AppRadius.md)
-                    .fill(AppColors.backgroundSecondary)
+                Color.clear
 
                 VStack(spacing: 0) {
                     ForEach(0..<4, id: \.self) { _ in
@@ -888,14 +1292,6 @@ private struct PreviewPathChart: View {
     }
 }
 
-private func formatCurrency(_ value: Double) -> String {
-    let formatter = NumberFormatter()
-    formatter.numberStyle = .currency
-    formatter.currencyCode = "USD"
-    formatter.maximumFractionDigits = 0
-    formatter.minimumFractionDigits = 0
-    return formatter.string(from: NSNumber(value: value)) ?? "$0"
-}
 
 #Preview {
     SimulatorView(displayState: .constant(.overview))

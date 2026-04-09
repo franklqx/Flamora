@@ -333,6 +333,7 @@ private struct WelcomeBudgetCard: View {
     @State private var showPercentages = false
     @State private var showSubcategories = false
     @State private var subcategoryVisible: [Bool] = Array(repeating: false, count: 6)
+    @State private var budgetAnimationTimers: [Timer] = []
 
     private static let amountFormatter: NumberFormatter = {
         let f = NumberFormatter()
@@ -397,11 +398,19 @@ private struct WelcomeBudgetCard: View {
                 }
             }
         }
+        .onDisappear {
+            invalidateBudgetAnimationTimers()
+        }
+    }
+
+    private func invalidateBudgetAnimationTimers() {
+        budgetAnimationTimers.forEach { $0.invalidate() }
+        budgetAnimationTimers.removeAll()
     }
 
     private func animateCounter(from: Int, to: Int, duration: Double, update: @escaping (Int) -> Void) {
         let startTime = Date()
-        Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { timer in
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { timer in
             let elapsed = Date().timeIntervalSince(startTime)
             let progress = min(elapsed / duration, 1.0)
             // easeOut cubic curve
@@ -413,9 +422,11 @@ private struct WelcomeBudgetCard: View {
                 update(to)
             }
         }
+        budgetAnimationTimers.append(timer)
     }
 
     private func startAnimation() {
+        invalidateBudgetAnimationTimers()
         // Step 1 — Progress bars + percentage labels (~2s)
         withAnimation(.timingCurve(0.25, 0, 0.1, 1, duration: 2.0)) {
             needsProgress = 0.62
@@ -517,6 +528,7 @@ private struct WelcomeSavingsCard: View {
 
     @State private var barHeights: [CGFloat] = Array(repeating: 0, count: 12)
     @State private var displayAmount: Int = 0
+    @State private var savingsCounterTimer: Timer?
 
     private static let formatter: NumberFormatter = {
         let f = NumberFormatter(); f.numberStyle = .decimal; return f
@@ -526,16 +538,23 @@ private struct WelcomeSavingsCard: View {
     }
 
     private func animateCounter(to target: Int, duration: Double, update: @escaping (Int) -> Void) {
+        savingsCounterTimer?.invalidate()
         let start = Date()
-        Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { t in
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { t in
             let p = min(Date().timeIntervalSince(start) / duration, 1.0)
             let eased = 1 - pow(1 - p, 3)
             update(Int(Double(target) * eased))
-            if p >= 1.0 { t.invalidate(); update(target) }
+            if p >= 1.0 {
+                t.invalidate()
+                update(target)
+            }
         }
+        savingsCounterTimer = timer
     }
 
     private func startAnimation() {
+        savingsCounterTimer?.invalidate()
+        savingsCounterTimer = nil
         // Bars: sequential grow-in — each bar fully grows before the next starts
         let barDuration = 0.22
         for i in 0..<values.count {
@@ -645,6 +664,10 @@ private struct WelcomeSavingsCard: View {
             displayAmount = 0
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { startAnimation() }
         }
+        .onDisappear {
+            savingsCounterTimer?.invalidate()
+            savingsCounterTimer = nil
+        }
     }
 
     @ViewBuilder
@@ -691,6 +714,7 @@ private struct WelcomeNetWorthCard: View {
     @State private var displayAmount: Int = 0
     @State private var showDot = false
     @State private var pulse = false
+    @State private var netWorthCounterTimer: Timer?
 
     private static let formatter: NumberFormatter = {
         let f = NumberFormatter(); f.numberStyle = .decimal; return f
@@ -700,16 +724,23 @@ private struct WelcomeNetWorthCard: View {
     }
 
     private func animateCounter(to target: Int, duration: Double, update: @escaping (Int) -> Void) {
+        netWorthCounterTimer?.invalidate()
         let start = Date()
-        Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { t in
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { t in
             let p = min(Date().timeIntervalSince(start) / duration, 1.0)
             let eased = 1 - pow(1 - p, 3)
             update(Int(Double(target) * eased))
-            if p >= 1.0 { t.invalidate(); update(target) }
+            if p >= 1.0 {
+                t.invalidate()
+                update(target)
+            }
         }
+        netWorthCounterTimer = timer
     }
 
     private func startAnimation() {
+        netWorthCounterTimer?.invalidate()
+        netWorthCounterTimer = nil
         // 折线从左到右描绘
         withAnimation(.easeInOut(duration: 1.4).delay(0.2)) { trimEnd = 1.0 }
         // 金额 counter
@@ -789,6 +820,10 @@ private struct WelcomeNetWorthCard: View {
             guard newValue else { return }
             trimEnd = 0; displayAmount = 0; showDot = false; pulse = false
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { startAnimation() }
+        }
+        .onDisappear {
+            netWorthCounterTimer?.invalidate()
+            netWorthCounterTimer = nil
         }
     }
 }

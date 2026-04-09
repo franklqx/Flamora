@@ -101,7 +101,7 @@ struct AppColors {
     static let dailyQuoteBg        = Color(hex: "#1D3A28")
     static let dailyQuoteAccent    = Color(hex: "#4ADE80")
 
-    // MARK: - Glass Surface
+    // MARK: - Glass Surface (legacy dark-mode glass — kept for connected views)
     static let glassBorder         = Color.white.opacity(0.10)
     static let glassBackground     = Color.black.opacity(0.68)
 
@@ -112,6 +112,160 @@ struct AppColors {
     // MARK: - Glass Pill (time range selector)
     static let glassPillFill       = Color.white.opacity(0.10)
     static let glassPillStroke     = Color.white.opacity(0.15)
+
+    // ════════════════════════════════════════════════════════
+    // MARK: - NEW DESIGN SYSTEM (Light Shell + Dark Hero)
+    // 对应 design-reference/home-rebuild-glass-prototype.html
+    // ════════════════════════════════════════════════════════
+
+    // MARK: Ink (dark text on light backgrounds)
+    /// Primary text on light shell — #111827
+    static let inkPrimary          = Color(hex: "#111827")
+    /// Secondary text — 66% ink
+    static let inkSoft             = Color(hex: "#111827").opacity(0.66)
+    /// Tertiary text — 42% ink
+    static let inkFaint            = Color(hex: "#111827").opacity(0.42)
+    /// Meta / kicker labels — 34% ink
+    static let inkMeta             = Color(hex: "#111827").opacity(0.34)
+    /// Chip label — 62% ink
+    static let inkChip             = Color(hex: "#111827").opacity(0.62)
+    /// 1pt border on light backgrounds — 8% ink
+    static let inkBorder           = Color(hex: "#111827").opacity(0.08)
+    /// Subtle divider line — 7% ink
+    static let inkDivider          = Color(hex: "#111827").opacity(0.07)
+    /// Dashed mid-chart line — 12% ink
+    static let inkDash             = Color(hex: "#111827").opacity(0.12)
+    /// Progress bar fill / bar chart fill — dark ink gradient
+    static let inkBarFill1         = Color(hex: "#111827").opacity(0.88)
+    static let inkBarFill2         = Color(hex: "#111827").opacity(0.72)
+    /// Progress track on light bg — 10% ink
+    static let inkTrack            = Color(hex: "#111827").opacity(0.10)
+
+    // MARK: Shell Background (below hero)
+    /// Shell gradient top — #f7f8fb
+    static let shellBg1            = Color(hex: "#f7f8fb")
+    /// Shell gradient bottom — #eef1f7
+    static let shellBg2            = Color(hex: "#eef1f7")
+
+    // MARK: Hero Gradient (dark atmospheric, top of each tab)
+    // Base linear layer matches `design-reference/home-rebuild-glass-prototype.html` `--brand-purple-surface` stops (non-uniform, not equal fifths).
+    static let heroGradient: [Color] = [
+        Color(hex: "#15162a"),   // dark navy-violet (top)
+        Color(hex: "#242b63"),   // deep blue-purple
+        Color(hex: "#5a6fe0"),   // blue-purple mid
+        Color(hex: "#d8dbff"),   // pale lavender
+        Color(hex: "#f7f3ff"),   // near-white purple tint (bottom)
+    ]
+
+    /// Home hero — same colors as `heroGradient` with CSS locations 0 / 18% / 42% / 68% / 100%
+    static var heroBrandLinearGradient: Gradient {
+        Gradient(stops: [
+            .init(color: Color(hex: "#15162a"), location: 0),
+            .init(color: Color(hex: "#242b63"), location: 0.18),
+            .init(color: Color(hex: "#5a6fe0"), location: 0.42),
+            .init(color: Color(hex: "#d8dbff"), location: 0.68),
+            .init(color: Color(hex: "#f7f3ff"), location: 1),
+        ])
+    }
+    /// Radial glow 1 — purple haze, top-left of hero
+    static let heroGlowPurple1     = Color(hex: "#c4b5fd").opacity(0.22)
+    /// Radial glow 2 — purple haze, top-right of hero
+    static let heroGlowPurple2     = Color(hex: "#a78bfa").opacity(0.26)
+    /// Radial glow 3 — pink warmth, center-lower of hero
+    static let heroGlowPink        = Color(hex: "#fca5a5").opacity(0.10)
+
+    // MARK: Glass Card (white glass on light shell)
+    /// Card primary fill — rgba(255,255,255,0.84)
+    static let glassCardBg         = Color.white.opacity(0.84)
+    /// Card secondary fill layer — rgba(250,246,251,0.74)
+    static let glassCardBg2        = Color(hex: "#faf6fb").opacity(0.74)
+    /// Card stroke — rgba(255,255,255,0.56)
+    static let glassCardBorder     = Color.white.opacity(0.56)
+    /// Card inner highlight (inset top edge) — rgba(255,255,255,0.72)
+    static let glassCardHighlight  = Color.white.opacity(0.72)
+    /// Card shadow tint — rgba(71,55,101,0.12)
+    static let glassCardShadow     = Color(hex: "#473765").opacity(0.12)
+
+    // MARK: Glass Block (nested secondary panel within card)
+    /// Block fill — rgba(255,255,255,0.32)
+    static let glassBlockBg        = Color.white.opacity(0.32)
+    /// Block stroke — rgba(255,255,255,0.34)
+    static let glassBlockBorder    = Color.white.opacity(0.34)
+
+    // MARK: Hero Surface Text (text on top of dark hero)
+    /// Primary white on hero (near-full opacity)
+    static let heroTextPrimary     = Color.white.opacity(0.98)
+    /// Soft white on hero — secondary
+    static let heroTextSoft        = Color.white.opacity(0.94)
+    /// Dim white on hero — tertiary
+    static let heroTextFaint       = Color.white.opacity(0.58)
+    /// Ultra-dim — placeholder / hint on hero
+    static let heroTextHint        = Color.white.opacity(0.36)
+    /// Hero progress track
+    static let heroTrack           = Color.white.opacity(0.16)
+    /// Hero track fill (active segment)
+    static let heroTrackFill       = Color.white.opacity(0.50)
+
+    // MARK: Investment Hero Gradient (blue-cold variant, distinct from Home heroGradient)
+    // Usage: prefer `investBrandLinearGradient` for full-bleed hero (matches HTML stop positions).
+    static let investHeroGradient: [Color] = [
+        Color(hex: "#13152a"),   // deep navy (top)
+        Color(hex: "#20275f"),   // dark indigo
+        Color(hex: "#556add"),   // blue-indigo mid
+        Color(hex: "#d9dcff"),   // pale blue-lavender
+        Color(hex: "#f8f4ff"),   // near-white cool tint (bottom)
+    ]
+
+    /// Investment tab — same stop layout as `design-reference/home-rebuild-glass-prototype.html` `.invest-view`
+    static var investBrandLinearGradient: Gradient {
+        Gradient(stops: [
+            .init(color: Color(hex: "#13152a"), location: 0),
+            .init(color: Color(hex: "#20275f"), location: 0.18),
+            .init(color: Color(hex: "#556add"), location: 0.42),
+            .init(color: Color(hex: "#d9dcff"), location: 0.68),
+            .init(color: Color(hex: "#f8f4ff"), location: 1),
+        ])
+    }
+
+    /// Investment hero radial 2 — HTML `rgba(167, 139, 250, 0.28)` (Home/Cash use `heroGlowPurple2` at 0.26)
+    static let investHeroGlowPurple2 = Color(hex: "#a78bfa").opacity(0.28)
+
+    // MARK: Tab Bar (glass floating tab bar on light shell)
+    /// Tab bar primary fill — rgba(255,255,255,0.68)
+    static let tabBarFill          = Color.white.opacity(0.68)
+    /// Tab bar border — rgba(255,255,255,0.82)
+    static let tabBarBorder        = Color.white.opacity(0.82)
+    /// Tab bar shadow tint — rgba(17,24,39,0.16)
+    static let tabBarShadow        = Color(hex: "#111827").opacity(0.16)
+    /// Active tab item fill — rgba(255,255,255,0.72)
+    static let tabBarActiveItem    = Color.white.opacity(0.72)
+    /// Inactive tab label — rgba(17,24,39,0.58)
+    static let tabBarInactiveLabel = Color(hex: "#111827").opacity(0.58)
+
+    // MARK: Simulator trend chart (integrated on atmospheric gradient)
+    /// Vertical bar fill — soft white capsules on gradient
+    static let simulatorTrendBar     = Color.white.opacity(0.42)
+    /// Earlier / de-emphasized bars in the trend strip
+    static let simulatorTrendBarSoft = Color.white.opacity(0.28)
+    /// Floating amount + age callout — glass pill (HTML `.bar-callout`: blur + rgba white)
+    static let simulatorCalloutBubbleFill = Color.white.opacity(0.08)
+    static let simulatorCalloutBubbleBorder = Color.white.opacity(0.08)
+    /// Callout label — rgba(255,255,255,0.84)
+    static let simulatorCalloutForeground = Color.white.opacity(0.84)
+
+    // MARK: Simulator Details Panel (dark glass panel inside simulator)
+    /// Sim details panel bg gradient top — rgba(33,37,78,0.94)
+    static let simDetailsBg1       = Color(hex: "#21254E").opacity(0.94)
+    /// Sim details panel bg gradient bottom — rgba(25,28,61,0.96)
+    static let simDetailsBg2       = Color(hex: "#191C3D").opacity(0.96)
+    /// Sim details panel border — rgba(255,255,255,0.12)
+    static let simDetailsBorder    = Color.white.opacity(0.12)
+
+    // MARK: CTA Button (black on light shell)
+    /// Black button background for light-shell CTAs
+    static let ctaBlack            = Color(hex: "#111827")
+    /// White label on black CTA
+    static let ctaWhite            = Color.white
 
     // MARK: - White / black overlays
     // 9-tier canonical scale — prefer these over raw Color.white/black.opacity

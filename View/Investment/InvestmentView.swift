@@ -223,7 +223,7 @@ private extension InvestmentView {
     }
 }
 
-private func parseDate(_ str: String) -> Date {
+private nonisolated func parseDate(_ str: String) -> Date {
     let f = DateFormatter()
     f.dateFormat = "yyyy-MM-dd"
     f.locale = Locale(identifier: "en_US_POSIX")

@@ -21,6 +21,28 @@ struct AppSpacing {
     static let sectionGap: CGFloat = 24
     static let tabBarReserve: CGFloat = 84
 
+    /// Home hero / Journey 渐变区高度 — 308pt 对应 HTML min-height: 308px（MainTabView 动态分区时的回退）
+    static let heroFullHeight: CGFloat = 308
+
+    /// Home 主列：渐变区约占可用高度 1/3（对齐 HTML .screen 892px 中 ~308px hero）
+    static let homeHeroRegionFraction: CGFloat = 1.0 / 3.0
+    /// 白底 sheet 约占可用高度 2/3（对齐 HTML .sheet min-height ~610px）
+    static let homeSheetRegionFraction: CGFloat = 2.0 / 3.0
+    /// 白底 sheet 上叠入 hero 的位移（HTML margin-top: -76px）
+    static let homeSheetTopOverlap: CGFloat = 76
+
+    /// Home 静止时：大气渐变占满 hero 区高度（对齐 `home-rebuild-glass-prototype.html` `.hero-layer` min-height + `background-size: 100% 100%`，不再做 22% 垂直压缩）
+    static let homeHeroGradientCollapsedFraction: CGFloat = 1.0
+
+    /// HTML `.cash-hero-copy` / `.invest-hero-copy` 大标题相对 hero 内容区顶部的间距
+    static let heroTabTitleTopOffset: CGFloat = 22
+
+    /// Home / Cash / Invest 三 Tab 白底 sheet 内首块主卡统一最小高度（对齐原型里 roadmap / cash-stage / invest-stage 视觉块一致）
+    static let homeSheetPrimaryCardMinHeight: CGFloat = 400
+
+    /// Sandbox HTML 柱状图单条宽度（Capsule）
+    static let simulatorBarWidth: CGFloat = 5
+
     /// Top spacer height below the custom nav bar (clears the BudgetSetup nav bar)
     static let navBarTopSpace: CGFloat = 60
     /// Standard row-level horizontal/vertical item spacing (14pt)
@@ -30,12 +52,26 @@ struct AppSpacing {
 }
 
 struct AppRadius {
+    /// 紧凑圆角（badge、小 pill）
+    static let xs: CGFloat = 6
     static let sm: CGFloat = 8
     static let md: CGFloat = 12
-    /// 卡片、里程碑格等（与 CLAUDE 示例一致）
+    /// 旧卡片圆角（connected 视图保留，新视图用 glassCard）
     static let card: CGFloat = 16
     static let lg: CGFloat = 20
     static let xl: CGFloat = 24
     static let button: CGFloat = 28
     static let full: CGFloat = 9999
+
+    // ─── 新设计系统（home-rebuild-glass-prototype）────────────
+    /// 主白色玻璃卡片 — 28pt（Cash Flow / Investment / Home cards）
+    static let glassCard: CGFloat = 28
+    /// 卡片内嵌二级 block — 20pt（budget/metric 小面板）
+    static let glassBlock: CGFloat = 20
+    /// Hero 区底部裁切弧 — 22pt
+    static let heroBottom: CGFloat = 22
+    /// Phone outer shell — 52pt（模拟器外壳）
+    static let phoneShell: CGFloat = 52
+    /// 中等面板 — 24pt（hero 行、tab 指示器等）
+    static let glassPanel: CGFloat = 24
 }

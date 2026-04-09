@@ -11,7 +11,7 @@ import Foundation
 // MARK: - Setup Stage
 
 /// S0–S5 setup stages that drive Home rendering.
-/// Decoded from Edge Function response; stored in memory only (not @AppStorage).
+/// Decoded from Edge Function response. Last successful payload is also persisted for offline / API-failure fallback (see `HomeSetupStateCache`).
 enum HomeSetupStage: String, Codable, Equatable {
     case noGoal           = "no_goal"
     case goalSet          = "goal_set"
@@ -56,6 +56,27 @@ struct HomeSetupStateResponse: Codable {
     /// Convenience: the stage to resume the setup flow from.
     var resumeStage: HomeSetupStage {
         lastIncompleteStage ?? setupStage
+    }
+}
+
+// MARK: - Cached API fallback
+
+/// Persists the last successful `get-setup-state` so Home can fall back when the network request fails.
+enum HomeSetupStateCache {
+    private static let key = FlamoraStorageKey.cachedHomeSetupState
+
+    static func save(_ response: HomeSetupStateResponse) {
+        guard let data = try? JSONEncoder().encode(response) else { return }
+        UserDefaults.standard.set(data, forKey: key)
+    }
+
+    static func load() -> HomeSetupStateResponse? {
+        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(HomeSetupStateResponse.self, from: data)
+    }
+
+    static func clear() {
+        UserDefaults.standard.removeObject(forKey: key)
     }
 }
 

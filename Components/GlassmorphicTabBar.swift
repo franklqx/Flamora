@@ -10,9 +10,10 @@
 import SwiftUI
 
 enum MainTabItem: Int {
-    case cashflow = 0
-    case investment = 1
-    case settings = 2
+    case home = 0
+    case cashflow = 1
+    case investment = 2
+    case settings = 3
 }
 
 struct GlassmorphicTabBar: View {
@@ -21,9 +22,9 @@ struct GlassmorphicTabBar: View {
     @Namespace private var tabIndicator
 
     private let tabs: [(item: MainTabItem, icon: String, label: String)] = [
-        (.cashflow, "creditcard", "Cash Flow"),
-        (.investment, "chart.pie", "Investment"),
-        (.settings, "gearshape", "Settings")
+        (.home, "house.fill", "Home"),
+        (.cashflow, "creditcard", "Cash"),
+        (.investment, "chart.line.uptrend.xyaxis", "Invest"),
     ]
 
     var body: some View {
@@ -65,13 +66,13 @@ private struct GlassTabButton: View {
                 Text(label)
                     .font(.label)
             }
-            .foregroundStyle(isSelected ? .white : AppColors.overlayWhiteForegroundMuted)
+            .foregroundStyle(isSelected ? AppColors.inkPrimary : AppColors.tabBarInactiveLabel)
             .frame(maxWidth: .infinity)
             .frame(height: 58)
             .background {
                 if isSelected {
                     Capsule()
-                        .fill(AppColors.glassPillStroke)
+                        .fill(AppColors.tabBarActiveItem)
                         .matchedGeometryEffect(id: "tabIndicator", in: namespace)
                 }
             }
@@ -86,7 +87,7 @@ private struct GlassTabButton: View {
         VStack {
             Spacer()
             GlassmorphicTabBar(
-                selectedTab: .constant(.cashflow),
+                selectedTab: .constant(.home),
                 onTabTapped: { _ in }
             )
         }

@@ -12,6 +12,8 @@ extension Notification.Name {
     static let savingsCheckInDidPersist = Notification.Name("SavingsCheckInDidPersist")
     /// 任意入口完成交易分类写入后广播，供 CashflowView 等刷新 summary / 缓存。
     static let transactionClassificationDidPersist = Notification.Name("TransactionClassificationDidPersist")
+    /// Budget Setup 全屏流程关闭（完成或取消）后广播，供 Journey / Hero 拉取最新 `setupStage`。
+    static let budgetSetupFlowDidDismiss = Notification.Name("BudgetSetupFlowDidDismiss")
 }
 
 final class TabContentCache {

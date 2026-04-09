@@ -5,37 +5,101 @@
 //  主导航容器 - Home hero + draggable sheet
 //
 
+import Foundation
 import SwiftUI
 internal import Auth
 
+/// Single source of truth for Home shell: sheet vs drag vs full simulator.
+private enum HomeState: Equatable {
+    /// Sheet visible at rest (default or tall height); `sheetHeight` holds layout.
+    case sheet
+    /// User is dragging the sheet; `progress` is 0 at default height, 1 when collapsed toward simulator.
+    case expanding(progress: CGFloat)
+    /// Simulator overlay is visible (sheet removed from hierarchy after transition).
+    case simulator
+}
+
+/// Home 主列分区：约 1/3 hero + 2/3 白底 sheet（对齐 `home-rebuild-glass-prototype.html`）
+private struct HomeLayoutMetrics: Equatable {
+    let heroFullHeight: CGFloat
+    let sheetDefault: CGFloat
+    let sheetTall: CGFloat
+    let compactDoneHeight: CGFloat
+
+    /// 固定 pt 回退（首帧 `GeometryReader` 尚未上报高度时与历史布局一致）。
+    private init(heroFullHeight: CGFloat, sheetDefault: CGFloat, sheetTall: CGFloat, compactDoneHeight: CGFloat) {
+        self.heroFullHeight = heroFullHeight
+        self.sheetDefault = sheetDefault
+        self.sheetTall = sheetTall
+        self.compactDoneHeight = compactDoneHeight
+    }
+
+    static let fallback = HomeLayoutMetrics(
+        heroFullHeight: AppSpacing.heroFullHeight,
+        sheetDefault: 440,
+        sheetTall: 620,
+        compactDoneHeight: 660
+    )
+
+    init(usableHeight: CGFloat) {
+        let u = max(400, usableHeight)
+        let hero = u * AppSpacing.homeHeroRegionFraction
+        let sheet = u * AppSpacing.homeSheetRegionFraction
+        let tall = min(sheet * 1.14, u * 0.92)
+        self.init(
+            heroFullHeight: hero,
+            sheetDefault: sheet,
+            sheetTall: tall,
+            compactDoneHeight: tall + 40
+        )
+    }
+}
+
+private struct HomeViewportHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct MainTabView: View {
-    @State private var selectedTab: MainTabItem = .cashflow
-    @State private var highlightedTab: MainTabItem = .cashflow
-    @State private var isSimulatorShown = false
-    @State private var showsHomeSheet = true
+    @State private var selectedTab: MainTabItem = .home
+    @State private var highlightedTab: MainTabItem = .home
+    @State private var homeState: HomeState = .sheet
     @State private var simulatorDisplayState: SimulatorDisplayState = .results
     @State private var showNotifications = false
     @State private var simulatorTransitionTask: Task<Void, Never>?
 
-    @State private var sheetHeight = HomeLayout.sheetDefault
-    @State private var sheetDragStartHeight = HomeLayout.sheetDefault
+    @State private var layoutMetrics = HomeLayoutMetrics.fallback
+    @State private var sheetHeight = HomeLayoutMetrics.fallback.sheetDefault
+    @State private var sheetDragStartHeight = HomeLayoutMetrics.fallback.sheetDefault
     @State private var isSheetDragging = false
 
     @State private var heroSnapshot = HomeHeroSnapshot.empty
+    @State private var viewportHeight: CGFloat = 0
 
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(PlaidManager.self) private var plaidManager
 
     var body: some View {
         ZStack(alignment: .top) {
-            AppBackgroundView()
+            shellUnderlay
+
+            BrandHeroBackground(
+                isInvestTab: selectedTab == .investment,
+                gradientHeight: brandGradientDisplayHeight
+            )
 
             HomeHeroCardSurface(
                 snapshot: heroSnapshot,
                 heroHeight: currentHeroHeight,
                 compactProgress: heroCompactProgress,
-                flipAngle: heroFlipAngle,
-                isSimulatorShown: isSimulatorShown,
+                isSimulatorShown: homeState == .simulator,
+                heroContentHeight: layoutMetrics.heroFullHeight,
+                sheetExpansionProgress: homeState == .simulator
+                    ? 1
+                    : sheetDragNormalizedProgress(),
+                selectedTab: selectedTab,
                 onHeroUpdated: { heroSnapshot = $0 }
             )
             .zIndex(60)
@@ -46,19 +110,36 @@ struct MainTabView: View {
             )
             .zIndex(80)
 
-            if showsHomeSheet {
+            if homeState != .simulator {
                 HomeBottomSheet(
                     height: sheetHeight,
                     selectedTab: selectedTab,
-                    sheetDragGesture: sheetDragGesture
+                    sheetDragGesture: sheetDragGesture,
+                    dragProgress: sheetDragNormalizedProgress()
                 )
+                .offset(y: -AppSpacing.homeSheetTopOverlap)
                 .zIndex(20)
             }
 
-            if isSimulatorShown {
+            if homeState == .simulator {
                 simulatorOverlay
                     .zIndex(40)
                     .transition(.opacity)
+            }
+        }
+        .background(
+            GeometryReader { geo in
+                Color.clear.preference(key: HomeViewportHeightKey.self, value: geo.size.height)
+            }
+        )
+        .onPreferenceChange(HomeViewportHeightKey.self) { h in
+            guard h > 0 else { return }
+            viewportHeight = h
+            let next = HomeLayoutMetrics(usableHeight: h)
+            layoutMetrics = next
+            if !isSheetDragging, homeState == .sheet {
+                sheetHeight = next.sheetDefault
+                sheetDragStartHeight = next.sheetDefault
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -77,6 +158,7 @@ struct MainTabView: View {
             set: { plaidManager.showBudgetSetup = $0 }
         ), onDismiss: {
             plaidManager.lastConnectionTime = Date()
+            NotificationCenter.default.post(name: .budgetSetupFlowDidDismiss, object: nil)
         }) {
             BudgetSetupView()
         }
@@ -90,20 +172,57 @@ struct MainTabView: View {
 }
 
 private extension MainTabView {
+    /// Full-viewport height for gradient lerp (fallback before first layout pass).
+    var homeGradientFullHeight: CGFloat {
+        if viewportHeight > 0 { return viewportHeight }
+        return layoutMetrics.heroFullHeight + layoutMetrics.sheetDefault
+    }
+
+    /// 与 Home 一致：未下拉时渐变仅覆盖 hero 带；下拉/模拟器时铺满。其它 Tab 不再强制全屏渐变，避免与 Home 顶部分层不一致。
+    var verticalFillProgress: CGFloat {
+        if homeState == .simulator { return 1 }
+        return smoothstepSheetProgress(sheetDragNormalizedProgress())
+    }
+
+    func smoothstepSheetProgress(_ t: CGFloat) -> CGFloat {
+        let x = max(0, min(1, t))
+        return x * x * (3 - 2 * x)
+    }
+
+    var brandGradientCollapsedHeight: CGFloat {
+        max(72, layoutMetrics.heroFullHeight * AppSpacing.homeHeroGradientCollapsedFraction)
+    }
+
+    var brandGradientDisplayHeight: CGFloat {
+        let collapsed = brandGradientCollapsedHeight
+        let full = homeGradientFullHeight
+        let p = verticalFillProgress
+        return collapsed + (full - collapsed) * p
+    }
+
+    var shellUnderlay: some View {
+        LinearGradient(
+            colors: [AppColors.shellBg1, AppColors.shellBg2],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .ignoresSafeArea()
+    }
+
     var simulatorOverlay: some View {
-        AppColors.backgroundPrimary
-            .ignoresSafeArea()
-            .overlay {
-                SimulatorView(
-                    displayState: $simulatorDisplayState,
-                    bottomPadding: 0,
-                    isFireOn: true,
-                    onFireToggle: exitSimulator,
-                    showResultCard: false,
-                    contentTopPadding: TopHeaderBar.height + AppSpacing.md + HomeLayout.heroFullHeight + AppSpacing.md
-                )
-            }
-            .gesture(
+        ZStack(alignment: .top) {
+            SimulatorView(
+                displayState: $simulatorDisplayState,
+                bottomPadding: 0,
+                isFireOn: true,
+                onFireToggle: exitSimulator,
+                showResultCard: false,
+                contentTopPadding: TopHeaderBar.height + AppSpacing.lg,
+                useHTMLPrototypeLayout: true,
+                fillsBackground: false
+            )
+        }
+            .highPriorityGesture(
                 DragGesture(minimumDistance: 20)
                     .onEnded { value in
                         if value.translation.height < -44 {
@@ -123,84 +242,88 @@ private extension MainTabView {
                     }
                     let nextHeight = sheetDragStartHeight - value.translation.height
                     sheetHeight = clampSheetHeight(nextHeight)
+                    homeState = .expanding(progress: sheetDragNormalizedProgress())
                 }
                 .onEnded { value in
                     isSheetDragging = false
 
                     let draggedDownDistance = value.translation.height
                     let predictedDownDistance = value.predictedEndTranslation.height
-                    let shouldSnapToSimulatorByDistance = draggedDownDistance > HomeLayout.sheetSnapDistanceToSimulator
-                    let shouldSnapToSimulatorByMomentum = predictedDownDistance > HomeLayout.sheetPredictedSnapDistanceToSimulator
+                    let shouldSnapToSimulatorByDistance = draggedDownDistance > HomeLayoutConstants.sheetSnapDistanceToSimulator
+                    let shouldSnapToSimulatorByMomentum = predictedDownDistance > HomeLayoutConstants.sheetPredictedSnapDistanceToSimulator
 
-                    if sheetHeight < HomeLayout.sheetDefault * HomeLayout.sheetToSimulatorThreshold
+                    if sheetHeight < layoutMetrics.sheetDefault * HomeLayoutConstants.sheetToSimulatorThreshold
                         || shouldSnapToSimulatorByDistance
                         || shouldSnapToSimulatorByMomentum {
                         enterSimulator()
                         return
                     }
-                    if sheetHeight > HomeLayout.sheetDefault * 1.15 {
-                        withAnimation(HomeLayout.springAnimation) {
-                            sheetHeight = HomeLayout.sheetTall
+                    if sheetHeight > layoutMetrics.sheetDefault * 1.15 {
+                        withAnimation(HomeLayoutConstants.springAnimation) {
+                            sheetHeight = layoutMetrics.sheetTall
                         }
                     } else {
-                        withAnimation(HomeLayout.springAnimation) {
-                            sheetHeight = HomeLayout.sheetDefault
+                        withAnimation(HomeLayoutConstants.springAnimation) {
+                            sheetHeight = layoutMetrics.sheetDefault
                         }
                     }
+                    homeState = .sheet
                 }
         )
     }
 
-    var heroFlipAngle: Double {
-        if isSimulatorShown { return -180 }
-        let progress = max(0, min(1, 1 - (sheetHeight / HomeLayout.sheetDefault)))
-        return -180 * progress
+    /// 0 = sheet at default height, 1 = fully collapsed toward simulator (height 0).
+    func sheetDragNormalizedProgress() -> CGFloat {
+        guard layoutMetrics.sheetDefault > 0 else { return 0 }
+        return max(0, min(1, 1 - (sheetHeight / layoutMetrics.sheetDefault)))
     }
 
     var currentHeroHeight: CGFloat {
-        if isSimulatorShown { return HomeLayout.heroFullHeight }
+        if homeState == .simulator { return layoutMetrics.heroFullHeight }
         let compactProgress = heroCompactProgress
-        return HomeLayout.heroFullHeight
-            - ((HomeLayout.heroFullHeight - HomeLayout.heroCompactHeight) * compactProgress)
+        return layoutMetrics.heroFullHeight
+            - ((layoutMetrics.heroFullHeight - HomeLayoutConstants.heroCompactHeight) * compactProgress)
     }
 
     var heroCompactProgress: CGFloat {
-        guard !isSimulatorShown, sheetHeight > HomeLayout.sheetDefault else { return 0 }
+        guard homeState != .simulator, sheetHeight > layoutMetrics.sheetDefault else { return 0 }
+        let denom = layoutMetrics.compactDoneHeight - layoutMetrics.sheetDefault
+        guard denom > 0 else { return 0 }
         return max(
             0,
             min(
                 1,
-                (sheetHeight - HomeLayout.sheetDefault)
-                    / (HomeLayout.compactDoneHeight - HomeLayout.sheetDefault)
+                (sheetHeight - layoutMetrics.sheetDefault) / denom
             )
         )
     }
 
     var tabBarHideProgress: CGFloat {
-        guard !isSimulatorShown else { return 1 }
-        let distance = HomeLayout.sheetDefault - sheetHeight
-        let threshold = HomeLayout.sheetDefault * 0.45
+        guard homeState != .simulator else { return 1 }
+        let distance = layoutMetrics.sheetDefault - sheetHeight
+        let threshold = layoutMetrics.sheetDefault * 0.45
         if distance <= 0 { return 0 }
         return max(0, min(1, distance / threshold))
     }
 
     var tabBarOpacity: CGFloat {
-        if isSimulatorShown { return 0 }
+        if homeState == .simulator { return 0 }
         return 1 - tabBarHideProgress
     }
 
     var tabBarOffsetY: CGFloat {
-        if isSimulatorShown { return 48 }
+        if homeState == .simulator { return 48 }
         return 32 * tabBarHideProgress
     }
 
     func clampSheetHeight(_ value: CGFloat) -> CGFloat {
-        max(0, min(HomeLayout.sheetTall + 30, value))
+        max(0, min(layoutMetrics.sheetTall + 30, value))
     }
 
     func enterSimulator() {
         simulatorTransitionTask?.cancel()
-        withAnimation(HomeLayout.springAnimation) {
+        homeState = .sheet
+        withAnimation(HomeLayoutConstants.springAnimation) {
             sheetHeight = 0
         }
 
@@ -210,43 +333,34 @@ private extension MainTabView {
             await MainActor.run {
                 simulatorDisplayState = .results
                 withAnimation(.easeInOut(duration: 0.16)) {
-                    isSimulatorShown = true
+                    homeState = .simulator
                 }
-                showsHomeSheet = false
             }
         }
     }
 
     func exitSimulator() {
         simulatorTransitionTask?.cancel()
-        showsHomeSheet = true
         sheetHeight = 0
         withAnimation(.easeInOut(duration: 0.16)) {
-            isSimulatorShown = false
+            homeState = .sheet
         }
-        withAnimation(HomeLayout.springAnimation) {
+        withAnimation(HomeLayoutConstants.springAnimation) {
             simulatorDisplayState = .results
-            sheetHeight = HomeLayout.sheetDefault
+            sheetHeight = layoutMetrics.sheetDefault
         }
     }
 
     func handleTabTap(_ tab: MainTabItem) {
-        switch tab {
-        case .cashflow, .investment, .settings:
-            withAnimation(HomeLayout.springAnimation) {
-                selectedTab = tab
-                highlightedTab = tab
-            }
+        withAnimation(HomeLayoutConstants.springAnimation) {
+            selectedTab = tab
+            highlightedTab = tab
         }
     }
 }
 
-private enum HomeLayout {
-    static let heroFullHeight: CGFloat = 212
+private enum HomeLayoutConstants {
     static let heroCompactHeight: CGFloat = 34
-    static let sheetDefault: CGFloat = 520
-    static let sheetTall: CGFloat = 702
-    static let compactDoneHeight: CGFloat = 660
     static let sheetToSimulatorThreshold: CGFloat = 0.72
     static let sheetSnapDistanceToSimulator: CGFloat = 96
     static let sheetPredictedSnapDistanceToSimulator: CGFloat = 150
@@ -257,6 +371,7 @@ private struct HomeBottomSheet: View {
     let height: CGFloat
     let selectedTab: MainTabItem
     let sheetDragGesture: AnyGesture<DragGesture.Value>
+    let dragProgress: CGFloat
 
     var body: some View {
         VStack(spacing: 0) {
@@ -269,17 +384,32 @@ private struct HomeBottomSheet: View {
             .frame(height: 24)
             .contentShape(Rectangle())
             .highPriorityGesture(sheetDragGesture)
+            .overlay(alignment: .center) {
+                let labelOpacity = max(0, min(1, (dragProgress - 0.72) / 0.28))
+                if labelOpacity > 0 {
+                    Text("Back to Home")
+                        .font(.footnoteRegular)
+                        .foregroundStyle(AppColors.textSecondary)
+                        .opacity(labelOpacity)
+                        .allowsHitTesting(false)
+                }
+            }
 
             Group {
                 switch selectedTab {
+                case .home:
+                    HomeRoadmapContent()
                 case .cashflow:
-                    CashflowView()
+                    CashUnconnectedContent()
                 case .investment:
-                    InvestmentView()
+                    InvestUnconnectedContent()
                 case .settings:
                     SettingsView(isEmbeddedInSheet: true)
                 }
             }
+            .id(selectedTab)
+            .transition(.opacity)
+            .animation(.easeInOut(duration: 0.2), value: selectedTab)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .clipped()
         }
@@ -287,16 +417,22 @@ private struct HomeBottomSheet: View {
         .frame(height: height, alignment: .top)
         .background(
             RoundedRectangle(cornerRadius: AppRadius.xl)
-                .fill(AppColors.textPrimary)
+                .fill(
+                    LinearGradient(
+                        colors: [AppColors.shellBg1, AppColors.shellBg2],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
         )
         .clipShape(
             RoundedRectangle(cornerRadius: AppRadius.xl)
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.xl)
-                .stroke(AppColors.overlayWhiteStroke, lineWidth: 0.5)
+                .stroke(AppColors.glassCardBorder, lineWidth: 0.5)
         )
-        .shadow(color: AppColors.cardShadow, radius: 14, y: -2)
+        .shadow(color: AppColors.glassCardShadow, radius: 18, y: -4)
         .frame(maxHeight: .infinity, alignment: .bottom)
         .ignoresSafeArea(edges: .bottom)
     }
@@ -306,41 +442,36 @@ private struct HomeHeroCardSurface: View {
     let snapshot: HomeHeroSnapshot
     let heroHeight: CGFloat
     let compactProgress: CGFloat
-    let flipAngle: Double
     let isSimulatorShown: Bool
+    /// 与 `HomeLayoutMetrics.heroFullHeight` 一致，供未连接 Hero / FIRECountdown 固定高度
+    let heroContentHeight: CGFloat
+    /// 0 = sheet at default; 1 = pulled toward simulator (HTML `.hero-layer` bottom radius eases to 0).
+    let sheetExpansionProgress: CGFloat
+    let selectedTab: MainTabItem
     let onHeroUpdated: (HomeHeroSnapshot) -> Void
+
+    private var heroLayerBottomCornerRadius: CGFloat {
+        let p = max(0, min(1, sheetExpansionProgress))
+        return max(0, 22 * (1 - p))
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
-            ZStack(alignment: .top) {
-                HomeHeroCardHost(onHeroUpdated: onHeroUpdated)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    .scaleEffect(
-                        x: 1,
-                        y: max(0.42, 1 - (compactProgress * 0.58)),
-                        anchor: .top
-                    )
-                    .opacity(frontFaceOpacity)
-
-                HeroBackFaceCard(snapshot: snapshot)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    .rotation3DEffect(
-                        .degrees(180),
-                        axis: (x: 1, y: 0, z: 0),
-                        anchor: .center,
-                        perspective: 0.75
-                    )
-                    .opacity(backFaceOpacity)
-            }
-            .rotation3DEffect(
-                .degrees(flipAngle),
-                axis: (x: 1, y: 0, z: 0),
-                anchor: .center,
-                perspective: 0.75
+            // No 3D flip (aligned with HTML: `.hero-summary` stays readable while sheet moves).
+            HomeHeroCardHost(
+                selectedTab: selectedTab,
+                heroContentHeight: heroContentHeight,
+                onHeroUpdated: onHeroUpdated
             )
-            .animation(HomeLayout.springAnimation, value: flipAngle)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .scaleEffect(
+                    x: 1,
+                    y: max(0.5, 1 - (compactProgress * 0.5)),
+                    anchor: .top
+                )
+                .opacity(heroContentOpacity)
 
-            if compactProgress > 0.01 && !isSimulatorShown {
+            if selectedTab == .home, compactProgress > 0.01 && !isSimulatorShown {
                 HeroCompactStrip(snapshot: snapshot)
                     .opacity(pow(compactProgress, 1.25))
                     .padding(.horizontal, AppSpacing.screenPadding)
@@ -348,22 +479,22 @@ private struct HomeHeroCardSurface: View {
             }
         }
         .frame(height: heroHeight, alignment: .top)
-        .clipped()
+        .clipShape(
+            UnevenRoundedRectangle(
+                topLeadingRadius: 0,
+                bottomLeadingRadius: heroLayerBottomCornerRadius,
+                bottomTrailingRadius: heroLayerBottomCornerRadius,
+                topTrailingRadius: 0,
+                style: .continuous
+            )
+        )
         .padding(.top, TopHeaderBar.height + AppSpacing.md)
     }
 
-    var flipProgress: Double {
-        max(0, min(1, -flipAngle / 180))
-    }
-
-    var frontFaceOpacity: Double {
+    /// Fades only when the full-screen simulator is shown; sheet drag no longer drives a flip that zeroes the front face.
+    private var heroContentOpacity: Double {
         if isSimulatorShown { return 0 }
-        return flipProgress < 0.5 ? max(0.2, 1 - (compactProgress * 0.5)) : 0
-    }
-
-    var backFaceOpacity: Double {
-        if isSimulatorShown { return 1 }
-        return flipProgress >= 0.5 ? 1 : 0
+        return max(0.72, 1 - (Double(compactProgress) * 0.22))
     }
 }
 
@@ -408,7 +539,7 @@ private struct HeroCompactStrip: View {
                 .foregroundStyle(AppColors.overlayWhiteOnGlass)
         }
         .padding(.horizontal, AppSpacing.md)
-        .frame(height: HomeLayout.heroCompactHeight)
+        .frame(height: HomeLayoutConstants.heroCompactHeight)
         .background(AppColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
         .overlay(
@@ -418,131 +549,12 @@ private struct HeroCompactStrip: View {
     }
 }
 
-private struct HeroBackFaceCard: View {
-    let snapshot: HomeHeroSnapshot
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack(spacing: AppSpacing.sm) {
-                Text("ADJUSTED SCENARIO")
-                    .font(.miniLabel)
-                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
-                Spacer(minLength: 0)
-                Text(snapshot.progressLabel)
-                    .font(.footnoteSemibold)
-                    .foregroundStyle(AppColors.accentAmber)
-                    .padding(.horizontal, AppSpacing.sm)
-                    .padding(.vertical, 5)
-                    .background(AppColors.warning.opacity(0.14))
-                    .clipShape(Capsule())
-            }
-
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text("Projected FIRE date")
-                    .font(.caption)
-                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
-                Text(snapshot.fireDateLabel)
-                    .font(.h2)
-                    .foregroundStyle(AppColors.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
-            }
-
-            Rectangle()
-                .fill(AppColors.overlayWhiteStroke)
-                .frame(height: 1)
-
-            HStack(alignment: .top, spacing: AppSpacing.sm) {
-                metricTile(
-                    title: "Official path",
-                    value: snapshot.fireDateLabel,
-                    caption: "locked",
-                    tint: AppColors.accentBlueBright
-                )
-                metricTile(
-                    title: "Preview progress",
-                    value: snapshot.progressLabel,
-                    caption: "sandbox only",
-                    tint: AppColors.accentAmber
-                )
-            }
-        }
-        .padding(AppSpacing.cardPadding)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(
-            LinearGradient(
-                colors: [
-                    AppColors.backgroundSecondary,
-                    AppColors.surface,
-                    AppColors.backgroundSecondary
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            AppColors.overlayWhiteStroke,
-                            AppColors.accentBlue.opacity(0.35),
-                            AppColors.accentAmber.opacity(0.3)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
-        )
-        .overlay(alignment: .top) {
-            LinearGradient(
-                colors: [AppColors.overlayWhiteMid, .clear],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 36)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
-            .allowsHitTesting(false)
-        }
-        .padding(.horizontal, AppSpacing.screenPadding)
-    }
-
-    private func metricTile(title: String, value: String, caption: String, tint: Color) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text(title.uppercased())
-                .font(.miniLabel)
-                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
-
-            Text(value)
-                .font(.footnoteSemibold)
-                .foregroundStyle(AppColors.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.88)
-
-            Text(caption)
-                .font(.caption)
-                .foregroundStyle(AppColors.overlayWhiteOnGlass)
-        }
-        .frame(maxWidth: .infinity, minHeight: 70, alignment: .topLeading)
-        .padding(AppSpacing.sm)
-        .background(
-            LinearGradient(
-                colors: [
-                    tint.opacity(0.16),
-                    AppColors.overlayWhiteWash
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(tint.opacity(0.24), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-    }
+/// Drives `.task(id:)` for hero data reloads (same inputs as JourneyView’s trigger).
+private struct HeroCardReloadTrigger: Equatable {
+    var connectionTime: TimeInterval?
+    var hasLinkedBank: Bool
+    var savingsPersistGeneration: Int
+    var budgetSetupDismissGeneration: Int
 }
 
 private struct HomeHeroSnapshot: Equatable {
@@ -562,27 +574,56 @@ private struct HomeHeroCardHost: View {
     @State private var homeHero: HomeHeroModel?
     @State private var isLoadingData = false
     @State private var needsReloadAfterCurrentPass = false
+    @State private var savingsCheckInGeneration = 0
+    @State private var budgetSetupDismissGeneration = 0
 
+    let selectedTab: MainTabItem
+    let heroContentHeight: CGFloat
     let onHeroUpdated: (HomeHeroSnapshot) -> Void
 
     @Environment(PlaidManager.self) private var plaidManager
 
-    var body: some View {
-        FIRECountdownCard(
-            hero: homeHero,
-            stage: homeSetupStage,
-            onPrimaryAction: { plaidManager.showBudgetSetup = true },
-            fixedHeight: HomeLayout.heroFullHeight
+    private var heroReloadTrigger: HeroCardReloadTrigger {
+        HeroCardReloadTrigger(
+            connectionTime: plaidManager.lastConnectionTime?.timeIntervalSince1970,
+            hasLinkedBank: plaidManager.hasLinkedBank,
+            savingsPersistGeneration: savingsCheckInGeneration,
+            budgetSetupDismissGeneration: budgetSetupDismissGeneration
         )
-        .task { await loadData() }
-        .onChange(of: plaidManager.lastConnectionTime) { _, _ in
-            Task { await loadData() }
+    }
+
+    var body: some View {
+        Group {
+            switch selectedTab {
+            case .cashflow:
+                TabHeroTitleContent(title: "Cash Flow")
+            case .investment:
+                TabHeroTitleContent(title: "Investment")
+            case .settings:
+                TabHeroTitleContent(title: "Settings")
+            case .home:
+                if homeSetupStage == .noGoal || homeSetupStage == .goalSet {
+                    // 顶栏正下方、白底 sheet 之上（对齐 HTML：`.hero-summary` 贴在 hero 顶部，不沉到渐变区底部）
+                    UnconnectedHeroContent()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                } else {
+                    FIRECountdownCard(
+                        hero: homeHero,
+                        stage: homeSetupStage,
+                        onPrimaryAction: { plaidManager.showBudgetSetup = true },
+                        fixedHeight: heroContentHeight
+                    )
+                }
+            }
         }
-        .onChange(of: plaidManager.hasLinkedBank) { _, _ in
-            Task { await loadData() }
+        .task(id: heroReloadTrigger) {
+            await loadData()
         }
         .onReceive(NotificationCenter.default.publisher(for: .savingsCheckInDidPersist)) { _ in
-            Task { await loadData() }
+            savingsCheckInGeneration += 1
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .budgetSetupFlowDidDismiss)) { _ in
+            budgetSetupDismissGeneration += 1
         }
         .onAppear {
             syncSnapshot(hero: homeHero)
@@ -626,11 +667,7 @@ private extension HomeHeroCardHost {
     }
 
     func fetchSetupState() async -> HomeSetupStateResponse? {
-        do {
-            return try await APIService.shared.getSetupState()
-        } catch {
-            return nil
-        }
+        await APIService.shared.getSetupStatePersistingCache()
     }
 
     func fetchHomeHero() async -> HomeHeroModel? {
@@ -654,6 +691,267 @@ private extension HomeHeroCardHost {
                 fireDateLabel: hero.displayFireDate ?? "Estimating"
             )
         )
+    }
+}
+
+// MARK: - Brand Hero Background (HTML: --brand-purple-surface)
+
+private struct BrandHeroBackground: View {
+    var isInvestTab: Bool = false
+    /// Drawn height; 与 `MainTabView.brandGradientDisplayHeight` 一致（各 Tab 均随 sheet 拖拽渐变，不再单独全屏）。
+    var gradientHeight: CGFloat
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let radialBox = min(w, gradientHeight)
+            ZStack {
+                if isInvestTab {
+                    LinearGradient(
+                        gradient: AppColors.investBrandLinearGradient,
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                } else {
+                    // Home + Cash Flow: HTML `.hero-layer` / `.cash-view` (`--brand-purple-surface`)
+                    LinearGradient(
+                        gradient: AppColors.heroBrandLinearGradient,
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                }
+
+                if isInvestTab {
+                    // HTML `.invest-view` radial stack (slightly shifted vs Home/Cash)
+                    RadialGradient(
+                        gradient: Gradient(colors: [AppColors.heroGlowPurple1, .clear]),
+                        center: UnitPoint(x: 0.16, y: 0.05),
+                        startRadius: 0,
+                        endRadius: radialBox * 0.24
+                    )
+                    RadialGradient(
+                        gradient: Gradient(colors: [AppColors.investHeroGlowPurple2, .clear]),
+                        center: UnitPoint(x: 0.84, y: 0.12),
+                        startRadius: 0,
+                        endRadius: radialBox * 0.26
+                    )
+                    RadialGradient(
+                        gradient: Gradient(colors: [AppColors.heroGlowPink, .clear]),
+                        center: UnitPoint(x: 0.58, y: 0.56),
+                        startRadius: 0,
+                        endRadius: radialBox * 0.28
+                    )
+                } else {
+                    // Home + Cash Flow: HTML `--brand-purple-surface` radials
+                    RadialGradient(
+                        gradient: Gradient(colors: [AppColors.heroGlowPurple1, .clear]),
+                        center: UnitPoint(x: 0.18, y: 0.06),
+                        startRadius: 0,
+                        endRadius: radialBox * 0.24
+                    )
+                    RadialGradient(
+                        gradient: Gradient(colors: [AppColors.heroGlowPurple2, .clear]),
+                        center: UnitPoint(x: 0.82, y: 0.14),
+                        startRadius: 0,
+                        endRadius: radialBox * 0.26
+                    )
+                    RadialGradient(
+                        gradient: Gradient(colors: [AppColors.heroGlowPink, .clear]),
+                        center: UnitPoint(x: 0.56, y: 0.58),
+                        startRadius: 0,
+                        endRadius: radialBox * 0.28
+                    )
+                }
+
+                VStack {
+                    Spacer(minLength: 0)
+                    LinearGradient(
+                        colors: [Color.clear, AppColors.shellBg1.opacity(0.55)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: min(AppSpacing.md, gradientHeight * 0.08))
+                }
+                .frame(height: gradientHeight)
+            }
+            .frame(width: w, height: gradientHeight)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .clipped()
+        }
+        .frame(height: gradientHeight)
+        .frame(maxWidth: .infinity, alignment: .top)
+        .clipped()
+        .allowsHitTesting(false)
+        // 与 `shellUnderlay` 的浅色顶区分开：让品牌渐变铺满状态栏/灵动岛区域，避免顶部一条「白边」
+        .ignoresSafeArea(edges: .top)
+    }
+}
+
+// MARK: - Unconnected Hero Content (HTML: .hero-summary for noGoal state)
+
+private struct UnconnectedHeroContent: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("YOUR FIRE JOURNEY")
+                .font(.inlineFigureBold)
+                .foregroundStyle(AppColors.heroTextPrimary)
+                .tracking(AppTypography.Tracking.miniUppercase)
+                .padding(.bottom, AppSpacing.sm)
+
+            Text("Finish the set up to track your progress.")
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.heroTextFaint)
+                .lineSpacing(3)
+                .padding(.bottom, AppSpacing.md)
+
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                HStack(spacing: AppSpacing.xs) {
+                    ForEach(0..<15, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: AppRadius.full)
+                            .fill(index < 3 ? AppColors.heroTrackFill : AppColors.heroTrack)
+                            .frame(height: 4)
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+
+                HStack {
+                    Spacer(minLength: 0)
+                    Text("Freedom date")
+                        .font(.label)
+                        .foregroundStyle(AppColors.heroTextHint)
+                        .tracking(AppTypography.Tracking.miniUppercase)
+                        .textCase(.uppercase)
+                }
+            }
+        }
+        .padding(.horizontal, AppSpacing.screenPadding)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+}
+
+// MARK: - Tab hero title (HTML: `.cash-hero-copy h1` / `.invest-hero-copy h1`)
+
+private struct TabHeroTitleContent: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.h1)
+            .foregroundStyle(AppColors.heroTextPrimary)
+            .tracking(-0.5)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, AppSpacing.screenPadding)
+            .padding(.top, AppSpacing.heroTabTitleTopOffset)
+    }
+}
+
+// MARK: - Home Roadmap Content (HTML: .roadmap with 3 steps)
+
+private struct HomeRoadmapContent: View {
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: AppSpacing.sectionGap) {
+                roadmapCard
+                    .padding(.horizontal, AppSpacing.screenPadding)
+
+                Spacer(minLength: AppSpacing.xl)
+            }
+            .padding(.top, AppSpacing.cardGap)
+            .padding(.bottom, AppSpacing.xl)
+        }
+    }
+
+    private var roadmapCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("What happens next")
+                .font(.cardHeader)
+                .foregroundStyle(AppColors.inkFaint)
+                .tracking(AppTypography.Tracking.cardHeader)
+                .textCase(.uppercase)
+                .padding(.bottom, AppSpacing.sm)
+
+            Text("Three steps to unlock Home.")
+                .font(.h3)
+                .foregroundStyle(AppColors.inkPrimary)
+                .tracking(-0.5)
+                .padding(.bottom, AppSpacing.md)
+
+            VStack(spacing: 0) {
+                roadmapStep(
+                    index: 1,
+                    isCurrent: true,
+                    title: "Set your FIRE goal",
+                    detail: "Tell Flamora what future you're aiming for."
+                )
+                roadmapStep(
+                    index: 2,
+                    isCurrent: false,
+                    title: "Connect your accounts",
+                    detail: "Bring in your real numbers when you're ready."
+                )
+                roadmapStep(
+                    index: 3,
+                    isCurrent: false,
+                    title: "Choose your path",
+                    detail: "Apply the version of FIRE that fits your life.",
+                    isLast: true
+                )
+            }
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.glassPanel)
+                .fill(AppColors.glassCardBg)
+                .shadow(color: AppColors.glassCardShadow, radius: 24, y: 8)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.glassPanel)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
+        .frame(minHeight: AppSpacing.homeSheetPrimaryCardMinHeight, alignment: .top)
+    }
+
+    private func roadmapStep(index: Int, isCurrent: Bool, title: String, detail: String, isLast: Bool = false) -> some View {
+        HStack(alignment: .center, spacing: AppSpacing.md) {
+            ZStack {
+                Circle()
+                    .fill(isCurrent ? AppColors.inkPrimary : AppColors.inkPrimary.opacity(0.06))
+                    .frame(width: 32, height: 32)
+                Text("\(index)")
+                    .font(.smallLabel)
+                    .foregroundStyle(isCurrent ? AppColors.ctaWhite : AppColors.inkSoft)
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.inlineLabel)
+                    .foregroundStyle(AppColors.inkPrimary)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(AppColors.inkSoft)
+                    .lineSpacing(2)
+            }
+
+            Spacer(minLength: 0)
+
+            ZStack {
+                Circle()
+                    .strokeBorder(AppColors.inkBorder, lineWidth: 1)
+                    .background(Circle().fill(AppColors.ctaWhite))
+                    .frame(width: 34, height: 34)
+                Image(systemName: "chevron.right")
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(AppColors.inkPrimary.opacity(0.54))
+            }
+        }
+        .padding(.vertical, 14)
+        .overlay(alignment: .bottom) {
+            if !isLast {
+                Rectangle()
+                    .fill(AppColors.inkDivider)
+                    .frame(height: 1)
+            }
+        }
     }
 }
 
@@ -725,6 +1023,236 @@ private struct NotificationsView: View {
             )
         }
     }
+}
+
+// MARK: - Cash Unconnected Content (HTML: .cash-view unconnected state)
+
+private struct CashUnconnectedContent: View {
+    @Environment(PlaidManager.self) private var plaidManager
+    @State private var showTrustBridge = false
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: AppSpacing.cardGap) {
+                CashflowSpendingOverviewPrototypeCard()
+                connectCTAButton(label: "Connect accounts") {
+                    if plaidManager.shouldShowTrustBridge() {
+                        showTrustBridge = true
+                    } else {
+                        Task { await plaidManager.startLinkFlow() }
+                    }
+                }
+            }
+            .padding(.horizontal, AppSpacing.screenPadding)
+            .padding(.top, AppSpacing.cardGap)
+            .padding(.bottom, AppSpacing.xl)
+        }
+        .sheet(isPresented: $showTrustBridge, onDismiss: {
+            if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {
+                Task { await plaidManager.startLinkFlow() }
+            }
+        }) {
+            PlaidTrustBridgeView()
+        }
+    }
+}
+
+// MARK: - Invest Unconnected Content (HTML: .invest-view unconnected state)
+
+private enum InvestTimeRange: String, CaseIterable, Hashable {
+    case w1 = "1W"
+    case m1 = "1M"
+    case m3 = "3M"
+    case ytd = "YTD"
+    case all = "ALL"
+}
+
+/// HTML prototype: total net worth, line trend, range pills, count-up on appear / tap.
+private struct InvestNetWorthPrototypeCard: View {
+    @State private var selectedRange: InvestTimeRange = .m1
+    @State private var displayedNetWorth: Double = 0
+
+    private let targetNetWorth: Double = 210_150
+    private let changePercent: Double = 13.8
+    private let linePoints: [CGFloat] = [0.22, 0.28, 0.25, 0.35, 0.42, 0.48, 0.55, 0.62, 0.68, 0.75, 0.82, 0.88, 0.95]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text("TOTAL NET WORTH")
+                .font(.cardHeader)
+                .foregroundStyle(AppColors.inkMeta)
+                .tracking(AppTypography.Tracking.cardHeader)
+
+            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                Text(NumberFormatter.appCurrency(displayedNetWorth))
+                    .font(.currencyHero)
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .contentTransition(.numericText())
+                    .monospacedDigit()
+
+                Text("+\(String(format: "%.1f", changePercent))%")
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(AppColors.success)
+            }
+
+            investLineChart(points: linePoints)
+                .frame(height: 72)
+
+            investRangePills
+
+            Text("Track all your investments in one place.")
+                .font(.caption)
+                .foregroundStyle(AppColors.inkSoft)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, AppSpacing.xs)
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.glassCard)
+                .fill(AppColors.glassCardBg)
+                .shadow(color: AppColors.glassCardShadow, radius: 24, y: 8)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.glassCard)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
+        .frame(minHeight: AppSpacing.homeSheetPrimaryCardMinHeight, alignment: .top)
+        .contentShape(RoundedRectangle(cornerRadius: AppRadius.glassCard))
+        .onTapGesture { replayCountUp() }
+        .onAppear { runInitialCountUp() }
+    }
+
+    private var investRangePills: some View {
+        HStack(spacing: AppSpacing.xs) {
+            ForEach(InvestTimeRange.allCases, id: \.self) { range in
+                Text(range.rawValue)
+                    .font(.smallLabel)
+                    .foregroundStyle(selectedRange == range ? AppColors.inkPrimary : AppColors.inkSoft)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 10)
+                    .frame(minHeight: 44)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppRadius.sm)
+                            .fill(selectedRange == range ? AppColors.inkPrimary.opacity(0.08) : AppColors.overlayWhiteWash)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppRadius.sm)
+                            .stroke(selectedRange == range ? AppColors.inkBorder : AppColors.inkDivider, lineWidth: 0.75)
+                    )
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            selectedRange = range
+                        }
+                    }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    private func investLineChart(points: [CGFloat]) -> some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            let count = points.count
+            ZStack {
+                Path { path in
+                    guard count > 1 else { return }
+                    for (i, p) in points.enumerated() {
+                        let x = w * CGFloat(i) / CGFloat(count - 1)
+                        let y = h - p * h * 0.9 - 4
+                        if i == 0 {
+                            path.move(to: CGPoint(x: x, y: y))
+                        } else {
+                            path.addLine(to: CGPoint(x: x, y: y))
+                        }
+                    }
+                }
+                .stroke(
+                    AppColors.inkPrimary,
+                    style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
+                )
+
+                if let last = points.last, count > 0 {
+                    let x = w
+                    let y = h - last * h * 0.9 - 4
+                    Circle()
+                        .fill(AppColors.inkPrimary)
+                        .frame(width: 8, height: 8)
+                        .position(x: x, y: y)
+                }
+            }
+        }
+    }
+
+    private func runInitialCountUp() {
+        displayedNetWorth = 0
+        withAnimation(.easeOut(duration: 0.85)) {
+            displayedNetWorth = targetNetWorth
+        }
+    }
+
+    private func replayCountUp() {
+        if displayedNetWorth >= targetNetWorth - 1 {
+            displayedNetWorth = 0
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) {
+                withAnimation(.easeOut(duration: 0.85)) {
+                    displayedNetWorth = targetNetWorth
+                }
+            }
+        } else {
+            withAnimation(.easeOut(duration: 0.85)) {
+                displayedNetWorth = targetNetWorth
+            }
+        }
+    }
+}
+
+private struct InvestUnconnectedContent: View {
+    @Environment(PlaidManager.self) private var plaidManager
+    @State private var showTrustBridge = false
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: AppSpacing.cardGap) {
+                InvestNetWorthPrototypeCard()
+                connectCTAButton(label: "Connect accounts") {
+                    if plaidManager.shouldShowTrustBridge() {
+                        showTrustBridge = true
+                    } else {
+                        Task { await plaidManager.startLinkFlow() }
+                    }
+                }
+            }
+            .padding(.horizontal, AppSpacing.screenPadding)
+            .padding(.top, AppSpacing.cardGap)
+            .padding(.bottom, AppSpacing.xl)
+        }
+        .sheet(isPresented: $showTrustBridge, onDismiss: {
+            if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {
+                Task { await plaidManager.startLinkFlow() }
+            }
+        }) {
+            PlaidTrustBridgeView()
+        }
+    }
+}
+
+// MARK: - Shared Unconnected Helpers
+
+private func connectCTAButton(label: String, action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+        Text(label)
+            .font(.sheetPrimaryButton)
+            .foregroundStyle(AppColors.ctaWhite)
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(
+                RoundedRectangle(cornerRadius: AppRadius.button)
+                    .fill(AppColors.ctaBlack)
+                    .shadow(color: AppColors.glassCardShadow, radius: 16, y: 8)
+            )
+    }
+    .buttonStyle(.plain)
 }
 
 #Preview {

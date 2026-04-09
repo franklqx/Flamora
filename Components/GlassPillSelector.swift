@@ -15,6 +15,8 @@ struct GlassPillSelector<T: Hashable>: View {
     let items: [T]
     @Binding var selected: T
     let label: (T) -> String
+    /// 未连接预览等场景：展示 pill 但不响应点击。
+    var isInteractionEnabled: Bool = true
 
     @Namespace private var pillNS
 
@@ -39,6 +41,7 @@ struct GlassPillSelector<T: Hashable>: View {
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
+                        guard isInteractionEnabled else { return }
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
                             selected = item
                         }

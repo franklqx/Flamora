@@ -14,16 +14,17 @@ struct TopHeaderBar: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            HStack(spacing: AppSpacing.sm) {
-                FlameIcon(
-                    size: 18,
-                    color: AppColors.textPrimary
+            // HTML `.brand-mark`: 34pt circle, rgba(255,255,255,0.1) fill, 0.12 stroke
+            Circle()
+                .fill(AppColors.overlayWhiteMid)
+                .overlay(
+                    Circle()
+                        .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
                 )
-
-                Text("Flamora")
-                    .font(.bodySemibold)
-                    .foregroundStyle(AppColors.textPrimary)
-            }
+                .frame(width: 34, height: 34)
+                .overlay {
+                    FlameIcon(size: 16, color: AppColors.heroTextPrimary)
+                }
 
             Spacer()
 
@@ -32,13 +33,13 @@ struct TopHeaderBar: View {
                     .fill(AppColors.overlayWhiteMid)
                     .frame(width: 34, height: 34)
                     .overlay(
-                        Image(systemName: "bell")
+                        Image(systemName: "gearshape")
                             .font(.figureSecondarySemibold)
-                            .foregroundStyle(AppColors.textPrimary)
+                            .foregroundStyle(AppColors.heroTextPrimary)
                     )
                     .overlay(
                         Circle()
-                            .stroke(AppColors.overlayWhiteStroke, lineWidth: 0.75)
+                            .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
                     )
             }
             .buttonStyle(.plain)

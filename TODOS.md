@@ -29,6 +29,14 @@ Maintained by /plan-ceo-review. Last updated: 2026-04-07.
 
 ---
 
+## P2 — Home Rebuild Unconnected State (from 2026-04-08 CEO review)
+
+- [ ] **Unconnected state analytics 埋点** — 在 3 个 tab 的 unconnected state View 里加 analytics 事件（viewAppear、停留时长、CTA 点击）。数据能告诉你用户在 unconnected state 看了什么、停留多久，指导后续迭代方向。工作量 S。涉及文件：新建的 UnconnectedHomeView、UnconnectedCashflowView、UnconnectedInvestmentView。前提：Home Rebuild Phase 1 完成。P2。
+
+- [ ] **Unconnected → Connected 状态切换动画** — 用户完成账户绑定后，3 个 tab 从 unconnected view 切换到 connected view 目前是 direct cut（无动画）。需要设计每个 tab 的最佳入场过渡（可能是淡入、slide 或 matched geometry）。工作量 M。涉及文件：JourneyView.swift、CashflowView.swift、InvestmentView.swift 的 `hasLinkedBank` gate 处。前提：Home Rebuild Phase 1 完成 + Design 确认过渡方案。P2。
+
+---
+
 ## P2 — v2 Features (post-launch)
 
 - [ ] **Initial Financial Snapshot ("Issue Zero")** — APPROVED for v2. Triggered immediately when user connects their first bank account. Shows: spending trends for available months, income overview, investment growth rate vs 7% benchmark. Ends with teaser: "Starting next month, you'll receive monthly FIRE reports + an annual summary." Same Edge Function as monthly report, different trigger. Prerequisite for monthly report build.

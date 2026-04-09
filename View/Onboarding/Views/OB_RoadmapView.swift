@@ -37,6 +37,7 @@ struct OB_RoadmapView: View {
     @State private var afterCard4Visible = false
     @State private var counterProgress: Double = 0
     @State private var showYearsSavedBadge = false
+    @State private var countingAnimationTimer: Timer?
 
     // Info sheet
     @State private var showInfoSheet = false
@@ -110,6 +111,10 @@ struct OB_RoadmapView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .sheet(isPresented: $showInfoSheet) { infoSheet }
+        .onDisappear {
+            countingAnimationTimer?.invalidate()
+            countingAnimationTimer = nil
+        }
     }
 
     // MARK: - 1. Header (back button + PREDICT + title)
@@ -789,8 +794,9 @@ struct OB_RoadmapView: View {
     }
 
     private func startCountingAnimation(duration: Double = 1.5) {
+        countingAnimationTimer?.invalidate()
         let startTime = Date()
-        Timer.scheduledTimer(withTimeInterval: 1.0 / 30, repeats: true) { timer in
+        let timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30, repeats: true) { timer in
             let elapsed = Date().timeIntervalSince(startTime)
             let t = min(1.0, elapsed / duration)
             // easeOut cubic
@@ -798,8 +804,10 @@ struct OB_RoadmapView: View {
             if t >= 1.0 {
                 timer.invalidate()
                 counterProgress = 1.0
+                countingAnimationTimer = nil
             }
         }
+        countingAnimationTimer = timer
     }
 }
 

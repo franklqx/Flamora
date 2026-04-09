@@ -121,7 +121,7 @@ struct OB_SignInView: View {
                         .focused($focusedField, equals: .email)
                         .padding()
                         .background(AppColors.backgroundCard)
-                        .cornerRadius(AppRadius.md)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                         .foregroundColor(AppColors.textPrimary)
 
                     SecureField("",
@@ -131,7 +131,7 @@ struct OB_SignInView: View {
                         .focused($focusedField, equals: .password)
                         .padding()
                         .background(AppColors.backgroundCard)
-                        .cornerRadius(AppRadius.md)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                         .foregroundColor(AppColors.textPrimary)
                 }
                 .padding(.horizontal, AppSpacing.lg)

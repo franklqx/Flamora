@@ -57,6 +57,8 @@ struct PortfolioCard: View {
     @State private var selectedRange: PortfolioTimeRange = .oneWeek
     @State private var hoveredIndex: Int? = nil
     @State private var hapticFired   = false
+    @State private var disconnectedLineTrim: CGFloat = 0
+    @State private var disconnectedShowEndpoint = false
 
     // MARK: Derived
 
@@ -118,11 +120,26 @@ struct PortfolioCard: View {
                 .padding(.bottom, AppSpacing.sm + AppSpacing.xs + AppSpacing.xs)
 
             } else {
-                ghostChartView
+                disconnectedPrototypeChart
+
+                GlassPillSelector(
+                    items: PortfolioTimeRange.allCases,
+                    selected: $selectedRange,
+                    label: { $0.label },
+                    isInteractionEnabled: false
+                )
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.top, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.sm + AppSpacing.xs + AppSpacing.xs)
+
+                Text("Track all your investment in one place")
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .padding(.horizontal, AppSpacing.cardPadding)
+                    .padding(.bottom, AppSpacing.sm)
 
                 connectButton
                     .padding(.horizontal, AppSpacing.cardPadding)
-                    .padding(.top, AppSpacing.sm)
                     .padding(.bottom, AppSpacing.cardPadding)
             }
         }
@@ -147,9 +164,22 @@ struct PortfolioCard: View {
         )
         .shadow(color: AppColors.cardShadow, radius: AppSpacing.md, x: 0, y: AppSpacing.sm)
         .padding(.horizontal, AppSpacing.screenPadding)
-        .onChange(of: selectedRange) { _ in
+        .onChange(of: selectedRange) { _, _ in
             hoveredIndex = nil
             hapticFired  = false
+        }
+        .onAppear {
+            if !isConnected {
+                playDisconnectedPrototypeAnimation()
+            }
+        }
+        .onChange(of: isConnected) { _, connected in
+            if connected {
+                disconnectedLineTrim = 0
+                disconnectedShowEndpoint = false
+            } else {
+                playDisconnectedPrototypeAnimation()
+            }
         }
     }
 
@@ -157,21 +187,21 @@ struct PortfolioCard: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack(spacing: AppSpacing.xs) {
-                Text("PORTFOLIO")
-                    .font(.cardHeader)
-                    .foregroundColor(AppColors.textTertiary)
-                    .tracking(AppTypography.Tracking.cardHeader)
-                if onTap != nil && isConnected {
-                    Image(systemName: "chevron.right")
-                        .font(.miniLabel)
-                        .foregroundColor(AppColors.textTertiary)
-                }
-            }
-            .contentShape(Rectangle())
-            .onTapGesture { if isConnected { onTap?() } }
-
             if isConnected {
+                HStack(spacing: AppSpacing.xs) {
+                    Text("PORTFOLIO")
+                        .font(.cardHeader)
+                        .foregroundColor(AppColors.textTertiary)
+                        .tracking(AppTypography.Tracking.cardHeader)
+                    if onTap != nil {
+                        Image(systemName: "chevron.right")
+                            .font(.miniLabel)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture { onTap?() }
+
                 HStack(alignment: .firstTextBaseline, spacing: 0) {
                     Text(formatCurrencyWhole(displayedValue))
                         .font(.portfolioHero)
@@ -183,27 +213,78 @@ struct PortfolioCard: View {
                 }
                 gainBadge
             } else {
-                Text("$—")
-                    .font(.portfolioHero)
+                Text("Total Net Worth")
+                    .font(.cardHeader)
                     .foregroundStyle(AppColors.textTertiary)
-                Text("Connect accounts to see your net worth")
-                    .font(.footnoteRegular)
-                    .foregroundStyle(AppColors.textTertiary)
+                    .tracking(AppTypography.Tracking.cardHeader)
+
+                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                    Text("$0")
+                        .font(.portfolioHero)
+                        .foregroundStyle(AppColors.textPrimary)
+
+                    Text("+13.8%")
+                        .font(.footnoteSemibold)
+                        .foregroundStyle(AppColors.successAlt)
+                        .padding(.horizontal, AppSpacing.sm)
+                        .padding(.vertical, AppSpacing.xs)
+                        .background(AppColors.successAlt.opacity(0.14))
+                        .clipShape(Capsule())
+                }
             }
         }
         .animation(.easeInOut(duration: 0.15), value: hoveredIndex)
     }
 
-    // MARK: Ghost chart（未连接时，低透明度占位）
-
-    private var ghostChartView: some View {
-        GeometryReader { geo in
-            chartCanvas(w: geo.size.width, h: geo.size.height)
+    private func playDisconnectedPrototypeAnimation() {
+        selectedRange = .oneMonth
+        disconnectedLineTrim = 0
+        disconnectedShowEndpoint = false
+        withAnimation(.easeInOut(duration: 0.9)) {
+            disconnectedLineTrim = 1
         }
-        .frame(height: 120)
-        .clipped()
-        .opacity(0.1)
-        .allowsHitTesting(false)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.88) {
+            withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) {
+                disconnectedShowEndpoint = true
+            }
+        }
+    }
+
+    // MARK: 未连接：HTML invest-card 折线 + 端点 halo（design-reference home-rebuild-glass-prototype）
+
+    private var disconnectedPrototypeChart: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            let cx = 292 / 308 * w
+            let cy = 46 / 170 * h
+
+            ZStack {
+                InvestmentDisconnectedPrototypeLine()
+                    .trim(from: 0, to: disconnectedLineTrim)
+                    .stroke(
+                        LinearGradient(
+                            colors: [AppColors.accentBlueBright, AppColors.warning],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
+                    )
+
+                if disconnectedShowEndpoint {
+                    Circle()
+                        .fill(AppColors.accentBlueBright.opacity(0.35))
+                        .frame(width: 24, height: 24)
+                        .position(x: cx, y: cy)
+                    Circle()
+                        .fill(AppColors.textPrimary)
+                        .frame(width: 9, height: 9)
+                        .position(x: cx, y: cy)
+                }
+            }
+        }
+        .frame(height: 170)
+        .padding(.horizontal, AppSpacing.cardPadding)
     }
 
     // MARK: Connect button
@@ -481,6 +562,38 @@ struct PortfolioCard: View {
         f.maximumFractionDigits = 0
         f.minimumFractionDigits = 0
         return f.string(from: NSNumber(value: abs(v))) ?? "$0"
+    }
+}
+
+// MARK: - HTML prototype invest line (home-rebuild-glass-prototype invest-chart)
+
+private struct InvestmentDisconnectedPrototypeLine: Shape {
+    func path(in rect: CGRect) -> Path {
+        let sx = rect.width / 308
+        let sy = rect.height / 170
+        var p = Path()
+        p.move(to: CGPoint(x: 8 * sx, y: 154 * sy))
+        p.addCurve(
+            to: CGPoint(x: 92 * sx, y: 132 * sy),
+            control1: CGPoint(x: 42 * sx, y: 152 * sy),
+            control2: CGPoint(x: 64 * sx, y: 146 * sy)
+        )
+        p.addCurve(
+            to: CGPoint(x: 162 * sx, y: 102 * sy),
+            control1: CGPoint(x: 118 * sx, y: 120 * sy),
+            control2: CGPoint(x: 142 * sx, y: 108 * sy)
+        )
+        p.addCurve(
+            to: CGPoint(x: 240 * sx, y: 72 * sy),
+            control1: CGPoint(x: 188 * sx, y: 94 * sy),
+            control2: CGPoint(x: 214 * sx, y: 84 * sy)
+        )
+        p.addCurve(
+            to: CGPoint(x: 292 * sx, y: 46 * sy),
+            control1: CGPoint(x: 262 * sx, y: 62 * sy),
+            control2: CGPoint(x: 278 * sx, y: 54 * sy)
+        )
+        return p
     }
 }
 

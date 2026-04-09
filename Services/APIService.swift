@@ -327,6 +327,20 @@ class APIService {
         try await invokeFunction("get-setup-state")
     }
 
+    /// Like `getSetupState()`, but persists the response on success and returns the last cached value on failure (if any).
+    func getSetupStatePersistingCache() async -> HomeSetupStateResponse? {
+        do {
+            let state = try await getSetupState()
+            HomeSetupStateCache.save(state)
+            return state
+        } catch {
+            #if DEBUG
+            print("⚠️ [API] getSetupState failed, trying cache: \(error)")
+            #endif
+            return HomeSetupStateCache.load()
+        }
+    }
+
     /// Apply a chosen plan to become the official active plan.
     func applySelectedPlan(data: ApplyPlanRequest) async throws -> ActivePlanModel {
         try await invokeFunction("apply-selected-plan", body: data)

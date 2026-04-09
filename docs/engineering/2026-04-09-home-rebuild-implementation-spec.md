@@ -5,7 +5,7 @@ Date: 2026-04-09
 Status: Draft implementation spec for the current unconnected-state prototype
 
 Primary source of truth:
-- HTML prototype: `/Users/staygreen/Documents/GitHub/Flamora/design-reference/home-rebuild-glass-prototype.html`
+- HTML prototype (repo): `design-reference/home-rebuild-glass-prototype.html`
 
 Project implementation targets:
 - Main container: `/Users/staygreen/Documents/GitHub/Flamora/View/MainTabView.swift`
@@ -64,6 +64,12 @@ Not included:
 - Exact API implementation
 - Final accessibility pass
 - Android
+
+### 2.1 Shell routing note (Journey vs MainTab)
+
+The shipped app shell is **`MainTabView`**: global hero (`HomeHeroCardSurface` + `UnconnectedHeroContent` / `FIRECountdownCard`), draggable sheet, tab bar, and full-screen simulator overlay (`SimulatorView` + `BrandHeroBackground`). The Home tab’s sheet content is **`HomeRoadmapContent`**, not `JourneyContainerView`.
+
+**`JourneyView` / `JourneyContainerView`** remain for shared logic (`JourneyViewModel`, `FIRECountdownCard`, sandbox wiring patterns) and future consolidation; they are **not** embedded in the current `MainTabView` tree. Do not assume `JourneyView` appears on device until explicitly wired.
 
 ## 3. Non-Negotiable Rules
 
@@ -232,7 +238,15 @@ Home consists of two layers:
 
 The white sheet is the primary interaction surface.
 
-### 6.3 Hero Layer
+### 6.3 Hero Layer — must match `home-rebuild-glass-prototype.html`
+
+The **top background** (hero layer fill) is not a generic “dark gradient.” It must reproduce the prototype’s **`--brand-purple-surface` / `--hero-fade`** stack:
+
+- Layered **radial** highlights (soft purple / pink washes at fixed anchor positions).
+- **Linear** vertical blend: deep navy-violet top (`#15162a` region) through mid blues (`#242b63`, `#5a6fe0`) to pale lavender / off-white bottom (`#d8dbff` → `#f7f3ff`).
+- Same **corner treatment** as `.hero-layer` in the HTML (bottom corners when not in simulator mode).
+
+Implementation must **open the prototype in a browser and match by eye**; do not substitute a flat two-stop gradient.
 
 Current Home unconnected hero content:
 - Title: `Your FIRE Journey`
@@ -304,14 +318,25 @@ Current prototype implementation characteristics:
 Current simulator structure:
 - Sandbox tag
 - Headline: `You will be financial free by age 30.`
-- Embedded bar chart
+- Embedded bar chart (see **6.6.1 Embedded graph**)
 - Retirement Detail panel
 - Advanced Details expandable section
 
-Chart rules:
-- Chart is part of the background plane
-- White bars on dark field
-- Only key callout shown
+#### 6.6.1 Embedded graph (trend bars — “Figure 2” / prototype `.sim-graph`)
+
+This block is the **same visual language as the standalone reference** (semi-transparent white bars on the blue gradient “wall”). Rules:
+
+1. **Background wall:** Bars sit **on the hero gradient plane**, not inside a separate white card. The chart area uses the **same** `--hero-fade` background as the rest of the hero (no extra boxed chart container with a different fill).
+2. **Monochrome only:** Bars use **white at varying opacity** (prototype: `.bar` vs `.bar.soft` — stronger vs softer white gradients). **No** category colors, **no** multi-hue fills, **no** green/red semantics on bars.
+3. **Bar shape:** Rounded **top** caps (prototype: `border-radius` tall pill on top, slight radius at bottom). Bars grow left → right along an exponential-style curve (many short bars early, tallest at the end).
+4. **Baseline & axis:** A single faint **horizontal baseline** (`rgba(255,255,255,~0.14)`). **Sparse** year labels under the grid only (e.g. `2026` / `2029` / `2032`), low-contrast white. No Y-axis grid lines, no tick spam.
+5. **Labels — leading point only:** Only the **leading point** (the **terminal / FIRE target bar**, rightmost peak in the series) carries the **money + age** label in UI. Format matches prototype callout: e.g. `$128,000 by age 30`. **No** per-bar value labels on other columns. (Optional: tap-to-inspect detail can still update a detail panel; the **floating glass pill** stays single-target unless product explicitly adds more.)
+6. **Callout chrome:** One **glass pill** (`backdrop-filter` blur, semi-white fill, thin light border) positioned near the leading bar, same as `.bar-callout` in the HTML.
+
+Chart rules (summary):
+- Chart is part of the **background plane**
+- **Monochrome** white bars on the gradient field
+- **One** money+age callout on the **leading (target) bar** only
 
 Variables shown:
 - Current Age
@@ -325,7 +350,7 @@ Variables shown:
 Behavior:
 - Variable rows are tap-to-edit
 - Advanced details collapsible
-- Chart bars are tappable
+- Chart bars may be tappable for **detail/inspector** updates (optional; matches prototype JS). **Do not** add extra floating money/age pills per bar; **one** glass callout for the target bar only (**D9**).
 
 Implementation target:
 - `/Users/staygreen/Documents/GitHub/Flamora/View/Journey/SimulatorView.swift`
@@ -673,10 +698,16 @@ The implementation is considered aligned only if all of the following are true:
 
 ### Home
 - Home hero is printed into the gradient background, not boxed
+- Hero gradient matches `design-reference/home-rebuild-glass-prototype.html` (`--brand-purple-surface` / `--hero-fade`)
 - White sheet overlaps upward
 - Roadmap has three clear setup steps
 - Drag interaction is finger-tracked, not modal-like
 - Simulator expansion feels continuous
+
+### Home simulator (embedded graph)
+- Bar chart sits on the hero gradient plane (wall), not inside a separate filled chart card
+- Bars are monochrome white opacity variants only (no per-bar colors)
+- Exactly one glass callout with money + age on the **leading / target** bar; sparse year labels on the baseline row only
 
 ### Cash Flow
 - Background is dark gradient
@@ -709,7 +740,86 @@ Do not:
 - Replace the bottom tab with a standard flat tab bar
 - Introduce unrelated redesigns in Settings or onboarding
 
-## 16. Handoff Note for Teammates
+## 16. Design Review Decisions (plan-design-review 2026-04-08, updated same day)
+
+The following design decisions were resolved during the `/plan-design-review` pass.
+They are binding and must be implemented as specified.
+
+**Supplement (embedded graph + hero parity):** D8–D9 lock the Home hero gradient and simulator bar graph to `design-reference/home-rebuild-glass-prototype.html` and the “Figure 2” monochrome wall-integrated treatment.
+
+### D1 — Home Hero Layout: ZStack (Pass 1, Issue 1)
+- **Decision:** Use `ZStack` for the Home Hero section.
+- **Topbar** (`Flamora logo + settings button`) is absolutely pinned to the top of the hero using `.frame(maxHeight: .infinity, alignment: .top)`.
+- **Hero content** (`Your FIRE Journey` title, subtitle, progress bar) is positioned below the topbar.
+- **On drag:** only the hero content fades out via `.opacity(1 - dragProgress)`. The topbar remains fully visible at all times.
+- **Why:** The prototype's core interaction requires the Flamora brand mark to remain visible throughout the drag gesture. A `VStack` would cause the topbar to animate away with the content.
+
+### D2 — Hero Entry Animation (Pass 3, Issue 3A)
+- **Decision:** Sequential entry animation on first load.
+- **Step 1:** Hero fades in — `withAnimation(.easeOut(duration: 0.2)) { heroOpacity = 1 }`
+- **Step 2:** After 120ms delay — Sheet slides up from bottom + fades in: `withAnimation(.easeOut(duration: 0.32)) { sheetOffset = 0; sheetOpacity = 1 }`
+- **Why:** Sequential reveal builds spatial hierarchy — user sees the background context first, then the action layer.
+
+### D3 — Tab Switch Animation (Pass 3, Issue 3B)
+- **Decision:** Cross-fade on tab switch.
+- **Implementation:** Apply `.animation(.easeInOut(duration: 0.2), value: selectedTab)` on the tab content container in `MainTabView`.
+- **Why:** Default SwiftUI tab switching is a hard cut. Cross-fade aligns with the glass material aesthetic.
+
+### D4 — Tab Bar Drag Animation (Pass 7)
+- **Extracted from prototype JS:** `tabbar.style.opacity = 1 - progress; tabbar.style.transform = translateY(16 * progress)`
+- **SwiftUI implementation:** `.opacity(1.0 - dragProgress).offset(y: 16 * dragProgress)`
+- **Pointer disable threshold:** When `dragProgress > 0.7`, tab bar becomes non-interactive (`.allowsHitTesting(dragProgress <= 0.7)`)
+
+### D5 — Sheet Peek Label (Pass 7)
+- **Text:** "Back to Home"
+- **Appearance:** Fades in when `dragProgress > 0.72`
+- **Opacity formula:** `clamp((dragProgress - 0.72) / 0.28, 0, 1)`
+
+### D6 — Missing Color Tokens (Pass 5)
+The following tokens must be added to `Style/Colors.swift` before implementation:
+```swift
+// Investment Hero (distinct from Home heroGradient)
+static let investHeroGradient: [Color] = [
+    Color(hex: "#13152a"),
+    Color(hex: "#20275f"),
+    Color(hex: "#556add"),
+    Color(hex: "#d9dcff"),
+    Color(hex: "#f8f4ff"),
+]
+
+// Tab Bar glass surface
+static let tabBarFill   = Color.white.opacity(0.68)
+static let tabBarBorder = Color.white.opacity(0.82)
+static let tabBarShadow = Color(hex: "#111827").opacity(0.16)
+
+// Simulator details panel (dark glass)
+static let simDetailsBg1 = Color(hex: "#21254E").opacity(0.94)
+static let simDetailsBg2 = Color(hex: "#191C3D").opacity(0.96)
+```
+
+### D7 — Glass Card Shadow Encapsulation (Pass 5)
+- **Decision:** Create `Style/Shadows.swift` with a `.glassCardShadow()` ViewModifier.
+- **Shadow spec (two layers):**
+  - Layer 1: `color: Color(hex: "#473765").opacity(0.12), radius: 40, x: 0, y: 18`
+  - Layer 2: `color: Color(hex: "#473765").opacity(0.05), radius: 8, x: 0, y: 2`
+- **Usage:** `.glassCardShadow()` replaces all inline shadow calls on glass cards.
+
+### D8 — Home hero background = `home-rebuild-glass-prototype.html` (plan-design-review 2026-04-08)
+- **Decision:** The Home **hero-layer** fill must match the prototype’s **`--brand-purple-surface`** stack: radials + `linear-gradient(180deg, #15162a 0%, #242b63 18%, #5a6fe0 42%, #d8dbff 68%, #f7f3ff 100%)` (see `design-reference/home-rebuild-glass-prototype.html` `:root` and `.hero-layer`).
+- **Verification:** Side-by-side with Safari/WebKit rendering of the HTML file on the same viewport width class.
+- **Why:** User-facing spec: “顶部背景和 prototype 一致（图一玻璃 + 渐变氛围）.”
+
+### D9 — Simulator embedded graph: wall-integrated, monochrome, single money+age pill (plan-design-review 2026-04-08)
+- **Decision:** The simulator **trend** is the **embedded bar graph** from the prototype (`.sim-graph` / `.graph-box`), not a multi-color chart.
+- **Integration:** Bars are drawn **on the hero gradient** (background wall). No chart-in-white-card treatment for this graph.
+- **Palette:** **Only** white at varying opacity (`.bar` / `.bar.soft` semantics). **禁止**柱间彩色编码或语义色。
+- **Labels:** **Only** the **leading (terminal / FIRE target) bar** shows the floating **glass pill** with **currency + age** (e.g. `$128,000 by age 30`). Other bars: **no** inline amount/age labels.
+- **Geometry:** Rounded-top bars, faint horizontal **floor** line, sparse **year** labels on the axis row only.
+- **Why:** Matches reference “图二 Embedded Graph” and the in-file note: “The bar chart is part of the background wall. Only the leading point needs the money and age label.”
+
+---
+
+## 17. Handoff Note for Teammates
 
 If another engineer implements this spec:
 - Use the HTML prototype as visual reference
@@ -723,3 +833,15 @@ The correct interpretation is:
 - preserve the motion language
 - preserve the material balance
 - translate it natively into SwiftUI
+
+## GSTACK REVIEW REPORT
+
+| Review | Trigger | Why | Runs | Status | Findings |
+|--------|---------|-----|------|--------|----------|
+| CEO Review | `/plan-ceo-review` | Scope & strategy | 1 | CLEAR | Previous session |
+| Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | — |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | CLEAR (PLAN) | 11 issues, 0 critical gaps |
+| Design Review | `/plan-design-review` | UI/UX gaps | 2 | CLEAR (FULL) | score: 4/10 → 8/10; +D8/D9 hero + embedded graph parity |
+
+**UNRESOLVED:** 0 design decisions deferred
+**VERDICT:** ENG + DESIGN CLEARED — ready to implement (hero + simulator graph per D8/D9)

@@ -57,6 +57,7 @@ class SupabaseManager {
                 }
             case .signedOut:
                 SubscriptionManager.shared.logoutUser()
+                HomeSetupStateCache.clear()
             default:
                 break
             }
@@ -102,6 +103,7 @@ class SupabaseManager {
         currentUser = nil
         isAuthenticated = false
         SubscriptionManager.shared.logoutUser()
+        HomeSetupStateCache.clear()
     }
 
     // MARK: - Helpers

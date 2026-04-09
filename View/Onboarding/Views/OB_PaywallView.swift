@@ -172,7 +172,7 @@ struct OB_PaywallView: View {
                                         endPoint: .trailing
                                     )
                                 )
-                                .cornerRadius(6)
+                                .clipShape(RoundedRectangle(cornerRadius: AppRadius.xs))
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical, 16)
