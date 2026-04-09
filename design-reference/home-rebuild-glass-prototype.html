@@ -332,40 +332,157 @@
     cursor: pointer;
   }
 
+  /* ── Cash Flow view: pull-down hero pattern (mirrors Home) ── */
   .cash-view {
     inset: 0 0 92px;
     padding: 0;
+    overflow: hidden;   /* no scrolling on the view itself */
+    color: #ffffff;
+  }
+
+  /* Dark hero — expands when pulled */
+  .cash-hero {
+    min-height: 308px;
+    padding: 18px 24px 0;
     background:
       radial-gradient(circle at 18% 6%, rgba(196, 181, 253, 0.22), transparent 24%),
       radial-gradient(circle at 82% 14%, rgba(167, 139, 250, 0.26), transparent 26%),
       radial-gradient(circle at 56% 58%, rgba(252, 165, 165, 0.10), transparent 28%),
       linear-gradient(180deg, #15162a 0%, #242b63 18%, #5a6fe0 42%, #d8dbff 68%, #f7f3ff 100%);
-    color: #ffffff;
+    overflow: hidden;
+    transition: min-height 320ms ease, border-radius 320ms ease;
   }
 
-  .cash-hero-bg {
-    padding: 18px 24px 0;
+  /* In expanded state the hero fills the full view so the white card can hide below */
+  .cash-view.cash-expanded .cash-hero {
+    min-height: 860px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .cash-view.cash-expanded .cash-hero::-webkit-scrollbar { display: none; }
+
+  .cash-hero-top {
+    /* Always-visible title area */
   }
 
-  .cash-hero-copy {
-    margin-top: 22px;
-  }
-
-  .cash-hero-copy h1 {
-    margin: 0;
+  .cash-hero-title {
+    margin: 18px 0 4px;
     font-size: 30px;
     line-height: 0.98;
     letter-spacing: -0.06em;
     color: #ffffff;
+    font-weight: 700;
+  }
+
+  .cash-hero-stat {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .cash-hero-amount {
+    font-size: 22px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.92);
+    letter-spacing: -0.03em;
+  }
+
+  .cash-hero-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.45);
+  }
+
+  /* TX panel — hidden until hero expands */
+  .cash-tx-panel {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    pointer-events: none;
+    transition: opacity 280ms ease, max-height 320ms ease;
+  }
+
+  .cash-view.cash-expanded .cash-tx-panel {
+    opacity: 1;
+    max-height: 800px;
+    pointer-events: auto;
+    overflow: visible;
+  }
+
+  /* White sheet below hero (same pattern as Home .sheet) */
+  .cash-sheet {
+    position: relative;
+    margin: -76px 0 0;
+    min-height: 500px;
+    padding: 16px 18px 100px;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.95));
+    border: 1px solid rgba(255,255,255,0.94);
+    box-shadow: 0 26px 72px rgba(20,26,47,0.12);
+    transition: transform 460ms cubic-bezier(0.4, 0, 0.2, 1), border-radius 320ms ease;
+    touch-action: none;
+  }
+
+  /* White card slides completely below the screen — hidden */
+  .cash-view.cash-expanded .cash-sheet {
+    transform: translateY(800px);
+    border-radius: 18px;
+  }
+
+  .cash-sheet-handle {
+    width: 50px;
+    height: 6px;
+    border-radius: 999px;
+    margin: 0 auto 20px;
+    background: rgba(17,24,39,0.12);
+    cursor: pointer;
+  }
+
+  .cash-sheet-peek-label {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    display: none;
+    min-width: 128px;
+    padding: 8px 14px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    text-align: center;
+    color: rgba(17,24,39,0.52);
+    background: rgba(255,255,255,0.98);
+    box-shadow: 0 10px 28px rgba(17,24,39,0.08);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  /* "Back to" label removed — ↑ oval button is the only way back */
+  .cash-view.cash-expanded .cash-sheet-peek-label {
+    display: none;
+  }
+
+  /* Fade mask at top when scrolling — cards "disappear" as they scroll off the top */
+  .cash-view.cash-expanded .cash-hero {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0px, rgba(0,0,0,0.6) 44px, black 88px);
+    mask-image: linear-gradient(to bottom, transparent 0px, rgba(0,0,0,0.6) 44px, black 88px);
+  }
+
+  /* Tighten the tx-panel top spacing in expanded mode */
+  .cash-view.cash-expanded .cash-tx-panel {
+    overflow: visible;
   }
 
   .cash-stage {
-    position: absolute;
-    left: 24px;
-    right: 24px;
-    top: 176px;
-    height: 500px;
+    position: relative;
+    margin: 0 6px;
+    height: 310px;
     overflow: hidden;
+    flex-shrink: 0;
   }
 
   .cash-flow-card {
@@ -632,11 +749,203 @@
   }
 
   .cash-flow-cta {
-    position: absolute;
-    left: 24px;
-    right: 24px;
-    bottom: 52px;
+    padding: 16px 24px 32px;
+    flex-shrink: 0;
   }
+
+  /* ── Apple Wallet–style Transaction Card Stack ── */
+  .tx-section {
+    padding: 28px 0 0;
+    flex-shrink: 0;
+  }
+
+  .tx-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0 20px 20px;
+  }
+
+  .tx-section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: -0.03em;
+  }
+
+  .tx-section-meta {
+    font-size: 12px;
+    color: rgba(17, 24, 39, 0.45);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── Apple Wallet–style Transaction Card Stack ── */
+  .tx-deck {
+    position: relative;
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .tx-card-wrap {
+    position: relative;
+    z-index: calc(var(--idx, 0) + 1);
+    margin-bottom: -102px;
+    opacity: 0;
+    transform: translateY(28px) scale(0.95);
+    transition:
+      opacity 0.44s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.44s cubic-bezier(0.22, 1, 0.36, 1);
+    border-radius: 22px;
+  }
+
+  .tx-card-wrap:last-of-type {
+    margin-bottom: 0;
+  }
+
+  .tx-card-wrap.tx-entered {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  @keyframes txCardRise {
+    from { opacity: 0; transform: translateY(32px) scale(0.94); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
+  }
+
+  /* White glass card */
+  .tx-card {
+    width: 100%;
+    height: 148px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.68);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.90);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.95) inset,
+      0 2px 8px rgba(31, 40, 74, 0.06),
+      0 8px 24px rgba(31, 40, 74, 0.10),
+      0 18px 40px rgba(31, 40, 74, 0.07);
+  }
+
+  .tx-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 22px;
+    background: linear-gradient(160deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.00) 100%);
+    pointer-events: none;
+  }
+
+  .tx-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 60%;
+    border-radius: 0 0 22px 22px;
+    background: linear-gradient(to bottom, rgba(var(--card-rgb,107,114,128),0.04) 0%, rgba(var(--card-rgb,107,114,128),0.09) 100%);
+    pointer-events: none;
+  }
+
+  .tx-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tx-merchant-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .tx-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(var(--card-rgb, 107,114,128), 0.12);
+    border: 1px solid rgba(var(--card-rgb, 107,114,128), 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .tx-icon img {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    display: block;
+  }
+
+  .tx-merchant {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: -0.02em;
+  }
+
+  .tx-amount-block {
+    text-align: right;
+  }
+
+  .tx-amount {
+    font-size: 15px;
+    font-weight: 400;
+    color: #111827;
+    letter-spacing: 0;
+    line-height: 1;
+  }
+
+  .tx-amount-sign {
+    font-size: 12px;
+    font-weight: 400;
+    color: rgba(17, 24, 39, 0.42);
+  }
+
+  .tx-card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tx-date {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(17, 24, 39, 0.42);
+    letter-spacing: 0.01em;
+  }
+
+  .tx-category-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(var(--card-rgb, 107,114,128), 0.10);
+    border: 1px solid rgba(var(--card-rgb, 107,114,128), 0.20);
+    font-size: 11px;
+    font-weight: 600;
+    color: rgb(var(--card-rgb, 55,65,81));
+    letter-spacing: 0.01em;
+  }
+
+  .tx-deck-spacer { display: none; }
 
   .cash-primary-btn {
     width: 100%;
@@ -652,32 +961,301 @@
     cursor: pointer;
   }
 
+  /* ── Investment view: pull-down hero pattern (mirrors Home) ── */
   .invest-view {
     inset: 0 0 92px;
     padding: 0;
+    overflow: hidden;
+    color: #ffffff;
+  }
+
+  .invest-hero {
+    min-height: 308px;
+    padding: 18px 24px 0;
     background:
       radial-gradient(circle at 16% 5%, rgba(196, 181, 253, 0.22), transparent 24%),
       radial-gradient(circle at 84% 12%, rgba(167, 139, 250, 0.28), transparent 26%),
       radial-gradient(circle at 58% 56%, rgba(252, 165, 165, 0.10), transparent 28%),
       linear-gradient(180deg, #13152a 0%, #20275f 18%, #556add 42%, #d9dcff 68%, #f8f4ff 100%);
-    color: #ffffff;
+    overflow: hidden;
+    transition: min-height 320ms ease, border-radius 320ms ease;
   }
 
-  .invest-hero-bg {
-    padding: 18px 24px 0;
+  .invest-view.invest-expanded .invest-hero {
+    min-height: 860px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
+  .invest-view.invest-expanded .invest-hero::-webkit-scrollbar { display: none; }
 
-  .invest-hero-copy {
-    margin-top: 22px;
-  }
-
-  .invest-hero-copy h1 {
-    margin: 0;
+  .invest-hero-title {
+    margin: 18px 0 4px;
     font-size: 30px;
     line-height: 0.98;
     letter-spacing: -0.06em;
     color: #ffffff;
+    font-weight: 700;
   }
+
+  .invest-hero-stat {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .invest-hero-amount {
+    font-size: 22px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.92);
+    letter-spacing: -0.03em;
+  }
+
+  .invest-hero-change {
+    font-size: 12px;
+    font-weight: 600;
+    color: #4ade80;
+  }
+
+  /* Chart panel — hidden until expanded */
+  .invest-chart-panel {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    pointer-events: none;
+    transition: opacity 280ms ease, max-height 320ms ease;
+    margin: 12px 0 0;
+  }
+
+  .invest-view.invest-expanded .invest-chart-panel {
+    opacity: 1;
+    max-height: 400px;
+    pointer-events: auto;
+  }
+
+  /* Inline chart inside hero — clean, no card wrapper */
+  .invest-inline-chart {
+    position: relative;
+    height: 180px;
+    margin: 8px 0 0;
+  }
+
+  .invest-inline-chart svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .invest-inline-line {
+    fill: none;
+    stroke: rgba(255,255,255,0.9);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 420;
+    stroke-dashoffset: 420;
+    transition: stroke-dashoffset 2200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .invest-view.invest-expanded .invest-inline-line {
+    stroke-dashoffset: 0;
+  }
+
+  .invest-inline-dot {
+    fill: #ffffff;
+    opacity: 0;
+    transform-origin: 292px 46px;
+    transform: scale(0.3);
+    transition: opacity 420ms ease, transform 640ms ease;
+    transition-delay: 2140ms;
+  }
+
+  .invest-inline-dot-halo {
+    fill: rgba(255,255,255,0.22);
+    opacity: 0;
+    transform-origin: 292px 46px;
+    transform: scale(0.5);
+    transition: opacity 420ms ease, transform 1200ms ease;
+    transition-delay: 2200ms;
+  }
+
+  .invest-view.invest-expanded .invest-inline-dot,
+  .invest-view.invest-expanded .invest-inline-dot-halo {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .invest-inline-periods {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    margin-top: 10px;
+    padding: 5px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.16);
+  }
+
+  .invest-inline-period {
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.55);
+    cursor: pointer;
+  }
+
+  .invest-inline-period.active {
+    background: rgba(255,255,255,0.18);
+    color: #ffffff;
+  }
+
+  /* White sheet */
+  .invest-sheet {
+    position: relative;
+    margin: -76px 0 0;
+    min-height: 500px;
+    padding: 16px 18px 100px;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.95));
+    border: 1px solid rgba(255,255,255,0.94);
+    box-shadow: 0 26px 72px rgba(20,26,47,0.12);
+    transition: transform 460ms cubic-bezier(0.4, 0, 0.2, 1), border-radius 320ms ease;
+    touch-action: none;
+  }
+
+  /* White card slides completely below screen — hidden */
+  .invest-view.invest-expanded .invest-sheet {
+    transform: translateY(800px);
+    border-radius: 18px;
+  }
+
+  .invest-sheet-handle {
+    width: 50px;
+    height: 6px;
+    border-radius: 999px;
+    margin: 0 auto 20px;
+    background: rgba(17,24,39,0.12);
+    cursor: pointer;
+  }
+
+  .invest-sheet-peek-label {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    display: none;
+    min-width: 144px;
+    padding: 8px 14px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    text-align: center;
+    color: rgba(17,24,39,0.52);
+    background: rgba(255,255,255,0.98);
+    box-shadow: 0 10px 28px rgba(17,24,47,0.08);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  /* "Back to" label removed — ↑ oval button is the only way back */
+  .invest-view.invest-expanded .invest-sheet-peek-label {
+    display: none;
+  }
+
+  /* Push chart toward screen center when expanded */
+  .invest-view.invest-expanded .invest-hero {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .invest-view.invest-expanded .invest-hero-top {
+    padding-top: 0;
+  }
+
+  .invest-view.invest-expanded .invest-chart-panel {
+    margin-top: 32px;
+  }
+
+  /* Holdings list in invest sheet */
+  .invest-holdings {
+    margin: 0 0 20px;
+  }
+
+  .invest-holdings-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(17,24,39,0.4);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .invest-holding-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(17,24,39,0.06);
+  }
+
+  .invest-holding-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .invest-holding-info {
+    flex: 1;
+  }
+
+  .invest-holding-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 2px;
+  }
+
+  .invest-holding-sub {
+    font-size: 12px;
+    color: rgba(17,24,39,0.42);
+  }
+
+  .invest-holding-right {
+    text-align: right;
+  }
+
+  .invest-holding-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+    margin-bottom: 2px;
+  }
+
+  .invest-holding-change {
+    font-size: 12px;
+    font-weight: 500;
+    color: #16a34a;
+  }
+
+  /* Keep old invest-card classes for reference but hide them */
+  .invest-card { display: none; }
+  .invest-stage { display: none; }
+  .invest-hero-bg { display: none; }
+  .invest-hero-copy { display: none; }
+  .invest-flow-cta { padding: 16px 0 0; }
 
   .cash-view .brand-mark,
   .invest-view .brand-mark {
@@ -699,18 +1277,9 @@
     backdrop-filter: blur(18px);
   }
 
-  .invest-stage {
-    position: absolute;
-    left: 24px;
-    right: 24px;
-    top: 174px;
-    height: 470px;
-    overflow: visible;
-  }
-
+  /* invest-card kept for potential future use but hidden via .invest-stage display:none above */
   .invest-card {
-    position: absolute;
-    inset: 0;
+    display: none;
     padding: 22px 20px 18px;
     border-radius: 28px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(249, 245, 251, 0.76));
@@ -1257,8 +1826,9 @@
   .tabbar {
     position: absolute;
     left: 26px;
-    right: 26px;
+    width: calc(100% - 52px);  /* was right:26px — explicit width for smooth animation */
     bottom: 24px;
+    height: 76px;              /* explicit height so CSS can animate it */
     z-index: 12;
     padding: 9px 10px;
     border-radius: 24px;
@@ -1269,12 +1839,58 @@
     box-shadow:
       0 18px 40px rgba(17, 24, 39, 0.16),
       inset 0 1px 0 rgba(255, 255, 255, 0.58);
+    overflow: hidden;
+    transition:
+      width 380ms cubic-bezier(0.4, 0, 0.2, 1),
+      height 380ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-radius 380ms cubic-bezier(0.4, 0, 0.2, 1),
+      padding 380ms cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 220ms ease,
+      transform 220ms ease;
+  }
+
+  /* Collapsed: three buttons shrink left into a single oval up-button */
+  .tabbar.collapsed {
+    width: 52px;
+    height: 52px;
+    border-radius: 999px;
+    padding: 0;
   }
 
   .tabgrid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
+    transition: opacity 180ms ease;
+  }
+
+  .tabbar.collapsed .tabgrid {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Up-button — sits inside the oval when collapsed */
+  .tabbar-up-btn {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    opacity: 0;
+    pointer-events: none;
+    cursor: pointer;
+    color: #111827;
+    transition: opacity 180ms ease 140ms; /* delay so it fades in after oval forms */
+  }
+
+  .tabbar-up-btn svg {
+    width: 22px;
+    height: 22px;
+    display: block;
+  }
+
+  .tabbar.collapsed .tabbar-up-btn {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .tab {
@@ -1835,15 +2451,17 @@
           </section>
           </section>
 
+          <!-- ══ CASH FLOW TAB ══ -->
           <section class="app-view cash-view" data-view="cash">
-            <div class="cash-hero-bg">
+
+            <!-- Dark hero: expands on pull-down to reveal tx deck -->
+            <div class="cash-hero" id="cashHero">
               <div class="topbar">
                 <div class="brand">
                   <div class="brand-mark">
                     <img src="../Flamora app/Assets.xcassets/FlameIcon.imageset/flame.png" alt="Flamora logo">
                   </div>
                 </div>
-
                 <button class="icon-button" aria-label="Settings">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M12 8.8A3.2 3.2 0 1 1 12 15.2 3.2 3.2 0 0 1 12 8.8z" stroke="currentColor" stroke-width="1.8"/>
@@ -1852,108 +2470,229 @@
                 </button>
               </div>
 
-              <div class="cash-hero-copy">
-                <h1>Cash Flow</h1>
+              <div class="cash-hero-top">
+                <div class="cash-hero-title">Cash Flow</div>
+                <div class="cash-hero-stat">
+                  <span class="cash-hero-amount">$3,420</span>
+                  <span class="cash-hero-label">spent this month</span>
+                </div>
               </div>
-            </div>
 
-            <section class="cash-stage">
-              <article class="cash-flow-card active" data-cash-card="spending">
-                <span class="cash-card-kicker">Spending overview</span>
-                <div class="cash-stage-header">
-                  <div>
-                    <div class="cash-stage-value">$3,420</div>
-                    <div class="cash-stage-copy">Monthly spending split into needs and wants.</div>
+              <!-- TX deck — revealed when hero expands -->
+              <div class="cash-tx-panel" id="cashTxPanel">
+                <section class="tx-section" id="txSection">
+                  <div class="tx-section-header">
+                    <span class="tx-section-title">Recent</span>
+                    <span class="tx-section-meta">Apr 2026</span>
                   </div>
-                  <div class="cash-chip">Spending</div>
-                </div>
+                  <div class="tx-deck" id="txDeck">
 
-                <div class="cash-budget-grid">
-                  <section class="cash-budget-block cash-budget-needs">
-                    <div class="cash-budget-top">
-                      <strong>Needs</strong>
-                      <span>$2,120</span>
+                    <div class="tx-card-wrap" style="--idx:0; --card-rgb:190,18,60">
+                      <div class="tx-card">
+                        <div class="tx-icon"><img src="https://logo.clearbit.com/netflix.com" alt="Netflix" onerror="this.parentNode.textContent='🎬'"></div>
+                        <div class="tx-merchant-info">
+                          <div class="tx-merchant">Netflix</div>
+                          <div class="tx-date">Apr 14, 2026</div>
+                        </div>
+                        <div class="tx-amount-block">
+                          <div class="tx-amount">-$22.99</div>
+                          <div class="tx-category-pill">Entertainment</div>
+                        </div>
+                      </div>
                     </div>
-                    <div class="cash-budget-line"><i></i></div>
-                    <div class="cash-budget-rows">
-                      <div class="cash-budget-row"><span>Rent</span><b>$1,480</b></div>
-                      <div class="cash-budget-row"><span>Groceries</span><b>$410</b></div>
-                      <div class="cash-budget-row"><span>Utilities</span><b>$230</b></div>
-                    </div>
-                  </section>
 
-                  <section class="cash-budget-block cash-budget-wants">
-                    <div class="cash-budget-top">
-                      <strong>Wants</strong>
-                      <span>$1,300</span>
+                    <div class="tx-card-wrap" style="--idx:1; --card-rgb:21,128,61">
+                      <div class="tx-card">
+                        <div class="tx-icon">🛒</div>
+                        <div class="tx-merchant-info">
+                          <div class="tx-merchant">Whole Foods</div>
+                          <div class="tx-date">Apr 13, 2026</div>
+                        </div>
+                        <div class="tx-amount-block">
+                          <div class="tx-amount">-$89.43</div>
+                          <div class="tx-category-pill">Groceries</div>
+                        </div>
+                      </div>
                     </div>
-                    <div class="cash-budget-line"><i></i></div>
-                    <div class="cash-budget-rows">
-                      <div class="cash-budget-row"><span>Dining</span><b>$420</b></div>
-                      <div class="cash-budget-row"><span>Shopping</span><b>$515</b></div>
-                      <div class="cash-budget-row"><span>Travel</span><b>$365</b></div>
+
+                    <div class="tx-card-wrap" style="--idx:2; --card-rgb:29,78,216">
+                      <div class="tx-card">
+                        <div class="tx-icon"><img src="https://logo.clearbit.com/uber.com" alt="Uber" onerror="this.parentNode.textContent='🚗'"></div>
+                        <div class="tx-merchant-info">
+                          <div class="tx-merchant">Uber</div>
+                          <div class="tx-date">Apr 12, 2026</div>
+                        </div>
+                        <div class="tx-amount-block">
+                          <div class="tx-amount">-$14.50</div>
+                          <div class="tx-category-pill">Transport</div>
+                        </div>
+                      </div>
                     </div>
-                  </section>
-                </div>
-              </article>
 
-              <article class="cash-flow-card back" data-cash-card="saving">
-                <span class="cash-card-kicker">Saving overview</span>
-                <div class="cash-stage-header">
-                  <div>
-                    <div class="cash-stage-value">$20,200</div>
-                    <div class="cash-stage-copy">Total saved this year from consistent monthly habits.</div>
-                  </div>
-                  <div class="cash-chip">Saving</div>
-                </div>
+                    <div class="tx-card-wrap" style="--idx:3; --card-rgb:124,58,237">
+                      <div class="tx-card">
+                        <div class="tx-icon"><img src="https://logo.clearbit.com/adobe.com" alt="Adobe" onerror="this.parentNode.textContent='🎨'"></div>
+                        <div class="tx-merchant-info">
+                          <div class="tx-merchant">Adobe CC</div>
+                          <div class="tx-date">Apr 11, 2026</div>
+                        </div>
+                        <div class="tx-amount-block">
+                          <div class="tx-amount">-$54.99</div>
+                          <div class="tx-category-pill">Software</div>
+                        </div>
+                      </div>
+                    </div>
 
-                <section class="cash-savings-chart">
-                  <div class="cash-savings-line"></div>
-                  <div class="cash-savings-bars">
-                    <div class="cash-savings-bar" style="--bar-height: 42px;"></div>
-                    <div class="cash-savings-bar" style="--bar-height: 58px;"></div>
-                    <div class="cash-savings-bar" style="--bar-height: 76px;"></div>
-                    <div class="cash-savings-bar" style="--bar-height: 48px;"></div>
-                    <div class="cash-savings-bar" style="--bar-height: 70px;"></div>
-                    <div class="cash-savings-bar" style="--bar-height: 86px;"></div>
-                    <div class="cash-savings-bar" style="--bar-height: 64px;"></div>
-                    <div class="cash-savings-bar" style="--bar-height: 96px;"></div>
-                    <div class="cash-savings-bar" style="--bar-height: 54px;"></div>
-                    <div class="cash-savings-bar" style="--bar-height: 18px;"></div>
-                  </div>
-                  <div class="cash-savings-months">
-                    <span>J</span><span>F</span><span>M</span><span>A</span><span>M</span>
-                    <span>J</span><span>J</span><span>A</span><span>S</span><span>O</span>
+                    <div class="tx-card-wrap" style="--idx:4; --card-rgb:180,83,9">
+                      <div class="tx-card">
+                        <div class="tx-icon"><img src="https://logo.clearbit.com/starbucks.com" alt="Starbucks" onerror="this.parentNode.textContent='☕'"></div>
+                        <div class="tx-merchant-info">
+                          <div class="tx-merchant">Starbucks</div>
+                          <div class="tx-date">Apr 10, 2026</div>
+                        </div>
+                        <div class="tx-amount-block">
+                          <div class="tx-amount">-$7.80</div>
+                          <div class="tx-category-pill">Coffee</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="tx-card-wrap" style="--idx:5; --card-rgb:15,118,110">
+                      <div class="tx-card">
+                        <div class="tx-icon"><img src="https://logo.clearbit.com/amazon.com" alt="Amazon" onerror="this.parentNode.textContent='📦'"></div>
+                        <div class="tx-merchant-info">
+                          <div class="tx-merchant">Amazon</div>
+                          <div class="tx-date">Apr 09, 2026</div>
+                        </div>
+                        <div class="tx-amount-block">
+                          <div class="tx-amount">-$143.20</div>
+                          <div class="tx-category-pill">Shopping</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="tx-card-wrap" style="--idx:6; --card-rgb:14,116,144">
+                      <div class="tx-card">
+                        <div class="tx-icon">🏋️</div>
+                        <div class="tx-merchant-info">
+                          <div class="tx-merchant">Equinox</div>
+                          <div class="tx-date">Apr 08, 2026</div>
+                        </div>
+                        <div class="tx-amount-block">
+                          <div class="tx-amount">-$185.00</div>
+                          <div class="tx-category-pill">Health</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="tx-card-wrap" style="--idx:7; --card-rgb:29,185,84">
+                      <div class="tx-card">
+                        <div class="tx-icon"><img src="https://logo.clearbit.com/spotify.com" alt="Spotify" onerror="this.parentNode.textContent='🎵'"></div>
+                        <div class="tx-merchant-info">
+                          <div class="tx-merchant">Spotify</div>
+                          <div class="tx-date">Apr 07, 2026</div>
+                        </div>
+                        <div class="tx-amount-block">
+                          <div class="tx-amount">-$11.99</div>
+                          <div class="tx-category-pill">Music</div>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 </section>
+              </div>
+            </div><!-- /cash-hero -->
 
-                <div class="cash-savings-stats">
-                  <div>
-                    <span>Target rate</span>
-                    <strong>20%</strong>
-                  </div>
-                  <div style="text-align:right;">
-                    <span>Target saving</span>
-                    <strong>$2,000</strong>
-                  </div>
-                </div>
-              </article>
-            </section>
+            <!-- White sheet: spending breakdown (always visible below hero) -->
+            <div class="cash-sheet" id="cashSheet">
+              <div class="cash-sheet-handle" id="cashSheetHandle"></div>
+              <div class="cash-sheet-peek-label" id="cashPeekLabel">Back to Cash Flow</div>
 
-            <div class="cash-flow-cta">
-              <button class="cash-primary-btn">Connect accounts</button>
-            </div>
+              <section class="cash-stage">
+                <article class="cash-flow-card active" data-cash-card="spending">
+                  <span class="cash-card-kicker">Spending overview</span>
+                  <div class="cash-stage-header">
+                    <div>
+                      <div class="cash-stage-value">$3,420</div>
+                      <div class="cash-stage-copy">Monthly spending split into needs and wants.</div>
+                    </div>
+                    <div class="cash-chip">Spending</div>
+                  </div>
+                  <div class="cash-budget-grid">
+                    <section class="cash-budget-block cash-budget-needs">
+                      <div class="cash-budget-top"><strong>Needs</strong><span>$2,120</span></div>
+                      <div class="cash-budget-line"><i></i></div>
+                      <div class="cash-budget-rows">
+                        <div class="cash-budget-row"><span>Rent</span><b>$1,480</b></div>
+                        <div class="cash-budget-row"><span>Groceries</span><b>$410</b></div>
+                        <div class="cash-budget-row"><span>Utilities</span><b>$230</b></div>
+                      </div>
+                    </section>
+                    <section class="cash-budget-block cash-budget-wants">
+                      <div class="cash-budget-top"><strong>Wants</strong><span>$1,300</span></div>
+                      <div class="cash-budget-line"><i></i></div>
+                      <div class="cash-budget-rows">
+                        <div class="cash-budget-row"><span>Dining</span><b>$420</b></div>
+                        <div class="cash-budget-row"><span>Shopping</span><b>$515</b></div>
+                        <div class="cash-budget-row"><span>Travel</span><b>$365</b></div>
+                      </div>
+                    </section>
+                  </div>
+                </article>
+
+                <article class="cash-flow-card back" data-cash-card="saving">
+                  <span class="cash-card-kicker">Saving overview</span>
+                  <div class="cash-stage-header">
+                    <div>
+                      <div class="cash-stage-value">$20,200</div>
+                      <div class="cash-stage-copy">Total saved this year from consistent monthly habits.</div>
+                    </div>
+                    <div class="cash-chip">Saving</div>
+                  </div>
+                  <section class="cash-savings-chart">
+                    <div class="cash-savings-line"></div>
+                    <div class="cash-savings-bars">
+                      <div class="cash-savings-bar" style="--bar-height:42px;"></div>
+                      <div class="cash-savings-bar" style="--bar-height:58px;"></div>
+                      <div class="cash-savings-bar" style="--bar-height:76px;"></div>
+                      <div class="cash-savings-bar" style="--bar-height:48px;"></div>
+                      <div class="cash-savings-bar" style="--bar-height:70px;"></div>
+                      <div class="cash-savings-bar" style="--bar-height:86px;"></div>
+                      <div class="cash-savings-bar" style="--bar-height:64px;"></div>
+                      <div class="cash-savings-bar" style="--bar-height:96px;"></div>
+                      <div class="cash-savings-bar" style="--bar-height:54px;"></div>
+                      <div class="cash-savings-bar" style="--bar-height:18px;"></div>
+                    </div>
+                    <div class="cash-savings-months">
+                      <span>J</span><span>F</span><span>M</span><span>A</span><span>M</span>
+                      <span>J</span><span>J</span><span>A</span><span>S</span><span>O</span>
+                    </div>
+                  </section>
+                  <div class="cash-savings-stats">
+                    <div><span>Target rate</span><strong>20%</strong></div>
+                    <div style="text-align:right;"><span>Target saving</span><strong>$2,000</strong></div>
+                  </div>
+                </article>
+              </section>
+
+              <div class="cash-flow-cta">
+                <button class="cash-primary-btn">Connect accounts</button>
+              </div>
+            </div><!-- /cash-sheet -->
           </section>
 
+          <!-- ══ INVESTMENT TAB ══ -->
           <section class="app-view invest-view" data-view="invest">
-            <div class="invest-hero-bg">
+
+            <!-- Dark hero: expands to reveal line chart -->
+            <div class="invest-hero" id="investHero">
               <div class="topbar">
                 <div class="brand">
                   <div class="brand-mark">
                     <img src="../Flamora app/Assets.xcassets/FlameIcon.imageset/flame.png" alt="Flamora logo">
                   </div>
                 </div>
-
                 <button class="icon-button" aria-label="Settings">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M12 8.8A3.2 3.2 0 1 1 12 15.2 3.2 3.2 0 0 1 12 8.8z" stroke="currentColor" stroke-width="1.8"/>
@@ -1962,45 +2701,85 @@
                 </button>
               </div>
 
-              <div class="invest-hero-copy">
-                <h1>Investment</h1>
+              <div class="invest-hero-top">
+                <div class="invest-hero-title">Investment</div>
+                <div class="invest-hero-stat">
+                  <span class="invest-hero-amount" id="investHeroValue">$210,150</span>
+                  <span class="invest-hero-change">+13.8%</span>
+                </div>
               </div>
-            </div>
 
-            <section class="invest-stage">
-              <article class="invest-card" id="investCard">
-                <span class="invest-card-kicker">Total Net Worth</span>
-                <div class="invest-value-row">
-                  <div class="invest-value-amount" id="investValue">$0</div>
-                  <div class="invest-value-change">+13.8%</div>
-                </div>
-
-                <section class="invest-chart">
+              <!-- Chart panel — revealed when hero expands -->
+              <div class="invest-chart-panel" id="investChartPanel">
+                <div class="invest-inline-chart">
                   <svg viewBox="0 0 308 170" preserveAspectRatio="none" aria-hidden="true">
-                    <path class="invest-line-path" d="M8 154 C 42 152, 64 146, 92 132 C 118 120, 142 108, 162 102 C 188 94, 214 84, 240 72 C 262 62, 278 54, 292 46"/>
-                    <circle class="invest-line-dot-halo" cx="292" cy="46" r="12"></circle>
-                    <circle class="invest-line-dot" cx="292" cy="46" r="4.5"></circle>
+                    <path class="invest-inline-line" id="investInlineLine" d="M8 154 C 42 152, 64 146, 92 132 C 118 120, 142 108, 162 102 C 188 94, 214 84, 240 72 C 262 62, 278 54, 292 46"/>
+                    <circle class="invest-inline-dot-halo" cx="292" cy="46" r="12"></circle>
+                    <circle class="invest-inline-dot" cx="292" cy="46" r="4.5"></circle>
                   </svg>
-                </section>
+                </div>
+                <div class="invest-inline-periods">
+                  <div class="invest-inline-period">1W</div>
+                  <div class="invest-inline-period active">1M</div>
+                  <div class="invest-inline-period">3M</div>
+                  <div class="invest-inline-period">YTD</div>
+                  <div class="invest-inline-period">All</div>
+                </div>
+              </div>
+            </div><!-- /invest-hero -->
 
-                <div class="invest-periods">
-                  <div class="invest-period">1W</div>
-                  <div class="invest-period active">1M</div>
-                  <div class="invest-period">3M</div>
-                  <div class="invest-period">YTD</div>
-                  <div class="invest-period">All</div>
+            <!-- White sheet: portfolio breakdown -->
+            <div class="invest-sheet" id="investSheet">
+              <div class="invest-sheet-handle" id="investSheetHandle"></div>
+              <div class="invest-sheet-peek-label" id="investPeekLabel">Back to Investment</div>
+
+              <div class="invest-holdings">
+                <div class="invest-holdings-title">Portfolio</div>
+
+                <div class="invest-holding-row">
+                  <div class="invest-holding-icon" style="background:#eef2ff;">📈</div>
+                  <div class="invest-holding-info">
+                    <div class="invest-holding-name">S&P 500 ETF</div>
+                    <div class="invest-holding-sub">VFIAX · 12.4 shares</div>
+                  </div>
+                  <div class="invest-holding-right">
+                    <div class="invest-holding-value">$142,800</div>
+                    <div class="invest-holding-change">+18.2%</div>
+                  </div>
                 </div>
 
-                <div class="invest-footer-copy">Track all your investment in one place</div>
-              </article>
-            </section>
+                <div class="invest-holding-row">
+                  <div class="invest-holding-icon" style="background:#f0fdf4;">🏦</div>
+                  <div class="invest-holding-info">
+                    <div class="invest-holding-name">Bond Index</div>
+                    <div class="invest-holding-sub">BND · 48 shares</div>
+                  </div>
+                  <div class="invest-holding-right">
+                    <div class="invest-holding-value">$38,400</div>
+                    <div class="invest-holding-change">+3.4%</div>
+                  </div>
+                </div>
 
-            <div class="invest-flow-cta">
-              <button class="cash-primary-btn">Connect accounts</button>
-            </div>
+                <div class="invest-holding-row">
+                  <div class="invest-holding-icon" style="background:#fefce8;">💵</div>
+                  <div class="invest-holding-info">
+                    <div class="invest-holding-name">Cash</div>
+                    <div class="invest-holding-sub">HYSA · 4.8% APY</div>
+                  </div>
+                  <div class="invest-holding-right">
+                    <div class="invest-holding-value">$28,950</div>
+                    <div class="invest-holding-change" style="color:#ca8a04;">+4.8%</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="invest-flow-cta">
+                <button class="cash-primary-btn">Connect accounts</button>
+              </div>
+            </div><!-- /invest-sheet -->
           </section>
 
-          <div class="tabbar">
+          <div class="tabbar" id="tabbar">
             <div class="tabgrid">
               <div class="tab active" data-tab="home">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -2024,6 +2803,14 @@
                 </svg>
                 <span>Invest</span>
               </div>
+            </div>
+
+            <!-- Up-button: visible only when tabbar is collapsed -->
+            <div class="tabbar-up-btn" id="tabbarUpBtn" aria-label="Back to top">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 19V5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                <path d="M5 12l7-7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </div>
           </div>
         </div>
@@ -2119,7 +2906,7 @@
   const sandboxHero = document.querySelector('.sandbox-hero');
   const simGraph = document.querySelector('.sim-graph');
   const simControls = document.querySelector('.sim-controls');
-  const tabbar = document.querySelector('.tabbar');
+  const tabbar = document.getElementById('tabbar');
   const sheetPeekLabel = document.querySelector('.sheet-peek-label');
   const inspectorTitle = document.getElementById('inspectorTitle');
   const inspectorCopy = document.getElementById('inspectorCopy');
@@ -2180,7 +2967,8 @@
     simControls.style.opacity = `${controlsProgress}`;
     simControls.style.transform = `translateY(${12 * (1 - controlsProgress)}px)`;
 
-    sheet.style.transform = `translateY(${98 * p}px)`;
+    // Sheet slides all the way off-screen (below the view) — hidden at p=1
+    sheet.style.transform = `translateY(${580 * p}px)`;
     const sheetRadius = 22 - (4 * p);
     sheet.style.borderRadius = `${sheetRadius}px`;
 
@@ -2189,12 +2977,21 @@
     roadmap.style.transform = `scale(${1 - (0.03 * p)})`;
     roadmap.style.pointerEvents = p > 0.6 ? 'none' : 'auto';
 
-    sheetPeekLabel.style.display = p > 0.72 ? 'block' : 'none';
-    sheetPeekLabel.style.opacity = `${clamp((p - 0.72) / 0.28, 0, 1)}`;
+    // "Back to" label removed — peek label always hidden
+    sheetPeekLabel.style.display = 'none';
 
-    tabbar.style.opacity = `${1 - p}`;
-    tabbar.style.transform = `translateY(${16 * p}px)`;
-    tabbar.style.pointerEvents = p > 0.7 ? 'none' : 'auto';
+    // Home tab: collapse tabbar into ↑ oval — ALWAYS keep it visible and tappable
+    if (p > 0.72) {
+      tabbar.classList.add('collapsed');
+      tabbar.style.opacity = '1';
+      tabbar.style.transform = '';
+      tabbar.style.pointerEvents = 'auto';
+    } else {
+      tabbar.classList.remove('collapsed');
+      tabbar.style.opacity = '1';
+      tabbar.style.transform = `translateY(${(p / 0.72) * 6}px)`;
+      tabbar.style.pointerEvents = 'auto';
+    }
 
     if (p < 0.02) {
       heroLayer.scrollTop = 0;
@@ -2256,34 +3053,114 @@
   }
 
   function startInvestAnimation() {
+    // invest-card is now hidden; animation handled by invest-expanded state
     stopInvestAnimation();
-    investCard.classList.remove('play');
-    investValue.textContent = '$0';
-
-    // Restart CSS transition timing for the line chart and dot.
-    void investCard.offsetWidth;
-    investCard.classList.add('play');
-
-    const target = 210150;
-    const duration = 2200;
-    const start = performance.now();
-
-    function tick(now) {
-      const t = clamp((now - start) / duration, 0, 1);
-      const eased = 1 - Math.pow(1 - t, 3);
-      const value = Math.round(target * eased);
-      investValue.textContent = `$${value.toLocaleString()}`;
-
-      if (t < 1) {
-        investAnimationFrame = requestAnimationFrame(tick);
-      } else {
-        investValue.textContent = '$210,150';
-        investAnimationFrame = null;
-      }
-    }
-
-    investAnimationFrame = requestAnimationFrame(tick);
   }
+
+  // ── Tabbar collapse helpers ───────────────────────────────
+  const tabbarUpBtn = document.getElementById('tabbarUpBtn');
+
+  function collapseTabbar() {
+    tabbar.classList.add('collapsed');
+    // Clear any inline styles set by Home tab's setProgress
+    tabbar.style.opacity = '';
+    tabbar.style.transform = '';
+    tabbar.style.pointerEvents = '';
+  }
+
+  function expandTabbar() {
+    tabbar.classList.remove('collapsed');
+    tabbar.style.opacity = '';
+    tabbar.style.transform = '';
+    tabbar.style.pointerEvents = '';
+  }
+
+  // ── Cash pull-down state ──────────────────────────────────
+  const cashView    = document.querySelector('.cash-view');
+  const cashHero    = document.getElementById('cashHero');
+  const cashSheet   = document.getElementById('cashSheet');
+  const cashHandle  = document.getElementById('cashSheetHandle');
+  const cashPeek    = document.getElementById('cashPeekLabel');
+
+  let cashExpanded = false;
+  let cashDragging = false;
+  let cashDragStartY = 0;
+
+  function openCash() {
+    cashExpanded = true;
+    cashView.classList.add('cash-expanded');
+    // Trigger tx-card entrance animations
+    document.querySelectorAll('#cashTxPanel .tx-card-wrap').forEach((el, i) => {
+      setTimeout(() => el.classList.add('tx-entered'), 60 + i * 50);
+    });
+    // Collapse the tabbar into an up-button oval
+    setTimeout(collapseTabbar, 180);
+  }
+
+  function closeCash() {
+    cashExpanded = false;
+    cashView.classList.remove('cash-expanded');
+    document.querySelectorAll('#cashTxPanel .tx-card-wrap').forEach(el => el.classList.remove('tx-entered'));
+    expandTabbar();
+  }
+
+  if (cashHandle) {
+    cashHandle.addEventListener('click', () => { cashExpanded ? closeCash() : openCash(); });
+    cashHandle.addEventListener('pointerdown', (e) => {
+      cashDragging = true;
+      cashDragStartY = e.clientY;
+      cashHandle.setPointerCapture(e.pointerId);
+    });
+    cashHandle.addEventListener('pointermove', (e) => {
+      if (!cashDragging) return;
+      const dy = e.clientY - cashDragStartY;
+      if (dy > 44 && !cashExpanded) openCash();
+      if (dy < -44 && cashExpanded) closeCash();
+    });
+    cashHandle.addEventListener('pointerup', () => { cashDragging = false; });
+  }
+  if (cashPeek) { cashPeek.addEventListener('click', closeCash); }
+
+  // ── Invest pull-down state ────────────────────────────────
+  const investView   = document.querySelector('.invest-view');
+  const investHeroEl = document.getElementById('investHero');
+  const investSheet  = document.getElementById('investSheet');
+  const investHandle = document.getElementById('investSheetHandle');
+  const investPeek   = document.getElementById('investPeekLabel');
+
+  let investExpanded = false;
+  let investDragging = false;
+  let investDragStartY = 0;
+
+  function openInvest() {
+    investExpanded = true;
+    investView.classList.add('invest-expanded');
+    // Collapse the tabbar into an up-button oval
+    setTimeout(collapseTabbar, 180);
+  }
+
+  function closeInvest() {
+    investExpanded = false;
+    investView.classList.remove('invest-expanded');
+    expandTabbar();
+  }
+
+  if (investHandle) {
+    investHandle.addEventListener('click', () => { investExpanded ? closeInvest() : openInvest(); });
+    investHandle.addEventListener('pointerdown', (e) => {
+      investDragging = true;
+      investDragStartY = e.clientY;
+      investHandle.setPointerCapture(e.pointerId);
+    });
+    investHandle.addEventListener('pointermove', (e) => {
+      if (!investDragging) return;
+      const dy = e.clientY - investDragStartY;
+      if (dy > 44 && !investExpanded) openInvest();
+      if (dy < -44 && investExpanded) closeInvest();
+    });
+    investHandle.addEventListener('pointerup', () => { investDragging = false; });
+  }
+  if (investPeek) { investPeek.addEventListener('click', closeInvest); }
 
   function switchView(viewName) {
     currentTab = viewName;
@@ -2295,21 +3172,25 @@
       item.classList.toggle('active', item.dataset.tab === viewName);
     });
 
-    if (viewName !== 'home') {
-      setProgress(0);
-    }
+    // Always restore tabbar to full state on tab switch
+    expandTabbar();
+
+    if (viewName !== 'home') { setProgress(0); }
 
     if (viewName === 'cash') {
       startCashAutoplay();
     } else {
       stopCashAutoplay();
+      closeCash();
     }
 
     if (viewName === 'invest') {
-      startInvestAnimation();
+      // no number animation needed — hero shows static value
     } else {
       stopInvestAnimation();
-      investCard.classList.remove('play');
+      closeInvest();
+      // keep old investCard compat
+      if (typeof investCard !== 'undefined' && investCard) investCard.classList && investCard.classList.remove('play');
     }
   }
 
@@ -2543,9 +3424,47 @@
     });
   });
 
+  // ── Tabbar up-button: restore whichever view is open ─────
+  if (tabbarUpBtn) {
+    tabbarUpBtn.addEventListener('click', () => {
+      if (currentTab === 'cash') {
+        closeCash();
+      } else if (currentTab === 'invest') {
+        closeInvest();
+      } else if (currentTab === 'home') {
+        animateTo(0);
+      }
+    });
+  }
+
   switchView('home');
   renderCashCards();
   setProgress(0);
+
+  // Staggered deck entrance: fire when #txSection scrolls into the cash-view
+  (function () {
+    const section = document.querySelector('#txSection');
+    const cards   = document.querySelectorAll('.tx-card-wrap');
+    if (!section || !cards.length) return;
+
+    function triggerDeckEntrance() {
+      cards.forEach(function (el, i) {
+        setTimeout(function () { el.classList.add('tx-entered'); }, i * 55);
+      });
+    }
+
+    const deckObserver = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting) {
+        triggerDeckEntrance();
+        deckObserver.disconnect();
+      }
+    }, {
+      root: document.querySelector('.cash-view'),
+      rootMargin: '0px 0px -8% 0px',
+      threshold: 0.08
+    });
+    deckObserver.observe(section);
+  })();
 </script>
 </body>
 </html>
