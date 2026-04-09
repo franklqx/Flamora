@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flamora — Transaction GlideScroll Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --grad-purple: #A78BFA;
+    --grad-pink:   #FCA5A5;
+    --grad-yellow: #FCD34D;
+    --bg:          #0C0C14;
+    --surface:     #13131F;
+    --card:        #1C1C2E;
+    --border:      rgba(255,255,255,0.07);
+    --text-primary:#F0F0FF;
+    --text-muted:  rgba(240,240,255,0.45);
+    --text-dim:    rgba(240,240,255,0.25);
+  }
+
+  body {
+    background: #0a0a10;
+    font-family: 'Inter', -apple-system, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 24px 80px;
+    min-height: 100vh;
+    color: var(--text-primary);
+  }
+
+  /* ── Page header ── */
+  .page-header {
+    width: 100%;
+    max-width: 480px;
+    margin-bottom: 32px;
+    text-align: center;
+  }
+  .page-header h1 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .page-header p {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.04em;
+  }
+
+  /* ── iPhone 17 Pro frame ── */
+  .phone-frame {
+    width: 393px;
+    height: 810px;
+    background: #1a1a2e;
+    border-radius: 54px;
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow:
+      0 0 0 6px #0d0d18,
+      0 0 0 7px rgba(255,255,255,0.06),
+      0 40px 100px rgba(0,0,0,0.8),
+      inset 0 1px 0 rgba(255,255,255,0.1);
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  /* Dynamic island */
+  .dynamic-island {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 34px;
+    background: #000;
+    border-radius: 20px;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.9);
+  }
+
+  /* ── Screen ── */
+  .screen {
+    position: absolute;
+    inset: 0;
+    border-radius: 54px;
+    background: var(--bg);
+    overflow: hidden;
+  }
+
+  /* ── Status bar ── */
+  .status-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    padding: 56px 28px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+    background: linear-gradient(to bottom, var(--bg) 60%, transparent);
+  }
+  .status-bar span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+  }
+  .status-icons {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .status-icons svg { opacity: 0.9; }
+
+  /* ── Scroll container ── */
+  .scroll-view {
+    position: absolute;
+    inset: 0;
+    border-radius: 54px;
+    overflow-y: scroll;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .scroll-view::-webkit-scrollbar { display: none; }
+
+  /* ── Content ── */
+  .content {
+    padding: 0 0 120px;
+  }
+
+  /* ── Hero section ── */
+  .hero {
+    padding: 64px 24px 28px;
+    position: relative;
+  }
+  .hero-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .flame-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(167,139,250,0.15);
+    border: 1px solid rgba(167,139,250,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+  .settings-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  .month-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .total-amount {
+    font-size: 42px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--grad-purple), var(--grad-pink), var(--grad-yellow));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .total-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .total-sub strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  /* ── Section header ── */
+  .section-header {
+    padding: 4px 24px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .section-count {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+  }
+
+  /* ── Transaction list ── */
+  .transaction-list {
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* ── The magic: CSS Scroll-Driven Animation ── */
+  /*
+    animation-timeline: view()  → tracks element's position in scroll container
+    animation-range: entry 0% entry 35% → plays during the "entering" phase
+
+    Equivalent to SwiftUI's .scrollTransition { content, phase in
+      content.opacity(...).scaleEffect(...).offset(...)
+    }
+  */
+
+  @keyframes cardGlideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-28px) scale(0.88);
+      filter: blur(3px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes cardGlideOut {
+    from {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(14px) scale(0.95);
+    }
+  }
+
+  .tx-card {
+    /* Entry animation as card scrolls into view */
+    animation: cardGlideIn linear both;
+    animation-timeline: view(block);
+    animation-range: entry 0% entry 38%;
+
+    will-change: transform, opacity;
+  }
+
+  /* Staggered delays via nth-child */
+  .tx-card:nth-child(1)  { animation-delay: 0ms; }
+  .tx-card:nth-child(2)  { animation-delay: 20ms; }
+  .tx-card:nth-child(3)  { animation-delay: 40ms; }
+
+  /* ── Card inner ── */
+  .tx-card-inner {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.15s ease;
+  }
+  .tx-card-inner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  /* Color accent strip */
+  .tx-card-inner::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 20%;
+    bottom: 20%;
+    width: 3px;
+    border-radius: 0 2px 2px 0;
+    background: var(--accent-color, var(--grad-purple));
+    opacity: 0.7;
+  }
+
+  /* ── App icon ── */
+  .app-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  /* ── Tx info ── */
+  .tx-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .tx-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 3px;
+  }
+  .tx-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tx-meta-dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--text-dim);
+  }
+
+  /* ── Tx amount ── */
+  .tx-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .tx-amount {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+  }
+  .tx-amount.positive { color: #6EE7B7; }
+  .tx-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 6px;
+    letter-spacing: 0.04em;
+  }
+  .badge-monthly {
+    background: rgba(167,139,250,0.15);
+    color: #A78BFA;
+  }
+  .badge-annual {
+    background: rgba(252,165,165,0.12);
+    color: #FCA5A5;
+  }
+  .badge-weekly {
+    background: rgba(252,211,77,0.12);
+    color: #FCD34D;
+  }
+  .badge-income {
+    background: rgba(110,231,183,0.12);
+    color: #6EE7B7;
+  }
+
+  /* ── Date separator ── */
+  .date-separator {
+    padding: 16px 24px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+
+    /* Separators also animate in */
+    animation: cardGlideIn linear both;
+    animation-timeline: view(block);
+    animation-range: entry 0% entry 30%;
+  }
+
+  /* ── Bottom tab bar ── */
+  .tab-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 90px;
+    background: linear-gradient(to top, var(--bg) 70%, transparent);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-around;
+    padding-top: 12px;
+    z-index: 50;
+    pointer-events: none;
+  }
+  .tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .tab-icon {
+    font-size: 22px;
+    opacity: 0.4;
+  }
+  .tab-icon.active { opacity: 1; }
+  .tab-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+  .tab-label.active {
+    background: linear-gradient(135deg, var(--grad-purple), var(--grad-pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .tab-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--grad-purple), var(--grad-pink));
+    margin-top: -2px;
+  }
+
+  /* ── Fallback notice ── */
+  .browser-note {
+    max-width: 480px;
+    margin-top: 24px;
+    padding: 12px 16px;
+    background: rgba(167,139,250,0.08);
+    border: 1px solid rgba(167,139,250,0.2);
+    border-radius: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    text-align: center;
+  }
+  .browser-note strong {
+    color: #A78BFA;
+  }
+
+  /* ── Tech notes panel ── */
+  .tech-panel {
+    max-width: 480px;
+    margin-top: 32px;
+    width: 100%;
+  }
+  .tech-panel h2 {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .tech-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 10px;
+  }
+  .tech-card h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+  .tech-card p {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .tech-card code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 11px;
+    background: rgba(167,139,250,0.12);
+    color: #A78BFA;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+
+  /* IntersectionObserver fallback for Safari < 17.2 */
+  @supports not (animation-timeline: view()) {
+    .tx-card, .date-separator {
+      opacity: 0;
+      transform: translateX(-28px) scale(0.88);
+      transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .tx-card.in-view, .date-separator.in-view {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Transaction GlideScroll — Flamora</h1>
+  <p>CSS Scroll-Driven Animations · iOS 17 .scrollTransition equivalent · Scroll inside the phone</p>
+</div>
+
+<!-- iPhone frame -->
+<div class="phone-frame">
+  <div class="dynamic-island"></div>
+  <div class="screen">
+
+    <!-- Scrollable screen content -->
+    <div class="scroll-view" id="scrollView">
+      <div class="content">
+
+        <!-- Hero -->
+        <div class="hero">
+          <div class="hero-nav">
+            <div class="flame-icon">🔥</div>
+            <div class="settings-icon">⚙</div>
+          </div>
+          <div class="month-label">April 2026</div>
+          <div class="total-amount">$3,847</div>
+          <div class="total-sub">Total spend · <strong>12 expenses</strong> tracked</div>
+        </div>
+
+        <!-- Section: Upcoming -->
+        <div class="section-header">
+          <span class="section-title">Upcoming</span>
+          <span class="section-count">3 this week</span>
+        </div>
+
+        <div class="transaction-list">
+
+          <!-- Netflix -->
+          <div class="tx-card">
+            <div class="tx-card-inner" style="--accent-color: #E50914;">
+              <div class="app-icon" style="background: rgba(229,9,20,0.15);">🎬</div>
+              <div class="tx-info">
+                <div class="tx-name">Netflix</div>
+                <div class="tx-meta">
+                  <span>Apr 12</span>
+                  <span class="tx-meta-dot"></span>
+                  <span>Entertainment</span>
+                </div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount">$22.99</div>
+                <div class="tx-badge badge-monthly">Monthly</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Spotify -->
+          <div class="tx-card">
+            <div class="tx-card-inner" style="--accent-color: #1DB954;">
+              <div class="app-icon" style="background: rgba(29,185,84,0.15);">🎵</div>
+              <div class="tx-info">
+                <div class="tx-name">Spotify</div>
+                <div class="tx-meta">
+                  <span>Apr 14</span>
+                  <span class="tx-meta-dot"></span>
+                  <span>Music</span>
+                </div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount">$11.99</div>
+                <div class="tx-badge badge-monthly">Monthly</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ChatGPT -->
+          <div class="tx-card">
+            <div class="tx-card-inner" style="--accent-color: #10A37F;">
+              <div class="app-icon" style="background: rgba(16,163,127,0.15);">🤖</div>
+              <div class="tx-info">
+                <div class="tx-name">ChatGPT Plus</div>
+                <div class="tx-meta">
+                  <span>Apr 15</span>
+                  <span class="tx-meta-dot"></span>
+                  <span>Productivity</span>
+                </div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount">$20.00</div>
+                <div class="tx-badge badge-monthly">Monthly</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Date separator -->
+        <div class="date-separator">This Month</div>
+
+        <div class="transaction-list">
+
+          <!-- iCloud -->
+          <div class="tx-card">
+            <div class="tx-card-inner" style="--accent-color: #007AFF;">
+              <div class="app-icon" style="background: rgba(0,122,255,0.15);">☁️</div>
+              <div class="tx-info">
+                <div class="tx-name">iCloud+ 2TB</div>
+                <div class="tx-meta">
+                  <span>Apr 3</span>
+                  <span class="tx-meta-dot"></span>
+                  <span>Storage</span>
+                </div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount">$9.99</div>
+                <div class="tx-badge badge-monthly">Monthly</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Adobe -->
+          <div class="tx-card">
+            <div class="tx-card-inner" style="--accent-color: #FF0000;">
+              <div class="app-icon" style="background: rgba(255,0,0,0.12);">🎨</div>
+              <div class="tx-info">
+                <div class="tx-name">Adobe CC</div>
+                <div class="tx-meta">
+                  <span>Apr 1</span>
+                  <span class="tx-meta-dot"></span>
+                  <span>Design</span>
+                </div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount">$54.99</div>
+                <div class="tx-badge badge-monthly">Monthly</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- YNAB -->
+          <div class="tx-card">
+            <div class="tx-card-inner" style="--accent-color: #F5A623;">
+              <div class="app-icon" style="background: rgba(245,166,35,0.15);">💰</div>
+              <div class="tx-info">
+                <div class="tx-name">YNAB</div>
+                <div class="tx-meta">
+                  <span>Apr 5</span>
+                  <span class="tx-meta-dot"></span>
+                  <span>Finance</span>
+                </div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount">$14.99</div>
+                <div class="tx-badge badge-monthly">Monthly</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Salary income -->
+          <div class="tx-card">
+            <div class="tx-card-inner" style="--accent-color: #6EE7B7;">
+              <div class="app-icon" style="background: rgba(110,231,183,0.12);">🏦</div>
+              <div class="tx-info">
+                <div class="tx-name">Salary Deposit</div>
+                <div class="tx-meta">
+                  <span>Apr 1</span>
+                  <span class="tx-meta-dot"></span>
+                  <span>Income</span>
+                </div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount positive">+$8,200</div>
+                <div class="tx-badge badge-income">Income</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Date separator -->
+        <div class="date-separator">Annual Subscriptions</div>
+
+        <div class="transaction-list">
+
+          <!-- 1Password -->
+          <div class="tx-card">
+            <div class="tx-card-inner" style="--accent-color: #1769FF;">
+              <div class="app-icon" style="background: rgba(23,105,255,0.15);">🔑</div>
+              <div class="tx-info">
+                <div class="tx-name">1Password</div>
+                <div class="tx-meta">
+                  <span>Renews May 22</span>
+                  <span class="tx-meta-dot"></span>
+                  <span>Security</span>
+                </div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount">$35.88</div>
+                <div class="tx-badge badge-annual">Annual</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Setapp -->
+          <div class="tx-card">
+            <div class="tx-card-inner" style="--accent-color: #A78BFA;">
+              <div class="app-icon" style="background: rgba(167,139,250,0.15);">📦</div>
+              <div class="tx-info">
+                <div class="tx-name">Setapp</div>
+                <div class="tx-meta">
+                  <span>Renews Jun 8</span>
+                  <span class="tx-meta-dot"></span>
+                  <span>Apps</span>
+                </div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount">$99.99</div>
+                <div class="tx-badge badge-annual">Annual</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GitHub -->
+          <div class="tx-card">
+            <div class="tx-card-inner" style="--accent-color: #F0F6FF;">
+              <div class="app-icon" style="background: rgba(240,246,255,0.08);">💻</div>
+              <div class="tx-info">
+                <div class="tx-name">GitHub Pro</div>
+                <div class="tx-meta">
+                  <span>Renews Jul 14</span>
+                  <span class="tx-meta-dot"></span>
+                  <span>Dev Tools</span>
+                </div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount">$48.00</div>
+                <div class="tx-badge badge-annual">Annual</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notion -->
+          <div class="tx-card">
+            <div class="tx-card-inner" style="--accent-color: #FCA5A5;">
+              <div class="app-icon" style="background: rgba(252,165,165,0.12);">📝</div>
+              <div class="tx-info">
+                <div class="tx-name">Notion Plus</div>
+                <div class="tx-meta">
+                  <span>Renews Aug 3</span>
+                  <span class="tx-meta-dot"></span>
+                  <span>Productivity</span>
+                </div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount">$96.00</div>
+                <div class="tx-badge badge-annual">Annual</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Raycast Pro -->
+          <div class="tx-card">
+            <div class="tx-card-inner" style="--accent-color: #FCD34D;">
+              <div class="app-icon" style="background: rgba(252,211,77,0.12);">⚡</div>
+              <div class="tx-info">
+                <div class="tx-name">Raycast Pro</div>
+                <div class="tx-meta">
+                  <span>Renews Sep 20</span>
+                  <span class="tx-meta-dot"></span>
+                  <span>Dev Tools</span>
+                </div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount">$96.00</div>
+                <div class="tx-badge badge-annual">Annual</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div><!-- /content -->
+    </div><!-- /scroll-view -->
+
+    <!-- Status bar (overlaid, after scroll-view so it's on top) -->
+    <div class="status-bar" style="position:absolute;top:0;left:0;right:0;z-index:60;pointer-events:none;">
+      <span>9:41</span>
+      <div class="status-icons">
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="white">
+          <rect x="0" y="4" width="3" height="8" rx="1" opacity="0.3"/>
+          <rect x="4.5" y="3" width="3" height="9" rx="1" opacity="0.5"/>
+          <rect x="9" y="1.5" width="3" height="10.5" rx="1" opacity="0.7"/>
+          <rect x="13.5" y="0" width="2.5" height="12" rx="1"/>
+        </svg>
+        <svg width="15" height="12" viewBox="0 0 15 12" fill="white">
+          <path d="M7.5 2.5C9.8 2.5 11.8 3.5 13.2 5.1L14.5 3.7C12.7 1.7 10.2 0.5 7.5 0.5C4.8 0.5 2.3 1.7 0.5 3.7L1.8 5.1C3.2 3.5 5.2 2.5 7.5 2.5Z" opacity="0.3"/>
+          <path d="M7.5 5.5C9 5.5 10.3 6.2 11.2 7.3L12.5 5.9C11.3 4.5 9.5 3.5 7.5 3.5C5.5 3.5 3.7 4.5 2.5 5.9L3.8 7.3C4.7 6.2 6 5.5 7.5 5.5Z" opacity="0.6"/>
+          <circle cx="7.5" cy="10.5" r="1.5"/>
+        </svg>
+        <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
+          <rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="white" stroke-opacity="0.35"/>
+          <rect x="2" y="2" width="16" height="8" rx="2" fill="white"/>
+          <path d="M23 4v4a2 2 0 0 0 0-4Z" fill="white" fill-opacity="0.4"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <div class="tab-item">
+        <div class="tab-icon active">🏠</div>
+        <div class="tab-label active">Home</div>
+        <div class="tab-dot"></div>
+      </div>
+      <div class="tab-item">
+        <div class="tab-icon">💳</div>
+        <div class="tab-label">Cash</div>
+      </div>
+      <div class="tab-item">
+        <div class="tab-icon">📈</div>
+        <div class="tab-label">Invest</div>
+      </div>
+    </div>
+
+  </div><!-- /screen -->
+</div><!-- /phone-frame -->
+
+<!-- Fallback note -->
+<div class="browser-note">
+  <strong>Scroll-Driven Animations</strong> · Requires Chrome 115+ · Safari 17.2+ · Firefox 110+<br>
+  Fallback: IntersectionObserver triggers on older browsers (auto-detected, no JS framework needed)
+</div>
+
+<!-- Tech breakdown -->
+<div class="tech-panel">
+  <h2>How it works</h2>
+
+  <div class="tech-card">
+    <h3>CSS Scroll-Driven Animation (the magic)</h3>
+    <p>
+      Each card has <code>animation-timeline: view(block)</code> which ties the animation
+      progress directly to the card's position in the scroll container — no JS, no ResizeObserver.
+      <code>animation-range: entry 0% entry 38%</code> plays the animation only during the
+      "entering" phase (card crossing the top of the viewport).
+    </p>
+  </div>
+
+  <div class="tech-card">
+    <h3>SwiftUI equivalent</h3>
+    <p>
+      This replicates <code>.scrollTransition { content, phase in content.opacity(...).scaleEffect(...).offset(...) }</code>
+      exactly. The <code>phase.isIdentity</code> check maps to the element being
+      fully in view (animation at 100%). Entry → animated. Identity → normal.
+    </p>
+  </div>
+
+  <div class="tech-card">
+    <h3>The keyframe</h3>
+    <p>
+      Cards glide in from <code>translateX(-28px) scale(0.88) blur(3px)</code> to
+      <code>translateX(0) scale(1) blur(0)</code> — matching Subbie's slide + fade effect.
+      The <code>will-change: transform, opacity</code> forces GPU compositing for 60fps.
+    </p>
+  </div>
+
+  <div class="tech-card">
+    <h3>IntersectionObserver fallback</h3>
+    <p>
+      The <code>@supports not (animation-timeline: view())</code> block applies transition-based
+      animation triggered by the JS observer below — same visual result, broader browser support.
+    </p>
+  </div>
+</div>
+
+<script>
+// IntersectionObserver fallback for browsers without scroll-driven animation support
+const supportsScrollTimeline = CSS.supports('animation-timeline', 'view()');
+
+if (!supportsScrollTimeline) {
+  const animItems = document.querySelectorAll('.tx-card, .date-separator');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        // Stagger based on position
+        const delay = (i % 3) * 60;
+        setTimeout(() => {
+          entry.target.classList.add('in-view');
+        }, delay);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, {
+    root: document.getElementById('scrollView'),
+    rootMargin: '0px 0px -10% 0px',
+    threshold: 0.05
+  });
+
+  animItems.forEach(el => observer.observe(el));
+}
+</script>
+</body>
+</html>
