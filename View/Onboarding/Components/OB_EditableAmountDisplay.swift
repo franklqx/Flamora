@@ -28,12 +28,12 @@ struct OB_EditableAmountDisplay: View {
             Spacer()
             Text(currencySymbol)
                 .font(.h1)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(AppColors.inkPrimary)
             ZStack {
                 // TextField 始终在视图树中，避免焦点丢失
                 TextField("", text: $editText)
                     .font(.currencyHero.monospacedDigit())
-                    .foregroundStyle(AppColors.textPrimary)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .keyboardType(.numberPad)
                     .focused($isFocused)
                     .multilineTextAlignment(.center)

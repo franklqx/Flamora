@@ -9,6 +9,76 @@ import SwiftUI
 internal import Auth
 
 struct OB_ContainerView: View {
+    enum ThemeSurface: Equatable {
+        case immersiveDark
+        case welcomeException
+        case lightShell
+    }
+
+    struct StepConfig: Equatable {
+        let allowsBack: Bool
+        let headerProgress: Int?
+        let themeSurface: ThemeSurface
+    }
+
+    private enum StepID: Int {
+        case splash = 0
+        case welcome = 1
+        case signIn = 2
+        case intro = 3
+        case name = 4
+        case motivation = 5
+        case socialProof = 6
+        case painPoints = 7
+        case valueScreen = 8
+        case age = 9
+        case income = 10
+        case spending = 11
+        case investment = 12
+        case lifestyle = 13
+        case loading = 14
+        case roadmap = 15
+        case ahaMoment = 16
+        case paywall = 17
+    }
+
+    private static let stepConfigs: [Int: StepConfig] = [
+        StepID.splash.rawValue: StepConfig(allowsBack: false, headerProgress: nil, themeSurface: .immersiveDark),
+        StepID.welcome.rawValue: StepConfig(allowsBack: false, headerProgress: nil, themeSurface: .welcomeException),
+        StepID.signIn.rawValue: StepConfig(allowsBack: true, headerProgress: nil, themeSurface: .lightShell),
+        StepID.intro.rawValue: StepConfig(allowsBack: true, headerProgress: 1, themeSurface: .lightShell),
+        StepID.name.rawValue: StepConfig(allowsBack: true, headerProgress: 2, themeSurface: .lightShell),
+        StepID.motivation.rawValue: StepConfig(allowsBack: true, headerProgress: 3, themeSurface: .lightShell),
+        StepID.socialProof.rawValue: StepConfig(allowsBack: true, headerProgress: nil, themeSurface: .lightShell),
+        StepID.painPoints.rawValue: StepConfig(allowsBack: true, headerProgress: 4, themeSurface: .lightShell),
+        StepID.valueScreen.rawValue: StepConfig(allowsBack: true, headerProgress: 5, themeSurface: .lightShell),
+        StepID.age.rawValue: StepConfig(allowsBack: true, headerProgress: 6, themeSurface: .lightShell),
+        StepID.income.rawValue: StepConfig(allowsBack: true, headerProgress: 7, themeSurface: .lightShell),
+        StepID.spending.rawValue: StepConfig(allowsBack: true, headerProgress: 8, themeSurface: .lightShell),
+        StepID.investment.rawValue: StepConfig(allowsBack: true, headerProgress: 9, themeSurface: .lightShell),
+        StepID.lifestyle.rawValue: StepConfig(allowsBack: true, headerProgress: 10, themeSurface: .lightShell),
+        StepID.loading.rawValue: StepConfig(allowsBack: false, headerProgress: nil, themeSurface: .lightShell),
+        StepID.roadmap.rawValue: StepConfig(allowsBack: true, headerProgress: nil, themeSurface: .immersiveDark),
+        StepID.ahaMoment.rawValue: StepConfig(allowsBack: false, headerProgress: nil, themeSurface: .immersiveDark),
+        StepID.paywall.rawValue: StepConfig(allowsBack: true, headerProgress: nil, themeSurface: .lightShell),
+    ]
+
+    static func config(for step: Int) -> StepConfig {
+        stepConfigs[step] ?? StepConfig(allowsBack: false, headerProgress: nil, themeSurface: .immersiveDark)
+    }
+
+    static func nextStep(after currentStep: Int) -> Int {
+        var nextStep = currentStep + 1
+        if nextStep == StepID.ahaMoment.rawValue { nextStep = StepID.paywall.rawValue } // Step 16 已合并到 Roadmap
+        return min(nextStep, StepID.paywall.rawValue)
+    }
+
+    static func previousStep(before currentStep: Int) -> Int {
+        var previousStep = currentStep - 1
+        if previousStep == StepID.ahaMoment.rawValue { previousStep = StepID.roadmap.rawValue } // Step 16 已合并到 Roadmap
+        return max(previousStep, StepID.splash.rawValue)
+    }
+
     @Binding var isOnboardingComplete: Bool
     @AppStorage("hasCompletedOnboardingV2") private var hasCompletedOnboarding = false  // key 保留兼容已完程用户
 
@@ -20,29 +90,37 @@ struct OB_ContainerView: View {
 
     private let supabase = SupabaseManager.shared
 
+    private var stepConfig: StepConfig {
+        Self.config(for: currentStep)
+    }
+
     private var canGoBack: Bool {
-        [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 17].contains(currentStep)
+        stepConfig.allowsBack
     }
 
     private var headerProgressCurrent: Int? {
-        switch currentStep {
-        case 3: return 1   // IntroView
-        case 4: return 2
-        case 5: return 3
-        case 7: return 4
-        case 8: return 5
-        case 9: return 6
-        case 10: return 7
-        case 11: return 8
-        case 12: return 9
-        case 13: return 10
-        default: return nil  // step 6 SocialProof 无进度条
+        stepConfig.headerProgress
+    }
+
+    private var containerBackground: some View {
+        Group {
+            switch stepConfig.themeSurface {
+            case .lightShell:
+                LinearGradient(
+                    colors: [AppColors.shellBg1, AppColors.shellBg2],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            case .welcomeException, .immersiveDark:
+                AppColors.backgroundPrimary
+            }
         }
+        .ignoresSafeArea()
     }
 
     var body: some View {
         ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            containerBackground
 
             currentStepView
                 .transition(.asymmetric(
@@ -58,7 +136,7 @@ struct OB_ContainerView: View {
             if supabase.isAuthenticated && !hasCompletedOnboarding {
                 data.userId = supabase.currentUserId ?? ""
                 data.email = supabase.currentUser?.email ?? ""
-                currentStep = 3
+                currentStep = StepID.intro.rawValue
             }
         }
     }
@@ -124,9 +202,7 @@ struct OB_ContainerView: View {
     private func next() {
         isTransitioning = true
         withAnimation(.easeInOut(duration: 0.3)) {
-            var nextStep = currentStep + 1
-            if nextStep == 16 { nextStep = 17 } // Skip step 16 (merged into Roadmap)
-            currentStep = min(nextStep, 17)
+            currentStep = Self.nextStep(after: currentStep)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             isTransitioning = false
@@ -136,9 +212,7 @@ struct OB_ContainerView: View {
     private func back() {
         isTransitioning = true
         withAnimation(.easeInOut(duration: 0.3)) {
-            var prevStep = currentStep - 1
-            if prevStep == 16 { prevStep = 15 } // Skip step 16 (merged into Roadmap)
-            currentStep = max(prevStep, 0)
+            currentStep = Self.previousStep(before: currentStep)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             isTransitioning = false

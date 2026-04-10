@@ -27,7 +27,7 @@ struct OB_LoadingView: View {
 
     var body: some View {
         ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 Spacer()
@@ -47,7 +47,13 @@ struct OB_LoadingView: View {
                     Image(systemName: "sparkle")
                         .font(.h1)
                         .fontWeight(.light)
-                        .foregroundColor(AppColors.textPrimary)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [AppColors.gradientEnd, AppColors.gradientMiddle, AppColors.gradientStart],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                         .rotationEffect(.degrees(rotation))
                         .opacity(showIcon ? 1 : 0)
                 }
@@ -72,7 +78,13 @@ struct OB_LoadingView: View {
                             .frame(height: 3)
 
                         Capsule()
-                            .fill(AppColors.textPrimary)
+                            .fill(
+                                LinearGradient(
+                                    colors: [AppColors.gradientEnd, AppColors.gradientMiddle, AppColors.gradientStart],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                             .frame(width: geo.size.width * barProgress, height: 3)
                     }
                 }
@@ -94,7 +106,7 @@ struct OB_LoadingView: View {
                 case .loading:
                     ProgressView()
                         .scaleEffect(0.8)
-                        .tint(AppColors.textSecondary)
+                        .tint(AppColors.inkSoft)
                         .frame(width: 20, height: 20)
                 case .done:
                     Image(systemName: "checkmark")
@@ -106,7 +118,7 @@ struct OB_LoadingView: View {
 
             Text(text)
                 .font(.bodySmall)
-                .foregroundColor(state == .waiting ? .clear : AppColors.textSecondary)
+                .foregroundColor(state == .waiting ? .clear : AppColors.inkSoft)
         }
         .animation(.easeOut(duration: 0.3), value: state == .waiting)
     }

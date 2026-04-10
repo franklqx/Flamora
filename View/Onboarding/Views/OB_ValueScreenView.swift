@@ -14,7 +14,7 @@ struct OB_ValueScreenView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -40,7 +40,7 @@ struct OB_ValueScreenView: View {
             // 固定在屏幕最下方的 CTA
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary],
+                    colors: [AppColors.shellBg2.opacity(0), AppColors.shellBg2],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -49,7 +49,7 @@ struct OB_ValueScreenView: View {
                 OB_PrimaryButton(title: "Continue", action: onNext)
             }
             .padding(.bottom, AppSpacing.md)
-            .background(AppColors.backgroundPrimary)
+            .background(AppColors.shellBg2)
             .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -80,7 +80,7 @@ private struct ValueMoneyTrackingContent: View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
             Text("We automatically sort\nevery dollar for you")
                 .font(.obQuestion)
-                .foregroundColor(AppColors.textPrimary)
+                .foregroundColor(AppColors.inkPrimary)
 
             // Animated card area
             VStack(spacing: 0) {
@@ -91,11 +91,11 @@ private struct ValueMoneyTrackingContent: View {
                             HStack {
                                 Text(transactions[index].name)
                                     .font(.supportingText)
-                                    .foregroundColor(AppColors.textPrimary)
+                                    .foregroundColor(AppColors.inkPrimary)
                                 Spacer()
                                 Text(transactions[index].amount)
                                     .font(.supportingText)
-                                    .foregroundColor(AppColors.textPrimary)
+                                    .foregroundColor(AppColors.inkPrimary)
                             }
                             .padding(.vertical, AppSpacing.sm + AppSpacing.xs)
                             .opacity(index < visibleRows ? 1 : 0)
@@ -106,12 +106,12 @@ private struct ValueMoneyTrackingContent: View {
                             )
 
                             if index < transactions.count - 1 {
-                                Divider().overlay(AppColors.borderDefault.opacity(0.3))
+                                Divider().overlay(AppColors.inkBorder.opacity(0.3))
                             }
                         }
                     }
                     .padding(AppSpacing.cardPadding)
-                    .background(AppColors.backgroundCard)
+                    .background(AppColors.glassCardBg)
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                     .transition(
                         .asymmetric(
@@ -149,7 +149,7 @@ private struct ValueMoneyTrackingContent: View {
                                     .tracking(1)
                                 Text("$3,200")
                                     .font(.detailTitle)
-                                    .foregroundColor(AppColors.textPrimary)
+                                    .foregroundColor(AppColors.inkPrimary)
                             }
                         }
                         .frame(width: 130, height: 130)
@@ -198,7 +198,7 @@ private struct ValueMoneyTrackingContent: View {
                         }
                     }
                     .padding(AppSpacing.cardPadding)
-                    .background(AppColors.backgroundCard)
+                    .background(AppColors.glassCardBg)
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                 }
             }
@@ -206,7 +206,7 @@ private struct ValueMoneyTrackingContent: View {
             // Bottom text
             Text("Flamora connects to your accounts and automatically categorizes every transaction in real-time — so you always know exactly where your money goes.")
                 .font(.bodySmall)
-                .foregroundColor(AppColors.textSecondary)
+                .foregroundColor(AppColors.inkSoft)
                 .lineSpacing(4)
         }
         .onAppear { startSequence() }
@@ -230,11 +230,11 @@ private struct ValueMoneyTrackingContent: View {
                     Circle().fill(color).frame(width: 10, height: 10)
                     Text(title)
                         .font(.supportingText)
-                        .foregroundColor(AppColors.textPrimary)
+                        .foregroundColor(AppColors.inkPrimary)
                     Spacer()
                     Text(total)
                         .font(.cardFigureSecondary)
-                        .foregroundColor(AppColors.textPrimary)
+                        .foregroundColor(AppColors.inkPrimary)
                     Image(systemName: "chevron.right")
                         .font(.caption)
                         .foregroundColor(AppColors.textTertiary)
@@ -252,22 +252,22 @@ private struct ValueMoneyTrackingContent: View {
                         HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
                             Image(systemName: items[i].icon)
                                 .font(.bodyRegular)
-                                .foregroundStyle(AppColors.textPrimary)
+                                .foregroundStyle(AppColors.inkPrimary)
                                 .frame(width: 20)
                             Text(items[i].category)
                                 .font(.footnoteRegular)
-                                .foregroundColor(AppColors.textPrimary)
+                                .foregroundColor(AppColors.inkPrimary)
                             Spacer()
                             Text(items[i].amount)
                                 .font(.footnoteSemibold)
-                                .foregroundColor(AppColors.textSecondary)
+                                .foregroundColor(AppColors.inkSoft)
                         }
                         .padding(.vertical, AppSpacing.sm)
                         .padding(.horizontal, AppSpacing.sm + AppSpacing.xs + AppSpacing.xs)
 
                         if i < items.count - 1 {
                             Divider()
-                                .overlay(AppColors.borderDefault.opacity(0.3))
+                                .overlay(AppColors.inkBorder.opacity(0.3))
                                 .padding(.leading, AppSpacing.md + AppSpacing.md + AppSpacing.xs + AppSpacing.xs + AppSpacing.xs)
                         }
                     }
@@ -275,7 +275,7 @@ private struct ValueMoneyTrackingContent: View {
                 .transition(.opacity)
             }
         }
-        .background(AppColors.backgroundCardHover)
+        .background(AppColors.glassBlockBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
     }
 
@@ -312,7 +312,7 @@ private struct ValueMoneyTrackingContent: View {
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.lg)
     }
-    .background(AppColors.backgroundPrimary)
+    .background(AppColors.shellBg2)
 }
 
 // MARK: - pain_saving
@@ -328,7 +328,7 @@ private struct ValueSavingContent: View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
             Text("Small wins build big momentum")
                 .font(.obQuestion)
-                .foregroundColor(AppColors.textPrimary)
+                .foregroundColor(AppColors.inkPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
 
@@ -346,12 +346,12 @@ private struct ValueSavingContent: View {
                     Spacer()
                     Text("2026")
                         .font(.cardRowMeta)
-                        .foregroundColor(AppColors.textSecondary)
+                        .foregroundColor(AppColors.inkSoft)
                         .padding(.horizontal, AppSpacing.sm + AppSpacing.xs + AppSpacing.xs)
                         .padding(.vertical, AppSpacing.xs)
                         .overlay(
                             RoundedRectangle(cornerRadius: AppRadius.sm)
-                                .stroke(AppColors.borderDefault, lineWidth: 1)
+                                .stroke(AppColors.inkBorder, lineWidth: 1)
                         )
                 }
 
@@ -370,7 +370,7 @@ private struct ValueSavingContent: View {
                     }
                 }
 
-                Divider().overlay(AppColors.borderDefault)
+                Divider().overlay(AppColors.inkBorder)
 
                 // Bottom stats
                 HStack {
@@ -384,7 +384,7 @@ private struct ValueSavingContent: View {
                         .foregroundColor(AppColors.textTertiary)
                         Text("20%")
                             .font(.h4)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(AppColors.inkPrimary)
                     }
                     Spacer()
                     VStack(alignment: .trailing, spacing: AppSpacing.xs) {
@@ -397,17 +397,17 @@ private struct ValueSavingContent: View {
                         .foregroundColor(AppColors.textTertiary)
                         Text("$200")
                             .font(.h4)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(AppColors.inkPrimary)
                     }
                 }
             }
             .padding(AppSpacing.cardPadding)
-            .background(AppColors.backgroundCard)
+            .background(AppColors.glassCardBg)
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
 
             Text("Consistency beats perfection. Track your monthly milestones throughout 2026.")
                 .font(.bodySmall)
-                .foregroundColor(AppColors.textSecondary)
+                .foregroundColor(AppColors.inkSoft)
                 .lineSpacing(4)
         }
         .onAppear {
@@ -435,14 +435,14 @@ private struct ValueSavingContent: View {
                                 startPoint: startPt,
                                 endPoint: endPt
                             ))
-                            : AnyShapeStyle(AppColors.backgroundCardHover)
+                            : AnyShapeStyle(AppColors.glassBlockBg)
                     )
                     .frame(height: 52)
 
                 Image(systemName: isCompleted ? "checkmark" : "plus")
                     .font(isCompleted ? .bodyRegular : .h4)
                     .fontWeight(.medium)
-                    .foregroundColor(isCompleted ? AppColors.textPrimary : AppColors.textTertiary)
+                    .foregroundColor(isCompleted ? AppColors.inkPrimary : AppColors.textTertiary)
             }
 
             Text(months[index])
@@ -458,7 +458,7 @@ private struct ValueSavingContent: View {
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.lg)
     }
-    .background(AppColors.backgroundPrimary)
+    .background(AppColors.shellBg2)
 }
 
 // MARK: - pain_investing
@@ -471,7 +471,7 @@ private struct ValueInvestingContent: View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
             Text("It's not about how much\nIt's about how early")
                 .font(.obQuestion)
-                .foregroundColor(AppColors.textPrimary)
+                .foregroundColor(AppColors.inkPrimary)
 
             // Preview card
             VStack(spacing: AppSpacing.cardGap) {
@@ -489,15 +489,15 @@ private struct ValueInvestingContent: View {
                             .tracking(0.5)
                         Text("$213,000")
                             .font(.bodySemibold)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(AppColors.inkPrimary)
                     }
                     .padding(.horizontal, AppSpacing.sm + AppSpacing.xs)
                     .padding(.vertical, AppSpacing.sm)
-                    .background(AppColors.backgroundCardHover)
+                    .background(AppColors.glassBlockBg)
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm))
                     .overlay(
                         RoundedRectangle(cornerRadius: AppRadius.sm)
-                            .stroke(AppColors.borderDefault, lineWidth: 1)
+                            .stroke(AppColors.inkBorder, lineWidth: 1)
                     )
                     .opacity(showCostBadge ? 1 : 0)
                     .offset(x: showCostBadge ? 0 : AppSpacing.md + AppSpacing.xs)
@@ -505,10 +505,10 @@ private struct ValueInvestingContent: View {
 
                 Text("Investing $300/month")
                     .font(.caption)
-                    .foregroundColor(AppColors.textSecondary)
+                    .foregroundColor(AppColors.inkSoft)
                     .frame(maxWidth: .infinity)
 
-                Divider().overlay(AppColors.borderDefault)
+                Divider().overlay(AppColors.inkBorder)
 
                 // Legend
                 HStack {
@@ -517,11 +517,11 @@ private struct ValueInvestingContent: View {
                             Circle().fill(AppColors.gradientStart).frame(width: 8, height: 8)
                             Text("Start now")
                                 .font(.caption)
-                                .foregroundColor(AppColors.textSecondary)
+                                .foregroundColor(AppColors.inkSoft)
                         }
                         Text("$549k")
                             .font(.detailTitle)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(AppColors.inkPrimary)
                     }
                     Spacer()
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
@@ -529,21 +529,21 @@ private struct ValueInvestingContent: View {
                             Circle().fill(AppColors.textTertiary).frame(width: 8, height: 8)
                             Text("Wait 5 yrs")
                                 .font(.caption)
-                                .foregroundColor(AppColors.textSecondary)
+                                .foregroundColor(AppColors.inkSoft)
                         }
                         Text("$336k")
                             .font(.detailTitle)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(AppColors.inkPrimary)
                     }
                 }
             }
             .padding(AppSpacing.cardPadding)
-            .background(AppColors.backgroundCard)
+            .background(AppColors.glassCardBg)
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
 
             Text("Even small contributions grow dramatically with time. Flamora helps you find that extra $100-300/month hiding in your spending.")
                 .font(.bodySmall)
-                .foregroundColor(AppColors.textSecondary)
+                .foregroundColor(AppColors.inkSoft)
                 .lineSpacing(4)
         }
         .onAppear {
@@ -700,7 +700,7 @@ private struct CompoundGrowthChart: View {
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.lg)
     }
-    .background(AppColors.backgroundPrimary)
+    .background(AppColors.shellBg2)
 }
 
 // MARK: - pain_fire
@@ -720,7 +720,7 @@ private struct ValueFireContent: View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
             Text("We'll guide you every step of the way")
                 .font(.obQuestion)
-                .foregroundColor(AppColors.textPrimary)
+                .foregroundColor(AppColors.inkPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
 
@@ -738,7 +738,7 @@ private struct ValueFireContent: View {
 
             Text("No spreadsheets. No guesswork. Just a system that keeps you on track — automatically.")
                 .font(.bodySmall)
-                .foregroundColor(AppColors.textSecondary)
+                .foregroundColor(AppColors.inkSoft)
                 .lineSpacing(4)
         }
         .onAppear {
@@ -764,19 +764,19 @@ private struct ValueFireContent: View {
                                     startPoint: .bottomLeading,
                                     endPoint: .topTrailing
                                 ))
-                                : AnyShapeStyle(AppColors.backgroundCardHover)
+                                : AnyShapeStyle(AppColors.glassBlockBg)
                         )
                         .frame(width: 48, height: 48)
 
                     Image(systemName: steps[index].icon)
                         .font(.chromeIconMedium)
-                        .foregroundColor(isLit ? AppColors.textPrimary : AppColors.textTertiary)
+                        .foregroundColor(isLit ? AppColors.inkPrimary : AppColors.textTertiary)
                 }
 
                 // Right: text centered to icon
                 Text(steps[index].text)
                     .font(isLit ? .bodySemibold : .bodyRegular)
-                    .foregroundColor(isLit ? AppColors.textPrimary : AppColors.textTertiary)
+                    .foregroundColor(isLit ? AppColors.inkPrimary : AppColors.textTertiary)
 
                 Spacer()
             }
@@ -784,7 +784,7 @@ private struct ValueFireContent: View {
             // Connector line between steps — centered under 48pt icon
             if index < steps.count - 1 {
                 Rectangle()
-                    .fill(AppColors.borderDefault)
+                    .fill(AppColors.inkBorder)
                     .frame(width: 1, height: 24)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.leading, AppSpacing.lg)
@@ -799,12 +799,12 @@ private struct ValueFireContent: View {
             .padding(.horizontal, AppSpacing.sm)
             .padding(.bottom, AppSpacing.sm)
     }
-    .background(AppColors.backgroundPrimary)
+    .background(AppColors.shellBg2)
 }
 
 #Preview("Value Screen (full)") {
     ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
+        LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
         OB_ValueScreenView(data: OnboardingData(), onNext: {}, onBack: {})
         VStack {
             OB_OnboardingHeader(onBack: {}, current: 5, total: 10)

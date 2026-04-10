@@ -15,7 +15,7 @@ struct OB_SnapshotProgress: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Financial Snapshot \(current)/\(total)")
                 .font(.label)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(AppColors.inkPrimary)
                 .tracking(0.8)
                 .frame(maxWidth: .infinity, alignment: .trailing)
 
@@ -27,7 +27,7 @@ struct OB_SnapshotProgress: View {
                 ZStack(alignment: .leading) {
                     // 背景轨道
                     Capsule()
-                        .fill(AppColors.surfaceInput)
+                        .fill(AppColors.glassCardBg)
                         .frame(height: 4)
 
                     // 渐变进度

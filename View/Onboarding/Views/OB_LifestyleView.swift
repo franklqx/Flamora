@@ -39,10 +39,10 @@ struct OB_LifestyleView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("What kind of retirement life do you want?")
                                 .font(.obQuestion)
-                                .foregroundStyle(AppColors.textPrimary)
+                                .foregroundStyle(AppColors.inkPrimary)
                             Text("Choose your target lifestyle in retirement")
                                 .font(.bodySmall)
-                                .foregroundColor(AppColors.textSecondary)
+                                .foregroundColor(AppColors.inkSoft)
                         }
 
                         Spacer().frame(height: AppSpacing.xl)
@@ -72,10 +72,10 @@ struct OB_LifestyleView: View {
                                 HStack(spacing: 8) {
                                     Image(systemName: "plus")
                                         .font(.footnoteSemibold)
-                                        .foregroundColor(AppColors.textSecondary)
+                                        .foregroundColor(AppColors.inkSoft)
                                     Text("Set my own target")
                                         .font(.bodySmall)
-                                        .foregroundColor(AppColors.textSecondary)
+                                        .foregroundColor(AppColors.inkSoft)
                                 }
                                 .padding(.top, 4)
                             }
@@ -89,7 +89,7 @@ struct OB_LifestyleView: View {
                                     .foregroundColor(AppColors.textTertiary)
                                 TextField("Monthly amount", text: $customAmountText)
                                     .font(.h4)
-                                    .foregroundStyle(AppColors.textPrimary)
+                                    .foregroundStyle(AppColors.inkPrimary)
                                     .keyboardType(.numberPad)
                                     .focused($isCustomInputFocused)
                                 Text("/mo")
@@ -98,7 +98,7 @@ struct OB_LifestyleView: View {
                             }
                             .padding(.horizontal, 20)
                             .frame(height: 56)
-                            .background(AppColors.surface)
+                            .background(AppColors.glassCardBg)
                             .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
                             .overlay(
                                 RoundedRectangle(cornerRadius: AppRadius.lg)
@@ -125,7 +125,7 @@ struct OB_LifestyleView: View {
             // 底部 CTA — 和 ScrollView 同级，键盘弹出时自动上移
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
+                    colors: [AppColors.shellBg2.opacity(0), AppColors.shellBg2],
                     startPoint: .top, endPoint: .bottom
                 )
                 .frame(height: 28)
@@ -141,10 +141,10 @@ struct OB_LifestyleView: View {
                 })
             }
             .padding(.bottom, 16)
-            .background(AppColors.backgroundPrimary)
+            .background(AppColors.shellBg2)
             .ignoresSafeArea(edges: .bottom)
         }
-        .background(AppColors.backgroundPrimary.ignoresSafeArea())
+        .background(LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
@@ -177,13 +177,13 @@ struct OB_LifestyleView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(option.title)
                         .font(.bodySemibold)
-                        .foregroundStyle(AppColors.textPrimary)
+                        .foregroundStyle(AppColors.inkPrimary)
 
                     HStack(spacing: 0) {
                         Text(option.subtitle)
-                            .foregroundColor(AppColors.textSecondary)
+                            .foregroundColor(AppColors.inkSoft)
                         Text(" · \(formatAmount(amount))/mo")
-                            .foregroundColor(AppColors.textSecondary)
+                            .foregroundColor(AppColors.inkSoft)
                     }
                     .font(.bodySmall)
                 }
@@ -201,11 +201,11 @@ struct OB_LifestyleView: View {
                 }
             }
             .padding(AppSpacing.md)
-            .background(AppColors.surface.opacity(0.6))
+            .background(AppColors.glassCardBg)
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.lg)
-                    .stroke(isSelected ? LinearGradient(colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd], startPoint: .leading, endPoint: .trailing) : LinearGradient(colors: [AppColors.overlayWhiteStroke], startPoint: .leading, endPoint: .trailing), lineWidth: isSelected ? 1.5 : 1)
+                    .stroke(isSelected ? LinearGradient(colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd], startPoint: .leading, endPoint: .trailing) : LinearGradient(colors: [AppColors.inkBorder], startPoint: .leading, endPoint: .trailing), lineWidth: isSelected ? 1.5 : 1)
             )
         }
         .buttonStyle(.plain)
@@ -223,7 +223,7 @@ struct OB_LifestyleView: View {
 
 #Preview {
     ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
+        LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
         OB_LifestyleView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

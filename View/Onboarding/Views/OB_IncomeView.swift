@@ -22,7 +22,7 @@ struct OB_IncomeView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -33,10 +33,10 @@ struct OB_IncomeView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("What's your monthly income?")
                             .font(.obQuestion)
-                            .foregroundStyle(AppColors.textPrimary)
+                            .foregroundStyle(AppColors.inkPrimary)
                         Text("A rough estimate is fine")
                             .font(.bodySmall)
-                            .foregroundColor(AppColors.textSecondary)
+                            .foregroundColor(AppColors.inkSoft)
                     }
 
                     Spacer().frame(height: AppSpacing.xl)
@@ -70,7 +70,7 @@ struct OB_IncomeView: View {
             // Sticky CTA（与 AgeView 一致）
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
+                    colors: [AppColors.shellBg2.opacity(0), AppColors.shellBg2],
                     startPoint: .top, endPoint: .bottom
                 )
                 .frame(height: 28)
@@ -81,7 +81,7 @@ struct OB_IncomeView: View {
                 })
             }
             .padding(.bottom, 16)
-            .background(AppColors.backgroundPrimary)
+            .background(AppColors.shellBg2)
             .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -169,11 +169,11 @@ struct OB_IncomeView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 20)
         .frame(minHeight: 200)
-        .background(AppColors.surface.opacity(0.6))
+        .background(AppColors.glassCardBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.xl)
-                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
         )
     }
 
@@ -218,7 +218,7 @@ struct OB_IncomeView: View {
 
 #Preview {
     ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
+        LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
         OB_IncomeView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

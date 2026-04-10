@@ -67,7 +67,12 @@ struct OB_RoadmapView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(
+                gradient: AppColors.heroBrandLinearGradient,
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
             ScrollViewReader { proxy in
                 ScrollView(showsIndicators: false) {
@@ -555,7 +560,7 @@ struct OB_RoadmapView: View {
     private var stickyBottomCTA: some View {
         VStack(spacing: 0) {
             LinearGradient(
-                colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
+                colors: [AppColors.overlayBlackSoft.opacity(0), AppColors.overlayBlackSoft],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -566,6 +571,7 @@ struct OB_RoadmapView: View {
                     // Before CTA (white)
                     OB_PrimaryButton(
                         title: "See My Flamora Plan",
+                        style: .ctaWhite,
                         includeContainerPadding: false,
                         action: {
                             UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
@@ -581,18 +587,16 @@ struct OB_RoadmapView: View {
                     } label: {
                         Text("Get My Real Numbers \u{2192}")
                             .font(.figureSecondarySemibold)
-                            .foregroundStyle(AppColors.textPrimary)
+                            .foregroundStyle(AppColors.textInverse)
                             .frame(maxWidth: .infinity)
                             .frame(height: 56)
-                            .background(
-                                LinearGradient(
-                                    colors: [AppColors.gradientEnd, AppColors.gradientMiddle, AppColors.gradientStart],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
+                            .background(AppColors.ctaWhite)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 100)
+                                    .stroke(AppColors.glassCardBorder, lineWidth: 1)
                             )
                             .clipShape(RoundedRectangle(cornerRadius: 100))
-                            .shadow(color: AppColors.gradientMiddle.opacity(0.25), radius: 16, y: 8)
+                            .shadow(color: AppColors.overlayBlackSoft, radius: 16, y: 8)
                     }
                     .opacity(showRevealedCTA ? 1 : 0)
                 }
@@ -604,7 +608,7 @@ struct OB_RoadmapView: View {
             }
             .padding(.horizontal, AppSpacing.screenPadding)
             .padding(.bottom, AppSpacing.md)
-            .background(AppColors.backgroundPrimary)
+            .background(AppColors.overlayBlackSoft)
             .ignoresSafeArea(edges: .bottom)
         }
     }
@@ -813,7 +817,12 @@ struct OB_RoadmapView: View {
 
 #Preview {
     ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
+        LinearGradient(
+            gradient: AppColors.heroBrandLinearGradient,
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .ignoresSafeArea()
         OB_RoadmapView(data: OnboardingData(), onNext: {}, onBackToLifestyle: {}, backAction: .constant(nil))
     }
 }

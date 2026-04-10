@@ -2,7 +2,7 @@
 //  GlassmorphicTabBar.swift
 //  Flamora app
 //
-//  底部 Tab Bar：三键胶囊；随 sheet 下拉 collapseProgress 增至 1 时收拢为左侧单圆（当前 Tab 图标），点击圆由外部恢复 sheet。
+//  底部 Tab Bar：三键胶囊；随 sheet 下拉 collapseProgress 增至 1 时收拢为右侧单圆（当前 Tab 图标），点击圆由外部恢复 sheet。
 //
 
 import SwiftUI
@@ -16,7 +16,7 @@ enum MainTabItem: Int {
 
 struct GlassmorphicTabBar: View {
     @Binding var selectedTab: MainTabItem
-    /// 0 = 三键展开；1 = 仅左侧单圆（当前 Tab）
+    /// 0 = 三键展开；1 = 仅右侧单圆（当前 Tab）
     var collapseProgress: CGFloat
     let onTabTapped: (MainTabItem) -> Void
     /// Sheet 已收起到 default 以下时点击单圆恢复白卡高度
@@ -44,7 +44,7 @@ struct GlassmorphicTabBar: View {
     }
 
     var body: some View {
-        ZStack(alignment: .leading) {
+        ZStack(alignment: .trailing) {
             HStack(spacing: 0) {
                 ForEach(tabs.indices, id: \.self) { index in
                     GlassTabButton(
@@ -63,9 +63,9 @@ struct GlassmorphicTabBar: View {
             .scaleEffect(
                 x: 1 - 0.16 * clampedProgress,
                 y: 1 - 0.05 * clampedProgress,
-                anchor: .leading
+                anchor: .trailing
             )
-            .offset(x: -28 * clampedProgress)
+            .offset(x: 28 * clampedProgress)
             .opacity(Double(1 - clampedProgress))
             .allowsHitTesting(clampedProgress < 0.5)
 
@@ -85,14 +85,14 @@ struct GlassmorphicTabBar: View {
         .padding(.horizontal, AppSpacing.tabBarHorizontalInset)
         .padding(.bottom, 0)
         .padding(.top, AppSpacing.xxs)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .trailing)
         .animation(.easeInOut(duration: 0.28), value: clampedProgress)
     }
 
-    /// 右侧 Tab 先向左收拢，强化「从右向左」进单圆的观感。
+    /// 左侧 Tab 先向右收拢，强化「从左向右」进右侧单圆的观感（右手拇指更易够到）。
     private func collapseTabOffset(for index: Int) -> CGFloat {
         let order = CGFloat(tabs.count - 1 - index)
-        return -order * AppSpacing.sm * clampedProgress
+        return order * AppSpacing.sm * clampedProgress
     }
 }
 

@@ -23,14 +23,14 @@ struct OB_PainPointsView: View {
 
                     Text("What's your biggest financial challenge right now?")
                         .font(.obQuestion)
-                        .foregroundStyle(AppColors.textPrimary)
+                        .foregroundStyle(AppColors.inkPrimary)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Spacer().frame(height: 8)
 
                     Text("Select the one that feels most true right now.")
                         .font(.bodySmall)
-                        .foregroundColor(AppColors.textSecondary)
+                        .foregroundColor(AppColors.inkSoft)
 
                     Spacer().frame(height: AppSpacing.lg)
 
@@ -61,7 +61,7 @@ struct OB_PainPointsView: View {
             // Sticky CTA
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
+                    colors: [AppColors.shellBg2.opacity(0), AppColors.shellBg2],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -70,11 +70,11 @@ struct OB_PainPointsView: View {
                 OB_PrimaryButton(isValid: isValid, action: onNext)
             }
             .padding(.bottom, 16)
-            .background(AppColors.backgroundPrimary)
+            .background(AppColors.shellBg2)
             .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(AppColors.backgroundPrimary)
+        .background(AppColors.shellBg2)
     }
 
     private var isValid: Bool {
@@ -101,13 +101,13 @@ private struct ChallengeCard: View {
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                   ))
-                                : AnyShapeStyle(AppColors.surfaceElevated)
+                                : AnyShapeStyle(AppColors.glassCardBg)
                         )
                         .frame(width: 36, height: 36)
 
                     Image(systemName: option.icon)
                         .font(.fieldBodyMedium)
-                        .foregroundColor(isSelected ? AppColors.textInverse : AppColors.textSecondary)
+                        .foregroundColor(isSelected ? AppColors.textInverse : AppColors.inkSoft)
                 }
                 .frame(width: 36, height: 36)
 
@@ -115,14 +115,14 @@ private struct ChallengeCard: View {
                     Text(option.title)
                         .font(.bodyRegular)
                         .fontWeight(.semibold)
-                        .foregroundStyle(AppColors.textPrimary)
+                        .foregroundStyle(AppColors.inkPrimary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
 
                     if let subtitle = option.subtitle {
                         Text(subtitle)
                             .font(.caption)
-                            .foregroundColor(AppColors.textSecondary)
+                            .foregroundColor(AppColors.inkSoft)
                             .lineLimit(1)
                             .minimumScaleFactor(0.85)
                     }
@@ -151,8 +151,8 @@ private struct ChallengeCard: View {
             .padding(.vertical, 14)
             .background(
                 isSelected
-                    ? AppColors.surface.opacity(0.9)
-                    : AppColors.surface.opacity(0.5)
+                    ? AppColors.glassCardBg.opacity(0.9)
+                    : AppColors.glassCardBg.opacity(0.5)
             )
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(
@@ -160,7 +160,7 @@ private struct ChallengeCard: View {
                     .stroke(
                         isSelected
                             ? LinearGradient(colors: AppColors.gradientFire, startPoint: .leading, endPoint: .trailing)
-                            : LinearGradient(colors: [AppColors.borderDefault], startPoint: .leading, endPoint: .trailing),
+                            : LinearGradient(colors: [AppColors.inkBorder], startPoint: .leading, endPoint: .trailing),
                         lineWidth: isSelected ? 1 : 0.75
                     )
             )
@@ -171,7 +171,7 @@ private struct ChallengeCard: View {
 
 #Preview {
     ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
+        LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
         OB_PainPointsView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

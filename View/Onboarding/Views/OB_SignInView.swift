@@ -26,7 +26,7 @@ struct OB_SignInView: View {
 
     var body: some View {
         ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // MARK: - Top Bar
@@ -37,7 +37,7 @@ struct OB_SignInView: View {
                     Text("FLAMORA")
                         .font(.caption)
                         .tracking(3)
-                        .foregroundColor(AppColors.textSecondary)
+                        .foregroundColor(AppColors.inkSoft)
                 }
                 .padding(.horizontal, AppSpacing.md)
 
@@ -46,7 +46,7 @@ struct OB_SignInView: View {
                 // MARK: - Title
                 Text("Join The Journey\nTo Freedom")
                     .font(Font(UIFont(name: "PlayfairDisplayRoman-SemiBold", size: AppTypography.h1) ?? UIFont.systemFont(ofSize: AppTypography.h1)))
-                    .foregroundColor(AppColors.textPrimary)
+                    .foregroundColor(AppColors.inkPrimary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, AppSpacing.lg)
 
@@ -61,14 +61,14 @@ struct OB_SignInView: View {
                         HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
                             Image(systemName: "apple.logo")
                                 .font(.h3)
-                                .foregroundColor(AppColors.textInverse)
+                                .foregroundColor(AppColors.ctaWhite)
                             Text("Sign in with Apple")
                                 .font(.bodyRegular)
-                                .foregroundColor(AppColors.textInverse)
+                                .foregroundColor(AppColors.ctaWhite)
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
-                        .background(AppColors.textPrimary)
+                        .background(AppColors.inkPrimary)
                         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                     }
 
@@ -83,11 +83,11 @@ struct OB_SignInView: View {
                                 .foregroundColor(Color(hex: "#4285F4"))
                             Text("Sign in with Google")
                                 .font(.bodyRegular)
-                                .foregroundColor(AppColors.textInverse)
+                                .foregroundColor(AppColors.ctaWhite)
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
-                        .background(AppColors.textPrimary)
+                        .background(AppColors.inkPrimary)
                         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                     }
                 }
@@ -96,14 +96,14 @@ struct OB_SignInView: View {
                 // MARK: - Divider
                 HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
                     Rectangle()
-                        .fill(AppColors.borderDefault)
+                        .fill(AppColors.inkBorder)
                         .frame(height: 1)
                     Text("OR SIGN UP WITH EMAIL")
                         .font(.cardRowMeta)
                         .foregroundColor(AppColors.textTertiary)
                         .fixedSize()
                     Rectangle()
-                        .fill(AppColors.borderDefault)
+                        .fill(AppColors.inkBorder)
                         .frame(height: 1)
                 }
                 .padding(.horizontal, AppSpacing.lg)
@@ -120,9 +120,9 @@ struct OB_SignInView: View {
                         .textInputAutocapitalization(.never)
                         .focused($focusedField, equals: .email)
                         .padding()
-                        .background(AppColors.backgroundCard)
+                        .background(AppColors.glassCardBg)
                         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-                        .foregroundColor(AppColors.textPrimary)
+                        .foregroundColor(AppColors.inkPrimary)
 
                     SecureField("",
                         text: $password,
@@ -130,9 +130,9 @@ struct OB_SignInView: View {
                         .textContentType(.oneTimeCode)
                         .focused($focusedField, equals: .password)
                         .padding()
-                        .background(AppColors.backgroundCard)
+                        .background(AppColors.glassCardBg)
                         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-                        .foregroundColor(AppColors.textPrimary)
+                        .foregroundColor(AppColors.inkPrimary)
                 }
                 .padding(.horizontal, AppSpacing.lg)
 
@@ -154,7 +154,7 @@ struct OB_SignInView: View {
                          ? "Already have an account? Sign In"
                          : "Don't have an account? Sign Up")
                         .font(.bodySmall)
-                        .foregroundColor(AppColors.textSecondary)
+                        .foregroundColor(AppColors.inkSoft)
                 }
                 .padding(.top, AppSpacing.sm + AppSpacing.xs)
 

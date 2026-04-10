@@ -10,6 +10,8 @@ import SwiftUI
 struct ContentView: View {
     @State private var isOnboardingComplete = false
     @State private var lockedRootSize: CGSize = .zero
+    @State private var bridgeOpacity: CGFloat = 0
+    @State private var bridgeVisible = false
     @AppStorage("hasCompletedOnboardingV2") private var hasCompletedOnboarding = false  // key 保留兼容已完程用户
 
     @Environment(SubscriptionManager.self) private var subscriptionManager
@@ -30,6 +32,12 @@ struct ContentView: View {
                     OB_ContainerView(isOnboardingComplete: $isOnboardingComplete)
                         .transition(.opacity)
                 }
+
+                if bridgeVisible {
+                    OB_TransitionBridgeView(progress: bridgeOpacity)
+                        .allowsHitTesting(false)
+                        .transition(.opacity)
+                }
             }
             .frame(width: displaySize.width, height: displaySize.height, alignment: .top)
             .onAppear {
@@ -40,6 +48,14 @@ struct ContentView: View {
             }
         }
         .animation(.easeInOut(duration: 0.5), value: isOnboardingComplete)
+        .onChange(of: isOnboardingComplete) { oldValue, newValue in
+            if !oldValue && newValue {
+                startTransitionBridge()
+            } else if oldValue && !newValue {
+                bridgeVisible = false
+                bridgeOpacity = 0
+            }
+        }
         .ignoresSafeArea(.keyboard, edges: .all)
         // Plaid Link 通过 PlaidLinkPresenter（UIWindow overlay）呈现，无 SwiftUI sheet
         // 全局 Paywall Sheet
@@ -113,10 +129,45 @@ struct ContentView: View {
             lockedRootSize = newSize
         }
     }
+
+    // MARK: - Welcome -> Home Bridge
+
+    private func startTransitionBridge() {
+        bridgeVisible = true
+        bridgeOpacity = 0
+
+        withAnimation(.easeInOut(duration: 0.5)) {
+            bridgeOpacity = 1
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.56) {
+            bridgeVisible = false
+            bridgeOpacity = 0
+        }
+    }
 }
 
 #Preview {
     ContentView()
         .environment(SubscriptionManager.shared)
         .environment(PlaidManager.shared)
+}
+
+private struct OB_TransitionBridgeView: View {
+    let progress: CGFloat
+
+    var body: some View {
+        ZStack {
+            AppColors.backgroundPrimary
+                .opacity(0.22 * Double(1 - progress))
+
+            LinearGradient(
+                colors: [AppColors.backgroundPrimary, AppColors.shellBg1, AppColors.shellBg2],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .opacity(Double(progress))
+        }
+        .ignoresSafeArea()
+    }
 }

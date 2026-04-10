@@ -34,7 +34,12 @@ struct OB_PaywallView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(
+                colors: [AppColors.shellBg1, AppColors.shellBg2],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // Header
@@ -46,7 +51,7 @@ struct OB_PaywallView: View {
                     } label: {
                         Text("Skip")
                             .font(.bodySmall)
-                            .foregroundColor(AppColors.textTertiary)
+                            .foregroundColor(AppColors.inkFaint)
                     }
                 }
                 .padding(.horizontal, AppSpacing.screenPadding)
@@ -67,11 +72,11 @@ struct OB_PaywallView: View {
 
                         Text("Flamora Pro")
                             .font(.h1)
-                            .foregroundStyle(AppColors.textPrimary)
+                            .foregroundStyle(AppColors.inkPrimary)
 
                         Text("Your complete toolkit for Financial Independence")
                             .font(.bodyRegular)
-                            .foregroundColor(AppColors.textSecondary)
+                            .foregroundColor(AppColors.inkSoft)
                             .multilineTextAlignment(.center)
 
                         Text("7-day free trial, cancel anytime")
@@ -98,7 +103,7 @@ struct OB_PaywallView: View {
 
                                 Text(feature)
                                     .font(.bodySmall)
-                                    .foregroundStyle(AppColors.textPrimary)
+                                    .foregroundStyle(AppColors.inkPrimary)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.8)
 
@@ -107,16 +112,16 @@ struct OB_PaywallView: View {
                             .padding(.vertical, 8)
 
                             if index < features.count - 1 {
-                                Divider().overlay(AppColors.overlayWhiteStroke)
+                                Divider().overlay(AppColors.inkDivider)
                             }
                         }
                     }
                     .padding(AppSpacing.cardPadding)
-                    .background(AppColors.surface.opacity(0.6))
+                    .background(AppColors.glassCardBg)
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
                     .overlay(
                         RoundedRectangle(cornerRadius: AppRadius.lg)
-                            .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                            .stroke(AppColors.inkBorder, lineWidth: 1)
                     )
                     .opacity(appear ? 1 : 0)
                     .offset(y: appear ? 0 : AppSpacing.md + AppSpacing.xs)
@@ -142,11 +147,11 @@ struct OB_PaywallView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Yearly")
                                     .font(.h4)
-                                    .foregroundStyle(AppColors.textPrimary)
+                                    .foregroundStyle(AppColors.inkPrimary)
 
                                 Text("$6.67/mo")
                                     .font(.caption)
-                                    .foregroundColor(AppColors.textSecondary)
+                                    .foregroundColor(AppColors.inkSoft)
                             }
 
                             Spacer()
@@ -154,15 +159,15 @@ struct OB_PaywallView: View {
                             HStack(alignment: .firstTextBaseline, spacing: 2) {
                                 Text("$79.99")
                                     .font(.h3)
-                                    .foregroundStyle(AppColors.textPrimary)
+                                    .foregroundStyle(AppColors.inkPrimary)
                                 Text("/year")
                                     .font(.caption)
-                                    .foregroundColor(AppColors.textSecondary)
+                                    .foregroundColor(AppColors.inkSoft)
                             }
 
                             Text("BEST VALUE")
                                 .font(.label)
-                                .foregroundStyle(AppColors.textPrimary)
+                                .foregroundStyle(AppColors.ctaWhite)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
                                 .background(
@@ -176,7 +181,7 @@ struct OB_PaywallView: View {
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical, 16)
-                        .background(AppColors.surface.opacity(0.6))
+                        .background(AppColors.glassCardBg)
                         .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
                         .overlay(
                             RoundedRectangle(cornerRadius: AppRadius.lg)
@@ -204,7 +209,7 @@ struct OB_PaywallView: View {
             // Sticky CTA（与 AgeView 一致）
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
+                    colors: [Color.clear, AppColors.shellBg2],
                     startPoint: .top, endPoint: .bottom
                 )
                 .frame(height: 28)
@@ -232,13 +237,13 @@ struct OB_PaywallView: View {
                     } label: {
                         Text("Already a Pro? Restore")
                             .font(.bodySmall)
-                            .foregroundColor(AppColors.textSecondary)
+                            .foregroundColor(AppColors.inkSoft)
                     }
                     .disabled(isPurchasing)
                 }
                 .padding(.horizontal, AppSpacing.screenPadding)
                 .padding(.bottom, 16)
-                .background(AppColors.backgroundPrimary)
+                .background(AppColors.shellBg2)
                 .ignoresSafeArea(edges: .bottom)
             }
             .opacity(appear ? 1 : 0)
@@ -305,7 +310,12 @@ struct OB_PaywallView: View {
 
 #Preview {
     ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
+        LinearGradient(
+            colors: [AppColors.shellBg1, AppColors.shellBg2],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .ignoresSafeArea()
         OB_PaywallView(data: OnboardingData(), onBack: {}, onComplete: {})
             .environment(SubscriptionManager.shared)
     }

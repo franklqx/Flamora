@@ -13,7 +13,12 @@ struct OB_IntroView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(
+                colors: [AppColors.shellBg1, AppColors.shellBg2],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -24,16 +29,16 @@ struct OB_IntroView: View {
                     HStack(alignment: .center, spacing: 16) {
                         // 小图标卡片
                         RoundedRectangle(cornerRadius: 14)
-                            .fill(AppColors.surfaceElevated)
+                            .fill(AppColors.glassCardBg)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 14)
-                                    .stroke(AppColors.borderDefault, lineWidth: 1)
+                                    .stroke(AppColors.inkBorder, lineWidth: 1)
                             )
                             .frame(width: 44, height: 44)
                             .overlay(
                                 Image(systemName: "chart.line.uptrend.xyaxis")
                                     .font(.h4)
-                                    .foregroundStyle(AppColors.textPrimary)
+                                    .foregroundStyle(AppColors.inkPrimary)
                             )
 
                         Spacer()
@@ -44,7 +49,7 @@ struct OB_IntroView: View {
                     // 标题
                     Text("Let's build your freedom plan")
                         .font(.obQuestion)
-                        .foregroundStyle(AppColors.textPrimary)
+                        .foregroundStyle(AppColors.inkPrimary)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Spacer().frame(height: 12)
@@ -52,7 +57,7 @@ struct OB_IntroView: View {
                     // 副标题
                     Text("Answer a few questions and we'll create your personalized path to financial freedom.")
                         .font(.bodySmall)
-                        .foregroundColor(AppColors.textSecondary)
+                        .foregroundColor(AppColors.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Spacer().frame(height: AppSpacing.xl)
@@ -77,7 +82,7 @@ struct OB_IntroView: View {
             // CTA
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
+                    colors: [Color.clear, AppColors.shellBg2],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -86,7 +91,7 @@ struct OB_IntroView: View {
                 OB_PrimaryButton(title: "Let's Do This", action: onNext)
             }
             .padding(.bottom, 16)
-            .background(AppColors.backgroundPrimary)
+            .background(AppColors.shellBg2)
             .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -105,21 +110,21 @@ private struct OBInfoPill: View {
         HStack(spacing: 10) {
             Image(systemName: systemIcon)
                 .font(.bodySemibold)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(AppColors.inkPrimary)
                 .frame(width: 24, height: 24)
 
             Text(title)
                 .font(.bodySmall)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(AppColors.inkPrimary)
 
             Spacer()
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(AppColors.surfaceElevated)
+        .background(AppColors.glassCardBg)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(AppColors.borderDefault, lineWidth: 1)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .scaleEffect(isPressed ? 0.97 : 1.0)
@@ -132,7 +137,12 @@ private struct OBInfoPill: View {
 
 #Preview {
     ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
+        LinearGradient(
+            colors: [AppColors.shellBg1, AppColors.shellBg2],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .ignoresSafeArea()
         OB_IntroView(onNext: {}, onBack: {})
     }
 }

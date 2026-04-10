@@ -24,7 +24,7 @@ struct AppSpacing {
     static let tabBarReserve: CGFloat = 84
     /// 底部 Tab 条水平 inset（与历史 FabBar 一致）
     static let tabBarHorizontalInset: CGFloat = 21
-    /// Sheet 收起态左侧单圆按钮边长
+    /// Sheet 收起态右侧单圆按钮边长
     static let tabBarCollapsedCircle: CGFloat = 58
 
     /// Home hero / Journey 渐变区高度 — 308pt 对应 HTML min-height: 308px（MainTabView 动态分区时的回退）

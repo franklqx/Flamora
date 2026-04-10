@@ -35,14 +35,14 @@ struct OB_MicroInsightCard: View {
             if highlightText.isEmpty || !text.contains(highlightText) {
                 Text(text)
                     .font(.bodySmall)
-                    .foregroundColor(AppColors.textSecondary)
+                    .foregroundColor(AppColors.inkSoft)
             } else {
                 buildHighlightedText()
             }
         }
         .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.backgroundCard)
+        .background(AppColors.glassCardBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
         .offset(y: isVisible ? 0 : AppSpacing.md + AppSpacing.xs)
         .opacity(isVisible ? 1 : 0)
@@ -56,8 +56,8 @@ struct OB_MicroInsightCard: View {
     @ViewBuilder
     private func buildHighlightedText() -> some View {
         let parts = text.components(separatedBy: highlightText)
-        Text("\(parts[0])\(Text(highlightText).foregroundColor(AppColors.textPrimary).bold())\(parts.dropFirst().joined(separator: highlightText))")
-            .foregroundColor(AppColors.textSecondary)
+        Text("\(parts[0])\(Text(highlightText).foregroundColor(AppColors.inkPrimary).bold())\(parts.dropFirst().joined(separator: highlightText))")
+            .foregroundColor(AppColors.inkSoft)
             .font(.bodySmall)
     }
 }

@@ -16,7 +16,7 @@ struct OB_NameView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
                 .onTapGesture { isFocused = false }
 
             VStack(alignment: .leading, spacing: 0) {
@@ -28,16 +28,16 @@ struct OB_NameView: View {
 
                 HStack(alignment: .center, spacing: 16) {
                     RoundedRectangle(cornerRadius: 14)
-                        .fill(AppColors.surfaceElevated)
+                        .fill(AppColors.glassCardBg)
                         .overlay(
                             RoundedRectangle(cornerRadius: 14)
-                                .stroke(AppColors.borderDefault, lineWidth: 1)
+                                .stroke(AppColors.inkBorder, lineWidth: 1)
                         )
                         .frame(width: 44, height: 44)
                         .overlay(
                             Image(systemName: "person.crop.circle")
                                 .font(.h4)
-                                .foregroundStyle(AppColors.textPrimary)
+                                .foregroundStyle(AppColors.inkPrimary)
                         )
                     Spacer()
                 }
@@ -48,7 +48,7 @@ struct OB_NameView: View {
 
                 Text("What should we call you?")
                     .font(.obQuestion)
-                    .foregroundStyle(AppColors.textPrimary)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .allowsHitTesting(false)
 
                 Spacer().frame(height: 10)
@@ -56,7 +56,7 @@ struct OB_NameView: View {
 
                 Text("Your plan will be personalized just for you.")
                     .font(.bodySmall)
-                    .foregroundColor(AppColors.textSecondary)
+                    .foregroundColor(AppColors.inkSoft)
                     .allowsHitTesting(false)
 
                 Spacer().frame(height: AppSpacing.xl)
@@ -65,17 +65,17 @@ struct OB_NameView: View {
                 TextField("", text: $data.userName,
                           prompt: Text("Your name").foregroundColor(AppColors.textTertiary))
                     .font(.bodyRegular)
-                    .foregroundStyle(AppColors.textPrimary)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .textContentType(.givenName)
                     .focused($isFocused)
                     .padding(.horizontal, 20)
                     .frame(height: 56)
-                    .background(AppColors.surface)
+                    .background(AppColors.glassCardBg)
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
                     .overlay(
                         RoundedRectangle(cornerRadius: AppRadius.lg)
                             .stroke(
-                                isFocused ? AppColors.overlayWhiteForegroundSoft : AppColors.borderDefault,
+                                isFocused ? AppColors.inkSoft : AppColors.inkBorder,
                                 lineWidth: 1
                             )
                     )
@@ -104,7 +104,7 @@ struct OB_NameView: View {
 
 #Preview {
     ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
+        LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
         OB_NameView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

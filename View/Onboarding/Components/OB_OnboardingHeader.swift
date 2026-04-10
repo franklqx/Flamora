@@ -26,7 +26,7 @@ struct OB_OnboardingHeader: View {
 
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(AppColors.surfaceInput)
+                        .fill(AppColors.glassCardBg)
                         .frame(height: 4)
 
                     Capsule()
@@ -46,7 +46,7 @@ struct OB_OnboardingHeader: View {
 
             Text("\(current) of \(total)")
                 .font(.label)
-                .foregroundColor(AppColors.overlayWhiteOnPhoto)
+                .foregroundColor(AppColors.inkMeta)
                 .tracking(0.8)
                 .lineLimit(1)
                 .padding(.leading, AppSpacing.sm)

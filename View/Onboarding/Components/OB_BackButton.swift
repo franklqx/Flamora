@@ -14,7 +14,7 @@ struct OB_BackButton: View {
         Button(action: action) {
             Image(systemName: "chevron.left")
                 .font(.h3)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(AppColors.inkPrimary)
                 .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
         }

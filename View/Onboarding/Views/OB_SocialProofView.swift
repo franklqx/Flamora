@@ -18,7 +18,7 @@ struct OB_SocialProofView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
             GeometryReader { geo in
                 let cardsHeight: CGFloat = 180 + 180 + 40  // top spacer + cards area + gap
@@ -34,7 +34,7 @@ struct OB_SocialProofView: View {
                         // Left card: ON YOUR OWN
                         VStack(spacing: 10) {
                             RoundedRectangle(cornerRadius: AppRadius.md)
-                                .fill(AppColors.backgroundCard)
+                                .fill(AppColors.glassCardBg)
                                 .frame(width: 100, height: 96)
 
                             Text("ON YOUR OWN")
@@ -78,7 +78,7 @@ struct OB_SocialProofView: View {
                                 )
                                 .animation(.spring(response: 0.6, dampingFraction: 0.75), value: showRightCard)
 
-                            Text("WITH \(Text("FLAMORA").font(.caption.italic()).foregroundStyle(AppColors.textPrimary))")
+                            Text("WITH \(Text("FLAMORA").font(.caption.italic()).foregroundStyle(AppColors.inkPrimary))")
                                 .font(.caption)
                                 .foregroundColor(AppColors.textTertiary)
                                 .opacity(showLabels ? 1 : 0)
@@ -96,11 +96,11 @@ struct OB_SocialProofView: View {
                         VStack(spacing: 16) {
                             Text("You can't reach a goal\nwithout tracking it.")
                                 .font(.obQuestion)
-                                .foregroundColor(AppColors.textPrimary)
+                                .foregroundColor(AppColors.inkPrimary)
                                 .multilineTextAlignment(.center)
 
-                            Text("By automating your financial overview, you are \(Text("3x more likely").foregroundColor(AppColors.textPrimary).bold()) to stay on track for your financial goals.")
-                                .foregroundColor(AppColors.textSecondary)
+                            Text("By automating your financial overview, you are \(Text("3x more likely").foregroundColor(AppColors.inkPrimary).bold()) to stay on track for your financial goals.")
+                                .foregroundColor(AppColors.inkSoft)
                                 .font(.bodyRegular)
                                 .lineSpacing(4)
                                 .multilineTextAlignment(.center)
@@ -118,7 +118,7 @@ struct OB_SocialProofView: View {
             // 固定在屏幕最下方的 CTA
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary],
+                    colors: [AppColors.shellBg2.opacity(0), AppColors.shellBg2],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -127,7 +127,7 @@ struct OB_SocialProofView: View {
                 OB_PrimaryButton(title: "Continue", action: onNext)
             }
             .padding(.bottom, 16)
-            .background(AppColors.backgroundPrimary)
+            .background(AppColors.shellBg2)
             .ignoresSafeArea(edges: .bottom)
         }
         .onAppear {

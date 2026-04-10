@@ -144,7 +144,7 @@ struct OB_WelcomeView: View {
             .padding(.bottom, AppSpacing.xxl + AppSpacing.xxl + AppSpacing.xl + AppSpacing.md + AppSpacing.md + AppSpacing.sm)
 
             // Get Started CTA
-            OB_PrimaryButton(title: "Get Started", action: onNext)
+            OB_PrimaryButton(title: "Get Started", style: .ctaWhite, action: onNext)
         }
         .background(
             Image("AppBackground")

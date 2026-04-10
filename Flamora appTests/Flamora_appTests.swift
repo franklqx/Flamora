@@ -33,4 +33,35 @@ final class Flamora_appTests: XCTestCase {
         }
     }
 
+    func testStepConfigWelcomeUsesWelcomeExceptionTheme() {
+        let config = OB_ContainerView.config(for: 1)
+        XCTAssertEqual(config.themeSurface, .welcomeException)
+        XCTAssertFalse(config.allowsBack)
+        XCTAssertNil(config.headerProgress)
+    }
+
+    func testStepConfigIntroHasExpectedHeaderProgress() {
+        let config = OB_ContainerView.config(for: 3)
+        XCTAssertEqual(config.headerProgress, 1)
+        XCTAssertTrue(config.allowsBack)
+        XCTAssertEqual(config.themeSurface, .lightShell)
+    }
+
+    func testStepConfigPaywallUsesLightShellTheme() {
+        let config = OB_ContainerView.config(for: 17)
+        XCTAssertEqual(config.themeSurface, .lightShell)
+        XCTAssertTrue(config.allowsBack)
+    }
+
+    func testStepConfigMiddleStepsUseLightShellTheme() {
+        XCTAssertEqual(OB_ContainerView.config(for: 2).themeSurface, .lightShell)   // SignIn
+        XCTAssertEqual(OB_ContainerView.config(for: 9).themeSurface, .lightShell)   // Age
+        XCTAssertEqual(OB_ContainerView.config(for: 14).themeSurface, .lightShell)  // Loading
+        XCTAssertEqual(OB_ContainerView.config(for: 15).themeSurface, .immersiveDark) // Roadmap exception
+    }
+
+    func testNextStepSkipsAhaMomentStep() {
+        XCTAssertEqual(OB_ContainerView.nextStep(after: 15), 17)
+        XCTAssertEqual(OB_ContainerView.previousStep(before: 17), 15)
+    }
 }

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TopHeaderBar: View {
     let onNotificationTapped: () -> Void
+    let onSettingsTapped: () -> Void
     let isVisible: Bool
     static let height: CGFloat = 60
 
@@ -28,21 +29,39 @@ struct TopHeaderBar: View {
 
             Spacer()
 
-            Button(action: onNotificationTapped) {
-                Circle()
-                    .fill(AppColors.overlayWhiteMid)
-                    .frame(width: 34, height: 34)
-                    .overlay(
-                        Image(systemName: "gearshape")
-                            .font(.figureSecondarySemibold)
-                            .foregroundStyle(AppColors.heroTextPrimary)
-                    )
-                    .overlay(
-                        Circle()
-                            .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
-                    )
+            HStack(spacing: 10) {
+                Button(action: onNotificationTapped) {
+                    Circle()
+                        .fill(AppColors.overlayWhiteMid)
+                        .frame(width: 34, height: 34)
+                        .overlay(
+                            Image(systemName: "bell")
+                                .font(.figureSecondarySemibold)
+                                .foregroundStyle(AppColors.heroTextPrimary)
+                        )
+                        .overlay(
+                            Circle()
+                                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
+
+                Button(action: onSettingsTapped) {
+                    Circle()
+                        .fill(AppColors.overlayWhiteMid)
+                        .frame(width: 34, height: 34)
+                        .overlay(
+                            Image(systemName: "gearshape")
+                                .font(.figureSecondarySemibold)
+                                .foregroundStyle(AppColors.heroTextPrimary)
+                        )
+                        .overlay(
+                            Circle()
+                                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
         .padding(.horizontal, AppSpacing.screenPadding)
         .padding(.vertical, 10)
@@ -59,6 +78,7 @@ struct TopHeaderBar: View {
         VStack {
             TopHeaderBar(
                 onNotificationTapped: {},
+                onSettingsTapped: {},
                 isVisible: true
             )
             Spacer()

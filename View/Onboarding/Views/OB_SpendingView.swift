@@ -31,7 +31,7 @@ struct OB_SpendingView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -42,10 +42,10 @@ struct OB_SpendingView: View {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Text("How much do you typically spend per month?")
                             .font(.obQuestion)
-                            .foregroundStyle(AppColors.textPrimary)
+                            .foregroundStyle(AppColors.inkPrimary)
                         Text("Include rent, groceries, entertainment, etc.")
                             .font(.bodySmall)
-                            .foregroundColor(AppColors.textSecondary)
+                            .foregroundColor(AppColors.inkSoft)
                     }
 
                     Spacer().frame(height: AppSpacing.xl)
@@ -82,7 +82,7 @@ struct OB_SpendingView: View {
             // Sticky CTA（与 AgeView 一致）
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
+                    colors: [AppColors.shellBg2.opacity(0), AppColors.shellBg2],
                     startPoint: .top, endPoint: .bottom
                 )
                 .frame(height: 28)
@@ -93,7 +93,7 @@ struct OB_SpendingView: View {
                 })
             }
             .padding(.bottom, 16)
-            .background(AppColors.backgroundPrimary)
+            .background(AppColors.shellBg2)
             .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -181,11 +181,11 @@ struct OB_SpendingView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 20)
         .frame(minHeight: 200)
-        .background(AppColors.surface.opacity(0.6))
+        .background(AppColors.glassCardBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.xl)
-                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
         )
     }
 
@@ -220,13 +220,13 @@ struct OB_SpendingView: View {
                     .animation(.spring(response: 0.3), value: rate)
                 Text("%")
                     .font(.cardFigurePrimary)
-                    .foregroundStyle(AppColors.textPrimary)
+                    .foregroundStyle(AppColors.inkPrimary)
                 Spacer()
             }
 
             // 分割线
             Rectangle()
-                .fill(AppColors.overlayWhiteStroke)
+                .fill(AppColors.inkBorder)
                 .frame(height: 1)
 
             // Income − Spending = Saved 分解
@@ -238,7 +238,7 @@ struct OB_SpendingView: View {
                     Text("\(data.currencySymbol)\(formattedAmount(income))")
                         .font(.bodySmall)
                         .fontWeight(.medium)
-                        .foregroundStyle(AppColors.textPrimary)
+                        .foregroundStyle(AppColors.inkPrimary)
                 }
                 Spacer()
                 Text("−")
@@ -253,7 +253,7 @@ struct OB_SpendingView: View {
                     Text("\(data.currencySymbol)\(formattedAmount(spendingValue))")
                         .font(.bodySmall)
                         .fontWeight(.medium)
-                        .foregroundStyle(AppColors.textPrimary)
+                        .foregroundStyle(AppColors.inkPrimary)
                 }
                 Spacer()
                 Text("=")
@@ -279,18 +279,18 @@ struct OB_SpendingView: View {
                     .foregroundStyle(accentGradient)
                 Text(savingsMicrocopy(rate: rate))
                     .font(.caption)
-                    .foregroundColor(AppColors.textSecondary)
+                    .foregroundColor(AppColors.inkSoft)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.cardPadding)
-        .background(AppColors.surface.opacity(0.6))
+        .background(AppColors.glassCardBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.xl)
-                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
         )
     }
 
@@ -325,7 +325,7 @@ struct OB_SpendingView: View {
 
 #Preview {
     ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
+        LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
         OB_SpendingView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

@@ -68,6 +68,7 @@ struct MainTabView: View {
     @State private var homeState: HomeState = .sheet
     @State private var simulatorDisplayState: SimulatorDisplayState = .results
     @State private var showNotifications = false
+    @State private var showSettings = false
     @State private var simulatorTransitionTask: Task<Void, Never>?
 
     @State private var layoutMetrics = HomeLayoutMetrics.fallback
@@ -111,6 +112,7 @@ struct MainTabView: View {
 
             TopHeaderBar(
                 onNotificationTapped: { showNotifications = true },
+                onSettingsTapped: openSettingsFromHeader,
                 isVisible: true
             )
             .zIndex(80)
@@ -178,6 +180,9 @@ struct MainTabView: View {
         }
         .sheet(isPresented: $showNotifications) {
             NotificationsView()
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView(isEmbeddedInSheet: false)
         }
         .onDisappear {
             simulatorTransitionTask?.cancel()
@@ -315,7 +320,7 @@ private extension MainTabView {
         )
     }
 
-    /// 0 = 三键展开；1 = 仅左侧单圆（与 sheet 低于默认的距离相关）
+    /// 0 = 三键展开；1 = 仅右侧单圆（与 sheet 低于默认的距离相关）
     var tabBarCollapseProgress: CGFloat {
         guard homeState != .simulator else { return 1 }
         let distance = layoutMetrics.sheetDefault - sheetHeight
@@ -393,6 +398,15 @@ private extension MainTabView {
             selectedTab = tab
             highlightedTab = tab
         }
+    }
+
+    func openSettingsFromHeader() {
+        if homeState == .simulator {
+            exitSimulator()
+        } else if sheetHeight < layoutMetrics.sheetDefault * 0.98 {
+            restoreSheetFromCollapsed()
+        }
+        showSettings = true
     }
 }
 

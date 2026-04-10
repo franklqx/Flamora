@@ -20,7 +20,7 @@ struct OB_AgeView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -31,10 +31,10 @@ struct OB_AgeView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Great, \(data.userName.isEmpty ? "Friend" : data.userName)!")
                             .font(.obQuestion)
-                            .foregroundStyle(AppColors.textPrimary)
+                            .foregroundStyle(AppColors.inkPrimary)
                         Text("Let's crunch your numbers")
                             .font(.obQuestion)
-                            .foregroundStyle(AppColors.textPrimary)
+                            .foregroundStyle(AppColors.inkPrimary)
                     }
 
                     Spacer().frame(height: AppSpacing.xl)
@@ -67,7 +67,7 @@ struct OB_AgeView: View {
             // Sticky CTA
             VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [Color.black.opacity(0), AppColors.backgroundPrimary],
+                    colors: [AppColors.shellBg2.opacity(0), AppColors.shellBg2],
                     startPoint: .top, endPoint: .bottom
                 )
                 .frame(height: 28)
@@ -75,7 +75,7 @@ struct OB_AgeView: View {
                 OB_PrimaryButton(title: "Next", action: onNext)
             }
             .padding(.bottom, 16)
-            .background(AppColors.backgroundPrimary)
+            .background(AppColors.shellBg2)
             .ignoresSafeArea(edges: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -170,7 +170,7 @@ struct OB_AgeView: View {
                     .foregroundStyle(accentGradient)
                 Text(ageMicrocopy)
                     .font(.caption)
-                    .foregroundColor(AppColors.textSecondary)
+                    .foregroundColor(AppColors.inkSoft)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -179,11 +179,11 @@ struct OB_AgeView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 20)
         .frame(minHeight: 238)
-        .background(AppColors.surface.opacity(0.6))
+        .background(AppColors.glassCardBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.xl)
-                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
         )
     }
 
@@ -197,10 +197,10 @@ struct OB_AgeView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(data.country)
                         .font(.bodyRegular)
-                        .foregroundStyle(AppColors.textPrimary)
+                        .foregroundStyle(AppColors.inkPrimary)
                     Text("\(data.currencyCode) \(data.currencySymbol)")
                         .font(.bodySmall)
-                        .foregroundColor(AppColors.textSecondary)
+                        .foregroundColor(AppColors.inkSoft)
                 }
 
                 Spacer()
@@ -211,11 +211,11 @@ struct OB_AgeView: View {
             }
             .padding(.horizontal, 20)
             .frame(height: 64)
-            .background(AppColors.surface.opacity(0.6))
+            .background(AppColors.glassCardBg)
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.lg)
-                    .stroke(AppColors.borderDefault, lineWidth: 1)
+                    .stroke(AppColors.inkBorder, lineWidth: 1)
             )
         }
     }
@@ -284,7 +284,7 @@ private struct OB_CurrencyPickerSheet: View {
 
 #Preview {
     ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
+        LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
         OB_AgeView(data: OnboardingData(), onNext: {}, onBack: {})
     }
 }

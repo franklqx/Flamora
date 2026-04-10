@@ -15,7 +15,7 @@ struct OB_PersonalizeProgress: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("STEP \(currentStep) OF \(totalSteps)")
                 .font(.label)
-                .foregroundColor(AppColors.textSecondary)
+                .foregroundColor(AppColors.inkSoft)
                 .tracking(1)
                 .frame(maxWidth: .infinity, alignment: .trailing)
 
@@ -25,7 +25,7 @@ struct OB_PersonalizeProgress: View {
 
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(AppColors.surfaceInput)
+                        .fill(AppColors.glassCardBg)
                         .frame(height: 4)
 
                     Capsule()
