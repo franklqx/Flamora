@@ -161,10 +161,12 @@ struct AppColors {
     static var heroBrandLinearGradient: Gradient {
         Gradient(stops: [
             .init(color: Color(hex: "#15162a"), location: 0),
-            .init(color: Color(hex: "#242b63"), location: 0.18),
-            .init(color: Color(hex: "#5a6fe0"), location: 0.42),
-            .init(color: Color(hex: "#d8dbff"), location: 0.68),
-            .init(color: Color(hex: "#f7f3ff"), location: 1),
+            .init(color: Color(hex: "#242b63"), location: 0.28),
+            // Keep most of the screen in the deep atmosphere; only lift near the very bottom.
+            .init(color: Color(hex: "#4f65dc"), location: 0.80),
+            .init(color: Color(hex: "#8ea4f0"), location: 0.94),
+            .init(color: Color(hex: "#d5defa"), location: 0.985),
+            .init(color: Color(hex: "#e7ecff"), location: 1),
         ])
     }
     /// Radial glow 1 — purple haze, top-left of hero
@@ -220,10 +222,10 @@ struct AppColors {
     static var investBrandLinearGradient: Gradient {
         Gradient(stops: [
             .init(color: Color(hex: "#13152a"), location: 0),
-            .init(color: Color(hex: "#20275f"), location: 0.18),
-            .init(color: Color(hex: "#556add"), location: 0.42),
-            .init(color: Color(hex: "#d9dcff"), location: 0.68),
-            .init(color: Color(hex: "#f8f4ff"), location: 1),
+            .init(color: Color(hex: "#20275f"), location: 0.20),
+            .init(color: Color(hex: "#4b61d8"), location: 0.50),
+            .init(color: Color(hex: "#c9d3ff"), location: 0.84),
+            .init(color: Color(hex: "#e9eeff"), location: 1),
         ])
     }
 

@@ -86,13 +86,28 @@ struct MainTabView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(PlaidManager.self) private var plaidManager
 
+    private var supportsSimulatorFullScreenBackground: Bool {
+        switch selectedTab {
+        case .home, .cashflow, .investment:
+            return true
+        case .settings:
+            return false
+        }
+    }
+
     var body: some View {
         ZStack(alignment: .top) {
+            let simulatorFullScreenActive = supportsSimulatorFullScreenBackground && homeState == .simulator
+
             shellUnderlay
+                .opacity(simulatorFullScreenActive ? 0 : 1)
+                .animation(.easeInOut(duration: 0.18), value: simulatorFullScreenActive)
 
             BrandHeroBackground(
                 isInvestTab: selectedTab == .investment,
-                gradientHeight: brandGradientDisplayHeight
+                gradientHeight: brandGradientDisplayHeight,
+                showsBottomShellLift: !simulatorFullScreenActive,
+                fillViewport: simulatorFullScreenActive
             )
 
             HomeHeroCardSurface(
@@ -157,16 +172,12 @@ struct MainTabView: View {
             layoutMetrics = next
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            GlassmorphicTabBar(
+            MainTabBarInset(
                 selectedTab: $highlightedTab,
                 collapseProgress: tabBarCollapseProgress,
                 onTabTapped: handleTabTap,
                 onCollapsedChromeTap: collapsedChromeTap
             )
-            .ignoresSafeArea(edges: .bottom)
-            .opacity(tabBarOpacity)
-            .offset(y: tabBarOffsetY)
-            .allowsHitTesting(true)
         }
         .ignoresSafeArea(.keyboard, edges: .all)
         .fullScreenCover(isPresented: Binding(
@@ -230,16 +241,30 @@ private extension MainTabView {
 
     var simulatorOverlay: some View {
         ZStack(alignment: .top) {
-            SimulatorView(
-                displayState: $simulatorDisplayState,
-                bottomPadding: 0,
-                isFireOn: true,
-                onFireToggle: exitSimulator,
-                showResultCard: false,
-                contentTopPadding: TopHeaderBar.height + AppSpacing.lg,
-                useHTMLPrototypeLayout: true,
-                fillsBackground: false
-            )
+            switch selectedTab {
+            case .home:
+                HomeExpandedOverlayView(
+                    displayState: $simulatorDisplayState,
+                    topPadding: TopHeaderBar.height + AppSpacing.lg,
+                    onClose: exitSimulator
+                )
+            case .cashflow:
+                CashflowExpandedOverlayView(
+                    topPadding: TopHeaderBar.height + AppSpacing.lg,
+                    onClose: exitSimulator
+                )
+            default:
+                SimulatorView(
+                    displayState: $simulatorDisplayState,
+                    bottomPadding: 0,
+                    isFireOn: true,
+                    onFireToggle: exitSimulator,
+                    showResultCard: false,
+                    contentTopPadding: TopHeaderBar.height + AppSpacing.lg,
+                    useHTMLPrototypeLayout: true,
+                    fillsBackground: false
+                )
+            }
         }
     }
 
@@ -320,21 +345,13 @@ private extension MainTabView {
         )
     }
 
-    /// 0 = 三键展开；1 = 仅右侧单圆（与 sheet 低于默认的距离相关）
+    /// 0 = 三键展开；1 = 仅右侧单圆。仅形态动画，不扩张 Sheet 绘制区；与 `HomeBottomSheet` 不侵入底部安全区配合使用。
     var tabBarCollapseProgress: CGFloat {
         guard homeState != .simulator else { return 1 }
         let distance = layoutMetrics.sheetDefault - sheetHeight
         let threshold = layoutMetrics.sheetDefault * 0.45
         if distance <= 0 { return 0 }
         return max(0, min(1, distance / threshold))
-    }
-
-    var tabBarOpacity: CGFloat {
-        1
-    }
-
-    var tabBarOffsetY: CGFloat {
-        0
     }
 
     func clampSheetHeight(_ value: CGFloat) -> CGFloat {
@@ -441,7 +458,7 @@ private struct HomeBottomSheet: View {
             .overlay(alignment: .center) {
                 let labelOpacity = max(0, min(1, (dragProgress - 0.72) / 0.28))
                 if labelOpacity > 0 {
-                    Text("Back to Home")
+                    Text(backLabelText)
                         .font(.footnoteRegular)
                         .foregroundStyle(AppColors.textSecondary)
                         .opacity(labelOpacity)
@@ -488,7 +505,15 @@ private struct HomeBottomSheet: View {
         )
         .shadow(color: AppColors.glassCardShadow, radius: 18, y: -4)
         .frame(maxHeight: .infinity, alignment: .bottom)
-        .ignoresSafeArea(edges: .bottom)
+        // 不使用 ignoresSafeArea(.bottom)，避免白底 Sheet 绘制到 Tab 栏区域、盖住或「带动」底部栏观感。
+    }
+
+    private var backLabelText: String {
+        switch selectedTab {
+        case .cashflow: return "Back to Cash Flow"
+        case .investment: return "Back to Investment"
+        default: return "Back to Home"
+        }
     }
 }
 
@@ -745,11 +770,18 @@ private struct BrandHeroBackground: View {
     var isInvestTab: Bool = false
     /// Drawn height; 与 `MainTabView.brandGradientDisplayHeight` 一致（各 Tab 均随 sheet 拖拽渐变，不再单独全屏）。
     var gradientHeight: CGFloat
+    /// When false, disable the old shell-lift at the bottom to avoid double white bands during handoff.
+    var showsBottomShellLift: Bool = true
+    /// When true, use one full-screen background source for simulator expanded state.
+    var fillViewport: Bool = false
 
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width
-            let radialBox = min(w, gradientHeight)
+            let targetHeight = fillViewport
+                ? geo.size.height + geo.safeAreaInsets.top + geo.safeAreaInsets.bottom
+                : gradientHeight
+            let radialBox = min(w, targetHeight)
             ZStack {
                 if isInvestTab {
                     LinearGradient(
@@ -808,27 +840,29 @@ private struct BrandHeroBackground: View {
                     )
                 }
 
-                VStack {
-                    Spacer(minLength: 0)
-                    LinearGradient(
-                        colors: [Color.clear, AppColors.shellBg1.opacity(0.55)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: min(AppSpacing.md, gradientHeight * 0.08))
+                if showsBottomShellLift {
+                    VStack {
+                        Spacer(minLength: 0)
+                        LinearGradient(
+                            colors: [Color.clear, AppColors.shellBg1.opacity(0.12)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: min(AppSpacing.xs, targetHeight * 0.022))
+                    }
+                    .frame(height: targetHeight)
                 }
-                .frame(height: gradientHeight)
             }
-            .frame(width: w, height: gradientHeight)
+            .frame(width: w, height: targetHeight)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .clipped()
         }
-        .frame(height: gradientHeight)
+        .frame(maxHeight: fillViewport ? .infinity : gradientHeight, alignment: .top)
         .frame(maxWidth: .infinity, alignment: .top)
         .clipped()
         .allowsHitTesting(false)
         // 与 `shellUnderlay` 的浅色顶区分开：让品牌渐变铺满状态栏/灵动岛区域，避免顶部一条「白边」
-        .ignoresSafeArea(edges: .top)
+        .ignoresSafeArea(edges: fillViewport ? .all : .top)
     }
 }
 
@@ -1256,6 +1290,26 @@ private func connectCTAButton(label: String, action: @escaping () -> Void) -> so
             )
     }
     .buttonStyle(.plain)
+}
+
+// MARK: - Bottom tab (safeAreaInset slot)
+
+/// 贴在底部安全区；`collapseProgress` 仅驱动 `GlassmorphicTabBar` 形态，Sheet 不得 ignoresSafeArea(.bottom) 以免盖住 Tab。
+private struct MainTabBarInset: View {
+    @Binding var selectedTab: MainTabItem
+    var collapseProgress: CGFloat
+    let onTabTapped: (MainTabItem) -> Void
+    let onCollapsedChromeTap: () -> Void
+
+    var body: some View {
+        GlassmorphicTabBar(
+            selectedTab: $selectedTab,
+            collapseProgress: collapseProgress,
+            onTabTapped: onTabTapped,
+            onCollapsedChromeTap: onCollapsedChromeTap
+        )
+        .ignoresSafeArea(edges: .bottom)
+    }
 }
 
 #Preview {

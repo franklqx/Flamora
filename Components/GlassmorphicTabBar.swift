@@ -2,7 +2,8 @@
 //  GlassmorphicTabBar.swift
 //  Flamora app
 //
-//  底部 Tab Bar：三键胶囊；随 sheet 下拉 collapseProgress 增至 1 时收拢为右侧单圆（当前 Tab 图标），点击圆由外部恢复 sheet。
+//  底部 Tab Bar 外观（三键胶囊 / 可选收拢为单圆）。由 `MainTabView` 内 `MainTabBarInset` 贴底挂载；
+//  `collapseProgress` 随 Sheet 低于默认高度时增大（仅形态，不侵入 Tab 安全区）。
 //
 
 import SwiftUI
@@ -34,10 +35,6 @@ struct GlassmorphicTabBar: View {
         max(0, min(1, collapseProgress))
     }
 
-    private var selectedIcon: String {
-        tabs.first { $0.item == selectedTab }?.icon ?? "house.fill"
-    }
-
     private var collapsedAccessibilityLabel: String {
         let name = tabs.first { $0.item == selectedTab }?.label ?? "Home"
         return "Expand \(name)"
@@ -58,7 +55,8 @@ struct GlassmorphicTabBar: View {
                     .offset(x: collapseTabOffset(for: index))
                 }
             }
-            .padding(AppSpacing.xxs)
+            .padding(.horizontal, AppSpacing.xxs)
+            .padding(.vertical, 6)
             .glassEffect(.regular, in: .capsule)
             .scaleEffect(
                 x: 1 - 0.16 * clampedProgress,
@@ -70,16 +68,31 @@ struct GlassmorphicTabBar: View {
             .allowsHitTesting(clampedProgress < 0.5)
 
             Button(action: onCollapsedChromeTap) {
-                Image(systemName: selectedIcon)
+                Image(systemName: "house.fill")
                     .font(.chromeIconMedium)
-                    .foregroundStyle(AppColors.overlayWhiteOnGlass)
+                    .foregroundStyle(Color.white.opacity(0.96))
                     .frame(width: AppSpacing.tabBarCollapsedCircle, height: AppSpacing.tabBarCollapsedCircle)
-                    .glassEffect(.regular, in: Circle())
+                    .background(
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color(hex: "#1C2D83"), Color(hex: "#16236A")],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white.opacity(0.22), lineWidth: 1)
+                    )
+                    .shadow(color: Color(hex: "#101846").opacity(0.42), radius: 12, y: 6)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(collapsedAccessibilityLabel)
             .opacity(Double(clampedProgress))
             .scaleEffect(0.88 + 0.12 * clampedProgress)
+            .offset(y: -10)
             .allowsHitTesting(clampedProgress >= 0.5)
         }
         .padding(.horizontal, AppSpacing.tabBarHorizontalInset)
@@ -114,7 +127,7 @@ private struct GlassTabButton: View {
             }
             .foregroundStyle(isSelected ? AppColors.inkPrimary : AppColors.tabBarInactiveLabel)
             .frame(maxWidth: .infinity)
-            .frame(height: 58)
+            .frame(height: 62)
             .background {
                 if isSelected {
                     Capsule()
