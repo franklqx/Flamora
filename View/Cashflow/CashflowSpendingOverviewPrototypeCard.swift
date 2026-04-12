@@ -70,23 +70,6 @@ struct CashflowSpendingOverviewPrototypeCard: View {
                 )
             }
         }
-        .padding(AppSpacing.cardPadding)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.xl)
-                .fill(
-                    LinearGradient(
-                        colors: [AppColors.shellBg1, AppColors.shellBg2],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.xl)
-                .stroke(AppColors.glassCardBorder, lineWidth: 1)
-        )
-        .shadow(color: AppColors.glassCardShadow, radius: AppSpacing.md, y: AppSpacing.sm)
-        .frame(minHeight: AppSpacing.homeSheetPrimaryCardMinHeight, alignment: .top)
     }
 
     private func budgetBlock(

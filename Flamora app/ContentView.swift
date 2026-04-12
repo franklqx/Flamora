@@ -18,6 +18,9 @@ struct ContentView: View {
 
     // 观察 SupabaseManager 的 auth 状态
     private let supabase = SupabaseManager.shared
+    private var forcesMainTabsForUITests: Bool {
+        ProcessInfo.processInfo.environment["FLAMORA_PLAID_UNCONNECTED"] == "1"
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -25,7 +28,7 @@ struct ContentView: View {
             let displaySize = effectiveDisplaySize(for: currentSize)
 
             ZStack {
-                if isOnboardingComplete && hasCompletedOnboarding {
+                if forcesMainTabsForUITests || (isOnboardingComplete && hasCompletedOnboarding) {
                     MainTabView()
                         .transition(.opacity)
                 } else {

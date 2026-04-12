@@ -45,6 +45,7 @@ struct GlassmorphicTabBar: View {
             HStack(spacing: 0) {
                 ForEach(tabs.indices, id: \.self) { index in
                     GlassTabButton(
+                        item: tabs[index].item,
                         icon: tabs[index].icon,
                         label: tabs[index].label,
                         isSelected: selectedTab == tabs[index].item,
@@ -110,6 +111,7 @@ struct GlassmorphicTabBar: View {
 }
 
 private struct GlassTabButton: View {
+    let item: MainTabItem
     let icon: String
     let label: String
     let isSelected: Bool
@@ -137,6 +139,16 @@ private struct GlassTabButton: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("tab_\(identifierSuffix)")
+    }
+
+    private var identifierSuffix: String {
+        switch item {
+        case .home: return "home"
+        case .cashflow: return "cashflow"
+        case .investment: return "investment"
+        case .settings: return "settings"
+        }
     }
 }
 

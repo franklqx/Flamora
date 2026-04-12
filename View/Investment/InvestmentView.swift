@@ -9,11 +9,12 @@ import SwiftUI
 
 struct InvestmentView: View {
     @Environment(PlaidManager.self) private var plaidManager
+    @Environment(InvestmentHeroData.self) private var heroData
 
     @State private var apiNetWorth: APINetWorthSummary? = nil
     /// 来自 `get-investment-holdings`；断连或未拉取成功时为 nil。
     @State private var apiHoldingsPayload: APIInvestmentHoldingsPayload?
-    /// 按时间范围缓存的真实历史曲线；nil 时 PortfolioCard 回退 mock。
+    /// 按时间范围缓存的真实历史曲线；Hero 层读取 InvestmentHeroData，此处保留供 loadInvestmentData 使用。
     @State private var portfolioHistoryCache: [String: [PortfolioDataPoint]] = [:]
     @State private var loadError = false
     @State private var showTrustBridge = false
@@ -24,7 +25,12 @@ struct InvestmentView: View {
 
     var connectedView: some View {
         ZStack {
-            Color.clear
+            LinearGradient(
+                colors: [AppColors.shellBg1, AppColors.shellBg2],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
             GeometryReader { proxy in
                 ScrollView(showsIndicators: false) {
@@ -35,20 +41,6 @@ struct InvestmentView: View {
                                 onRetry: { Task { await loadInvestmentData() } }
                             )
                         }
-                        PortfolioCard(
-                            portfolioBalance: portfolioBalanceDisplay,
-                            gainAmount: apiHoldingsPayload?.summary.totalGainLoss ?? apiNetWorth?.growthAmount ?? 0,
-                            gainPercentage: apiHoldingsPayload?.summary.totalGainLossPct ?? apiNetWorth?.growthPercentage ?? 0,
-                            realChartData: { range in portfolioHistoryCache[rangeKey(range)] },
-                            isConnected: plaidManager.hasLinkedBank,
-                            onConnectTapped: {
-                                if plaidManager.shouldShowTrustBridge() {
-                                    showTrustBridge = true
-                                } else {
-                                    Task { await plaidManager.startLinkFlow() }
-                                }
-                            }
-                        )
 
                         AssetAllocationCard(
                             allocation: displayAllocation,
@@ -56,25 +48,17 @@ struct InvestmentView: View {
                             holdingsPayload: apiHoldingsPayload,
                             cashBankAccounts: cashBankAccounts
                         )
-                        .padding(.horizontal, AppSpacing.screenPadding)
 
                         AccountsCard(
                             accounts: computedAccounts,
                             isConnected: plaidManager.hasLinkedBank,
-                            onAddAccount: {
-                                if plaidManager.shouldShowTrustBridge() {
-                                    showTrustBridge = true
-                                } else {
-                                    Task { await plaidManager.startLinkFlow() }
-                                }
-                            },
-                            lastSyncedAt: apiNetWorth?.lastSyncedAt
+                            onAddAccount: handleAddAccount
                         )
-                        .padding(.horizontal, AppSpacing.screenPadding)
                     }
                     .frame(minHeight: proxy.size.height, alignment: .top)
-                    .padding(.top, AppSpacing.md)
-                    .padding(.bottom, AppSpacing.lg)
+                    .padding(.horizontal, AppSpacing.cardPadding)
+                    .padding(.top, AppSpacing.lg)
+                    .padding(.bottom, AppSpacing.xl)
                 }
             }
         }
@@ -96,6 +80,13 @@ struct InvestmentView: View {
             }
             if apiHoldingsPayload == nil {
                 apiHoldingsPayload = TabContentCache.shared.investmentHoldings
+            }
+            // 从缓存恢复 Hero 层数据（避免 Tab 切回时图表空白）
+            if heroData.balance == 0, !portfolioHistoryCache.isEmpty {
+                heroData.balance        = portfolioBalanceDisplay
+                heroData.gainAmount     = apiHoldingsPayload?.summary.totalGainLoss ?? apiNetWorth?.growthAmount ?? 0
+                heroData.gainPercentage = apiHoldingsPayload?.summary.totalGainLossPct ?? apiNetWorth?.growthPercentage ?? 0
+                heroData.historyCache   = portfolioHistoryCache
             }
         }
         .task {
@@ -149,6 +140,10 @@ private extension InvestmentView {
             apiHoldingsPayload = nil
             portfolioHistoryCache = [:]
             TabContentCache.shared.setInvestmentNetWorth(nil)
+            heroData.balance = 0
+            heroData.gainAmount = 0
+            heroData.gainPercentage = 0
+            heroData.historyCache = [:]
             return
         }
         let nw = await fetchNetWorth()
@@ -162,6 +157,11 @@ private extension InvestmentView {
         portfolioHistoryCache = hist
         TabContentCache.shared.setPortfolioHistory(hist)
         TabContentCache.shared.setInvestmentHoldings(h)
+        // 同步到 Hero 层
+        heroData.balance       = portfolioBalanceDisplay
+        heroData.gainAmount    = h?.summary.totalGainLoss ?? nw?.growthAmount ?? 0
+        heroData.gainPercentage = h?.summary.totalGainLossPct ?? nw?.growthPercentage ?? 0
+        heroData.historyCache  = hist
     }
 
     private func fetchAllPortfolioHistory() async -> [String: [PortfolioDataPoint]] {
@@ -220,6 +220,14 @@ private extension InvestmentView {
             .filter { $0.type == "investment" }
             .map { Account.fromNetWorthAccount($0) }
             .sorted { $0.balance > $1.balance }
+    }
+
+    func handleAddAccount() {
+        if plaidManager.shouldShowTrustBridge() {
+            showTrustBridge = true
+        } else {
+            Task { await plaidManager.startLinkFlow() }
+        }
     }
 }
 

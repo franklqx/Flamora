@@ -27,6 +27,12 @@ class PlaidManager {
 
     // MARK: - 从 user-profile 加载银行连接状态
     func loadStatus() async {
+        if ProcessInfo.processInfo.environment["FLAMORA_PLAID_UNCONNECTED"] == "1" {
+            hasLinkedBank = false
+            connectedInstitutionName = nil
+            return
+        }
+
         do {
             let session = try await client.auth.session
             let options = FunctionInvokeOptions(

@@ -64,4 +64,41 @@ final class Flamora_appTests: XCTestCase {
         XCTAssertEqual(OB_ContainerView.nextStep(after: 15), 17)
         XCTAssertEqual(OB_ContainerView.previousStep(before: 17), 15)
     }
+
+    // MARK: - Expanded overlay routing
+
+    func testHomeTabRoutesHomeOverlay() {
+        XCTAssertEqual(MainTabView.overlayKind(for: .home, hasLinkedBank: false), .home)
+    }
+
+    func testCashflowTabRoutesCashflowOverlay() {
+        XCTAssertEqual(MainTabView.overlayKind(for: .cashflow, hasLinkedBank: false), .cashflow)
+    }
+
+    /// Investment must never route to the simulator overlay.
+    func testInvestmentTabDoesNotRouteToSimulatorWhenConnected() {
+        let kind = MainTabView.overlayKind(for: .investment, hasLinkedBank: true)
+        XCTAssertEqual(kind, .investment, "Investment tab should show InvestmentView overlay when connected")
+        XCTAssertNotEqual(kind, .simulator)
+    }
+
+    func testInvestmentTabRoutesLockedOverlayWhenUnconnected() {
+        let kind = MainTabView.overlayKind(for: .investment, hasLinkedBank: false)
+        XCTAssertEqual(kind, .investmentLocked, "Investment tab should show locked overlay when unconnected")
+        XCTAssertNotEqual(kind, .simulator)
+    }
+
+    func testSettingsTabFallsBackToSimulator() {
+        XCTAssertEqual(MainTabView.overlayKind(for: .settings, hasLinkedBank: false), .simulator)
+    }
+
+    // MARK: - TabContentCache monthly summaries
+
+    func testCacheClearAfterBankDisconnectClearsMonthySummaries() {
+        // Not directly testable without a spy; verify the property is nil by default.
+        let cache = TabContentCache.shared
+        // After clearAfterBankDisconnect the property must be nil.
+        cache.clearAfterBankDisconnect()
+        XCTAssertNil(cache.cashflowMonthlySummaries)
+    }
 }

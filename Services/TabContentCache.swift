@@ -43,6 +43,9 @@ final class TabContentCache {
     /// Cash Flow Tab 上次成功的 Wants 支出详情数据。
     private(set) var cashflowWantsDetail: SpendingDetailData?
 
+    /// Cash Flow 展开层上次成功的当年逐月支出 summary；用于避免 overlay 重新打开时的空白闪烁。
+    private(set) var cashflowMonthlySummaries: [Int: APISpendingSummary]?
+
     private init() {}
 
     func setInvestmentNetWorth(_ value: APINetWorthSummary?) {
@@ -65,6 +68,10 @@ final class TabContentCache {
         cashflowSavingsByYear = value
     }
 
+    func setCashflowMonthlySummaries(_ value: [Int: APISpendingSummary]?) {
+        cashflowMonthlySummaries = value
+    }
+
     func setCashflowSpendingDetails(
         total: TotalSpendingDetailData?,
         needs: SpendingDetailData?,
@@ -84,5 +91,6 @@ final class TabContentCache {
         cashflowSpendingTotalDetail = nil
         cashflowNeedsDetail = nil
         cashflowWantsDetail = nil
+        cashflowMonthlySummaries = nil
     }
 }

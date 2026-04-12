@@ -9,6 +9,16 @@ import Foundation
 import SwiftUI
 internal import Auth
 
+/// Which expanded overlay a tab renders when the sheet is fully dragged up.
+/// Internal (not private) so unit tests can import and exercise `overlayKind(for:)`.
+enum ExpandedOverlayKind: Equatable {
+    case home
+    case cashflow
+    case investment
+    case investmentLocked
+    case simulator
+}
+
 /// Single source of truth for Home shell: sheet vs drag vs full simulator.
 private enum HomeState: Equatable {
     /// Sheet visible at rest (default or tall height); `sheetHeight` holds layout.
@@ -82,6 +92,9 @@ struct MainTabView: View {
     /// Shared with `HomeHeroCardHost` for journey strip + hero snapshot (single load path).
     @State private var homeJourneySetupState: HomeSetupStateResponse?
     @State private var homeJourneyHero: HomeHeroModel?
+    /// Investment Hero 层数据：由 InvestmentView 加载后写入，InvestmentPortfolioReveal 读取。
+    @State private var investmentHeroData = InvestmentHeroData()
+    @AppStorage(FlamoraStorageKey.budgetSetupCompleted) private var budgetSetupCompleted: Bool = false
 
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(PlaidManager.self) private var plaidManager
@@ -132,6 +145,16 @@ struct MainTabView: View {
             )
             .zIndex(80)
 
+            // Investment Portfolio Hero 层：在 Sheet 下方（z5）、BrandHeroBackground 上方渲染。
+            // Sheet 收起时自然露出，Sheet 恢复时被遮盖。
+            if selectedTab == .investment, homeState != .simulator {
+                InvestmentPortfolioReveal(
+                    heroBottomOffset: currentHeroHeight + TopHeaderBar.height + AppSpacing.md,
+                    revealProgress: sheetDragNormalizedProgress()
+                )
+                .zIndex(5)
+            }
+
             if homeState != .simulator {
                 HomeBottomSheet(
                     height: sheetHeight,
@@ -149,6 +172,7 @@ struct MainTabView: View {
                     .transition(.opacity)
             }
         }
+        .environment(investmentHeroData)
         .background(
             GeometryReader { geo in
                 Color.clear.preference(key: HomeViewportHeightKey.self, value: geo.size.height)
@@ -241,7 +265,7 @@ private extension MainTabView {
 
     var simulatorOverlay: some View {
         ZStack(alignment: .top) {
-            switch selectedTab {
+            switch MainTabView.overlayKind(for: selectedTab, hasLinkedBank: plaidManager.hasLinkedBank) {
             case .home:
                 HomeExpandedOverlayView(
                     displayState: $simulatorDisplayState,
@@ -253,7 +277,19 @@ private extension MainTabView {
                     topPadding: TopHeaderBar.height + AppSpacing.lg,
                     onClose: exitSimulator
                 )
-            default:
+            case .investment:
+                InvestmentPortfolioReveal(
+                    heroBottomOffset: currentHeroHeight + TopHeaderBar.height + AppSpacing.md,
+                    revealProgress: 1,
+                    layoutMode: .expandedOverlay,
+                    topPadding: TopHeaderBar.height + AppSpacing.lg
+                )
+            case .investmentLocked:
+                InvestUnconnectedContent()
+                    .safeAreaInset(edge: .top) {
+                        Color.clear.frame(height: TopHeaderBar.height + AppSpacing.lg)
+                    }
+            case .simulator:
                 SimulatorView(
                     displayState: $simulatorDisplayState,
                     bottomPadding: 0,
@@ -427,6 +463,19 @@ private extension MainTabView {
     }
 }
 
+extension MainTabView {
+    /// Maps a tab to the kind of expanded overlay it should display.
+    /// Internal so tests can verify routing without rendering the full view tree.
+    static func overlayKind(for tab: MainTabItem, hasLinkedBank: Bool) -> ExpandedOverlayKind {
+        switch tab {
+        case .home: return .home
+        case .cashflow: return .cashflow
+        case .investment: return hasLinkedBank ? .investment : .investmentLocked
+        case .settings: return .simulator
+        }
+    }
+}
+
 private enum HomeLayoutConstants {
     static let heroCompactHeight: CGFloat = 34
     static let sheetToSimulatorThreshold: CGFloat = 0.72
@@ -443,6 +492,8 @@ private struct HomeBottomSheet: View {
     let selectedTab: MainTabItem
     let sheetDragGesture: AnyGesture<DragGesture.Value>
     let dragProgress: CGFloat
+    @Environment(PlaidManager.self) private var plaidManager
+    @AppStorage(FlamoraStorageKey.budgetSetupCompleted) private var budgetSetupCompleted: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -471,9 +522,9 @@ private struct HomeBottomSheet: View {
                 case .home:
                     HomeRoadmapContent()
                 case .cashflow:
-                    CashUnconnectedContent()
+                    cashflowSheetContent
                 case .investment:
-                    InvestUnconnectedContent()
+                    investmentSheetContent
                 case .settings:
                     SettingsView(isEmbeddedInSheet: true)
                 }
@@ -486,6 +537,7 @@ private struct HomeBottomSheet: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: height, alignment: .top)
+        .accessibilityIdentifier("home_bottom_sheet")
         .background(
             RoundedRectangle(cornerRadius: AppRadius.xl)
                 .fill(
@@ -513,6 +565,24 @@ private struct HomeBottomSheet: View {
         case .cashflow: return "Back to Cash Flow"
         case .investment: return "Back to Investment"
         default: return "Back to Home"
+        }
+    }
+
+    @ViewBuilder
+    private var cashflowSheetContent: some View {
+        if plaidManager.hasLinkedBank || budgetSetupCompleted {
+            CashflowView()
+        } else {
+            CashUnconnectedContent()
+        }
+    }
+
+    @ViewBuilder
+    private var investmentSheetContent: some View {
+        if plaidManager.hasLinkedBank {
+            InvestmentView()
+        } else {
+            InvestUnconnectedContent()
         }
     }
 }
@@ -889,11 +959,11 @@ private struct HomeRoadmapContent: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppSpacing.sectionGap) {
                 roadmapCard
-                    .padding(.horizontal, AppSpacing.screenPadding)
+                    .padding(.horizontal, AppSpacing.cardPadding)
 
                 Spacer(minLength: AppSpacing.xl)
             }
-            .padding(.top, AppSpacing.cardGap)
+            .padding(.top, AppSpacing.lg)
             .padding(.bottom, AppSpacing.xl)
         }
     }
@@ -935,17 +1005,6 @@ private struct HomeRoadmapContent: View {
                 )
             }
         }
-        .padding(AppSpacing.cardPadding)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.glassPanel)
-                .fill(AppColors.glassCardBg)
-                .shadow(color: AppColors.glassCardShadow, radius: 24, y: 8)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.glassPanel)
-                .stroke(AppColors.glassCardBorder, lineWidth: 1)
-        )
-        .frame(minHeight: AppSpacing.homeSheetPrimaryCardMinHeight, alignment: .top)
     }
 
     private func roadmapStep(index: Int, isCurrent: Bool, title: String, detail: String, isLast: Bool = false) -> some View {
@@ -1065,31 +1124,15 @@ private struct NotificationsView: View {
 // MARK: - Cash Unconnected Content (HTML: .cash-view unconnected state)
 
 private struct CashUnconnectedContent: View {
-    @Environment(PlaidManager.self) private var plaidManager
-    @State private var showTrustBridge = false
-
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: AppSpacing.cardGap) {
                 CashflowSpendingOverviewPrototypeCard()
-                connectCTAButton(label: "Connect accounts") {
-                    if plaidManager.shouldShowTrustBridge() {
-                        showTrustBridge = true
-                    } else {
-                        Task { await plaidManager.startLinkFlow() }
-                    }
-                }
+                ConnectBankButton(label: "Connect accounts")
             }
-            .padding(.horizontal, AppSpacing.screenPadding)
-            .padding(.top, AppSpacing.cardGap)
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.top, AppSpacing.lg)
             .padding(.bottom, AppSpacing.xl)
-        }
-        .sheet(isPresented: $showTrustBridge, onDismiss: {
-            if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {
-                Task { await plaidManager.startLinkFlow() }
-            }
-        }) {
-            PlaidTrustBridgeView()
         }
     }
 }
@@ -1143,18 +1186,7 @@ private struct InvestNetWorthPrototypeCard: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.top, AppSpacing.xs)
         }
-        .padding(AppSpacing.cardPadding)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.glassCard)
-                .fill(AppColors.glassCardBg)
-                .shadow(color: AppColors.glassCardShadow, radius: 24, y: 8)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.glassCard)
-                .stroke(AppColors.glassCardBorder, lineWidth: 1)
-        )
-        .frame(minHeight: AppSpacing.homeSheetPrimaryCardMinHeight, alignment: .top)
-        .contentShape(RoundedRectangle(cornerRadius: AppRadius.glassCard))
+        .contentShape(Rectangle())
         .onTapGesture { replayCountUp() }
         .onAppear { runInitialCountUp() }
     }
@@ -1245,24 +1277,36 @@ private struct InvestNetWorthPrototypeCard: View {
 }
 
 private struct InvestUnconnectedContent: View {
-    @Environment(PlaidManager.self) private var plaidManager
-    @State private var showTrustBridge = false
-
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: AppSpacing.cardGap) {
                 InvestNetWorthPrototypeCard()
-                connectCTAButton(label: "Connect accounts") {
-                    if plaidManager.shouldShowTrustBridge() {
-                        showTrustBridge = true
-                    } else {
-                        Task { await plaidManager.startLinkFlow() }
-                    }
-                }
+                ConnectBankButton(label: "Connect accounts")
             }
-            .padding(.horizontal, AppSpacing.screenPadding)
-            .padding(.top, AppSpacing.cardGap)
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.top, AppSpacing.lg)
             .padding(.bottom, AppSpacing.xl)
+        }
+    }
+}
+
+// MARK: - Shared Unconnected Helpers
+
+/// Self-contained connect button that owns the trust-bridge sheet state.
+/// Eliminates the repeated `showTrustBridge` + `.sheet(isPresented:)` pattern in
+/// `CashUnconnectedContent` and `InvestUnconnectedContent`.
+private struct ConnectBankButton: View {
+    let label: String
+    @Environment(PlaidManager.self) private var plaidManager
+    @State private var showTrustBridge = false
+
+    var body: some View {
+        connectCTAButton(label: label) {
+            if plaidManager.shouldShowTrustBridge() {
+                showTrustBridge = true
+            } else {
+                Task { await plaidManager.startLinkFlow() }
+            }
         }
         .sheet(isPresented: $showTrustBridge, onDismiss: {
             if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {
@@ -1273,8 +1317,6 @@ private struct InvestUnconnectedContent: View {
         }
     }
 }
-
-// MARK: - Shared Unconnected Helpers
 
 private func connectCTAButton(label: String, action: @escaping () -> Void) -> some View {
     Button(action: action) {
@@ -1309,6 +1351,424 @@ private struct MainTabBarInset: View {
             onCollapsedChromeTap: onCollapsedChromeTap
         )
         .ignoresSafeArea(edges: .bottom)
+    }
+}
+
+// MARK: - Investment Portfolio Reveal (Hero 暗色区)
+
+/// Sheet 收起时在暗色 Hero 区展示 Portfolio 摘要（余额 + 盈亏 + 图表 + 时间选择器）。
+/// zIndex 5：渲染在 BrandHeroBackground 之上、HomeBottomSheet 之下。
+/// Sheet 默认高度时被 Sheet 遮盖；Sheet 收起时自然露出。
+private struct InvestmentPortfolioReveal: View {
+
+    enum LayoutMode {
+        case sheetReveal
+        case expandedOverlay
+    }
+
+    /// Hero 卡片底部 y 坐标（TopBarHeight + topPadding + heroHeight）
+    let heroBottomOffset: CGFloat
+    /// sheetDragNormalizedProgress: 0 = sheet 默认高度，>0 = sheet 收起
+    let revealProgress: CGFloat
+    var layoutMode: LayoutMode = .sheetReveal
+    var topPadding: CGFloat = 0
+
+    @Environment(InvestmentHeroData.self) private var heroData
+
+    @State private var hoveredIndex: Int? = nil
+    @State private var hapticFired = false
+
+    // 淡入：revealProgress 超过 0.08 开始显现，0.38 时达到完全不透明
+    private var contentOpacity: Double {
+        let t = max(0, min(1, Double(revealProgress - 0.08) / 0.30))
+        return t * t * (3 - 2 * t) // smoothstep
+    }
+
+    // MARK: Body
+
+    var body: some View {
+        @Bindable var heroData = heroData
+
+        Group {
+            switch layoutMode {
+            case .sheetReveal:
+                VStack(alignment: .leading, spacing: 0) {
+                    // 占位：与 Hero 卡片高度对齐
+                    Color.clear.frame(height: heroBottomOffset + AppSpacing.sm)
+
+                    portfolioPanel
+                        .padding(.horizontal, AppSpacing.screenPadding)
+                        .opacity(contentOpacity)
+
+                    Spacer()
+                }
+            case .expandedOverlay:
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: AppSpacing.md) {
+                        HStack {
+                            Text("Investment")
+                                .font(.h1)
+                                .foregroundStyle(AppColors.heroTextPrimary)
+                            Spacer()
+                        }
+                        .padding(.top, topPadding)
+
+                        portfolioPanel
+                    }
+                    .padding(.horizontal, AppSpacing.screenPadding)
+                    .padding(.bottom, AppSpacing.xl)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .allowsHitTesting(layoutMode == .expandedOverlay || revealProgress > 0.1)
+    }
+
+    // MARK: Derived
+
+    private var currentData: [PortfolioDataPoint] { heroData.currentData }
+
+    private var displayValue: Double {
+        guard let idx = hoveredIndex, currentData.indices.contains(idx) else {
+            return heroData.balance
+        }
+        return currentData[idx].value
+    }
+
+    private var displayGain: (amount: Double, pct: Double) {
+        guard !currentData.isEmpty else {
+            return (heroData.gainAmount, heroData.gainPercentage)
+        }
+        let start = currentData.first!.value
+        let end   = hoveredIndex.flatMap { currentData.indices.contains($0) ? currentData[$0].value : nil }
+                    ?? currentData.last!.value
+        let diff  = end - start
+        let pct   = start > 0 ? diff / start * 100 : 0
+        return (diff, pct)
+    }
+
+    // MARK: Sub-views
+
+    private var portfolioPanel: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("PORTFOLIO")
+                .font(.cardHeader)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                .tracking(AppTypography.Tracking.cardHeader)
+
+            Spacer().frame(height: AppSpacing.xs)
+
+            HStack(alignment: .firstTextBaseline, spacing: 0) {
+                Text(formatWhole(displayValue))
+                    .font(.portfolioHero)
+                    .foregroundStyle(AppColors.heroTextPrimary)
+                    .contentTransition(.numericText())
+                Text(formatCents(displayValue))
+                    .font(.h4)
+                    .foregroundStyle(AppColors.overlayWhiteAt60)
+            }
+
+            Spacer().frame(height: AppSpacing.sm + AppSpacing.xs)
+
+            gainBadge
+
+            Spacer().frame(height: AppSpacing.md + AppSpacing.xs)
+
+            chartArea
+                .frame(height: 148)
+                .clipped()
+
+            Rectangle()
+                .fill(AppColors.overlayWhiteStroke)
+                .frame(height: 0.8)
+                .padding(.top, AppSpacing.sm)
+
+            GlassPillSelector(
+                items: PortfolioTimeRange.allCases,
+                selected: Bindable(heroData).selectedRange,
+                label: { $0.label }
+            )
+            .padding(.horizontal, AppSpacing.sm)
+            .padding(.top, AppSpacing.sm + AppSpacing.xs)
+        }
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.top, AppSpacing.md + AppSpacing.xs)
+        .padding(.bottom, AppSpacing.md)
+        .background(portfolioPanelBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.glassPanel))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.glassPanel)
+                .stroke(AppColors.overlayWhiteEmphasisStroke.opacity(0.22), lineWidth: 0.9)
+        )
+        .overlay(alignment: .top) {
+            RoundedRectangle(cornerRadius: AppRadius.glassPanel)
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            AppColors.overlayWhiteAt40.opacity(0.55),
+                            Color.clear
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    lineWidth: 1
+                )
+                .padding(1)
+        }
+        .simDetailsShadow()
+    }
+
+    private var portfolioPanelBackground: some View {
+        ZStack {
+            LinearGradient(
+                colors: [AppColors.simDetailsBg1, AppColors.simDetailsBg2],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            RadialGradient(
+                gradient: Gradient(colors: [AppColors.investHeroGlowPurple2, .clear]),
+                center: UnitPoint(x: 0.84, y: 0.08),
+                startRadius: 0,
+                endRadius: 180
+            )
+
+            RadialGradient(
+                gradient: Gradient(colors: [AppColors.heroGlowPink, .clear]),
+                center: UnitPoint(x: 0.48, y: 0.92),
+                startRadius: 0,
+                endRadius: 220
+            )
+
+            LinearGradient(
+                colors: [AppColors.overlayWhiteWash, Color.clear],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var gainBadge: some View {
+        let (diff, pct) = displayGain
+        let up = diff >= 0
+        HStack(spacing: AppSpacing.xs) {
+            Image(systemName: up ? "arrow.up.right" : "arrow.down.right")
+                .font(.cardHeader)
+            Text("\(up ? "+" : "")\(formatCompact(diff))  (\(String(format: "%.2f", pct))%)")
+                .font(.footnoteRegular)
+        }
+        .foregroundColor(up ? AppColors.successAlt : AppColors.error)
+        .padding(.horizontal, AppSpacing.sm + AppSpacing.xs)
+        .padding(.vertical, AppSpacing.sm)
+        .background((up ? AppColors.successAlt : AppColors.error).opacity(0.18))
+        .clipShape(Capsule())
+        .animation(.easeInOut(duration: 0.15), value: hoveredIndex)
+    }
+
+    @ViewBuilder
+    private var chartArea: some View {
+        let data = currentData
+        ZStack {
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            AppColors.overlayWhiteWash,
+                            AppColors.overlayWhiteWash.opacity(0.15),
+                            Color.clear
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+
+            if data.isEmpty {
+                VStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.navChevron)
+                        .foregroundStyle(AppColors.overlayWhiteOnGlass.opacity(0.4))
+                    Text("Loading chart…")
+                        .font(.footnoteRegular)
+                        .foregroundStyle(AppColors.overlayWhiteOnGlass.opacity(0.5))
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                GeometryReader { geo in
+                    heroChartCanvas(data: data, w: geo.size.width, h: geo.size.height)
+                }
+                .contentShape(Rectangle())
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func heroChartCanvas(data: [PortfolioDataPoint], w: CGFloat, h: CGFloat) -> some View {
+        let vals   = data.map { $0.value }
+        let n      = data.count
+        let minV   = vals.min() ?? 0
+        let maxV   = vals.max() ?? 1
+        let vRange = max(maxV - minV, 1.0)
+        let steps  = max(n - 1, 1)
+        let topPad: CGFloat = 20
+        let botPad: CGFloat = 14
+        let useH   = h - topPad - botPad
+
+        let pts: [CGPoint] = vals.enumerated().map { i, v in
+            CGPoint(
+                x: w * CGFloat(i) / CGFloat(steps),
+                y: topPad + useH * (1 - CGFloat((v - minV) / vRange))
+            )
+        }
+
+        ZStack(alignment: .topLeading) {
+            if w > 0, h > 0, !pts.isEmpty {
+                Path { p in
+                    let baseline = h - botPad
+                    p.move(to: CGPoint(x: 0, y: baseline))
+                    p.addLine(to: CGPoint(x: w, y: baseline))
+                }
+                .stroke(AppColors.overlayWhiteStroke.opacity(0.7), lineWidth: 0.8)
+
+                areaPath(pts, bottomY: h)
+                    .fill(LinearGradient(
+                        colors: [
+                            AppColors.accentPurpleLight.opacity(0.28),
+                            AppColors.accentPink.opacity(0.14),
+                            Color.clear
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ))
+                linePath(pts)
+                    .stroke(AppColors.accentPurpleFaint.opacity(0.96), lineWidth: 2)
+            }
+
+            if let idx = hoveredIndex, pts.indices.contains(idx) {
+                let sx = pts[idx].x
+                let sy = pts[idx].y
+                let dateLabel = formatDate(data[idx].date, range: heroData.selectedRange)
+
+                Text(dateLabel)
+                    .font(.label)
+                    .foregroundColor(AppColors.overlayWhiteOnGlass)
+                    .fixedSize()
+                    .padding(.horizontal, AppSpacing.sm - AppSpacing.xs)
+                    .padding(.vertical, AppSpacing.xs / 2)
+                    .background(AppColors.overlayWhiteMid)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm))
+                    .position(
+                        x: min(max(sx, AppSpacing.xl + AppSpacing.xs), w - AppSpacing.xl - AppSpacing.xs),
+                        y: topPad / 2 + AppSpacing.xs
+                    )
+                    .transition(.opacity)
+                    .animation(.easeInOut(duration: 0.1), value: hoveredIndex)
+
+                Path { p in
+                    p.move(to: CGPoint(x: sx, y: topPad))
+                    p.addLine(to: CGPoint(x: sx, y: h))
+                }
+                .stroke(AppColors.overlayWhiteEmphasisStroke,
+                        style: StrokeStyle(lineWidth: 1, dash: [3, 4]))
+
+                Circle()
+                    .fill(AppColors.overlayWhiteHigh)
+                    .frame(width: 18, height: 18)
+                    .position(x: sx, y: sy)
+                Circle()
+                    .fill(AppColors.textPrimary)
+                    .frame(width: 7, height: 7)
+                    .position(x: sx, y: sy)
+            } else if let lastPoint = pts.last {
+                Circle()
+                    .fill(AppColors.overlayWhiteHigh)
+                    .frame(width: 14, height: 14)
+                    .position(x: lastPoint.x, y: lastPoint.y)
+                Circle()
+                    .fill(AppColors.heroTextPrimary)
+                    .frame(width: 6, height: 6)
+                    .position(x: lastPoint.x, y: lastPoint.y)
+            }
+
+            ChartInteractionLayer(
+                onDrag: { x, chartWidth in
+                    guard chartWidth > 0, n > 1 else { return }
+                    if !hapticFired {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        hapticFired = true
+                    }
+                    let fraction = max(0, min(x / chartWidth, 1.0))
+                    hoveredIndex = min(Int((fraction * CGFloat(n - 1)).rounded()), n - 1)
+                },
+                onRelease: {
+                    withAnimation(.easeOut(duration: 0.25)) { hoveredIndex = nil }
+                    hapticFired = false
+                }
+            )
+            .frame(width: w, height: h)
+        }
+        .onChange(of: heroData.selectedRange) { _, _ in
+            hoveredIndex = nil
+            hapticFired  = false
+        }
+    }
+
+    // MARK: Path helpers
+
+    private func linePath(_ pts: [CGPoint]) -> Path {
+        guard pts.count > 1 else { return Path() }
+        var path = Path()
+        path.move(to: pts[0])
+        for i in 1..<pts.count {
+            let prev  = i > 1 ? pts[i - 2] : pts[i - 1]
+            let curr  = pts[i - 1]
+            let next  = pts[i]
+            let next2 = i < pts.count - 1 ? pts[i + 1] : pts[i]
+            let cp1 = CGPoint(x: curr.x + (next.x - prev.x) / 6,
+                              y: curr.y + (next.y - prev.y) / 6)
+            let cp2 = CGPoint(x: next.x - (next2.x - curr.x) / 6,
+                              y: next.y - (next2.y - curr.y) / 6)
+            path.addCurve(to: next, control1: cp1, control2: cp2)
+        }
+        return path
+    }
+
+    private func areaPath(_ pts: [CGPoint], bottomY: CGFloat) -> Path {
+        var path = linePath(pts)
+        path.addLine(to: CGPoint(x: pts.last!.x, y: bottomY))
+        path.addLine(to: CGPoint(x: pts.first!.x, y: bottomY))
+        path.closeSubpath()
+        return path
+    }
+
+    // MARK: Formatters
+
+    private func formatWhole(_ v: Double) -> String {
+        let f = NumberFormatter()
+        f.numberStyle = .currency; f.currencyCode = "USD"
+        f.maximumFractionDigits = 0; f.minimumFractionDigits = 0
+        return f.string(from: NSNumber(value: v)) ?? "$0"
+    }
+
+    private func formatCents(_ v: Double) -> String {
+        let cents = Int(abs(v.truncatingRemainder(dividingBy: 1)) * 100)
+        return String(format: ".%02d", cents)
+    }
+
+    private func formatCompact(_ v: Double) -> String {
+        let f = NumberFormatter()
+        f.numberStyle = .currency; f.currencyCode = "USD"
+        f.maximumFractionDigits = 0; f.minimumFractionDigits = 0
+        return f.string(from: NSNumber(value: abs(v))) ?? "$0"
+    }
+
+    private func formatDate(_ date: Date, range: PortfolioTimeRange) -> String {
+        let f = DateFormatter()
+        switch range {
+        case .oneWeek, .oneMonth, .threeMonths: f.dateFormat = "MMM d, yyyy"
+        case .ytd, .all: f.dateFormat = "MMM yyyy"
+        }
+        return f.string(from: date)
     }
 }
 

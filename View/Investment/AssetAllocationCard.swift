@@ -17,6 +17,7 @@ struct AssetAllocationCard: View {
     }
 
     private struct AllocRow {
+        let id: String
         let title: String
         let percent: Int
         let amount: Double
@@ -25,14 +26,17 @@ struct AssetAllocationCard: View {
 
     private var sortedRows: [AllocRow] {
         var rows = [
-            AllocRow(title: "U.S. Stocks", percent: allocation.stocks.percent, amount: allocation.stocks.amount, color: AppColors.chartSteelBlue),
-            AllocRow(title: "Crypto", percent: allocation.bonds.percent, amount: allocation.bonds.amount, color: AppColors.chartYellow),
-            AllocRow(title: "Cash", percent: allocation.cash.percent, amount: allocation.cash.amount, color: AppColors.chartSageGreen)
+            AllocRow(id: "stocks", title: "U.S. Stocks", percent: allocation.stocks.percent, amount: allocation.stocks.amount, color: AppColors.chartSteelBlue),
+            AllocRow(id: "crypto", title: "Crypto", percent: allocation.bonds.percent, amount: allocation.bonds.amount, color: AppColors.chartYellow),
+            AllocRow(id: "cash", title: "Cash", percent: allocation.cash.percent, amount: allocation.cash.amount, color: AppColors.chartSageGreen)
         ]
         if let other = allocation.other, other.percent > 0 {
-            rows.append(AllocRow(title: "Other", percent: other.percent, amount: other.amount, color: AppColors.chartCoral))
+            rows.append(AllocRow(id: "other", title: "Other", percent: other.percent, amount: other.amount, color: AppColors.chartCoral))
         }
-        return rows.sorted { $0.percent > $1.percent }
+        let filtered = rows.filter { row in
+            row.amount > 0 || row.percent > 0
+        }
+        return (filtered.isEmpty ? rows : filtered).sorted { $0.amount > $1.amount }
     }
 
     private var allocationSegments: [ChartSegment] {
@@ -41,45 +45,46 @@ struct AssetAllocationCard: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack(spacing: 6) {
+            HStack {
                 Text("ASSET ALLOCATION")
                     .font(.cardHeader)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundColor(AppColors.inkFaint)
                     .tracking(AppTypography.Tracking.cardHeader)
+                Spacer()
                 if isConnected {
                     Image(systemName: "chevron.right")
                         .font(.miniLabel)
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(AppColors.inkFaint)
                 }
-                Spacer()
             }
-            .contentShape(Rectangle())
-            .onTapGesture { if isConnected { showDetail = true } }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.top, AppSpacing.cardPadding)
             .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
 
             Rectangle()
-                .fill(AppColors.surfaceBorder)
+                .fill(AppColors.inkDivider)
                 .frame(height: 0.5)
                 .padding(.horizontal, AppSpacing.cardPadding)
 
             if isConnected {
-                // Chart + breakdown
-                HStack(spacing: 20) {
+                HStack(alignment: .top, spacing: 20) {
                     ZStack {
                         DonutChart(segments: allocationSegments)
                             .frame(width: 110, height: 110)
+                            .contentShape(Circle())
+                            .onTapGesture {
+                                guard isConnected else { return }
+                                showDetail = true
+                            }
 
                         VStack(spacing: 1) {
                             Text("TOTAL")
                                 .font(.miniLabel)
-                                .foregroundColor(AppColors.textTertiary)
+                                .foregroundColor(AppColors.inkMeta)
                                 .tracking(AppTypography.Tracking.miniUppercase)
                             Text(formatCompact(totalAmount))
                                 .font(.inlineFigureBold)
-                                .foregroundStyle(AppColors.textPrimary)
+                                .foregroundStyle(AppColors.inkPrimary)
                         }
                     }
 
@@ -102,12 +107,21 @@ struct AssetAllocationCard: View {
                 disconnectedContent
             }
         }
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.xl)
-                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.glassPanel)
+                .fill(AppColors.glassCardBg)
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.glassPanel)
+                        .fill(AppColors.glassCardBg2)
+                        .padding(1)
+                )
         )
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.glassPanel))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.glassPanel)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
+        .glassCardShadow()
         .fullScreenCover(isPresented: $showDetail) {
             AssetAllocationDetailView(
                 allocation: allocation,
@@ -119,41 +133,39 @@ struct AssetAllocationCard: View {
 
     private var disconnectedContent: some View {
         HStack(spacing: 20) {
-            // Ghost donut
             ZStack {
                 Circle()
-                    .stroke(AppColors.surfaceInput, lineWidth: 14)
+                    .stroke(AppColors.inkTrack, lineWidth: 14)
                     .frame(width: 110, height: 110)
                     .opacity(0.35)
 
                 VStack(spacing: 1) {
                     Text("TOTAL")
                         .font(.miniLabel)
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(AppColors.inkMeta)
                         .tracking(AppTypography.Tracking.miniUppercase)
                     Text("$—")
                         .font(.inlineFigureBold)
-                        .foregroundStyle(AppColors.textTertiary)
+                        .foregroundStyle(AppColors.inkFaint)
                 }
             }
 
-            // Ghost rows (locked placeholder)
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(["U.S. Stocks", "Crypto", "Cash"], id: \.self) { label in
                     HStack(spacing: 8) {
                         Image(systemName: "lock.fill")
                             .font(.caption)
-                            .foregroundStyle(AppColors.textTertiary.opacity(0.45))
+                            .foregroundStyle(AppColors.inkFaint.opacity(0.7))
                         Circle()
-                            .fill(AppColors.textTertiary.opacity(0.3))
+                            .fill(AppColors.inkFaint.opacity(0.25))
                             .frame(width: 8, height: 8)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(label)
                                 .font(.footnoteSemibold)
-                                .foregroundStyle(AppColors.textTertiary)
+                                .foregroundStyle(AppColors.inkPrimary)
                             Text("—% · $—")
                                 .font(.cardRowMeta)
-                                .foregroundColor(AppColors.textTertiary.opacity(0.5))
+                                .foregroundColor(AppColors.inkSoft)
                         }
                     }
                 }
@@ -187,10 +199,10 @@ private struct AllocationRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.footnoteSemibold)
-                    .foregroundStyle(AppColors.textPrimary)
+                    .foregroundStyle(AppColors.inkPrimary)
                 Text("\(percent)% · \(formatCurrency(amount))")
                     .font(.cardRowMeta)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundColor(AppColors.inkSoft)
             }
         }
     }
@@ -209,7 +221,7 @@ private struct DonutChart: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(AppColors.surfaceInput, lineWidth: 14)
+                .stroke(AppColors.inkTrack, lineWidth: 14)
 
             ForEach(segments.indices, id: \.self) { i in
                 if segments[i].percent > 0 {
@@ -243,7 +255,8 @@ private struct ChartSegment { let percent: Int; let color: Color }
 
 #Preview {
     ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
+        LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom)
+            .ignoresSafeArea()
         AssetAllocationCard(allocation: MockData.investmentData.allocation).padding()
     }
 }

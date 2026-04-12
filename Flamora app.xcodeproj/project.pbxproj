@@ -73,18 +73,11 @@
 		15ABCD012F36A00000AABB01 /* IncomeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15ABCD002F36A00000AABB01 /* IncomeDetailView.swift */; };
 		15ABCD032F36B00000AABB02 /* TotalIncomeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15ABCD022F36B00000AABB02 /* TotalIncomeDetailView.swift */; };
 		15E21AA62F3248F500A9BB60 /* JourneyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AA32F3248F500A9BB60 /* JourneyView.swift */; };
-		PH0A00012F40000000000001 /* JourneyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0A00002F40000000000001 /* JourneyViewModel.swift */; };
-		PH0B00022F40000000000002 /* LegendItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0B00012F40000000000002 /* LegendItemView.swift */; };
-		PH0C00032F40000000000003 /* NumberFormatter+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0C00022F40000000000003 /* NumberFormatter+App.swift */; };
 		15E21AAB2F324EFA00A9BB60 /* Spacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AAA2F324EFA00A9BB60 /* Spacing.swift */; };
-		1EB2D5B3CC5D45E3A2CC9B26 /* Shadows.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B6BBC00A0F486AB485D850 /* Shadows.swift */; };
 		15E21AAD2F324F0E00A9BB60 /* ProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AAC2F324F0E00A9BB60 /* ProgressBar.swift */; };
 		15E21AAF2F324F1F00A9BB60 /* MonthIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AAE2F324F1F00A9BB60 /* MonthIndicator.swift */; };
 		15E21AB12F32548A00A9BB60 /* SimulatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB02F32548A00A9BB60 /* SimulatorView.swift */; };
 		15E21AB32F3257B000A9BB60 /* CashflowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB22F3257B000A9BB60 /* CashflowView.swift */; };
-		CF10A0012F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF10A0002F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift */; };
-		CF10A0112F50000100A9BB60 /* CashflowExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF10A0102F50000100A9BB60 /* CashflowExpandedOverlayView.swift */; };
-		CF20A0112F70000100A9BB60 /* HomeExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */; };
 		15E21AB72F3257C600A9BB60 /* InvestmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB62F3257C600A9BB60 /* InvestmentView.swift */; };
 		15E21AB92F3257D700A9BB60 /* GlassmorphicTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */; };
 		15E21ABB2F325A9D00A9BB60 /* JourneyContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21ABA2F325A9D00A9BB60 /* JourneyContainerView.swift */; };
@@ -98,6 +91,7 @@
 		15E21AF12F33C40000A9BB60 /* BudgetCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF02F33C40000A9BB60 /* BudgetCard.swift */; };
 		15E21AF32F33F2AD00A9BB60 /* AccountsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF22F33F2AD00A9BB60 /* AccountsCard.swift */; };
 		15E21AF52F33F2BE00A9BB60 /* AssetAllocationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */; };
+		CDBB00062FA2000000000001 /* PortfolioHoldingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00052FA2000000000001 /* PortfolioHoldingsSection.swift */; };
 		15E21AF82F34010000A9BB71 /* TransactionDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF72F34010000A9BB70 /* TransactionDetailSheet.swift */; };
 		15E21AFA2F34020000A9BB72 /* TransactionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF92F34020000A9BB73 /* TransactionRow.swift */; };
 		15E21AFC2F34030000A9BB74 /* AllTransactionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AFB2F34030000A9BB75 /* AllTransactionsView.swift */; };
@@ -108,8 +102,8 @@
 		15FF6EDF2F3104500005F482 /* ConnectAccountCTAView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6EDE2F3104500005F482 /* ConnectAccountCTAView.swift */; };
 		15FF6EE02F310A040005F482 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED82F3103F70005F482 /* Typography.swift */; };
 		18177349D8754A42810808DD /* PlaidTrustBridgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A896C70355034867B690BCB2 /* PlaidTrustBridgeView.swift */; };
+		1EB2D5B3CC5D45E3A2CC9B26 /* Shadows.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B6BBC00A0F486AB485D850 /* Shadows.swift */; };
 		468A105E0AD44511A1EFC2E0 /* FIRECountdownCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3AE291F3C594B4B8D1E5239 /* FIRECountdownCard.swift */; };
-		PH0D000A2F4000000000000A /* HomeJourneyProgressStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0D000B2F4000000000000B /* HomeJourneyProgressStrip.swift */; };
 		AA5B00032F38500000001003 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = AA5B00022F38500000001002 /* Supabase */; };
 		AA5B00052F38500000001005 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5B00042F38500000001004 /* SupabaseManager.swift */; };
 		AAOB00012F38500000000001 /* OnboardingData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00112F38500000000001 /* OnboardingData.swift */; };
@@ -125,10 +119,18 @@
 		CDAA00022FA0000000000001 /* CategoryDisplayHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA00012FA0000000000001 /* CategoryDisplayHelper.swift */; };
 		CDAA00072FA0000000000001 /* CashflowDetailBuilders.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA00062FA0000000000001 /* CashflowDetailBuilders.swift */; };
 		CDAA00092FA0000000000001 /* TabContentCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA00082FA0000000000001 /* TabContentCache.swift */; };
+		B3D9EBFAB4389F2E2DF7ABA4 /* InvestmentHeroData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ABA209DA5EFACBEF2E96A48 /* InvestmentHeroData.swift */; };
 		CDAA000B2FA0000000000001 /* InvestmentAllocationBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA000A2FA0000000000001 /* InvestmentAllocationBuilder.swift */; };
 		CDBB00022FA1000000000001 /* CashAccountsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00012FA1000000000001 /* CashAccountsCard.swift */; };
 		CDBB00042FA1000000000001 /* CashAccountDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00032FA1000000000001 /* CashAccountDetailView.swift */; };
+		CF10A0012F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF10A0002F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift */; };
+		CF10A0112F50000100A9BB60 /* CashflowExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF10A0102F50000100A9BB60 /* CashflowExpandedOverlayView.swift */; };
+		CF20A0112F70000100A9BB60 /* HomeExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */; };
 		EB0000012F9A00000000EB01 /* ErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB0000022F9A00000000EB01 /* ErrorBanner.swift */; };
+		PH0A00012F40000000000001 /* JourneyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0A00002F40000000000001 /* JourneyViewModel.swift */; };
+		PH0B00022F40000000000002 /* LegendItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0B00012F40000000000002 /* LegendItemView.swift */; };
+		PH0C00032F40000000000003 /* NumberFormatter+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0C00022F40000000000003 /* NumberFormatter+App.swift */; };
+		PH0D000A2F4000000000000A /* HomeJourneyProgressStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0D000B2F4000000000000B /* HomeJourneyProgressStrip.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -214,17 +216,11 @@
 		15ABCD002F36A00000AABB01 /* IncomeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomeDetailView.swift; sourceTree = "<group>"; };
 		15ABCD022F36B00000AABB02 /* TotalIncomeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotalIncomeDetailView.swift; sourceTree = "<group>"; };
 		15E21AA32F3248F500A9BB60 /* JourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyView.swift; sourceTree = "<group>"; };
-		PH0A00002F40000000000001 /* JourneyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyViewModel.swift; sourceTree = "<group>"; };
-		PH0B00012F40000000000002 /* LegendItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegendItemView.swift; sourceTree = "<group>"; };
 		15E21AAA2F324EFA00A9BB60 /* Spacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spacing.swift; sourceTree = "<group>"; };
-		D4B6BBC00A0F486AB485D850 /* Shadows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shadows.swift; sourceTree = "<group>"; };
 		15E21AAC2F324F0E00A9BB60 /* ProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBar.swift; sourceTree = "<group>"; };
 		15E21AAE2F324F1F00A9BB60 /* MonthIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthIndicator.swift; sourceTree = "<group>"; };
 		15E21AB02F32548A00A9BB60 /* SimulatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorView.swift; sourceTree = "<group>"; };
 		15E21AB22F3257B000A9BB60 /* CashflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowView.swift; sourceTree = "<group>"; };
-		CF10A0002F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowSpendingOverviewPrototypeCard.swift; sourceTree = "<group>"; };
-		CF10A0102F50000100A9BB60 /* CashflowExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowExpandedOverlayView.swift; sourceTree = "<group>"; };
-		CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeExpandedOverlayView.swift; sourceTree = "<group>"; };
 		15E21AB62F3257C600A9BB60 /* InvestmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentView.swift; sourceTree = "<group>"; };
 		15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassmorphicTabBar.swift; sourceTree = "<group>"; };
 		15E21ABA2F325A9D00A9BB60 /* JourneyContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyContainerView.swift; sourceTree = "<group>"; };
@@ -238,6 +234,7 @@
 		15E21AF02F33C40000A9BB60 /* BudgetCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetCard.swift; sourceTree = "<group>"; };
 		15E21AF22F33F2AD00A9BB60 /* AccountsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountsCard.swift; sourceTree = "<group>"; };
 		15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetAllocationCard.swift; sourceTree = "<group>"; };
+		CDBB00052FA2000000000001 /* PortfolioHoldingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioHoldingsSection.swift; sourceTree = "<group>"; };
 		15E21AF72F34010000A9BB70 /* TransactionDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionDetailSheet.swift; sourceTree = "<group>"; };
 		15E21AF92F34020000A9BB73 /* TransactionRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionRow.swift; sourceTree = "<group>"; };
 		15E21AFB2F34030000A9BB75 /* AllTransactionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllTransactionsView.swift; sourceTree = "<group>"; };
@@ -261,16 +258,23 @@
 		CD2604070000000000000005 /* ActivePlanModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivePlanModel.swift; sourceTree = "<group>"; };
 		CD2604070000000000000007 /* SimulatorPreviewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorPreviewModel.swift; sourceTree = "<group>"; };
 		CDAA00012FA0000000000001 /* CategoryDisplayHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryDisplayHelper.swift; sourceTree = "<group>"; };
-		PH0C00022F40000000000003 /* NumberFormatter+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NumberFormatter+App.swift"; sourceTree = "<group>"; };
 		CDAA00062FA0000000000001 /* CashflowDetailBuilders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowDetailBuilders.swift; sourceTree = "<group>"; };
 		CDAA00082FA0000000000001 /* TabContentCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabContentCache.swift; sourceTree = "<group>"; };
+		5ABA209DA5EFACBEF2E96A48 /* InvestmentHeroData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentHeroData.swift; sourceTree = "<group>"; };
 		CDAA000A2FA0000000000001 /* InvestmentAllocationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentAllocationBuilder.swift; sourceTree = "<group>"; };
 		CDBB00012FA1000000000001 /* CashAccountsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountsCard.swift; sourceTree = "<group>"; };
 		CDBB00032FA1000000000001 /* CashAccountDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountDetailView.swift; sourceTree = "<group>"; };
+		CF10A0002F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowSpendingOverviewPrototypeCard.swift; sourceTree = "<group>"; };
+		CF10A0102F50000100A9BB60 /* CashflowExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowExpandedOverlayView.swift; sourceTree = "<group>"; };
+		CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeExpandedOverlayView.swift; sourceTree = "<group>"; };
 		D3AE291F3C594B4B8D1E5239 /* FIRECountdownCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIRECountdownCard.swift; sourceTree = "<group>"; };
-		PH0D000B2F4000000000000B /* HomeJourneyProgressStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeJourneyProgressStrip.swift; sourceTree = "<group>"; };
+		D4B6BBC00A0F486AB485D850 /* Shadows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shadows.swift; sourceTree = "<group>"; };
 		EB0000022F9A00000000EB01 /* ErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBanner.swift; sourceTree = "<group>"; };
 		F3D88B1E877C494CB82A4469 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		PH0A00002F40000000000001 /* JourneyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyViewModel.swift; sourceTree = "<group>"; };
+		PH0B00012F40000000000002 /* LegendItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegendItemView.swift; sourceTree = "<group>"; };
+		PH0C00022F40000000000003 /* NumberFormatter+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NumberFormatter+App.swift"; sourceTree = "<group>"; };
+		PH0D000B2F4000000000000B /* HomeJourneyProgressStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeJourneyProgressStrip.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -443,6 +447,7 @@
 				1571A1D62F3C2A2C0024A729 /* APIService.swift */,
 				CDAA00062FA0000000000001 /* CashflowDetailBuilders.swift */,
 				CDAA00082FA0000000000001 /* TabContentCache.swift */,
+				5ABA209DA5EFACBEF2E96A48 /* InvestmentHeroData.swift */,
 				CDAA000A2FA0000000000001 /* InvestmentAllocationBuilder.swift */,
 				AAOB00112F38500000000001 /* OnboardingData.swift */,
 				AA5B00042F38500000001004 /* SupabaseManager.swift */,
@@ -467,7 +472,7 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
-		15E21AA42F3248F500A9BB60 /* Journey */ = {
+		15E21AA42F3248F500A9BB60 /* Home */ = {
 			isa = PBXGroup;
 			children = (
 				CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */,
@@ -500,7 +505,7 @@
 				15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */,
 				15E21AEB2F33BE1900A9BB60 /* Investment */,
 				15E21AE72F33BC5E00A9BB60 /* Cashflow */,
-				15E21AA42F3248F500A9BB60 /* Journey */,
+				15E21AA42F3248F500A9BB60 /* Home */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -535,6 +540,7 @@
 				15E21AF22F33F2AD00A9BB60 /* AccountsCard.swift */,
 				15E21B0F2F33F31000A9BB70 /* AccountDetailView.swift */,
 				15E21AB62F3257C600A9BB60 /* InvestmentView.swift */,
+				CDBB00052FA2000000000001 /* PortfolioHoldingsSection.swift */,
 			);
 			path = Investment;
 			sourceTree = "<group>";
@@ -759,6 +765,7 @@
 				1571A1D82F3C2A2C0024A729 /* APIService.swift in Sources */,
 				CDAA00072FA0000000000001 /* CashflowDetailBuilders.swift in Sources */,
 				CDAA00092FA0000000000001 /* TabContentCache.swift in Sources */,
+				B3D9EBFAB4389F2E2DF7ABA4 /* InvestmentHeroData.swift in Sources */,
 				CDAA000B2FA0000000000001 /* InvestmentAllocationBuilder.swift in Sources */,
 				12748F252F65CCEE00410D60 /* BudgetSetupView.swift in Sources */,
 				15FF6EE02F310A040005F482 /* Typography.swift in Sources */,
@@ -798,6 +805,7 @@
 				15E21B142F33F33000A9BB80 /* AssetAllocationDetailView.swift in Sources */,
 				15E21AF32F33F2AD00A9BB60 /* AccountsCard.swift in Sources */,
 				15E21B102F33F31000A9BB70 /* AccountDetailView.swift in Sources */,
+				CDBB00062FA2000000000001 /* PortfolioHoldingsSection.swift in Sources */,
 				153CA32C2F3562AC001ED98E /* SavingsTargetDetailView2.swift in Sources */,
 				15ABCD012F36A00000AABB01 /* IncomeDetailView.swift in Sources */,
 				15ABCD032F36B00000AABB02 /* TotalIncomeDetailView.swift in Sources */,
@@ -1013,7 +1021,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 526LTP6Z7D;
+				DEVELOPMENT_TEAM = H9BUW6F8JV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Flamora-App-Info.plist";
@@ -1028,7 +1036,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.LL.fire.Flamora-app7";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.QL.fire.Flamora-app7";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -1048,7 +1056,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 526LTP6Z7D;
+				DEVELOPMENT_TEAM = H9BUW6F8JV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Flamora-App-Info.plist";
@@ -1063,7 +1071,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.LL.fire.Flamora-app7";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.QL.fire.Flamora-app7";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;

@@ -107,6 +107,11 @@ struct CashflowExpandedOverlayView: View {
         }
         .onAppear {
             if selectedDay <= 0 { selectedDay = 1 }
+            // Restore from cache immediately to avoid empty flash when overlay reopens.
+            if let cached = TabContentCache.shared.cashflowMonthlySummaries, !cached.isEmpty {
+                summaries = cached
+                dataState = .live
+            }
         }
         .task(id: plaidManager.hasLinkedBank) {
             await loadOverlayData()
@@ -135,14 +140,8 @@ private extension CashflowExpandedOverlayView {
     }
 
     private var trendPoints: [TrendPoint] {
-        if isPlaceholder {
-            let seed: [Double] = trendMode == .expense
-                ? [1200, 1400, 1320, 1560, 1490, 1620, 1710, 1590, 1680, 1760, 1840, 1780]
-                : [2200, 2380, 2450, 2530, 2490, 2610, 2730, 2690, 2820, 2910, 2980, 3040]
-            return seed.enumerated().prefix(monthCountInScope).map { i, value in
-                TrendPoint(id: i, label: monthShort[i], value: value)
-            }
-        }
+        // Never show fake amounts for an unconnected user.
+        if isPlaceholder { return [] }
 
         let pts: [TrendPoint] = (0..<monthCountInScope).map { index in
             let value: Double
@@ -154,26 +153,13 @@ private extension CashflowExpandedOverlayView {
             return TrendPoint(id: index, label: monthShort[index], value: value)
         }
 
-        if pts.contains(where: { $0.value > 0 }) {
-            return pts
-        }
-
-        let demo: [Double] = trendMode == .expense
-            ? [1840, 1910, 2030, 1970, 2130, 2210, 2160, 2300, 2390, 2470, 2520, 2640]
-            : [3420, 3560, 3490, 3710, 3650, 3890, 3960, 4050, 3990, 4160, 4280, 4370]
-        return demo.enumerated().prefix(monthCountInScope).map { i, value in
-            TrendPoint(id: i, label: monthShort[i], value: value)
-        }
+        // Return real (possibly all-zero) points; never fabricate fake amounts for a connected user.
+        return pts
     }
 
     private var categoryRows: [CashCategoryRow] {
-        if isPlaceholder {
-            return [
-                CashCategoryRow(id: "rent", name: "Rent & Housing", icon: "house.fill", amount: 0, percentage: 0),
-                CashCategoryRow(id: "groceries", name: "Groceries", icon: "cart.fill", amount: 0, percentage: 0),
-                CashCategoryRow(id: "dining", name: "Dining & Social", icon: "fork.knife", amount: 0, percentage: 0),
-            ]
-        }
+        // categoriesSection is hidden when isPlaceholder; this guard is a safety belt.
+        if isPlaceholder { return [] }
 
         if let s = summaries[selectedMonthIndex] {
             if trendMode == .expense {
@@ -213,14 +199,14 @@ private extension CashflowExpandedOverlayView {
             }
         }
 
-        return [
-            CashCategoryRow(id: "demo-a", name: "Essentials", icon: "house.fill", amount: 1240, percentage: 0.47),
-            CashCategoryRow(id: "demo-b", name: "Lifestyle", icon: "fork.knife", amount: 810, percentage: 0.31),
-            CashCategoryRow(id: "demo-c", name: "Subscriptions", icon: "play.tv.fill", amount: 590, percentage: 0.22),
-        ]
+        // No summary data yet for this month — return empty rather than fabricating amounts.
+        return []
     }
 
     private var selectedPoint: TrendPoint {
+        guard !trendPoints.isEmpty else {
+            return TrendPoint(id: selectedMonthIndex, label: monthShort[selectedMonthIndex], value: 0)
+        }
         let safe = min(max(0, selectedMonthIndex), max(0, trendPoints.count - 1))
         return trendPoints[safe]
     }
@@ -407,8 +393,20 @@ private extension CashflowExpandedOverlayView {
                     dayCellView(cell)
                 }
             }
+            .accessibilityIdentifier("cashflow_calendar_grid")
 
-            calendarDetailTray
+            // Only show day-detail tray once the user has connected and data is available.
+            if !isPlaceholder {
+                calendarDetailTray
+            } else {
+                Text("Connect a bank account to see daily spending detail.")
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.heroTextHint)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, AppSpacing.sm)
+                    .accessibilityIdentifier("cashflow_calendar_connect_hint")
+            }
         }
     }
 
@@ -490,6 +488,7 @@ private extension CashflowExpandedOverlayView {
                 .stroke(Color.white.opacity(0.62), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.12), radius: 20, y: 8)
+        .accessibilityIdentifier("cashflow_day_detail_tray")
     }
 
     private var detailTitleText: String {
@@ -508,13 +507,12 @@ private extension CashflowExpandedOverlayView {
                     .foregroundStyle(AppColors.heroTextHint)
                     .textCase(.uppercase)
                 Text(isPlaceholder ? "—" : NumberFormatter.appCurrency(selectedPoint.value))
-                    .font(.system(size: 32, weight: .bold))
+                    .font(.h1)
                     .foregroundStyle(AppColors.heroTextPrimary)
                 Text("\(selectedPoint.label) \(currentYear)")
                     .font(.caption)
                     .foregroundStyle(AppColors.heroTextFaint)
             }
-            .redacted(reason: isPlaceholder ? .placeholder : [])
 
             HStack(spacing: 8) {
                 ForEach(TrendMode.allCases, id: \.self) { mode in
@@ -538,9 +536,29 @@ private extension CashflowExpandedOverlayView {
                 }
             }
 
-            trendBarChart
-            categoriesSection
+            if isPlaceholder {
+                // Unconnected: show an honest empty state instead of fake chart/categories.
+                trendUnconnectedEmptyState
+            } else {
+                trendBarChart
+                categoriesSection
+            }
         }
+    }
+
+    private var trendUnconnectedEmptyState: some View {
+        VStack(spacing: AppSpacing.md) {
+            Image(systemName: "chart.bar.xaxis")
+                .font(.h1)
+                .foregroundStyle(AppColors.heroTextHint)
+            Text("Connect a bank account to see your spending trends and category breakdowns.")
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.heroTextHint)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, AppSpacing.xl)
+        .accessibilityIdentifier("cashflow_trend_empty_state")
     }
 
     private var trendBarChart: some View {
@@ -686,6 +704,7 @@ private extension CashflowExpandedOverlayView {
                 .stroke(Color.white.opacity(0.62), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.12), radius: 20, y: 8)
+        .accessibilityIdentifier("cashflow_categories_section")
     }
 
     private func metricCard(title: String, value: String) -> some View {
@@ -813,5 +832,6 @@ private extension CashflowExpandedOverlayView {
         summaries = fetchedSummaries
         transactions = fetchedTransactions
         dataState = fetchedSummaries.isEmpty ? .demo : .live
+        TabContentCache.shared.setCashflowMonthlySummaries(fetchedSummaries.isEmpty ? nil : fetchedSummaries)
     }
 }
