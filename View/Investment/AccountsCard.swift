@@ -18,7 +18,7 @@ struct AccountsCard: View {
             HStack {
                 Text("ACCOUNTS")
                     .font(.cardHeader)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundColor(AppColors.inkMeta)
                     .tracking(AppTypography.Tracking.cardHeader)
                 Spacer()
             }
@@ -27,7 +27,7 @@ struct AccountsCard: View {
             .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
 
             Rectangle()
-                .fill(AppColors.surfaceBorder)
+                .fill(Color.white.opacity(0.45))
                 .frame(height: 0.5)
                 .padding(.horizontal, AppSpacing.cardPadding)
 
@@ -41,7 +41,7 @@ struct AccountsCard: View {
 
                     if index < accounts.count - 1 {
                         Rectangle()
-                            .fill(AppColors.surfaceBorder)
+                            .fill(Color.white.opacity(0.45))
                             .frame(height: 0.5)
                             .padding(.horizontal, AppSpacing.cardPadding)
                     }
@@ -49,7 +49,7 @@ struct AccountsCard: View {
 
                 // Add Account button
                 Rectangle()
-                    .fill(AppColors.surfaceBorder)
+                    .fill(Color.white.opacity(0.45))
                     .frame(height: 0.5)
                     .padding(.horizontal, AppSpacing.cardPadding)
 
@@ -57,10 +57,10 @@ struct AccountsCard: View {
                     HStack(spacing: AppSpacing.sm) {
                         Image(systemName: "plus.circle.fill")
                             .font(.bodyRegular)
-                            .foregroundStyle(AppColors.textPrimary)
+                            .foregroundStyle(AppColors.inkPrimary)
                         Text("Add Account")
                             .font(.bodySemibold)
-                            .foregroundStyle(AppColors.textPrimary)
+                            .foregroundStyle(AppColors.inkPrimary)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, AppSpacing.md)
@@ -70,11 +70,17 @@ struct AccountsCard: View {
                 disconnectedContent
             }
         }
-        .background(AppColors.surface)
+        .background(
+            LinearGradient(
+                colors: [Color.white.opacity(0.86), Color(hex: "#F8F9FF").opacity(0.78)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.xl)
-                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
+                .stroke(Color.white.opacity(0.62), lineWidth: 1)
         )
         .fullScreenCover(item: $selectedAccount) { account in
             AccountDetailView(account: account)
@@ -86,13 +92,13 @@ struct AccountsCard: View {
             VStack(spacing: AppSpacing.xs) {
                 Image(systemName: "building.columns")
                     .font(.h3)
-                    .foregroundStyle(AppColors.textTertiary.opacity(0.45))
+                    .foregroundStyle(AppColors.inkMeta)
                 Text("No accounts connected")
                     .font(.figureSecondarySemibold)
-                    .foregroundStyle(AppColors.textTertiary)
+                    .foregroundStyle(AppColors.inkSoft)
                 Text("Connect your bank and investment accounts to see them here.")
                     .font(.caption)
-                    .foregroundStyle(AppColors.textTertiary.opacity(0.7))
+                    .foregroundStyle(AppColors.inkMeta)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -102,10 +108,10 @@ struct AccountsCard: View {
                 HStack(spacing: AppSpacing.sm) {
                     Image(systemName: "plus.circle.fill")
                         .font(.bodyRegular)
-                        .foregroundStyle(AppColors.textPrimary)
+                        .foregroundStyle(AppColors.inkPrimary)
                     Text("Add Account")
                         .font(.bodySemibold)
-                        .foregroundStyle(AppColors.textPrimary)
+                        .foregroundStyle(AppColors.inkPrimary)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, AppSpacing.md)
@@ -130,15 +136,15 @@ private struct AccountRow: View {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(account.name ?? account.institution)
                     .font(.figureSecondarySemibold)
-                    .foregroundStyle(AppColors.textPrimary)
+                    .foregroundStyle(AppColors.inkPrimary)
                 Text(accountSubtypeLabel)
                     .font(.caption)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundColor(AppColors.inkMeta)
             }
             Spacer()
             Text(formatCurrency(account.balance))
                 .font(.cardFigureSecondary)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(AppColors.inkPrimary)
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.md)

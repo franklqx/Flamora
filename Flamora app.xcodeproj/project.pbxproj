@@ -97,6 +97,10 @@
 		15E21AEF2F33C3F600A9BB60 /* IncomeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AEE2F33C3F600A9BB60 /* IncomeCard.swift */; };
 		15E21AF12F33C40000A9BB60 /* BudgetCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF02F33C40000A9BB60 /* BudgetCard.swift */; };
 		15E21AF32F33F2AD00A9BB60 /* AccountsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF22F33F2AD00A9BB60 /* AccountsCard.swift */; };
+		F10000022FB0000000000001 /* InvestmentDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000012FB0000000000001 /* InvestmentDataStore.swift */; };
+		F10000042FB0000000000001 /* InvestmentExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000032FB0000000000001 /* InvestmentExpandedOverlayView.swift */; };
+		F10000062FB0000000000001 /* InvestmentSheetContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000052FB0000000000001 /* InvestmentSheetContent.swift */; };
+		F10000082FB0000000000001 /* SheetPrimaryCTAButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000072FB0000000000001 /* SheetPrimaryCTAButton.swift */; };
 		15E21AF52F33F2BE00A9BB60 /* AssetAllocationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */; };
 		15E21AF82F34010000A9BB71 /* TransactionDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF72F34010000A9BB70 /* TransactionDetailSheet.swift */; };
 		15E21AFA2F34020000A9BB72 /* TransactionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF92F34020000A9BB73 /* TransactionRow.swift */; };
@@ -267,6 +271,10 @@
 		CDAA000A2FA0000000000001 /* InvestmentAllocationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentAllocationBuilder.swift; sourceTree = "<group>"; };
 		CDBB00012FA1000000000001 /* CashAccountsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountsCard.swift; sourceTree = "<group>"; };
 		CDBB00032FA1000000000001 /* CashAccountDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountDetailView.swift; sourceTree = "<group>"; };
+		F10000012FB0000000000001 /* InvestmentDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentDataStore.swift; sourceTree = "<group>"; };
+		F10000032FB0000000000001 /* InvestmentExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentExpandedOverlayView.swift; sourceTree = "<group>"; };
+		F10000052FB0000000000001 /* InvestmentSheetContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentSheetContent.swift; sourceTree = "<group>"; };
+		F10000072FB0000000000001 /* SheetPrimaryCTAButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetPrimaryCTAButton.swift; sourceTree = "<group>"; };
 		D3AE291F3C594B4B8D1E5239 /* FIRECountdownCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIRECountdownCard.swift; sourceTree = "<group>"; };
 		PH0D000B2F4000000000000B /* HomeJourneyProgressStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeJourneyProgressStrip.swift; sourceTree = "<group>"; };
 		EB0000022F9A00000000EB01 /* ErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBanner.swift; sourceTree = "<group>"; };
@@ -334,6 +342,7 @@
 				12123E3E2F485B920011B385 /* PaywallSheet.swift */,
 				AAB934E0EA2D41B4B246F19E /* SafariView.swift */,
 				A896C70355034867B690BCB2 /* PlaidTrustBridgeView.swift */,
+				F10000072FB0000000000001 /* SheetPrimaryCTAButton.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -530,6 +539,9 @@
 		15E21AEB2F33BE1900A9BB60 /* Investment */ = {
 			isa = PBXGroup;
 			children = (
+				F10000012FB0000000000001 /* InvestmentDataStore.swift */,
+				F10000052FB0000000000001 /* InvestmentSheetContent.swift */,
+				F10000032FB0000000000001 /* InvestmentExpandedOverlayView.swift */,
 				15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */,
 				15E21B132F33F33000A9BB80 /* AssetAllocationDetailView.swift */,
 				15E21AF22F33F2AD00A9BB60 /* AccountsCard.swift */,
@@ -797,6 +809,10 @@
 				15E21AF52F33F2BE00A9BB60 /* AssetAllocationCard.swift in Sources */,
 				15E21B142F33F33000A9BB80 /* AssetAllocationDetailView.swift in Sources */,
 				15E21AF32F33F2AD00A9BB60 /* AccountsCard.swift in Sources */,
+				F10000022FB0000000000001 /* InvestmentDataStore.swift in Sources */,
+				F10000062FB0000000000001 /* InvestmentSheetContent.swift in Sources */,
+				F10000042FB0000000000001 /* InvestmentExpandedOverlayView.swift in Sources */,
+				F10000082FB0000000000001 /* SheetPrimaryCTAButton.swift in Sources */,
 				15E21B102F33F31000A9BB70 /* AccountDetailView.swift in Sources */,
 				153CA32C2F3562AC001ED98E /* SavingsTargetDetailView2.swift in Sources */,
 				15ABCD012F36A00000AABB01 /* IncomeDetailView.swift in Sources */,

@@ -205,6 +205,27 @@ serve(async (req) => {
 
     const uninvestedCashValue = Math.max(0, totalAccountValue - totalHoldingsValue)
 
+    // 最近两次投资历史快照的真实变化，用于详情页「今日变化」。
+    const { data: historyRows } = await supabase
+      .from('net_worth_history')
+      .select('date, investment_total, total_net_worth')
+      .eq('user_id', user.id)
+      .order('date', { ascending: false })
+      .limit(2)
+
+    let todayChange: number | null = null
+    let todayChangePct: number | null = null
+    if ((historyRows || []).length >= 2) {
+      const latest = historyRows![0]
+      const previous = historyRows![1]
+      const latestValue = latest.investment_total ?? latest.total_net_worth ?? 0
+      const previousValue = previous.investment_total ?? previous.total_net_worth ?? 0
+      todayChange = parseFloat((latestValue - previousValue).toFixed(2))
+      todayChangePct = previousValue > 0
+        ? parseFloat((((latestValue - previousValue) / previousValue) * 100).toFixed(2))
+        : null
+    }
+
     // 每个 investment account 的持仓市值
     const holdingsValueByAccountId: Record<string, number> = {}
     for (const h of enrichedHoldings) {
@@ -238,6 +259,8 @@ serve(async (req) => {
             total_cost_basis: parseFloat(totalCostBasis.toFixed(2)),
             total_gain_loss: totalGainLoss !== null ? parseFloat(totalGainLoss.toFixed(2)) : null,
             total_gain_loss_pct: totalGainLossPct,
+            today_change: todayChange,
+            today_change_pct: todayChangePct,
             holdings_count: enrichedHoldings.length,
           },
           type_breakdown: typeBreakdown,

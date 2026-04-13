@@ -522,6 +522,9 @@ struct APIInvestmentHoldingsSummary: Codable {
     let totalCostBasis: Double?
     let totalGainLoss: Double?
     let totalGainLossPct: Double?
+    /// 最近两次投资历史快照之间的真实变化，优先表示「今日变化」。
+    let todayChange: Double?
+    let todayChangePct: Double?
     let holdingsCount: Int
 }
 

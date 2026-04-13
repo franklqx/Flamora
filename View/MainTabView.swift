@@ -104,7 +104,7 @@ struct MainTabView: View {
                 .animation(.easeInOut(duration: 0.18), value: simulatorFullScreenActive)
 
             BrandHeroBackground(
-                isInvestTab: selectedTab == .investment,
+                isInvestTab: selectedTab == .investment && !simulatorFullScreenActive,
                 gradientHeight: brandGradientDisplayHeight,
                 showsBottomShellLift: !simulatorFullScreenActive,
                 fillViewport: simulatorFullScreenActive
@@ -250,6 +250,11 @@ private extension MainTabView {
                 )
             case .cashflow:
                 CashflowExpandedOverlayView(
+                    topPadding: TopHeaderBar.height + AppSpacing.lg,
+                    onClose: exitSimulator
+                )
+            case .investment:
+                InvestmentExpandedOverlayView(
                     topPadding: TopHeaderBar.height + AppSpacing.lg,
                     onClose: exitSimulator
                 )
@@ -473,7 +478,7 @@ private struct HomeBottomSheet: View {
                 case .cashflow:
                     CashUnconnectedContent()
                 case .investment:
-                    InvestUnconnectedContent()
+                    InvestmentSheetContent()
                 case .settings:
                     SettingsView(isEmbeddedInSheet: true)
                 }
@@ -1072,7 +1077,7 @@ private struct CashUnconnectedContent: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: AppSpacing.cardGap) {
                 CashflowSpendingOverviewPrototypeCard()
-                connectCTAButton(label: "Connect accounts") {
+                SheetPrimaryCTAButton(label: "Connect accounts") {
                     if plaidManager.shouldShowTrustBridge() {
                         showTrustBridge = true
                     } else {
@@ -1092,204 +1097,6 @@ private struct CashUnconnectedContent: View {
             PlaidTrustBridgeView()
         }
     }
-}
-
-// MARK: - Invest Unconnected Content (HTML: .invest-view unconnected state)
-
-private enum InvestTimeRange: String, CaseIterable, Hashable {
-    case w1 = "1W"
-    case m1 = "1M"
-    case m3 = "3M"
-    case ytd = "YTD"
-    case all = "ALL"
-}
-
-/// HTML prototype: total net worth, line trend, range pills, count-up on appear / tap.
-private struct InvestNetWorthPrototypeCard: View {
-    @State private var selectedRange: InvestTimeRange = .m1
-    @State private var displayedNetWorth: Double = 0
-
-    private let targetNetWorth: Double = 210_150
-    private let changePercent: Double = 13.8
-    private let linePoints: [CGFloat] = [0.22, 0.28, 0.25, 0.35, 0.42, 0.48, 0.55, 0.62, 0.68, 0.75, 0.82, 0.88, 0.95]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("TOTAL NET WORTH")
-                .font(.cardHeader)
-                .foregroundStyle(AppColors.inkMeta)
-                .tracking(AppTypography.Tracking.cardHeader)
-
-            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
-                Text(NumberFormatter.appCurrency(displayedNetWorth))
-                    .font(.currencyHero)
-                    .foregroundStyle(AppColors.inkPrimary)
-                    .contentTransition(.numericText())
-                    .monospacedDigit()
-
-                Text("+\(String(format: "%.1f", changePercent))%")
-                    .font(.footnoteSemibold)
-                    .foregroundStyle(AppColors.success)
-            }
-
-            investLineChart(points: linePoints)
-                .frame(height: 72)
-
-            investRangePills
-
-            Text("Track all your investments in one place.")
-                .font(.caption)
-                .foregroundStyle(AppColors.inkSoft)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.top, AppSpacing.xs)
-        }
-        .padding(AppSpacing.cardPadding)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.glassCard)
-                .fill(AppColors.glassCardBg)
-                .shadow(color: AppColors.glassCardShadow, radius: 24, y: 8)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.glassCard)
-                .stroke(AppColors.glassCardBorder, lineWidth: 1)
-        )
-        .frame(minHeight: AppSpacing.homeSheetPrimaryCardMinHeight, alignment: .top)
-        .contentShape(RoundedRectangle(cornerRadius: AppRadius.glassCard))
-        .onTapGesture { replayCountUp() }
-        .onAppear { runInitialCountUp() }
-    }
-
-    private var investRangePills: some View {
-        HStack(spacing: AppSpacing.xs) {
-            ForEach(InvestTimeRange.allCases, id: \.self) { range in
-                Text(range.rawValue)
-                    .font(.smallLabel)
-                    .foregroundStyle(selectedRange == range ? AppColors.inkPrimary : AppColors.inkSoft)
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 10)
-                    .frame(minHeight: 44)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppRadius.sm)
-                            .fill(selectedRange == range ? AppColors.inkPrimary.opacity(0.08) : AppColors.overlayWhiteWash)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppRadius.sm)
-                            .stroke(selectedRange == range ? AppColors.inkBorder : AppColors.inkDivider, lineWidth: 0.75)
-                    )
-                    .onTapGesture {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            selectedRange = range
-                        }
-                    }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .center)
-    }
-
-    private func investLineChart(points: [CGFloat]) -> some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            let h = geo.size.height
-            let count = points.count
-            ZStack {
-                Path { path in
-                    guard count > 1 else { return }
-                    for (i, p) in points.enumerated() {
-                        let x = w * CGFloat(i) / CGFloat(count - 1)
-                        let y = h - p * h * 0.9 - 4
-                        if i == 0 {
-                            path.move(to: CGPoint(x: x, y: y))
-                        } else {
-                            path.addLine(to: CGPoint(x: x, y: y))
-                        }
-                    }
-                }
-                .stroke(
-                    AppColors.inkPrimary,
-                    style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
-                )
-
-                if let last = points.last, count > 0 {
-                    let x = w
-                    let y = h - last * h * 0.9 - 4
-                    Circle()
-                        .fill(AppColors.inkPrimary)
-                        .frame(width: 8, height: 8)
-                        .position(x: x, y: y)
-                }
-            }
-        }
-    }
-
-    private func runInitialCountUp() {
-        displayedNetWorth = 0
-        withAnimation(.easeOut(duration: 0.85)) {
-            displayedNetWorth = targetNetWorth
-        }
-    }
-
-    private func replayCountUp() {
-        if displayedNetWorth >= targetNetWorth - 1 {
-            displayedNetWorth = 0
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) {
-                withAnimation(.easeOut(duration: 0.85)) {
-                    displayedNetWorth = targetNetWorth
-                }
-            }
-        } else {
-            withAnimation(.easeOut(duration: 0.85)) {
-                displayedNetWorth = targetNetWorth
-            }
-        }
-    }
-}
-
-private struct InvestUnconnectedContent: View {
-    @Environment(PlaidManager.self) private var plaidManager
-    @State private var showTrustBridge = false
-
-    var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: AppSpacing.cardGap) {
-                InvestNetWorthPrototypeCard()
-                connectCTAButton(label: "Connect accounts") {
-                    if plaidManager.shouldShowTrustBridge() {
-                        showTrustBridge = true
-                    } else {
-                        Task { await plaidManager.startLinkFlow() }
-                    }
-                }
-            }
-            .padding(.horizontal, AppSpacing.screenPadding)
-            .padding(.top, AppSpacing.cardGap)
-            .padding(.bottom, AppSpacing.xl)
-        }
-        .sheet(isPresented: $showTrustBridge, onDismiss: {
-            if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {
-                Task { await plaidManager.startLinkFlow() }
-            }
-        }) {
-            PlaidTrustBridgeView()
-        }
-    }
-}
-
-// MARK: - Shared Unconnected Helpers
-
-private func connectCTAButton(label: String, action: @escaping () -> Void) -> some View {
-    Button(action: action) {
-        Text(label)
-            .font(.sheetPrimaryButton)
-            .foregroundStyle(AppColors.ctaWhite)
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(
-                RoundedRectangle(cornerRadius: AppRadius.button)
-                    .fill(AppColors.ctaBlack)
-                    .shadow(color: AppColors.glassCardShadow, radius: 16, y: 8)
-            )
-    }
-    .buttonStyle(.plain)
 }
 
 // MARK: - Bottom tab (safeAreaInset slot)
