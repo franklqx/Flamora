@@ -97,8 +97,9 @@ private extension SettingsView {
                     legalSection
                 }
                 .padding(AppSpacing.cardPadding)
-                .padding(.bottom, AppSpacing.xl)
+                .padding(.bottom, isEmbeddedInSheet ? AppSpacing.lg : AppSpacing.xl)
             }
+            .scrollContentBackground(.hidden)
         }
     }
 }

@@ -176,7 +176,7 @@ AppSpacing.screenPadding 16pt  horizontal scroll content margins
 AppSpacing.sectionGap   24pt   between settings sections
 AppSpacing.rowItem      14pt   horizontal item spacing in rows
 AppSpacing.sectionLabelGap 10pt  gap between section label and content
-AppSpacing.tabBarReserve  84pt  bottom padding for tab bar clearance
+AppSpacing.tabBarReserve  70pt  bottom padding for tab bar clearance
 ```
 
 ---

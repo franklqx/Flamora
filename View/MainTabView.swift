@@ -25,6 +25,7 @@ private struct HomeLayoutMetrics: Equatable {
     let sheetDefault: CGFloat
     let sheetTall: CGFloat
     let compactDoneHeight: CGFloat
+    private static let unifiedSheetDefaultHeight: CGFloat = 555
 
     /// 固定 pt 回退（首帧 `GeometryReader` 尚未上报高度时与历史布局一致）。
     private init(heroFullHeight: CGFloat, sheetDefault: CGFloat, sheetTall: CGFloat, compactDoneHeight: CGFloat) {
@@ -36,7 +37,7 @@ private struct HomeLayoutMetrics: Equatable {
 
     static let fallback = HomeLayoutMetrics(
         heroFullHeight: AppSpacing.heroFullHeight,
-        sheetDefault: 440,
+        sheetDefault: unifiedSheetDefaultHeight,
         sheetTall: 620,
         compactDoneHeight: 660
     )
@@ -44,7 +45,7 @@ private struct HomeLayoutMetrics: Equatable {
     init(usableHeight: CGFloat) {
         let u = max(400, usableHeight)
         let hero = u * AppSpacing.homeHeroRegionFraction
-        let sheet = u * AppSpacing.homeSheetRegionFraction
+        let sheet = Self.unifiedSheetDefaultHeight
         let tall = min(sheet * 1.14, u * 0.92)
         self.init(
             heroFullHeight: hero,
@@ -55,9 +56,14 @@ private struct HomeLayoutMetrics: Equatable {
     }
 }
 
+private struct HomeViewportMetrics: Equatable {
+    let height: CGFloat
+    let safeAreaBottom: CGFloat
+}
+
 private struct HomeViewportHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+    static var defaultValue: HomeViewportMetrics = .init(height: 0, safeAreaBottom: 0)
+    static func reduce(value: inout HomeViewportMetrics, nextValue: () -> HomeViewportMetrics) {
         value = nextValue()
     }
 }
@@ -78,6 +84,7 @@ struct MainTabView: View {
 
     @State private var heroSnapshot = HomeHeroSnapshot.empty
     @State private var viewportHeight: CGFloat = 0
+    @State private var viewportSafeAreaBottom: CGFloat = 0
 
     /// Shared with `HomeHeroCardHost` for journey strip + hero snapshot (single load path).
     @State private var homeJourneySetupState: HomeSetupStateResponse?
@@ -110,6 +117,14 @@ struct MainTabView: View {
                 fillViewport: simulatorFullScreenActive
             )
 
+            Rectangle()
+                // Bottom safe-area strip: above sheet in Home, behind background in simulator.
+                .fill(AppColors.shellBg2)
+                .frame(height: AppSpacing.tabBarButtonRowHeight + (AppSpacing.xs * 2) - 2)
+                .ignoresSafeArea(edges: .bottom)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .zIndex(homeState == .simulator ? -10 : 30)
+
             HomeHeroCardSurface(
                 snapshot: heroSnapshot,
                 heroHeight: currentHeroHeight,
@@ -133,13 +148,17 @@ struct MainTabView: View {
             .zIndex(80)
 
             if homeState != .simulator {
+
                 HomeBottomSheet(
-                    height: sheetHeight,
+                    // Extend upward while keeping the bottom treatment unchanged.
+                    height: sheetHeight + viewportSafeAreaBottom + 2,
                     selectedTab: selectedTab,
                     sheetDragGesture: sheetDragGesture,
                     dragProgress: sheetDragNormalizedProgress()
                 )
-                .offset(y: -AppSpacing.homeSheetTopOverlap)
+                .ignoresSafeArea(edges: .bottom)
+                // Drop sheet lower without changing its height.
+                .offset(y: -AppSpacing.homeSheetTopOverlap + AppSpacing.md + 2)
                 .zIndex(20)
             }
 
@@ -151,13 +170,17 @@ struct MainTabView: View {
         }
         .background(
             GeometryReader { geo in
-                Color.clear.preference(key: HomeViewportHeightKey.self, value: geo.size.height)
+                Color.clear.preference(
+                    key: HomeViewportHeightKey.self,
+                    value: .init(height: geo.size.height, safeAreaBottom: geo.safeAreaInsets.bottom)
+                )
             }
         )
-        .onPreferenceChange(HomeViewportHeightKey.self) { h in
-            guard h > 0 else { return }
-            viewportHeight = h
-            let next = HomeLayoutMetrics(usableHeight: h)
+        .onPreferenceChange(HomeViewportHeightKey.self) { metrics in
+            guard metrics.height > 0 else { return }
+            viewportHeight = metrics.height
+            viewportSafeAreaBottom = metrics.safeAreaBottom
+            let next = HomeLayoutMetrics(usableHeight: metrics.height)
             let oldDefault = layoutMetrics.sheetDefault
             if !isSheetDragging, homeState == .sheet {
                 if sheetHeight < oldDefault * 0.98 {
@@ -171,13 +194,17 @@ struct MainTabView: View {
             }
             layoutMetrics = next
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+        .overlay(alignment: .bottom) {
             MainTabBarInset(
                 selectedTab: $highlightedTab,
                 collapseProgress: tabBarCollapseProgress,
                 onTabTapped: handleTabTap,
-                onCollapsedChromeTap: collapsedChromeTap
+                onCollapsedChromeTap: collapsedChromeTap,
+                onCollapseScrubChanged: handleTabBarCollapseScrubChanged,
+                onCollapseScrubEnded: handleTabBarCollapseScrubEnded,
+                onTabScrubbed: handleTabScrubbed
             )
+            .padding(.bottom, -13)
         }
         .ignoresSafeArea(.keyboard, edges: .all)
         .fullScreenCover(isPresented: Binding(
@@ -430,6 +457,45 @@ private extension MainTabView {
         }
         showSettings = true
     }
+
+    /// Interactive vertical scrub on tab bar: drag down to collapse, drag up to restore.
+    func handleTabBarCollapseScrubChanged(_ progress: CGFloat) {
+        let p = max(0, min(1, progress))
+        simulatorTransitionTask?.cancel()
+        if homeState == .simulator {
+            homeState = .sheet
+        }
+        sheetHeight = clampSheetHeight(layoutMetrics.sheetDefault * (1 - p))
+        sheetDragStartHeight = sheetHeight
+    }
+
+    /// Snap after scrub ends (restore / collapsed stable range / simulator).
+    func handleTabBarCollapseScrubEnded(_ progress: CGFloat) {
+        let p = max(0, min(1, progress))
+        if p > 0.9 {
+            enterSimulator()
+            return
+        }
+        if p < 0.08 {
+            restoreSheetFromCollapsed()
+            return
+        }
+
+        let lo = layoutMetrics.sheetDefault * HomeLayoutConstants.sheetCollapsedMinFraction
+        let hi = layoutMetrics.sheetDefault * HomeLayoutConstants.sheetCollapsedMaxFraction
+        let target = min(max(layoutMetrics.sheetDefault * (1 - p), lo), hi)
+        withAnimation(HomeLayoutConstants.springAnimation) {
+            sheetHeight = target
+            sheetDragStartHeight = target
+        }
+        homeState = .sheet
+    }
+
+    /// Horizontal scrub on tab bar: slide to neighboring tabs.
+    func handleTabScrubbed(_ tab: MainTabItem) {
+        guard tab != selectedTab else { return }
+        handleTabTap(tab)
+    }
 }
 
 private enum HomeLayoutConstants {
@@ -441,85 +507,6 @@ private enum HomeLayoutConstants {
     /// 收起态松手时 sheet 高度吸附区间（相对 `sheetDefault`）
     static let sheetCollapsedMinFraction: CGFloat = 0.32
     static let sheetCollapsedMaxFraction: CGFloat = 0.96
-}
-
-private struct HomeBottomSheet: View {
-    let height: CGFloat
-    let selectedTab: MainTabItem
-    let sheetDragGesture: AnyGesture<DragGesture.Value>
-    let dragProgress: CGFloat
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Capsule()
-                    .fill(AppColors.surfaceBorder)
-                    .frame(width: 36, height: 4)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 24)
-            .contentShape(Rectangle())
-            .highPriorityGesture(sheetDragGesture)
-            .overlay(alignment: .center) {
-                let labelOpacity = max(0, min(1, (dragProgress - 0.72) / 0.28))
-                if labelOpacity > 0 {
-                    Text(backLabelText)
-                        .font(.footnoteRegular)
-                        .foregroundStyle(AppColors.textSecondary)
-                        .opacity(labelOpacity)
-                        .allowsHitTesting(false)
-                }
-            }
-
-            Group {
-                switch selectedTab {
-                case .home:
-                    HomeRoadmapContent()
-                case .cashflow:
-                    CashUnconnectedContent()
-                case .investment:
-                    InvestmentSheetContent()
-                case .settings:
-                    SettingsView(isEmbeddedInSheet: true)
-                }
-            }
-            .id(selectedTab)
-            .transition(.opacity)
-            .animation(.easeInOut(duration: 0.2), value: selectedTab)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .clipped()
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: height, alignment: .top)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.xl)
-                .fill(
-                    LinearGradient(
-                        colors: [AppColors.shellBg1, AppColors.shellBg2],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-        )
-        .clipShape(
-            RoundedRectangle(cornerRadius: AppRadius.xl)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.xl)
-                .stroke(AppColors.glassCardBorder, lineWidth: 0.5)
-        )
-        .shadow(color: AppColors.glassCardShadow, radius: 18, y: -4)
-        .frame(maxHeight: .infinity, alignment: .bottom)
-        // 不使用 ignoresSafeArea(.bottom)，避免白底 Sheet 绘制到 Tab 栏区域、盖住或「带动」底部栏观感。
-    }
-
-    private var backLabelText: String {
-        switch selectedTab {
-        case .cashflow: return "Back to Cash Flow"
-        case .investment: return "Back to Investment"
-        default: return "Back to Home"
-        }
-    }
 }
 
 private struct HomeHeroCardSurface: View {
@@ -889,7 +876,7 @@ private struct TabHeroTitleContent: View {
 
 // MARK: - Home Roadmap Content (HTML: .roadmap with 3 steps)
 
-private struct HomeRoadmapContent: View {
+struct HomeRoadmapContent: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppSpacing.sectionGap) {
@@ -899,8 +886,9 @@ private struct HomeRoadmapContent: View {
                 Spacer(minLength: AppSpacing.xl)
             }
             .padding(.top, AppSpacing.cardGap)
-            .padding(.bottom, AppSpacing.xl)
+            .padding(.bottom, AppSpacing.lg)
         }
+        .scrollContentBackground(.hidden)
     }
 
     private var roadmapCard: some View {
@@ -1069,7 +1057,7 @@ private struct NotificationsView: View {
 
 // MARK: - Cash Unconnected Content (HTML: .cash-view unconnected state)
 
-private struct CashUnconnectedContent: View {
+struct CashUnconnectedContent: View {
     @Environment(PlaidManager.self) private var plaidManager
     @State private var showTrustBridge = false
 
@@ -1087,8 +1075,9 @@ private struct CashUnconnectedContent: View {
             }
             .padding(.horizontal, AppSpacing.screenPadding)
             .padding(.top, AppSpacing.cardGap)
-            .padding(.bottom, AppSpacing.xl)
+            .padding(.bottom, AppSpacing.lg)
         }
+        .scrollContentBackground(.hidden)
         .sheet(isPresented: $showTrustBridge, onDismiss: {
             if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {
                 Task { await plaidManager.startLinkFlow() }
@@ -1107,13 +1096,19 @@ private struct MainTabBarInset: View {
     var collapseProgress: CGFloat
     let onTabTapped: (MainTabItem) -> Void
     let onCollapsedChromeTap: () -> Void
+    let onCollapseScrubChanged: (CGFloat) -> Void
+    let onCollapseScrubEnded: (CGFloat) -> Void
+    let onTabScrubbed: (MainTabItem) -> Void
 
     var body: some View {
         GlassmorphicTabBar(
             selectedTab: $selectedTab,
             collapseProgress: collapseProgress,
             onTabTapped: onTabTapped,
-            onCollapsedChromeTap: onCollapsedChromeTap
+            onCollapsedChromeTap: onCollapsedChromeTap,
+            onCollapseScrubChanged: onCollapseScrubChanged,
+            onCollapseScrubEnded: onCollapseScrubEnded,
+            onTabScrubbed: onTabScrubbed
         )
         .ignoresSafeArea(edges: .bottom)
     }

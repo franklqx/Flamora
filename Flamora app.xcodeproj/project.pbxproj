@@ -85,6 +85,7 @@
 		CF10A0012F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF10A0002F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift */; };
 		CF10A0112F50000100A9BB60 /* CashflowExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF10A0102F50000100A9BB60 /* CashflowExpandedOverlayView.swift */; };
 		CF20A0112F70000100A9BB60 /* HomeExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */; };
+		CF30A0012F80000100A9BB60 /* HomeBottomSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF30A0002F80000100A9BB60 /* HomeBottomSheet.swift */; };
 		15E21AB72F3257C600A9BB60 /* InvestmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB62F3257C600A9BB60 /* InvestmentView.swift */; };
 		15E21AB92F3257D700A9BB60 /* GlassmorphicTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */; };
 		15E21ABB2F325A9D00A9BB60 /* JourneyContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21ABA2F325A9D00A9BB60 /* JourneyContainerView.swift */; };
@@ -229,6 +230,7 @@
 		CF10A0002F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowSpendingOverviewPrototypeCard.swift; sourceTree = "<group>"; };
 		CF10A0102F50000100A9BB60 /* CashflowExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowExpandedOverlayView.swift; sourceTree = "<group>"; };
 		CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeExpandedOverlayView.swift; sourceTree = "<group>"; };
+		CF30A0002F80000100A9BB60 /* HomeBottomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeBottomSheet.swift; sourceTree = "<group>"; };
 		15E21AB62F3257C600A9BB60 /* InvestmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentView.swift; sourceTree = "<group>"; };
 		15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassmorphicTabBar.swift; sourceTree = "<group>"; };
 		15E21ABA2F325A9D00A9BB60 /* JourneyContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyContainerView.swift; sourceTree = "<group>"; };
@@ -480,6 +482,7 @@
 			isa = PBXGroup;
 			children = (
 				CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */,
+				CF30A0002F80000100A9BB60 /* HomeBottomSheet.swift */,
 				153CA3172F34E952001ED98E /* PortfolioCard.swift */,
 				D3AE291F3C594B4B8D1E5239 /* FIRECountdownCard.swift */,
 				PH0D000B2F4000000000000B /* HomeJourneyProgressStrip.swift */,
@@ -823,6 +826,7 @@
 				CF10A0012F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift in Sources */,
 				CF10A0112F50000100A9BB60 /* CashflowExpandedOverlayView.swift in Sources */,
 				CF20A0112F70000100A9BB60 /* HomeExpandedOverlayView.swift in Sources */,
+				CF30A0012F80000100A9BB60 /* HomeBottomSheet.swift in Sources */,
 				12123E422F485B920011B385 /* PaywallSheet.swift in Sources */,
 				12123E432F485B920011B385 /* SettingsView.swift in Sources */,
 				12748F232F65CA7300410D60 /* BudgetSetupViewModel.swift in Sources */,

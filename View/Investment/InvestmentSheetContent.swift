@@ -38,8 +38,9 @@ struct InvestmentSheetContent: View {
                 .padding(.horizontal, AppSpacing.screenPadding)
             }
             .padding(.top, AppSpacing.cardGap)
-            .padding(.bottom, AppSpacing.xl)
+            .padding(.bottom, AppSpacing.lg)
         }
+        .scrollContentBackground(.hidden)
         .onAppear {
             store.restoreFromCache()
         }
