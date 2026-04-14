@@ -20,6 +20,7 @@ struct BS_DiagnosisView: View {
     @State private var showMetrics = false
     @State private var showChart = false
     @State private var showInsights = false
+    @State private var showGoalGap = false
     
     
     var body: some View {
@@ -51,7 +52,13 @@ struct BS_DiagnosisView: View {
                         .padding(.bottom, AppSpacing.md)
                         .opacity(showInsights ? 1 : 0)
                         .offset(y: showInsights ? 0 : AppSpacing.sm + AppSpacing.xs)
-                    
+
+                    goalGapSection
+                        .padding(.horizontal, AppSpacing.lg)
+                        .padding(.bottom, AppSpacing.md)
+                        .opacity(showGoalGap ? 1 : 0)
+                        .offset(y: showGoalGap ? 0 : AppSpacing.sm + AppSpacing.xs)
+
                     Spacer().frame(height: AppSpacing.tabBarReserve + AppSpacing.md + AppSpacing.md + AppSpacing.sm)
                 }
             }
@@ -66,6 +73,7 @@ struct BS_DiagnosisView: View {
         withAnimation(.easeOut(duration: 0.5).delay(0.1)) { showMetrics = true }
         withAnimation(.easeOut(duration: 0.5).delay(0.3)) { showChart = true }
         withAnimation(.easeOut(duration: 0.5).delay(0.5)) { showInsights = true }
+        withAnimation(.easeOut(duration: 0.5).delay(0.7)) { showGoalGap = true }
     }
     
     // MARK: - Header
@@ -269,6 +277,140 @@ struct BS_DiagnosisView: View {
         .accessibilityLabel("\(insight.type) insight: \(insight.title). \(insight.description)")
     }
     
+    // MARK: - Goal Gap
+
+    @ViewBuilder
+    private var goalGapSection: some View {
+        if viewModel.isLoadingFeasibility {
+            HStack(spacing: AppSpacing.sm) {
+                ProgressView()
+                    .tint(AppColors.textSecondary)
+                Text("Analyzing your goal...")
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.textSecondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(AppSpacing.md)
+            .background(AppColors.overlayWhiteWash)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.md)
+                    .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+            )
+        } else if let f = viewModel.goalFeasibility {
+            goalGapCard(f)
+        }
+    }
+
+    @ViewBuilder
+    private func goalGapCard(_ f: GoalFeasibilityResult) -> some View {
+        let (statusLabel, statusColor, copy) = feasibilityDisplay(f)
+        let isOnTrack = f.phaseSub == "0a" || f.phaseSub == "0b" || f.phaseSub == "0c"
+        let gap = max(0, f.requiredMonthlyContribution - f.currentPath.monthlySavings)
+
+        VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
+            Text("YOUR GOAL GAP")
+                .font(.label)
+                .tracking(1.0)
+                .foregroundStyle(AppColors.overlayWhiteForegroundSoft)
+
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text(statusLabel)
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(statusColor)
+                Text(copy)
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if !isOnTrack {
+                Rectangle()
+                    .fill(AppColors.overlayWhiteStroke)
+                    .frame(height: 1)
+                    .padding(.vertical, AppSpacing.xs)
+
+                goalStatRow(label: "Current savings",
+                            amount: f.currentPath.monthlySavings,
+                            rate: f.currentPath.savingsRate)
+                goalStatRow(label: "Required for goal",
+                            amount: f.requiredMonthlyContribution,
+                            rate: f.requiredSavingsRate)
+
+                HStack {
+                    Text("Gap")
+                        .font(.inlineLabel)
+                        .foregroundStyle(AppColors.textSecondary)
+                    Spacer()
+                    Text(gap > 0 ? "+$\(formatted(gap))/mo" : "None")
+                        .font(.inlineFigureBold)
+                        .foregroundStyle(gap > 0 ? statusColor : AppColors.success)
+                }
+            }
+        }
+        .padding(AppSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.overlayWhiteWash)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+        )
+    }
+
+    @ViewBuilder
+    private func goalStatRow(label: String, amount: Double, rate: Double) -> some View {
+        HStack {
+            Text(label)
+                .font(.inlineLabel)
+                .foregroundStyle(AppColors.textSecondary)
+            Spacer()
+            HStack(spacing: AppSpacing.xs) {
+                Text("$\(formatted(amount))")
+                    .font(.inlineFigureBold)
+                    .foregroundStyle(AppColors.textPrimary)
+                Text("(\(Int(rate.rounded()))%)")
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.textSecondary)
+            }
+        }
+    }
+
+    private func feasibilityDisplay(_ f: GoalFeasibilityResult) -> (label: String, color: Color, copy: String) {
+        let gap = max(0, f.requiredMonthlyContribution - f.currentPath.monthlySavings)
+        let gapStr = formatted(gap)
+
+        switch f.phaseSub {
+        case "0a":
+            return ("ON TRACK", AppColors.success,
+                    "You've already hit your FIRE number.")
+        case "0b", "0c":
+            return ("ON TRACK", AppColors.success,
+                    "You're on track to retire at \(viewModel.targetRetirementAge).")
+        case "0d":
+            return ("ACHIEVABLE", AppColors.warning,
+                    "Achievable — you need $\(gapStr) more/month.")
+        default:
+            if f.phase == 2 {
+                return ("NEEDS ADJUSTMENT", AppColors.error,
+                        "Goal needs adjustment — current income can't support this timeline.")
+            }
+            let planFeasibility = f.planA?.feasibility ?? f.currentPath.feasibility
+            switch planFeasibility {
+            case "comfortable", "balanced":
+                return ("ACHIEVABLE", AppColors.warning,
+                        "Achievable — you need $\(gapStr) more/month.")
+            case "aggressive":
+                return ("AMBITIOUS", AppColors.progressOrange,
+                        "Ambitious — requires significant lifestyle change.")
+            default:
+                return ("NEEDS ADJUSTMENT", AppColors.error,
+                        "Goal needs adjustment — current income can't support this timeline.")
+            }
+        }
+    }
+
     // MARK: - Sticky CTA
     
     private var stickyBottomCTA: some View {

@@ -39,7 +39,13 @@ struct FIRECountdownCard: View {
                 if stage == .noGoal {
                     noGoalState
                 } else if let hero {
-                    loadedState(hero: hero)
+                    // Old users may have a goal with no target_retirement_age (pre-S1-1).
+                    // Show a CTA to complete setup rather than rendering a misleading hero.
+                    if (hero.targetRetirementAge ?? 0) > 0 {
+                        loadedState(hero: hero)
+                    } else {
+                        incompleteGoalState
+                    }
                 } else if stage == .goalSet {
                     connectState
                 } else {
@@ -111,6 +117,36 @@ private extension FIRECountdownCard {
             if let onPrimaryAction {
                 Button(action: onPrimaryAction) {
                     Text("Continue Setup")
+                        .font(.bodySmallSemibold)
+                        .foregroundStyle(AppColors.textPrimary)
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, AppSpacing.sm)
+                        .background(AppColors.surfaceElevated)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    /// Shown when a goal exists (stage = .active) but target_retirement_age is nil.
+    /// Guides the user back into Budget Setup to complete the missing field.
+    var incompleteGoalState: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text("One more detail needed.")
+                    .font(.h4)
+                    .foregroundStyle(AppColors.textPrimary)
+
+                Text("Set your target retirement age to unlock your FIRE countdown and projected path.")
+                    .font(.bodySmall)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .lineSpacing(3)
+            }
+
+            if let onPrimaryAction {
+                Button(action: onPrimaryAction) {
+                    Text("Complete goal setup")
                         .font(.bodySmallSemibold)
                         .foregroundStyle(AppColors.textPrimary)
                         .padding(.horizontal, AppSpacing.md)

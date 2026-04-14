@@ -40,6 +40,7 @@ class BudgetSetupViewModel {
     // MARK: - Step 0: Goal Setup
 
     var retirementSpendingMonthly: Double = 0
+    var targetRetirementAge: Int = 0
     var lifestylePreset: String = "current"   // "lean" | "current" | "fat"
     var isSavingGoal = false
     var goalSaveError: String?
@@ -82,9 +83,11 @@ class BudgetSetupViewModel {
     var currencyCode: String = "USD"
     
     // MARK: - Step 2: Spending Stats & Diagnosis
-    
+
     var spendingStats: SpendingStatsResponse?
     var diagnosis: FinancialDiagnosisResponse?
+    var goalFeasibility: GoalFeasibilityResult? = nil
+    var isLoadingFeasibility = false
     
     // MARK: - Step 3: Plans
     
@@ -180,7 +183,7 @@ class BudgetSetupViewModel {
     
     /// Client-side compound growth projection (matches backend formula)
     private func projectPortfolio(monthlySavings: Double, startingPortfolio: Double, years: Int) -> Double {
-        let monthlyRate = 0.055 / 12  // 5.5% real annual return
+        let monthlyRate = FIREAssumptions.realAnnualReturn / 12
         var portfolio = startingPortfolio
         let totalMonths = years * 12
         
@@ -233,17 +236,36 @@ class BudgetSetupViewModel {
         isLoadingStats = true
         isLoadingDiagnosis = true
         loadingError = nil
-        
+
         async let profileTask: () = loadProfile()
         async let statsTask: () = loadSpendingStats()
-        
+
         await profileTask
         await statsTask
-        
+
+        // Restore goal fields from DB — covers old users, mid-flow exits, multi-device
+        await restoreFromActiveFireGoal()
+
         if spendingStats != nil {
             await loadDiagnosis()
         } else {
             isLoadingDiagnosis = false
+        }
+
+        await loadGoalFeasibility()
+    }
+
+    private func restoreFromActiveFireGoal() async {
+        do {
+            let goal = try await APIService.shared.getActiveFireGoal()
+            if let spending = goal.retirementSpendingMonthly, spending > 0 {
+                retirementSpendingMonthly = spending
+            }
+            if let age = goal.targetRetirementAge, age > 0 {
+                targetRetirementAge = age
+            }
+        } catch {
+            print("⚠️ [BudgetSetup] no active fire goal to restore: \(error)")
         }
     }
     
@@ -296,6 +318,28 @@ class BudgetSetupViewModel {
         }
     }
     
+    func loadGoalFeasibility() async {
+        guard targetRetirementAge > 0,
+              retirementSpendingMonthly > 0,
+              let stats = spendingStats else { return }
+
+        isLoadingFeasibility = true
+        do {
+            goalFeasibility = try await APIService.shared.calculateFireGoal(
+                targetRetirementAge: targetRetirementAge,
+                monthlyIncome: stats.avgMonthlyIncome,
+                currentMonthlyExpenses: stats.avgMonthlyExpenses,
+                desiredMonthlyExpenses: retirementSpendingMonthly,
+                currentNetWorth: currentNetWorth > 0 ? currentNetWorth : nil,
+                currentAge: currentAge > 0 ? currentAge : nil
+            )
+            print("✅ [BudgetSetup] loadGoalFeasibility success — phase: \(goalFeasibility?.phase ?? -1), achievable: \(goalFeasibility?.isAchievable ?? false)")
+        } catch {
+            print("❌ [BudgetSetup] loadGoalFeasibility error: \(error)")
+        }
+        isLoadingFeasibility = false
+    }
+
     private func loadDiagnosis() async {
         guard let stats = spendingStats else {
             isLoadingDiagnosis = false
@@ -380,10 +424,12 @@ class BudgetSetupViewModel {
         isSavingGoal = true
         goalSaveError = nil
         do {
-            let request = SaveFireGoalRequest(
+            var request = SaveFireGoalRequest(
                 retirementSpendingMonthly: retirementSpendingMonthly,
                 lifestylePreset: lifestylePreset
             )
+            if targetRetirementAge > 0 { request.targetRetirementAge = targetRetirementAge }
+            if currentAge > 0 { request.currentAge = currentAge }
             _ = try await APIService.shared.saveFireGoal(data: request)
             isSavingGoal = false
             return true
@@ -453,8 +499,22 @@ class BudgetSetupViewModel {
     /// Reads the server-side setup state and advances currentStep to the correct resume point.
     func resumeFromSetupState() async {
         defer { isResumingState = false }
+
+        // Restore goal fields before routing so we can check targetRetirementAge
+        await restoreFromActiveFireGoal()
+
         do {
             let state = try await APIService.shared.getSetupState()
+
+            // Intercept: goal exists but targetRetirementAge was never filled in
+            // (old users created before S1-1). Must complete goal setup before continuing.
+            if state.resumeStage != .noGoal && targetRetirementAge == 0 {
+                goalSaveError = "We need one more detail — please set your target retirement age to continue."
+                currentStep = .goalSetup
+                print("⚠️ [BudgetSetup] intercepted: goal exists but targetRetirementAge == nil → goalSetup")
+                return
+            }
+
             switch state.resumeStage {
             case .noGoal:
                 currentStep = .goalSetup

@@ -1,5 +1,7 @@
 // supabase/functions/_shared/fire-calculator.ts
 
+import { ASSUMPTIONS } from './fire-assumptions.ts'
+
 export interface AdjustGoalInput {
   monthlyIncome: number
   currentAge: number
@@ -32,9 +34,10 @@ export interface AdjustGoalResult {
   recommended: PathDetail | null
 }
 
-const ANNUAL_RETURN = 0.08
+// Feasibility calculations use real return (purchasing-power consistent with FIRE number).
+const ANNUAL_RETURN = ASSUMPTIONS.REAL_ANNUAL_RETURN
 const MONTHLY_RATE = ANNUAL_RETURN / 12
-const WITHDRAWAL_RATE = 0.04
+const WITHDRAWAL_RATE = ASSUMPTIONS.WITHDRAWAL_RATE
 
 export class FIRECalculator {
 

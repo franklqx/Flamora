@@ -19,6 +19,7 @@ import {
   computeFireNumber,
   generateGraphSeries,
 } from '../_shared/fire-math.ts'
+import { ASSUMPTIONS } from '../_shared/fire-assumptions.ts'
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -69,8 +70,9 @@ Deno.serve(async (req) => {
     const mode = body.mode ?? 'demo'
 
     const GRAPH_HORIZON_YEARS = 35
-    const DEFAULT_RETURN_RATE = 0.07
-    const DEFAULT_WITHDRAWAL  = 0.04
+    // Simulator shows projected portfolio dollar amounts → use NOMINAL return.
+    const DEFAULT_RETURN_RATE = ASSUMPTIONS.NOMINAL_ANNUAL_RETURN
+    const DEFAULT_WITHDRAWAL  = ASSUMPTIONS.WITHDRAWAL_RATE
 
     // ── Resolve official anchors ──────────────────────────────
     let officialSavings:  number | null = body.official_savings_monthly ?? null

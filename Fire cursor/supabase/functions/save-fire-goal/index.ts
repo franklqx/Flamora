@@ -17,6 +17,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders, handleCors } from '../_shared/cors.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { computeFireNumber } from '../_shared/fire-math.ts'
+import { ASSUMPTIONS } from '../_shared/fire-assumptions.ts'
 
 interface SaveFireGoalRequest {
   // v1 minimum — spending-based goal
@@ -47,9 +48,9 @@ interface SaveFireGoalRequest {
   adjustment_strategy?: string
 }
 
-const DEFAULT_WITHDRAWAL_RATE = 0.04
-const DEFAULT_INFLATION        = 0.03
-const DEFAULT_RETURN_RATE      = 0.07
+const DEFAULT_WITHDRAWAL_RATE = ASSUMPTIONS.WITHDRAWAL_RATE
+const DEFAULT_INFLATION        = ASSUMPTIONS.INFLATION_RATE
+const DEFAULT_RETURN_RATE      = ASSUMPTIONS.REAL_ANNUAL_RETURN
 
 serve(async (req) => {
   const corsResponse = handleCors(req)

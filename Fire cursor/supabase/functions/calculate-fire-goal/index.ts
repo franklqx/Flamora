@@ -10,6 +10,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders, handleCors } from '../_shared/cors.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { FIRECalculator } from '../_shared/fire-calculator.ts'
+import { ASSUMPTIONS } from '../_shared/fire-assumptions.ts'
 
 interface CalculateFireGoalRequest {
   target_retirement_age: number
@@ -126,8 +127,8 @@ serve(async (req) => {
         meta: {
           timestamp: new Date().toISOString(),
           user_id: user.id,
-          return_rate_assumption: 0.09,    // NEW: surface the assumption
-          withdrawal_rate: 0.04,
+          return_rate_assumption: ASSUMPTIONS.REAL_ANNUAL_RETURN,
+          withdrawal_rate: ASSUMPTIONS.WITHDRAWAL_RATE,
           inputs: {
             current_age: currentAge,
             target_retirement_age: body.target_retirement_age,

@@ -31,16 +31,18 @@ struct BS_AccountSelectionView: View {
                         loadingState
                     } else if let error = viewModel.accountsError {
                         errorState(error)
+                    } else if !plaidManager.hasLinkedBank {
+                        connectAccountsCTA
                     } else if viewModel.plaidAccounts.isEmpty {
                         emptyState
                     } else {
                         accountsList
                             .padding(.horizontal, AppSpacing.lg)
-                    }
 
-                    addAccountButton
-                        .padding(.horizontal, AppSpacing.lg)
-                        .padding(.top, AppSpacing.md)
+                        addAccountButton
+                            .padding(.horizontal, AppSpacing.lg)
+                            .padding(.top, AppSpacing.md)
+                    }
 
                     Spacer().frame(height: 140)
                 }
@@ -76,19 +78,26 @@ struct BS_AccountSelectionView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Select Accounts")
+            Text(plaidManager.hasLinkedBank ? "Select Accounts" : "Connect Your Bank")
                 .font(.h1)
                 .foregroundStyle(AppColors.textPrimary)
 
-            Text("Choose which accounts to include in your budget analysis. We recommend selecting your everyday spending accounts.")
-                .font(.inlineLabel)
-                .foregroundStyle(AppColors.textSecondary)
-                .lineSpacing(3)
+            if plaidManager.hasLinkedBank {
+                Text("Choose which accounts to include in your budget analysis. We recommend selecting your everyday spending accounts.")
+                    .font(.inlineLabel)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .lineSpacing(3)
 
-            Text("Investment accounts stay in the Investment module and won’t be used to build this budget.")
-                .font(.caption)
-                .foregroundStyle(AppColors.textTertiary)
-                .lineSpacing(3)
+                Text("Investment accounts stay in the Investment module and won’t be used to build this budget.")
+                    .font(.caption)
+                    .foregroundStyle(AppColors.textTertiary)
+                    .lineSpacing(3)
+            } else {
+                Text("Link your bank to build a personalized budget based on real spending data.")
+                    .font(.inlineLabel)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .lineSpacing(3)
+            }
         }
     }
 
@@ -126,6 +135,56 @@ struct BS_AccountSelectionView: View {
         .frame(maxWidth: .infinity)
         .padding(.top, AppSpacing.navBarTopSpace)
         .padding(.horizontal, AppSpacing.lg)
+    }
+
+    // MARK: - Connect CTA (no bank linked)
+
+    private var connectAccountsCTA: some View {
+        VStack(spacing: AppSpacing.lg) {
+            VStack(spacing: AppSpacing.sm) {
+                Image(systemName: "building.columns.fill")
+                    .font(.h2)
+                    .foregroundStyle(AppColors.accentAmber)
+                Text("Link your first account")
+                    .font(.h4)
+                    .foregroundStyle(AppColors.textPrimary)
+                    .multilineTextAlignment(.center)
+                Text("We'll analyze your last 6 months of transactions to build a personalized budget.")
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(3)
+            }
+
+            Button {
+                guard subscriptionManager.isPremium else {
+                    subscriptionManager.showPaywall = true
+                    return
+                }
+                if plaidManager.shouldShowTrustBridge() {
+                    showTrustBridge = true
+                } else {
+                    Task { await plaidManager.startLinkFlow() }
+                }
+            } label: {
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.h4)
+                    Text("Connect Bank Account")
+                        .font(.sheetPrimaryButton)
+                }
+                .foregroundStyle(AppColors.textInverse)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .background(
+                    LinearGradient(colors: AppColors.gradientFire, startPoint: .leading, endPoint: .trailing)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.top, AppSpacing.md)
     }
 
     // MARK: - Empty State
@@ -316,7 +375,7 @@ struct BS_AccountSelectionView: View {
                 }
                 .disabled(!viewModel.canProceedFromAccountSelection)
 
-                if !viewModel.canProceedFromAccountSelection && !viewModel.plaidAccounts.isEmpty {
+                if plaidManager.hasLinkedBank && !viewModel.canProceedFromAccountSelection && !viewModel.plaidAccounts.isEmpty {
                     Text("Select at least one checking or credit card account")
                         .font(.caption)
                         .foregroundStyle(AppColors.textSecondary)

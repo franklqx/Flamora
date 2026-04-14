@@ -1141,8 +1141,8 @@ private extension SimulatorView {
             savingsMonthly: effective?.savingsMonthly ?? 1_800,
             retirementSpending: effective?.retirementSpending ?? 5_000,
             investableAssets: effective?.netWorth ?? 310_000,
-            returnRate: (effective?.returnRate ?? 0.07) * 100,
-            withdrawalRate: (effective?.withdrawalRate ?? 0.04) * 100,
+            returnRate: (effective?.returnRate ?? FIREAssumptions.nominalAnnualReturn) * 100,
+            withdrawalRate: (effective?.withdrawalRate ?? FIREAssumptions.withdrawalRate) * 100,
             currentAge: effective?.currentAge ?? 33
         )
         didSeedControls = true

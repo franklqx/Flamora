@@ -810,7 +810,8 @@ struct BudgetCard: View {
         let total = max(draftTotalBudget, 1)
         let categoryMap = (draftNeedsCategories + draftWantsCategories)
             .reduce(into: [String: Double]()) { partialResult, item in
-                partialResult[item.name] = max(item.amount, 0)
+                let key = TransactionCategoryCatalog.id(forDisplayedSubcategory: item.name) ?? item.name
+                partialResult[key] = max(item.amount, 0)
             }
 
         let payload = BudgetEditPayload(

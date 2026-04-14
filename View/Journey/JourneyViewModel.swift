@@ -44,6 +44,16 @@ final class JourneyViewModel {
         return plaidManager.hasLinkedBank ? .accountsLinked : .noGoal
     }
 
+    /// True when the user has an active FIRE goal saved (non-nil activeGoalId from get-setup-state).
+    var hasFireGoal: Bool {
+        setupState?.activeGoalId != nil
+    }
+
+    /// True when the full setup flow is complete (plan applied, stage == .active).
+    var budgetSetupCompleted: Bool {
+        homeSetupStage == .active
+    }
+
     var saveStatusText: String {
         let actual = currentMonthSummary?.savings.actual ?? apiBudget.savingsActual ?? 0
         if let target = homeHero?.savingsTargetMonthly, target > 0 {

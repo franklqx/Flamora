@@ -1,4 +1,4 @@
-# CEO Review: Flamora — Home / Setup / Plan System Rebuild
+还是不对，这样吧，我们先列一个类似Markdown的框架，然后你也可以跟我讨论是怎么样去设计的。 # CEO Review: Flamora — Home / Setup / Plan System Rebuild
 Generated on 2026-04-07
 Branch: `0331数据api版`
 Mode: `SELECTIVE EXPANSION (with expansion lens)`

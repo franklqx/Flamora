@@ -3,6 +3,8 @@
 // Shared FIRE date computation utility.
 // Used by: get-active-fire-goal, generate-plans, apply-selected-plan, preview-simulator
 
+import { ASSUMPTIONS } from './fire-assumptions.ts'
+
 export interface FireDateResult {
   yearsRemaining: number        // 0 if already at FIRE
   fireDate: string              // "Mar 2042"
@@ -18,14 +20,14 @@ const MAX_MONTHS = 600          // 50-year ceiling
  * @param currentNetWorth  Current total net worth ($ amount)
  * @param fireNumber       Target FIRE number (25× annual spending rule by default)
  * @param monthlySavings   Net monthly contribution (savings + investment contribution)
- * @param annualReturnRate Nominal or real annual return rate (e.g. 0.07)
+ * @param annualReturnRate Annual return rate — use REAL for feasibility, NOMINAL for display projections
  * @param currentAge       Optional — enables fireAge output
  */
 export function computeFireDate(
   currentNetWorth: number,
   fireNumber: number,
   monthlySavings: number,
-  annualReturnRate: number = 0.07,
+  annualReturnRate: number = ASSUMPTIONS.REAL_ANNUAL_RETURN,
   currentAge?: number
 ): FireDateResult {
   // Already at or past FIRE
@@ -69,7 +71,7 @@ export function computeFireDate(
  */
 export function computeFireNumber(
   retirementSpendingMonthly: number,
-  withdrawalRate: number = 0.04
+  withdrawalRate: number = ASSUMPTIONS.WITHDRAWAL_RATE
 ): number {
   const annualSpending = retirementSpendingMonthly * 12
   return Math.round(annualSpending / withdrawalRate)

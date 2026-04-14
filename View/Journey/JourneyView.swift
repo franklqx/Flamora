@@ -107,6 +107,19 @@ struct JourneyView: View {
                                     stage: viewModel.homeSetupStage,
                                     onOpenSimulator: onFireTapped
                                 )
+
+                                if viewModel.homeSetupStage.needsGuidedCard {
+                                    JourneyTodoList(
+                                        hasLinkedBank: plaidManager.hasLinkedBank,
+                                        hasFireGoal: viewModel.hasFireGoal,
+                                        budgetSetupCompleted: viewModel.budgetSetupCompleted,
+                                        onConnectAccounts: {
+                                            Task { await plaidManager.startLinkFlow() }
+                                        },
+                                        onSetFireGoal: viewModel.openSetupFlow,
+                                        onCompleteBudgetSetup: viewModel.openSetupFlow
+                                    )
+                                }
                             }
                             .opacity(sheetVisible ? 1 : 0)
                             .offset(y: sheetVisible ? 0 : (AppSpacing.lg + AppSpacing.md))

@@ -71,6 +71,31 @@ extension APIService {
         return try await perform(request)
     }
 
+    // MARK: - Goal Feasibility
+
+    /// Calculate FIRE goal feasibility given target retirement age and spending data.
+    /// Backend fetches profile defaults for any omitted optional fields.
+    func calculateFireGoal(
+        targetRetirementAge: Int,
+        monthlyIncome: Double,
+        currentMonthlyExpenses: Double,
+        desiredMonthlyExpenses: Double,
+        currentNetWorth: Double?,
+        currentAge: Int?
+    ) async throws -> GoalFeasibilityResult {
+        var body: [String: Any] = [
+            "target_retirement_age": targetRetirementAge,
+            "monthly_income": monthlyIncome,
+            "current_monthly_expenses": currentMonthlyExpenses,
+            "desired_monthly_expenses": desiredMonthlyExpenses,
+        ]
+        if let nw = currentNetWorth, nw > 0 { body["current_net_worth"] = nw }
+        if let age = currentAge, age > 0 { body["current_age"] = age }
+        let data = try JSONSerialization.data(withJSONObject: body)
+        let request = try await authenticatedRequest(function: "calculate-fire-goal", body: data)
+        return try await perform(request)
+    }
+
     // MARK: - Cash Flow in-place budget edit
 
     /// Upsert current monthly budget from Cash Flow edit mode.

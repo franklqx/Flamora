@@ -2,6 +2,7 @@
 
 import { corsHeaders, handleCors } from '../_shared/cors.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { ASSUMPTIONS } from '../_shared/fire-assumptions.ts'
 
 interface OnboardingData {
   user_id: string
@@ -92,7 +93,7 @@ Deno.serve(async (req) => {
         ? (currentSavings / body.rough_monthly_income) * 100
         : 0
 
-      const annualReturn = 0.08
+      const annualReturn = ASSUMPTIONS.REAL_ANNUAL_RETURN
       const monthlyRate = annualReturn / 12
 
       let yearsToFire = 0
@@ -188,7 +189,7 @@ Deno.serve(async (req) => {
       ? (currentSavings / body.rough_monthly_income) * 100
       : 0
 
-    const annualReturn = 0.08
+    const annualReturn = ASSUMPTIONS.REAL_ANNUAL_RETURN
     const monthlyRate = annualReturn / 12
 
     let yearsToFire = 0

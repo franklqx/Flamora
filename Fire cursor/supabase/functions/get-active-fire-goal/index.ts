@@ -18,6 +18,8 @@
 
 import { corsHeaders, handleCors } from '../_shared/cors.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { computeFireDate, computeFireNumber, getProgressStatus } from '../_shared/fire-math.ts'
+import { ASSUMPTIONS } from '../_shared/fire-assumptions.ts'
 
 Deno.serve(async (req) => {
   const corsResponse = handleCors(req)
@@ -90,7 +92,7 @@ Deno.serve(async (req) => {
       : (fireGoal.retirement_spending_monthly
           ? computeFireNumber(
               fireGoal.retirement_spending_monthly,
-              fireGoal.withdrawal_rate_assumption ?? 0.04
+              fireGoal.withdrawal_rate_assumption ?? ASSUMPTIONS.WITHDRAWAL_RATE
             )
           : 0)
 
@@ -111,7 +113,7 @@ Deno.serve(async (req) => {
     const currentAge: number | null =
       profile?.age ?? fireGoal.current_age ?? null
 
-    const returnRate: number = fireGoal.return_assumption ?? 0.07
+    const returnRate: number = fireGoal.return_assumption ?? ASSUMPTIONS.REAL_ANNUAL_RETURN
 
     // ── 7. Compute official FIRE date ─────────────────────────
     const fireResult = computeFireDate(
@@ -207,75 +209,4 @@ function errorResponse(status: number, code: string, message: string): Response 
     JSON.stringify({ success: false, error: { code, message } }),
     { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
-}
-
-type LocalFireDateResult = {
-  yearsRemaining: number
-  fireDate: string
-  fireAge: number | null
-}
-
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const MAX_MONTHS = 600
-
-function computeFireDate(
-  currentNetWorth: number,
-  fireNumber: number,
-  monthlySavings: number,
-  annualReturnRate: number = 0.07,
-  currentAge?: number
-): LocalFireDateResult {
-  if (currentNetWorth >= fireNumber) {
-    return {
-      yearsRemaining: 0,
-      fireDate: arrivalDateFromMonths(0),
-      fireAge: currentAge ?? null,
-    }
-  }
-
-  if (monthlySavings <= 0 || fireNumber <= 0) {
-    return {
-      yearsRemaining: 99,
-      fireDate: 'Unknown',
-      fireAge: null,
-    }
-  }
-
-  const monthlyRate = annualReturnRate / 12
-  let portfolio = currentNetWorth
-  let months = 0
-
-  while (portfolio < fireNumber && months < MAX_MONTHS) {
-    portfolio = portfolio * (1 + monthlyRate) + monthlySavings
-    months += 1
-  }
-
-  const yearsRemaining = Math.ceil(months / 12)
-  return {
-    yearsRemaining,
-    fireDate: arrivalDateFromMonths(months),
-    fireAge: currentAge != null ? currentAge + yearsRemaining : null,
-  }
-}
-
-function computeFireNumber(
-  retirementSpendingMonthly: number,
-  withdrawalRate: number = 0.04
-): number {
-  return Math.round((retirementSpendingMonthly * 12) / withdrawalRate)
-}
-
-function getProgressStatus(progressPct: number, onTrack: boolean): string {
-  if (progressPct >= 90) return "You're almost there. Keep going."
-  if (progressPct >= 60) return 'Strong progress. Your path is working.'
-  if (progressPct >= 30 && onTrack) return 'Your current path is improving.'
-  if (progressPct >= 30) return "You're building momentum."
-  if (progressPct >= 10) return 'Early days. Every month counts.'
-  return 'Your FIRE journey starts here.'
-}
-
-function arrivalDateFromMonths(monthsFromNow: number): string {
-  const d = new Date()
-  d.setMonth(d.getMonth() + monthsFromNow)
-  return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`
 }

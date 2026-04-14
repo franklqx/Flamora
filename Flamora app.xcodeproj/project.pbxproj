@@ -52,6 +52,23 @@
 		12748FED2F7277AA00410D60 /* BS_SpendingBreakdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748FEC2F7277AA00410D60 /* BS_SpendingBreakdownView.swift */; };
 		12748FEF2F7277AA00410D60 /* BS_GoalSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748FEE2F7277AA00410D60 /* BS_GoalSetupView.swift */; };
 		12748FF12F7277AA00410D60 /* BS_AccountsReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748FF02F7277AA00410D60 /* BS_AccountsReviewView.swift */; };
+		12ADE5832F8EA4E400413A26 /* JourneyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ADE57A2F8EA4E400413A26 /* JourneyView.swift */; };
+		12ADE5842F8EA4E400413A26 /* SavingsRateCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ADE5802F8EA4E400413A26 /* SavingsRateCard.swift */; };
+		12ADE5852F8EA4E400413A26 /* DailyQuoteCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ADE5722F8EA4E400413A26 /* DailyQuoteCard.swift */; };
+		12ADE5862F8EA4E400413A26 /* PortfolioCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ADE57E2F8EA4E400413A26 /* PortfolioCard.swift */; };
+		12ADE5872F8EA4E400413A26 /* LegendItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ADE57C2F8EA4E400413A26 /* LegendItemView.swift */; };
+		12ADE5882F8EA4E400413A26 /* JourneyTodoList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ADE5792F8EA4E400413A26 /* JourneyTodoList.swift */; };
+		12ADE5892F8EA4E400413A26 /* JourneyContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ADE5782F8EA4E400413A26 /* JourneyContainerView.swift */; };
+		12ADE58A2F8EA4E400413A26 /* HomeExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ADE5762F8EA4E400413A26 /* HomeExpandedOverlayView.swift */; };
+		12ADE58B2F8EA4E400413A26 /* BudgetPlanCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ADE5712F8EA4E400413A26 /* BudgetPlanCard.swift */; };
+		12ADE58C2F8EA4E400413A26 /* FIRECountdownCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ADE5732F8EA4E400413A26 /* FIRECountdownCard.swift */; };
+		12ADE58D2F8EA4E400413A26 /* MonthIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ADE57D2F8EA4E400413A26 /* MonthIndicator.swift */; };
+		12ADE58E2F8EA4E400413A26 /* FlameTogglePill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ADE5742F8EA4E400413A26 /* FlameTogglePill.swift */; };
+		12ADE58F2F8EA4E400413A26 /* ProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ADE57F2F8EA4E400413A26 /* ProgressBar.swift */; };
+		12ADE5902F8EA4E400413A26 /* HomeJourneyProgressStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ADE5772F8EA4E400413A26 /* HomeJourneyProgressStrip.swift */; };
+		12ADE5912F8EA4E400413A26 /* HomeBottomSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ADE5752F8EA4E400413A26 /* HomeBottomSheet.swift */; };
+		12ADE5922F8EA4E400413A26 /* SimulatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ADE5812F8EA4E400413A26 /* SimulatorView.swift */; };
+		12ADE5932F8EA4E400413A26 /* JourneyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12ADE57B2F8EA4E400413A26 /* JourneyViewModel.swift */; };
 		1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */; };
 		1508AF372F5D1A2600D59781 /* OB_BarChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1508AF362F5D1A2600D59781 /* OB_BarChartView.swift */; };
 		152BE0822F67A66100CACBBC /* SmoothPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152BE0812F67A66100CACBBC /* SmoothPath.swift */; };
@@ -73,19 +90,11 @@
 		15ABCD012F36A00000AABB01 /* IncomeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15ABCD002F36A00000AABB01 /* IncomeDetailView.swift */; };
 		15ABCD032F36B00000AABB02 /* TotalIncomeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15ABCD022F36B00000AABB02 /* TotalIncomeDetailView.swift */; };
 		15E21AA62F3248F500A9BB60 /* JourneyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AA32F3248F500A9BB60 /* JourneyView.swift */; };
-		PH0A00012F40000000000001 /* JourneyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0A00002F40000000000001 /* JourneyViewModel.swift */; };
-		PH0B00022F40000000000002 /* LegendItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0B00012F40000000000002 /* LegendItemView.swift */; };
-		PH0C00032F40000000000003 /* NumberFormatter+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0C00022F40000000000003 /* NumberFormatter+App.swift */; };
 		15E21AAB2F324EFA00A9BB60 /* Spacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AAA2F324EFA00A9BB60 /* Spacing.swift */; };
-		1EB2D5B3CC5D45E3A2CC9B26 /* Shadows.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B6BBC00A0F486AB485D850 /* Shadows.swift */; };
 		15E21AAD2F324F0E00A9BB60 /* ProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AAC2F324F0E00A9BB60 /* ProgressBar.swift */; };
 		15E21AAF2F324F1F00A9BB60 /* MonthIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AAE2F324F1F00A9BB60 /* MonthIndicator.swift */; };
 		15E21AB12F32548A00A9BB60 /* SimulatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB02F32548A00A9BB60 /* SimulatorView.swift */; };
 		15E21AB32F3257B000A9BB60 /* CashflowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB22F3257B000A9BB60 /* CashflowView.swift */; };
-		CF10A0012F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF10A0002F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift */; };
-		CF10A0112F50000100A9BB60 /* CashflowExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF10A0102F50000100A9BB60 /* CashflowExpandedOverlayView.swift */; };
-		CF20A0112F70000100A9BB60 /* HomeExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */; };
-		CF30A0012F80000100A9BB60 /* HomeBottomSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF30A0002F80000100A9BB60 /* HomeBottomSheet.swift */; };
 		15E21AB72F3257C600A9BB60 /* InvestmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB62F3257C600A9BB60 /* InvestmentView.swift */; };
 		15E21AB92F3257D700A9BB60 /* GlassmorphicTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */; };
 		15E21ABB2F325A9D00A9BB60 /* JourneyContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21ABA2F325A9D00A9BB60 /* JourneyContainerView.swift */; };
@@ -98,10 +107,6 @@
 		15E21AEF2F33C3F600A9BB60 /* IncomeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AEE2F33C3F600A9BB60 /* IncomeCard.swift */; };
 		15E21AF12F33C40000A9BB60 /* BudgetCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF02F33C40000A9BB60 /* BudgetCard.swift */; };
 		15E21AF32F33F2AD00A9BB60 /* AccountsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF22F33F2AD00A9BB60 /* AccountsCard.swift */; };
-		F10000022FB0000000000001 /* InvestmentDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000012FB0000000000001 /* InvestmentDataStore.swift */; };
-		F10000042FB0000000000001 /* InvestmentExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000032FB0000000000001 /* InvestmentExpandedOverlayView.swift */; };
-		F10000062FB0000000000001 /* InvestmentSheetContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000052FB0000000000001 /* InvestmentSheetContent.swift */; };
-		F10000082FB0000000000001 /* SheetPrimaryCTAButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000072FB0000000000001 /* SheetPrimaryCTAButton.swift */; };
 		15E21AF52F33F2BE00A9BB60 /* AssetAllocationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */; };
 		15E21AF82F34010000A9BB71 /* TransactionDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF72F34010000A9BB70 /* TransactionDetailSheet.swift */; };
 		15E21AFA2F34020000A9BB72 /* TransactionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF92F34020000A9BB73 /* TransactionRow.swift */; };
@@ -113,8 +118,8 @@
 		15FF6EDF2F3104500005F482 /* ConnectAccountCTAView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6EDE2F3104500005F482 /* ConnectAccountCTAView.swift */; };
 		15FF6EE02F310A040005F482 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED82F3103F70005F482 /* Typography.swift */; };
 		18177349D8754A42810808DD /* PlaidTrustBridgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A896C70355034867B690BCB2 /* PlaidTrustBridgeView.swift */; };
+		1EB2D5B3CC5D45E3A2CC9B26 /* Shadows.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B6BBC00A0F486AB485D850 /* Shadows.swift */; };
 		468A105E0AD44511A1EFC2E0 /* FIRECountdownCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3AE291F3C594B4B8D1E5239 /* FIRECountdownCard.swift */; };
-		PH0D000A2F4000000000000A /* HomeJourneyProgressStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0D000B2F4000000000000B /* HomeJourneyProgressStrip.swift */; };
 		AA5B00032F38500000001003 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = AA5B00022F38500000001002 /* Supabase */; };
 		AA5B00052F38500000001005 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5B00042F38500000001004 /* SupabaseManager.swift */; };
 		AAOB00012F38500000000001 /* OnboardingData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAOB00112F38500000000001 /* OnboardingData.swift */; };
@@ -123,6 +128,7 @@
 		CD11E0022F90000000000001 /* TransactionCategoryCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11E0012F90000000000001 /* TransactionCategoryCatalog.swift */; };
 		CD11E0042F90000000000001 /* Account+API.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11E0032F90000000000001 /* Account+API.swift */; };
 		CD11E0062F90000000000001 /* CashflowDetailEmptyStates.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11E0052F90000000000001 /* CashflowDetailEmptyStates.swift */; };
+		CD11E0082F90000000000001 /* FIREAssumptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11E0072F90000000000001 /* FIREAssumptions.swift */; };
 		CD2604070000000000000002 /* HomeSetupState.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD2604070000000000000001 /* HomeSetupState.swift */; };
 		CD2604070000000000000004 /* HomeHeroModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD2604070000000000000003 /* HomeHeroModel.swift */; };
 		CD2604070000000000000006 /* ActivePlanModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD2604070000000000000005 /* ActivePlanModel.swift */; };
@@ -131,9 +137,22 @@
 		CDAA00072FA0000000000001 /* CashflowDetailBuilders.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA00062FA0000000000001 /* CashflowDetailBuilders.swift */; };
 		CDAA00092FA0000000000001 /* TabContentCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA00082FA0000000000001 /* TabContentCache.swift */; };
 		CDAA000B2FA0000000000001 /* InvestmentAllocationBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA000A2FA0000000000001 /* InvestmentAllocationBuilder.swift */; };
+		CDAA000D2FA0000000000001 /* InvestmentHeroData.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA000C2FA0000000000001 /* InvestmentHeroData.swift */; };
 		CDBB00022FA1000000000001 /* CashAccountsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00012FA1000000000001 /* CashAccountsCard.swift */; };
 		CDBB00042FA1000000000001 /* CashAccountDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00032FA1000000000001 /* CashAccountDetailView.swift */; };
+		CF10A0012F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF10A0002F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift */; };
+		CF10A0112F50000100A9BB60 /* CashflowExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF10A0102F50000100A9BB60 /* CashflowExpandedOverlayView.swift */; };
+		CF20A0112F70000100A9BB60 /* HomeExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */; };
+		CF30A0012F80000100A9BB60 /* HomeBottomSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF30A0002F80000100A9BB60 /* HomeBottomSheet.swift */; };
 		EB0000012F9A00000000EB01 /* ErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB0000022F9A00000000EB01 /* ErrorBanner.swift */; };
+		F10000022FB0000000000001 /* InvestmentDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000012FB0000000000001 /* InvestmentDataStore.swift */; };
+		F10000042FB0000000000001 /* InvestmentExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000032FB0000000000001 /* InvestmentExpandedOverlayView.swift */; };
+		F10000062FB0000000000001 /* InvestmentSheetContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000052FB0000000000001 /* InvestmentSheetContent.swift */; };
+		F10000082FB0000000000001 /* SheetPrimaryCTAButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000072FB0000000000001 /* SheetPrimaryCTAButton.swift */; };
+		PH0A00012F40000000000001 /* JourneyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0A00002F40000000000001 /* JourneyViewModel.swift */; };
+		PH0B00022F40000000000002 /* LegendItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0B00012F40000000000002 /* LegendItemView.swift */; };
+		PH0C00032F40000000000003 /* NumberFormatter+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0C00022F40000000000003 /* NumberFormatter+App.swift */; };
+		PH0D000A2F4000000000000A /* HomeJourneyProgressStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0D000B2F4000000000000B /* HomeJourneyProgressStrip.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -195,6 +214,23 @@
 		12748FEC2F7277AA00410D60 /* BS_SpendingBreakdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_SpendingBreakdownView.swift; sourceTree = "<group>"; };
 		12748FEE2F7277AA00410D60 /* BS_GoalSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_GoalSetupView.swift; sourceTree = "<group>"; };
 		12748FF02F7277AA00410D60 /* BS_AccountsReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_AccountsReviewView.swift; sourceTree = "<group>"; };
+		12ADE5712F8EA4E400413A26 /* BudgetPlanCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetPlanCard.swift; sourceTree = "<group>"; };
+		12ADE5722F8EA4E400413A26 /* DailyQuoteCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyQuoteCard.swift; sourceTree = "<group>"; };
+		12ADE5732F8EA4E400413A26 /* FIRECountdownCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIRECountdownCard.swift; sourceTree = "<group>"; };
+		12ADE5742F8EA4E400413A26 /* FlameTogglePill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlameTogglePill.swift; sourceTree = "<group>"; };
+		12ADE5752F8EA4E400413A26 /* HomeBottomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeBottomSheet.swift; sourceTree = "<group>"; };
+		12ADE5762F8EA4E400413A26 /* HomeExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeExpandedOverlayView.swift; sourceTree = "<group>"; };
+		12ADE5772F8EA4E400413A26 /* HomeJourneyProgressStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeJourneyProgressStrip.swift; sourceTree = "<group>"; };
+		12ADE5782F8EA4E400413A26 /* JourneyContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyContainerView.swift; sourceTree = "<group>"; };
+		12ADE5792F8EA4E400413A26 /* JourneyTodoList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyTodoList.swift; sourceTree = "<group>"; };
+		12ADE57A2F8EA4E400413A26 /* JourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyView.swift; sourceTree = "<group>"; };
+		12ADE57B2F8EA4E400413A26 /* JourneyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyViewModel.swift; sourceTree = "<group>"; };
+		12ADE57C2F8EA4E400413A26 /* LegendItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegendItemView.swift; sourceTree = "<group>"; };
+		12ADE57D2F8EA4E400413A26 /* MonthIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthIndicator.swift; sourceTree = "<group>"; };
+		12ADE57E2F8EA4E400413A26 /* PortfolioCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioCard.swift; sourceTree = "<group>"; };
+		12ADE57F2F8EA4E400413A26 /* ProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBar.swift; sourceTree = "<group>"; };
+		12ADE5802F8EA4E400413A26 /* SavingsRateCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsRateCard.swift; sourceTree = "<group>"; };
+		12ADE5812F8EA4E400413A26 /* SimulatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorView.swift; sourceTree = "<group>"; };
 		1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBackgroundView.swift; sourceTree = "<group>"; };
 		150899942F30F60F003DDFBF /* Flamora app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Flamora app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899A32F30F611003DDFBF /* Flamora appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -219,18 +255,11 @@
 		15ABCD002F36A00000AABB01 /* IncomeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomeDetailView.swift; sourceTree = "<group>"; };
 		15ABCD022F36B00000AABB02 /* TotalIncomeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotalIncomeDetailView.swift; sourceTree = "<group>"; };
 		15E21AA32F3248F500A9BB60 /* JourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyView.swift; sourceTree = "<group>"; };
-		PH0A00002F40000000000001 /* JourneyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyViewModel.swift; sourceTree = "<group>"; };
-		PH0B00012F40000000000002 /* LegendItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegendItemView.swift; sourceTree = "<group>"; };
 		15E21AAA2F324EFA00A9BB60 /* Spacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spacing.swift; sourceTree = "<group>"; };
-		D4B6BBC00A0F486AB485D850 /* Shadows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shadows.swift; sourceTree = "<group>"; };
 		15E21AAC2F324F0E00A9BB60 /* ProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBar.swift; sourceTree = "<group>"; };
 		15E21AAE2F324F1F00A9BB60 /* MonthIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthIndicator.swift; sourceTree = "<group>"; };
 		15E21AB02F32548A00A9BB60 /* SimulatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorView.swift; sourceTree = "<group>"; };
 		15E21AB22F3257B000A9BB60 /* CashflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowView.swift; sourceTree = "<group>"; };
-		CF10A0002F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowSpendingOverviewPrototypeCard.swift; sourceTree = "<group>"; };
-		CF10A0102F50000100A9BB60 /* CashflowExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowExpandedOverlayView.swift; sourceTree = "<group>"; };
-		CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeExpandedOverlayView.swift; sourceTree = "<group>"; };
-		CF30A0002F80000100A9BB60 /* HomeBottomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeBottomSheet.swift; sourceTree = "<group>"; };
 		15E21AB62F3257C600A9BB60 /* InvestmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentView.swift; sourceTree = "<group>"; };
 		15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassmorphicTabBar.swift; sourceTree = "<group>"; };
 		15E21ABA2F325A9D00A9BB60 /* JourneyContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyContainerView.swift; sourceTree = "<group>"; };
@@ -262,25 +291,34 @@
 		CD11E0012F90000000000001 /* TransactionCategoryCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionCategoryCatalog.swift; sourceTree = "<group>"; };
 		CD11E0032F90000000000001 /* Account+API.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Account+API.swift"; sourceTree = "<group>"; };
 		CD11E0052F90000000000001 /* CashflowDetailEmptyStates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowDetailEmptyStates.swift; sourceTree = "<group>"; };
+		CD11E0072F90000000000001 /* FIREAssumptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIREAssumptions.swift; sourceTree = "<group>"; };
 		CD2604070000000000000001 /* HomeSetupState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeSetupState.swift; sourceTree = "<group>"; };
 		CD2604070000000000000003 /* HomeHeroModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHeroModel.swift; sourceTree = "<group>"; };
 		CD2604070000000000000005 /* ActivePlanModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivePlanModel.swift; sourceTree = "<group>"; };
 		CD2604070000000000000007 /* SimulatorPreviewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorPreviewModel.swift; sourceTree = "<group>"; };
 		CDAA00012FA0000000000001 /* CategoryDisplayHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryDisplayHelper.swift; sourceTree = "<group>"; };
-		PH0C00022F40000000000003 /* NumberFormatter+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NumberFormatter+App.swift"; sourceTree = "<group>"; };
 		CDAA00062FA0000000000001 /* CashflowDetailBuilders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowDetailBuilders.swift; sourceTree = "<group>"; };
 		CDAA00082FA0000000000001 /* TabContentCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabContentCache.swift; sourceTree = "<group>"; };
 		CDAA000A2FA0000000000001 /* InvestmentAllocationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentAllocationBuilder.swift; sourceTree = "<group>"; };
+		CDAA000C2FA0000000000001 /* InvestmentHeroData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentHeroData.swift; sourceTree = "<group>"; };
 		CDBB00012FA1000000000001 /* CashAccountsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountsCard.swift; sourceTree = "<group>"; };
 		CDBB00032FA1000000000001 /* CashAccountDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountDetailView.swift; sourceTree = "<group>"; };
+		CF10A0002F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowSpendingOverviewPrototypeCard.swift; sourceTree = "<group>"; };
+		CF10A0102F50000100A9BB60 /* CashflowExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowExpandedOverlayView.swift; sourceTree = "<group>"; };
+		CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeExpandedOverlayView.swift; sourceTree = "<group>"; };
+		CF30A0002F80000100A9BB60 /* HomeBottomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeBottomSheet.swift; sourceTree = "<group>"; };
+		D3AE291F3C594B4B8D1E5239 /* FIRECountdownCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIRECountdownCard.swift; sourceTree = "<group>"; };
+		D4B6BBC00A0F486AB485D850 /* Shadows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shadows.swift; sourceTree = "<group>"; };
+		EB0000022F9A00000000EB01 /* ErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBanner.swift; sourceTree = "<group>"; };
 		F10000012FB0000000000001 /* InvestmentDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentDataStore.swift; sourceTree = "<group>"; };
 		F10000032FB0000000000001 /* InvestmentExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentExpandedOverlayView.swift; sourceTree = "<group>"; };
 		F10000052FB0000000000001 /* InvestmentSheetContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentSheetContent.swift; sourceTree = "<group>"; };
 		F10000072FB0000000000001 /* SheetPrimaryCTAButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetPrimaryCTAButton.swift; sourceTree = "<group>"; };
-		D3AE291F3C594B4B8D1E5239 /* FIRECountdownCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIRECountdownCard.swift; sourceTree = "<group>"; };
-		PH0D000B2F4000000000000B /* HomeJourneyProgressStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeJourneyProgressStrip.swift; sourceTree = "<group>"; };
-		EB0000022F9A00000000EB01 /* ErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBanner.swift; sourceTree = "<group>"; };
 		F3D88B1E877C494CB82A4469 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		PH0A00002F40000000000001 /* JourneyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyViewModel.swift; sourceTree = "<group>"; };
+		PH0B00012F40000000000002 /* LegendItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegendItemView.swift; sourceTree = "<group>"; };
+		PH0C00022F40000000000003 /* NumberFormatter+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NumberFormatter+App.swift"; sourceTree = "<group>"; };
+		PH0D000B2F4000000000000B /* HomeJourneyProgressStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeJourneyProgressStrip.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -415,6 +453,30 @@
 			path = BudgetSetup;
 			sourceTree = "<group>";
 		};
+		12ADE5822F8EA4E400413A26 /* Journey */ = {
+			isa = PBXGroup;
+			children = (
+				12ADE5712F8EA4E400413A26 /* BudgetPlanCard.swift */,
+				12ADE5722F8EA4E400413A26 /* DailyQuoteCard.swift */,
+				12ADE5732F8EA4E400413A26 /* FIRECountdownCard.swift */,
+				12ADE5742F8EA4E400413A26 /* FlameTogglePill.swift */,
+				12ADE5752F8EA4E400413A26 /* HomeBottomSheet.swift */,
+				12ADE5762F8EA4E400413A26 /* HomeExpandedOverlayView.swift */,
+				12ADE5772F8EA4E400413A26 /* HomeJourneyProgressStrip.swift */,
+				12ADE5782F8EA4E400413A26 /* JourneyContainerView.swift */,
+				12ADE5792F8EA4E400413A26 /* JourneyTodoList.swift */,
+				12ADE57A2F8EA4E400413A26 /* JourneyView.swift */,
+				12ADE57B2F8EA4E400413A26 /* JourneyViewModel.swift */,
+				12ADE57C2F8EA4E400413A26 /* LegendItemView.swift */,
+				12ADE57D2F8EA4E400413A26 /* MonthIndicator.swift */,
+				12ADE57E2F8EA4E400413A26 /* PortfolioCard.swift */,
+				12ADE57F2F8EA4E400413A26 /* ProgressBar.swift */,
+				12ADE5802F8EA4E400413A26 /* SavingsRateCard.swift */,
+				12ADE5812F8EA4E400413A26 /* SimulatorView.swift */,
+			);
+			path = Journey;
+			sourceTree = "<group>";
+		};
 		1508998B2F30F60F003DDFBF = {
 			isa = PBXGroup;
 			children = (
@@ -455,6 +517,7 @@
 				CDAA00062FA0000000000001 /* CashflowDetailBuilders.swift */,
 				CDAA00082FA0000000000001 /* TabContentCache.swift */,
 				CDAA000A2FA0000000000001 /* InvestmentAllocationBuilder.swift */,
+				CDAA000C2FA0000000000001 /* InvestmentHeroData.swift */,
 				AAOB00112F38500000000001 /* OnboardingData.swift */,
 				AA5B00042F38500000001004 /* SupabaseManager.swift */,
 			);
@@ -472,13 +535,14 @@
 				CD2604070000000000000005 /* ActivePlanModel.swift */,
 				CD2604070000000000000007 /* SimulatorPreviewModel.swift */,
 				CD11E0052F90000000000001 /* CashflowDetailEmptyStates.swift */,
+				CD11E0072F90000000000001 /* FIREAssumptions.swift */,
 				1571A1D92F3C2A5B0024A729 /* OnboardingModels.swift */,
 				CD11E0012F90000000000001 /* TransactionCategoryCatalog.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
 		};
-		15E21AA42F3248F500A9BB60 /* Journey */ = {
+		15E21AA42F3248F500A9BB60 /* Home */ = {
 			isa = PBXGroup;
 			children = (
 				CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */,
@@ -505,6 +569,7 @@
 		15E21AA52F3248F500A9BB60 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				12ADE5822F8EA4E400413A26 /* Journey */,
 				12748F212F65CA5C00410D60 /* BudgetSetup */,
 				124C46482F56F65E00E4EA8B /* Onboarding */,
 				12123E3D2F485B920011B385 /* Settings */,
@@ -512,7 +577,7 @@
 				15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */,
 				15E21AEB2F33BE1900A9BB60 /* Investment */,
 				15E21AE72F33BC5E00A9BB60 /* Cashflow */,
-				15E21AA42F3248F500A9BB60 /* Journey */,
+				15E21AA42F3248F500A9BB60 /* Home */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -775,6 +840,7 @@
 				CDAA00072FA0000000000001 /* CashflowDetailBuilders.swift in Sources */,
 				CDAA00092FA0000000000001 /* TabContentCache.swift in Sources */,
 				CDAA000B2FA0000000000001 /* InvestmentAllocationBuilder.swift in Sources */,
+				CDAA000D2FA0000000000001 /* InvestmentHeroData.swift in Sources */,
 				12748F252F65CCEE00410D60 /* BudgetSetupView.swift in Sources */,
 				15FF6EE02F310A040005F482 /* Typography.swift in Sources */,
 				15E21AA62F3248F500A9BB60 /* JourneyView.swift in Sources */,
@@ -793,6 +859,23 @@
 				15E21AFC2F34030000A9BB74 /* AllTransactionsView.swift in Sources */,
 				CDBB00022FA1000000000001 /* CashAccountsCard.swift in Sources */,
 				CDBB00042FA1000000000001 /* CashAccountDetailView.swift in Sources */,
+				12ADE5832F8EA4E400413A26 /* JourneyView.swift in Sources */,
+				12ADE5842F8EA4E400413A26 /* SavingsRateCard.swift in Sources */,
+				12ADE5852F8EA4E400413A26 /* DailyQuoteCard.swift in Sources */,
+				12ADE5862F8EA4E400413A26 /* PortfolioCard.swift in Sources */,
+				12ADE5872F8EA4E400413A26 /* LegendItemView.swift in Sources */,
+				12ADE5882F8EA4E400413A26 /* JourneyTodoList.swift in Sources */,
+				12ADE5892F8EA4E400413A26 /* JourneyContainerView.swift in Sources */,
+				12ADE58A2F8EA4E400413A26 /* HomeExpandedOverlayView.swift in Sources */,
+				12ADE58B2F8EA4E400413A26 /* BudgetPlanCard.swift in Sources */,
+				12ADE58C2F8EA4E400413A26 /* FIRECountdownCard.swift in Sources */,
+				12ADE58D2F8EA4E400413A26 /* MonthIndicator.swift in Sources */,
+				12ADE58E2F8EA4E400413A26 /* FlameTogglePill.swift in Sources */,
+				12ADE58F2F8EA4E400413A26 /* ProgressBar.swift in Sources */,
+				12ADE5902F8EA4E400413A26 /* HomeJourneyProgressStrip.swift in Sources */,
+				12ADE5912F8EA4E400413A26 /* HomeBottomSheet.swift in Sources */,
+				12ADE5922F8EA4E400413A26 /* SimulatorView.swift in Sources */,
+				12ADE5932F8EA4E400413A26 /* JourneyViewModel.swift in Sources */,
 				153CA31A2F34EDEC001ED98E /* TopHeaderBar.swift in Sources */,
 				15E21AAF2F324F1F00A9BB60 /* MonthIndicator.swift in Sources */,
 				15E21AEF2F33C3F600A9BB60 /* IncomeCard.swift in Sources */,
@@ -809,6 +892,7 @@
 				CD11E0022F90000000000001 /* TransactionCategoryCatalog.swift in Sources */,
 				CD11E0042F90000000000001 /* Account+API.swift in Sources */,
 				CD11E0062F90000000000001 /* CashflowDetailEmptyStates.swift in Sources */,
+				CD11E0082F90000000000001 /* FIREAssumptions.swift in Sources */,
 				15E21AF52F33F2BE00A9BB60 /* AssetAllocationCard.swift in Sources */,
 				15E21B142F33F33000A9BB80 /* AssetAllocationDetailView.swift in Sources */,
 				15E21AF32F33F2AD00A9BB60 /* AccountsCard.swift in Sources */,
@@ -1033,7 +1117,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 526LTP6Z7D;
+				DEVELOPMENT_TEAM = H9BUW6F8JV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Flamora-App-Info.plist";
@@ -1048,7 +1132,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.LL.fire.Flamora-app7";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.SL.fire.Flamora-app7";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -1068,7 +1152,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 526LTP6Z7D;
+				DEVELOPMENT_TEAM = H9BUW6F8JV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Flamora-App-Info.plist";
@@ -1083,7 +1167,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.LL.fire.Flamora-app7";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.SL.fire.Flamora-app7";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;

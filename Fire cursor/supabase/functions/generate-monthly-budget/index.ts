@@ -21,6 +21,8 @@ interface GenerateBudgetRequest {
   needs_budget?: number
   wants_budget?: number
   savings_budget?: number
+  // Per-category budget amounts; keys are canonical TransactionCategoryCatalog ids
+  category_budgets?: Record<string, number>
 }
 
 serve(async (req) => {
@@ -216,13 +218,16 @@ serve(async (req) => {
     // ============================================================
     // 6. Upsert into budgets table
     // ============================================================
-    // 当 source 为 'setup' 且客户端传了具体金额时，直接使用客户端的值
-    const finalNeedsBudget = (body.source === 'setup' && body.needs_budget !== undefined)
-      ? body.needs_budget : needsBudget
-    const finalWantsBudget = (body.source === 'setup' && body.wants_budget !== undefined)
-      ? body.wants_budget : wantsBudget
-    const finalSavingsBudget = (body.source === 'setup' && body.savings_budget !== undefined)
-      ? body.savings_budget : savingsBudget
+    // 当 source 为 'setup' 或 'manual' 且客户端传了具体金额时，直接使用客户端的值。
+    // 'manual' = cashflow_edit 路径，用户显式编辑了金额，不应被 profile.monthly_income × ratio 覆盖。
+    const clientProvidesBudget =
+      (body.source === 'setup' || body.source === 'manual') &&
+      body.needs_budget !== undefined &&
+      body.wants_budget !== undefined &&
+      body.savings_budget !== undefined
+    const finalNeedsBudget   = clientProvidesBudget ? body.needs_budget!   : needsBudget
+    const finalWantsBudget   = clientProvidesBudget ? body.wants_budget!   : wantsBudget
+    const finalSavingsBudget = clientProvidesBudget ? body.savings_budget! : savingsBudget
 
     const { data: budget, error: upsertError } = await supabase
       .from('budgets')
@@ -240,6 +245,7 @@ serve(async (req) => {
         flexible_budget: body.flexible_budget ?? null,
         selected_plan: body.selected_plan ?? null,
         is_custom: isCustom,
+        category_budgets: body.category_budgets ?? {},
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'user_id,month',
@@ -275,6 +281,7 @@ serve(async (req) => {
           flexible_budget: budget.flexible_budget,
           selected_plan: budget.selected_plan,
           is_custom: budget.is_custom,
+          category_budgets: budget.category_budgets ?? {},
         },
         meta: {
           timestamp: new Date().toISOString(),

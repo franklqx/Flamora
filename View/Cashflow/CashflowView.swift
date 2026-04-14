@@ -74,8 +74,7 @@ struct CashflowView: View {
     }
 
     private var hasBudget: Bool {
-        plaidManager.hasLinkedBank
-        && (apiBudget.needsBudget + apiBudget.wantsBudget) > 0
+        plaidManager.hasLinkedBank && budgetSetupCompleted
     }
 
     private var isCashflowUnlocked: Bool {
@@ -291,10 +290,16 @@ private extension CashflowView {
         let budgetMap = apiBudget.categoryBudgets ?? [:]
         let parentKey = parent.rawValue.lowercased()
 
-        let budgetNamesForParent: [String] = budgetMap.keys
-            .filter { TransactionCategoryCatalog.parent(for: $0) == parentKey }
-            .sorted {
-                (budgetMap[$0] ?? 0) > (budgetMap[$1] ?? 0)
+        // budgetMap keys are canonical ids (e.g. "groceries"); map to display names
+        // before merging into orderedNames to avoid "groceries" / "Groceries" duplication.
+        let budgetDisplayNamesForParent: [String] = budgetMap.keys
+            .filter { key in
+                (TransactionCategoryCatalog.all.first(where: { $0.id == key })?.parent
+                 ?? TransactionCategoryCatalog.parent(for: key)) == parentKey
+            }
+            .sorted { (budgetMap[$0] ?? 0) > (budgetMap[$1] ?? 0) }
+            .map { key in
+                TransactionCategoryCatalog.all.first(where: { $0.id == key })?.name ?? key
             }
 
         let monthCategories = monthlySpendingCategories(from: detail)
@@ -306,7 +311,7 @@ private extension CashflowView {
         let defaultNames = defaultBudgetCategoryNames(for: parent)
 
         var orderedNames: [String] = []
-        for name in budgetNamesForParent where !orderedNames.contains(name) {
+        for name in budgetDisplayNamesForParent where !orderedNames.contains(name) {
             orderedNames.append(name)
         }
         for name in defaultNames where !orderedNames.contains(name) {
@@ -333,10 +338,13 @@ private extension CashflowView {
 
         return Array(orderedNames.prefix(6)).map { name in
             let spent = spendingByName[name] ?? spendingByNameLower[name.lowercased()] ?? 0
+            // Display name → canonical id → budget amount; fall back to name for legacy data
+            let budgetId = TransactionCategoryCatalog.id(forDisplayedSubcategory: name)
+            let amount = budgetId.flatMap { budgetMap[$0] } ?? budgetMap[name] ?? 0
             return BudgetCategoryBudget(
                 name: name,
                 parent: parent,
-                amount: max(budgetMap[name] ?? 0, 0),
+                amount: max(amount, 0),
                 spent: spent
             )
         }
@@ -386,15 +394,21 @@ private extension CashflowView {
                 "fixed_budget": payload.needsBudget,
                 "flexible_budget": payload.wantsBudget,
                 "selected_plan": apiBudget.selectedPlan ?? "custom",
-                "source": "cashflow_edit",
+                "source": "manual",
                 "category_budgets": payload.categoryBudgets
             ]
 
-            // Keep ratios normalized in case of rounding drift.
-            let ratioSum = payload.needsRatio + payload.wantsRatio
-            if ratioSum > 0.001 {
-                requestPayload["needs_ratio"] = payload.needsRatio / ratioSum * 100
-                requestPayload["wants_ratio"] = payload.wantsRatio / ratioSum * 100
+            // Recompute all three ratios from absolute amounts so they sum to exactly 100.
+            // Bug fix: previous code normalized needs+wants to 100 then appended savings_ratio
+            // separately, producing a total of ~120 and triggering INVALID_RATIOS from the backend.
+            let needsBudget   = payload.needsBudget
+            let wantsBudget   = payload.wantsBudget
+            let savingsBudget = apiBudget.savingsBudget
+            let totalBudget   = needsBudget + wantsBudget + savingsBudget
+            if totalBudget > 0 {
+                requestPayload["needs_ratio"]   = needsBudget   / totalBudget * 100
+                requestPayload["wants_ratio"]   = wantsBudget   / totalBudget * 100
+                requestPayload["savings_ratio"] = savingsBudget / totalBudget * 100
             }
 
             try await APIService.shared.upsertMonthlyBudget(payload: requestPayload)

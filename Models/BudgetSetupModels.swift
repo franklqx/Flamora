@@ -224,6 +224,11 @@ struct GeneratePlansRequest: Encodable {
     var retirementSpendingMonthly: Double? = nil
     var returnAssumption: Double? = nil
 
+    // v3 optional fields for FIRE-aware plan generation
+    var targetRetirementAge: Int? = nil       // "target_retirement_age"
+    var accountIds: [String]? = nil           // "account_ids"
+    var month: String? = nil                  // "month"
+
     enum CodingKeys: String, CodingKey {
         case currentSavingsRate        = "current_savings_rate"
         case avgMonthlyIncome          = "avg_monthly_income"
@@ -235,6 +240,9 @@ struct GeneratePlansRequest: Encodable {
         case fireNumber                = "fire_number"
         case retirementSpendingMonthly = "retirement_spending_monthly"
         case returnAssumption          = "return_assumption"
+        case targetRetirementAge       = "target_retirement_age"
+        case accountIds                = "account_ids"
+        case month
     }
 }
 
@@ -432,4 +440,29 @@ struct SaveFireGoalResponse: Codable {
         case requiredSavingsRate        = "required_savings_rate"
         case isActive                   = "is_active"
     }
+}
+
+// MARK: - calculate-fire-goal Response
+
+struct GoalFeasibilityResult: Codable {
+    let phase: Int                          // 0 / 1 / 2
+    let phaseSub: String                    // "0a","0b","0c","0d","1","2"
+    let strategy: String                    // "goal_achievable" | "user_choice" | "impossible"
+    let fireNumber: Double
+    let gapToFire: Double
+    let requiredMonthlyContribution: Double
+    let requiredSavingsRate: Double
+    let yearsToRetirement: Int
+    let isAchievable: Bool
+    let currentPath: FeasibilityPath
+    let planA: FeasibilityPath?
+    let planB: FeasibilityPath?
+    let recommended: FeasibilityPath?
+}
+
+struct FeasibilityPath: Codable {
+    let retirementAge: Int
+    let savingsRate: Double
+    let monthlySavings: Double
+    let feasibility: String  // "comfortable" | "balanced" | "aggressive" | "unrealistic"
 }

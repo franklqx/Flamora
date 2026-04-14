@@ -68,6 +68,10 @@ enum TransactionCategoryCatalog {
         all.first(where: { $0.name == name })?.parent
     }
 
+    static func id(forDisplayedSubcategory name: String) -> String? {
+        all.first(where: { $0.name == name })?.id
+    }
+
     static func canonicalSubcategory(fromStored raw: String?) -> String? {
         guard let raw, !raw.isEmpty else { return nil }
         let normalized = raw

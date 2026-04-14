@@ -20,11 +20,13 @@ import {
   getPositioningCopy,
   buildTradeoffNote,
 } from '../_shared/fire-math.ts'
+import { ASSUMPTIONS } from '../_shared/fire-assumptions.ts'
 
 // ── Global assumptions ────────────────────────────────────────
-const NOMINAL_ANNUAL_RETURN = 0.08
-const INFLATION_RATE        = 0.025
-const REAL_ANNUAL_RETURN    = 0.055
+// Imported from single source of truth — do not hardcode here.
+const NOMINAL_ANNUAL_RETURN = ASSUMPTIONS.NOMINAL_ANNUAL_RETURN   // display projections
+const REAL_ANNUAL_RETURN    = ASSUMPTIONS.REAL_ANNUAL_RETURN       // feasibility / required savings
+const INFLATION_RATE        = ASSUMPTIONS.INFLATION_RATE
 const MONTHLY_REAL_RATE     = REAL_ANNUAL_RETURN / 12
 
 // Flexible compression ratios

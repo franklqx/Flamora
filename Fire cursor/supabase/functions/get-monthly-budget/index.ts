@@ -124,6 +124,7 @@ serve(async (req) => {
           savings_ratio: budget.savings_ratio,
           selected_plan: budget.selected_plan || null,
           is_custom: budget.is_custom,
+          category_budgets: budget.category_budgets ?? {},
           progress: {
             needs_percentage: needsPercentage,
             wants_percentage: wantsPercentage,
