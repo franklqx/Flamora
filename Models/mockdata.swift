@@ -816,6 +816,8 @@ struct APIMonthlyBudget: Codable {
     let needsBudget: Double
     let wantsBudget: Double
     let savingsBudget: Double
+    /// Optional subcategory budgets returned by backend as `category_budgets`.
+    let categoryBudgets: [String: Double]?
     let needsSpent: Double?
     let wantsSpent: Double?
     let savingsActual: Double?
@@ -831,6 +833,7 @@ struct APIMonthlyBudget: Codable {
         needsBudget: 0,
         wantsBudget: 0,
         savingsBudget: 0,
+        categoryBudgets: nil,
         needsSpent: nil,
         wantsSpent: nil,
         savingsActual: nil,
@@ -1194,6 +1197,7 @@ extension MockData {
         needsBudget: 4000.00,
         wantsBudget: 2000.00,
         savingsBudget: 2000.00,
+        categoryBudgets: nil,
         needsSpent: 3090.00,
         wantsSpent: 1290.00,
         savingsActual: 2200.00,

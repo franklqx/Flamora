@@ -14,84 +14,77 @@ struct AccountsCard: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // Header
             HStack {
                 Text("ACCOUNTS")
                     .font(.cardHeader)
-                    .foregroundColor(AppColors.inkFaint)
+                    .foregroundColor(AppColors.inkMeta)
                     .tracking(AppTypography.Tracking.cardHeader)
                 Spacer()
             }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.top, AppSpacing.cardPadding)
-            .padding(.bottom, AppSpacing.xs)
-
-            Text("Your connected investment accounts.")
-                .font(.bodySmall)
-                .foregroundStyle(AppColors.inkSoft)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, AppSpacing.cardPadding)
-                .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
+            .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
 
             Rectangle()
-                .fill(AppColors.inkDivider)
+                .fill(Color.white.opacity(0.45))
                 .frame(height: 0.5)
                 .padding(.horizontal, AppSpacing.cardPadding)
 
             if isConnected {
-                if accounts.isEmpty {
-                    emptyConnectedContent
-                } else {
-                    ForEach(accounts.indices, id: \.self) { index in
-                        Button(action: { selectedAccount = accounts[index] }) {
-                            AccountRow(account: accounts[index], lastSyncedAt: lastSyncedAt)
-                        }
-                        .buttonStyle(.plain)
+                // Account rows
+                ForEach(accounts.indices, id: \.self) { index in
+                    Button(action: { selectedAccount = accounts[index] }) {
+                        AccountRow(account: accounts[index], lastSyncedAt: lastSyncedAt)
+                    }
+                    .buttonStyle(.plain)
 
-                        if index < accounts.count - 1 {
-                            Rectangle()
-                                .fill(AppColors.inkDivider)
-                                .frame(height: 0.5)
-                                .padding(.horizontal, AppSpacing.cardPadding)
-                        }
+                    if index < accounts.count - 1 {
+                        Rectangle()
+                            .fill(Color.white.opacity(0.45))
+                            .frame(height: 0.5)
+                            .padding(.horizontal, AppSpacing.cardPadding)
                     }
                 }
+
+                // Add Account button
+                Rectangle()
+                    .fill(Color.white.opacity(0.45))
+                    .frame(height: 0.5)
+                    .padding(.horizontal, AppSpacing.cardPadding)
+
+                Button(action: { onAddAccount?() }) {
+                    HStack(spacing: AppSpacing.sm) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.bodyRegular)
+                            .foregroundStyle(AppColors.inkPrimary)
+                        Text("Add Account")
+                            .font(.bodySemibold)
+                            .foregroundStyle(AppColors.inkPrimary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, AppSpacing.md)
+                }
+                .buttonStyle(.plain)
             } else {
                 disconnectedContent
             }
         }
         .background(
-            RoundedRectangle(cornerRadius: AppRadius.glassPanel)
-                .fill(AppColors.glassCardBg)
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppRadius.glassPanel)
-                        .fill(AppColors.glassCardBg2)
-                        .padding(1)
-                )
+            LinearGradient(
+                colors: [Color.white.opacity(0.86), Color(hex: "#F8F9FF").opacity(0.78)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         )
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.glassPanel))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
         .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.glassPanel)
-                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.xl)
+                .stroke(Color.white.opacity(0.62), lineWidth: 1)
         )
-        .glassCardShadow()
         .fullScreenCover(item: $selectedAccount) { account in
             AccountDetailView(account: account)
         }
-    }
-
-    private var emptyConnectedContent: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("No investment accounts found yet.")
-                .font(.figureSecondarySemibold)
-                .foregroundStyle(AppColors.inkPrimary)
-            Text("We'll list each connected brokerage or crypto account here as soon as the sync completes.")
-                .font(.caption)
-                .foregroundStyle(AppColors.inkSoft)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, AppSpacing.cardPadding)
-        .padding(.vertical, AppSpacing.md)
     }
 
     private var disconnectedContent: some View {
@@ -99,13 +92,13 @@ struct AccountsCard: View {
             VStack(spacing: AppSpacing.xs) {
                 Image(systemName: "building.columns")
                     .font(.h3)
-                    .foregroundStyle(AppColors.inkFaint.opacity(0.7))
+                    .foregroundStyle(AppColors.inkMeta)
                 Text("No accounts connected")
                     .font(.figureSecondarySemibold)
-                    .foregroundStyle(AppColors.inkPrimary)
+                    .foregroundStyle(AppColors.inkSoft)
                 Text("Connect your bank and investment accounts to see them here.")
                     .font(.caption)
-                    .foregroundStyle(AppColors.inkSoft)
+                    .foregroundStyle(AppColors.inkMeta)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -115,15 +108,13 @@ struct AccountsCard: View {
                 HStack(spacing: AppSpacing.sm) {
                     Image(systemName: "plus.circle.fill")
                         .font(.bodyRegular)
-                        .foregroundStyle(AppColors.ctaWhite)
+                        .foregroundStyle(AppColors.inkPrimary)
                     Text("Add Account")
                         .font(.bodySemibold)
-                        .foregroundStyle(AppColors.ctaWhite)
+                        .foregroundStyle(AppColors.inkPrimary)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, AppSpacing.md)
-                .background(AppColors.ctaBlack)
-                .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
             }
             .buttonStyle(.plain)
         }
@@ -143,12 +134,12 @@ private struct AccountRow: View {
         HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
             accountLogo
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text(account.institution.isEmpty ? (account.name ?? "Investment Account") : account.institution)
+                Text(account.name ?? account.institution)
                     .font(.figureSecondarySemibold)
                     .foregroundStyle(AppColors.inkPrimary)
                 Text(accountSubtypeLabel)
                     .font(.caption)
-                    .foregroundColor(AppColors.inkSoft)
+                    .foregroundColor(AppColors.inkMeta)
             }
             Spacer()
             Text(formatCurrency(account.balance))
@@ -159,11 +150,13 @@ private struct AccountRow: View {
         .padding(.vertical, AppSpacing.md)
     }
 
+    /// e.g. "Brokerage • 7892" or just "Brokerage"
     private var accountSubtypeLabel: String {
+        var parts: [String] = [account.accountType.displayLabel]
         if let mask = account.mask, !mask.isEmpty {
-            return "•••• \(mask)"
+            parts.append("•\u{00A0}\(mask)")
         }
-        return account.accountType.displayLabel
+        return parts.joined(separator: " ")
     }
 
     @ViewBuilder
@@ -223,8 +216,7 @@ private struct AccountRow: View {
 
 #Preview {
     ZStack {
-        LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom)
-            .ignoresSafeArea()
+        AppColors.backgroundPrimary.ignoresSafeArea()
         AccountsCard(accounts: MockData.allAccounts).padding()
     }
 }

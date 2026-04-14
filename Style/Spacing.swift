@@ -21,19 +21,24 @@ struct AppSpacing {
     static let cardGap: CGFloat = 16
     static let screenPadding: CGFloat = 16
     static let sectionGap: CGFloat = 24
-    static let tabBarReserve: CGFloat = 84
+    /// 与压缩后 `GlassmorphicTabBar` 占位对齐（含 Home Indicator 区缓冲）
+    static let tabBarReserve: CGFloat = 70
     /// 底部 Tab 条水平 inset（与历史 FabBar 一致）
     static let tabBarHorizontalInset: CGFloat = 21
-    /// Sheet 收起态右侧单圆按钮边长
-    static let tabBarCollapsedCircle: CGFloat = 58
+    /// Sheet 收起态右侧单圆按钮边长（对齐参考图圆钮 44–48pt 量级）
+    static let tabBarCollapsedCircle: CGFloat = 46
+    /// 三键胶囊内单行可点区域高度
+    static let tabBarButtonRowHeight: CGFloat = 52
+    /// Tab 图标行占位高度（与 `tabBarButtonRowHeight` 配套）
+    static let tabBarIconRowHeight: CGFloat = 24
 
     /// Home hero / Journey 渐变区高度 — 308pt 对应 HTML min-height: 308px（MainTabView 动态分区时的回退）
     static let heroFullHeight: CGFloat = 308
 
     /// Home 主列：渐变区收矮，主信息在 draggable sheet（与 Home roadmap + FIRE 进度合一）
     static let homeHeroRegionFraction: CGFloat = 0.22
-    /// 白底 sheet 占剩余高度
-    static let homeSheetRegionFraction: CGFloat = 0.78
+    /// 白底 sheet 占可用高度比例（过高会在 Roadmap 等短内容下露出大块同色壳）
+    static let homeSheetRegionFraction: CGFloat = 0.74
     /// 白底 sheet 上叠入 hero 的位移（HTML margin-top: -76px）
     static let homeSheetTopOverlap: CGFloat = 76
 
