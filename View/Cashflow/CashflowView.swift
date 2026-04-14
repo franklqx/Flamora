@@ -74,12 +74,48 @@ struct CashflowView: View {
     }
 
     private var hasBudget: Bool {
-        budgetSetupCompleted
+        plaidManager.hasLinkedBank
         && (apiBudget.needsBudget + apiBudget.wantsBudget) > 0
     }
 
     private var isCashflowUnlocked: Bool {
-        plaidManager.hasLinkedBank && budgetSetupCompleted
+        plaidManager.hasLinkedBank
+    }
+
+    private var actualSavingsRate: Double? {
+        let income = incomeMonthDisplay.total
+        guard income > 0 else { return nil }
+        return (income - totalSpend) / income
+    }
+
+    private var currentMonthNeedsCategories: [BudgetCategoryBudget] {
+        budgetCategories(from: cashflowNeedsDetail, parent: .needs)
+    }
+
+    private var currentMonthWantsCategories: [BudgetCategoryBudget] {
+        budgetCategories(from: cashflowWantsDetail, parent: .wants)
+    }
+
+    private var monthlySavingsCheckins: [SavingsCheckinMonth] {
+        let calendar = Calendar.current
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM"
+        let currentYear = calendar.component(.year, from: Date())
+        let currentMonth = calendar.component(.month, from: Date())
+        let yearSeries = cashflowSavingsByYear?[currentYear]
+
+        return (0..<4).compactMap { offset in
+            let monthNumber = currentMonth - 3 + offset
+            guard monthNumber >= 1, monthNumber <= 12 else { return nil }
+            let idx = monthNumber - 1
+            let amount = (yearSeries != nil && idx < (yearSeries?.count ?? 0)) ? yearSeries?[idx] : nil
+            let date = calendar.date(from: DateComponents(year: currentYear, month: monthNumber, day: 1)) ?? Date()
+            return SavingsCheckinMonth(
+                id: "\(currentYear)-\(monthNumber)",
+                label: formatter.string(from: date).uppercased(),
+                amount: amount ?? nil
+            )
+        }
     }
 
     private var incomePlaceholderMessage: String {
@@ -99,31 +135,6 @@ struct CashflowView: View {
             GeometryReader { proxy in
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                        if loadError {
-                            ErrorBanner(
-                                message: "Couldn't load your data.",
-                                onRetry: { Task { await loadCashflowData() } }
-                            )
-                        }
-                        IncomeCard(
-                            income:          incomeMonthDisplay,
-                            yearlyIncome:    incomeYearDisplay,
-                            onCardTapped:    { showTotalIncomeDetail = true },
-                            isConnected:     isCashflowUnlocked,
-                            placeholderMessage: incomePlaceholderMessage
-                        )
-                        .padding(.horizontal, AppSpacing.screenPadding)
-
-                        SavingsTargetCard(
-                            currentAmount: $currentSavings,
-                            targetAmount: apiBudget.savingsBudget,
-                            isConnected: plaidManager.hasLinkedBank,
-                            hasBudgetSetup: hasBudget,
-                            onAdd: { showSavingsInput = true },
-                            onCardTap: { showSavingsSummary = true }
-                        )
-                        .padding(.horizontal, AppSpacing.screenPadding)
-
                         BudgetCard(
                             spending: spendingForDisplay,
                             apiBudget: apiBudget,
@@ -132,13 +143,27 @@ struct CashflowView: View {
                             onSetupBudget: { plaidManager.showBudgetSetup = true },
                             onCardTapped: { showTotalSpendingDetail = true },
                             onNeedsTapped: { showNeedsSpendingDetail = true },
-                            onWantsTapped: { showWantsSpendingDetail = true }
+                            onWantsTapped: { showWantsSpendingDetail = true },
+                            needsCategories: currentMonthNeedsCategories,
+                            wantsCategories: currentMonthWantsCategories,
+                            onSaveBudget: { payload in
+                                await saveBudgetEdit(payload)
+                            }
                         )
                         .padding(.horizontal, AppSpacing.screenPadding)
 
-                        cashAccountsSection
-
-                        transactionsSection
+                        SavingsTargetCard(
+                            currentAmount: $currentSavings,
+                            targetAmount: apiBudget.savingsBudget,
+                            actualRate: actualSavingsRate,
+                            targetRatePercent: apiBudget.savingsRatio,
+                            monthlyCheckins: monthlySavingsCheckins,
+                            isConnected: plaidManager.hasLinkedBank,
+                            hasBudgetSetup: hasBudget,
+                            onAdd: { showSavingsInput = true },
+                            onCardTap: { showSavingsSummary = true }
+                        )
+                        .padding(.horizontal, AppSpacing.screenPadding)
                     }
                     .frame(minHeight: proxy.size.height, alignment: .top)
                     .padding(.top, AppSpacing.md)
@@ -259,6 +284,134 @@ struct CashflowView: View {
 // MARK: - Data Loading
 
 private extension CashflowView {
+    func budgetCategories(
+        from detail: SpendingDetailData?,
+        parent: BudgetScope
+    ) -> [BudgetCategoryBudget] {
+        let budgetMap = apiBudget.categoryBudgets ?? [:]
+        let parentKey = parent.rawValue.lowercased()
+
+        let budgetNamesForParent: [String] = budgetMap.keys
+            .filter { TransactionCategoryCatalog.parent(for: $0) == parentKey }
+            .sorted {
+                (budgetMap[$0] ?? 0) > (budgetMap[$1] ?? 0)
+            }
+
+        let monthCategories = monthlySpendingCategories(from: detail)
+        let spendingNamesForParent = monthCategories
+            .filter { TransactionCategoryCatalog.parent(for: $0.name) == parentKey }
+            .sorted { $0.amount > $1.amount }
+            .map(\.name)
+
+        let defaultNames = defaultBudgetCategoryNames(for: parent)
+
+        var orderedNames: [String] = []
+        for name in budgetNamesForParent where !orderedNames.contains(name) {
+            orderedNames.append(name)
+        }
+        for name in defaultNames where !orderedNames.contains(name) {
+            orderedNames.append(name)
+        }
+        for name in spendingNamesForParent where !orderedNames.contains(name) {
+            orderedNames.append(name)
+        }
+
+        // Product requirement: each side shows 6 categories.
+        while orderedNames.count < 6 {
+            let filler = parent == .needs ? "Other Needs \(orderedNames.count + 1)" : "Other Wants \(orderedNames.count + 1)"
+            if !orderedNames.contains(filler) {
+                orderedNames.append(filler)
+            }
+        }
+
+        let spendingByName: [String: Double] = monthCategories.reduce(into: [:]) { partial, category in
+            partial[category.name, default: 0] += max(category.amount, 0)
+        }
+        let spendingByNameLower: [String: Double] = spendingByName.reduce(into: [:]) { partial, item in
+            partial[item.key.lowercased()] = item.value
+        }
+
+        return Array(orderedNames.prefix(6)).map { name in
+            let spent = spendingByName[name] ?? spendingByNameLower[name.lowercased()] ?? 0
+            return BudgetCategoryBudget(
+                name: name,
+                parent: parent,
+                amount: max(budgetMap[name] ?? 0, 0),
+                spent: spent
+            )
+        }
+    }
+
+    private func monthlySpendingCategories(from detail: SpendingDetailData?) -> [SpendingDetailCategory] {
+        guard let detail else { return [] }
+        let year = Calendar.current.component(.year, from: Date())
+        return detail.monthlyDataByYear[year]?[currentMonthIndex]?.categories ?? []
+    }
+
+    private func defaultBudgetCategoryNames(for parent: BudgetScope) -> [String] {
+        switch parent {
+        case .needs:
+            var base = TransactionCategoryCatalog.needsCategories.map(\.name)
+            base.append("Other Needs")
+            return base
+        case .wants:
+            var base = TransactionCategoryCatalog.wantsCategories.map(\.name)
+            base.append("Other Wants")
+            return base
+        case .all:
+            return []
+        }
+    }
+
+    func budgetEditMonthString(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let calendar = Calendar.current
+        let firstOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: date)) ?? date
+        return formatter.string(from: firstOfMonth)
+    }
+
+    @MainActor
+    func saveBudgetEdit(_ payload: BudgetEditPayload) async -> Bool {
+        do {
+            var requestPayload: [String: Any] = [
+                "month": budgetEditMonthString(from: Date()),
+                "needs_ratio": payload.needsRatio,
+                "wants_ratio": payload.wantsRatio,
+                "savings_ratio": apiBudget.savingsRatio,
+                "needs_budget": payload.needsBudget,
+                "wants_budget": payload.wantsBudget,
+                "savings_budget": apiBudget.savingsBudget,
+                "savings_rate": apiBudget.savingsRatio,
+                "fixed_budget": payload.needsBudget,
+                "flexible_budget": payload.wantsBudget,
+                "selected_plan": apiBudget.selectedPlan ?? "custom",
+                "source": "cashflow_edit",
+                "category_budgets": payload.categoryBudgets
+            ]
+
+            // Keep ratios normalized in case of rounding drift.
+            let ratioSum = payload.needsRatio + payload.wantsRatio
+            if ratioSum > 0.001 {
+                requestPayload["needs_ratio"] = payload.needsRatio / ratioSum * 100
+                requestPayload["wants_ratio"] = payload.wantsRatio / ratioSum * 100
+            }
+
+            try await APIService.shared.upsertMonthlyBudget(payload: requestPayload)
+
+            if let refreshed = try? await APIService.shared.getMonthlyBudget(month: apiMonthString(from: Date())) {
+                apiBudget = refreshed
+                FlamoraStorageKey.migrateBudgetSetupIfNeeded(budget: refreshed, hasLinkedBank: plaidManager.hasLinkedBank)
+                TabContentCache.shared.setCashflowBudget(refreshed)
+            }
+            await loadCashflowData()
+            return true
+        } catch {
+            print("❌ [CashflowView] Failed to save edited budget: \(error)")
+            return false
+        }
+    }
+
     func restoreFromCache() {
         let cache = TabContentCache.shared
         if let b = cache.cashflowBudget, apiBudget.budgetId.isEmpty {

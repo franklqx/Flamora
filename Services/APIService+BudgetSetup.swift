@@ -70,4 +70,18 @@ extension APIService {
         let request = try await authenticatedRequest(function: "generate-spending-plan", body: body)
         return try await perform(request)
     }
+
+    // MARK: - Cash Flow in-place budget edit
+
+    /// Upsert current monthly budget from Cash Flow edit mode.
+    /// Reuses the existing `generate-monthly-budget` endpoint for compatibility.
+    func upsertMonthlyBudget(payload: [String: Any]) async throws {
+        let body = try JSONSerialization.data(withJSONObject: payload)
+        let request = try await authenticatedRequest(function: "generate-monthly-budget", body: body)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode) else {
+            throw APIError.httpError((response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+    }
 }

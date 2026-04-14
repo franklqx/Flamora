@@ -20,6 +20,7 @@ struct HomeBottomSheet: View {
     let selectedTab: MainTabItem
     let sheetDragGesture: AnyGesture<DragGesture.Value>
     let dragProgress: CGFloat
+    @Environment(PlaidManager.self) private var plaidManager
 
     var body: some View {
         VStack(spacing: 0) {
@@ -48,7 +49,11 @@ struct HomeBottomSheet: View {
                 case .home:
                     HomeRoadmapContent()
                 case .cashflow:
-                    CashUnconnectedContent()
+                    if plaidManager.hasLinkedBank {
+                        CashflowView()
+                    } else {
+                        CashUnconnectedContent()
+                    }
                 case .investment:
                     InvestmentSheetContent()
                 case .settings:

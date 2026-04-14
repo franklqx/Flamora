@@ -373,6 +373,16 @@ struct AppColors {
     static let budgetAmbitiousEnd   = Color(hex: "#0F2236")
     /// Accelerate difficulty color
     static let budgetOrange         = Color(hex: "#F59E42")
+
+    // MARK: - Cashflow Budget (light-shell aligned blue/purple)
+    /// Needs 主色：取自 Home hero 渐变中段蓝，提升在浅色卡面的识别度
+    static let budgetNeedsBlue      = Color(hex: "#6AABF7")
+    /// Needs 浅色底（用于浅色卡中的标签/子块）
+    static let budgetNeedsBlueTint  = Color(hex: "#EAF0FF")
+    /// Wants 主色：与 hero 紫光同族，但提高饱和度用于预算环与标签
+    static let budgetWantsPurple    = Color(hex: "#A58AF1")
+    /// Wants 浅色底（用于浅色卡中的标签/子块）
+    static let budgetWantsPurpleTint = Color(hex: "#F3EEFF")
 }
 
 // MARK: - Gradient Wallpaper (Welcome / Onboarding 背景)
