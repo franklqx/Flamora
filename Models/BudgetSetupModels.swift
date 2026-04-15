@@ -78,6 +78,12 @@ struct PlansResponse: Codable {
     let currentNetWorth: Double
     let currentAge: Int
     let assumptions: PlanAssumptions?
+
+    // S2-1: goal-driven feasibility context (nil when backend falls back to legacy mode)
+    var phase: Int? = nil                 // 0 / 1 / 2
+    var phaseSub: String? = nil           // "0a","0b","0c","0d","1","2"
+    var strategy: String? = nil           // "goal_achievable" | "user_choice" | "impossible"
+    var goalDriven: Bool? = nil
 }
 
 struct BaselinePlan: Codable {
@@ -128,6 +134,9 @@ struct PlanDetail: Codable, Identifiable {
     var tradeoffNote: String? = nil
     var positioningCopy: String? = nil
 
+    // S2-1: Phase 2 accelerate warning flag (goal-driven mode only)
+    var warning: Bool? = nil
+
     // .convertFromSnakeCase capitalises the letter after a digit boundary:
     // "projection_1y" → "projection1Y" (capital Y), "gain_vs_baseline_10y" → "gainVsBaseline10Y".
     enum CodingKeys: String, CodingKey {
@@ -149,6 +158,7 @@ struct PlanDetail: Codable, Identifiable {
         case fireYearsVsBaseline      = "fire_years_vs_baseline"
         case tradeoffNote             = "tradeoff_note"
         case positioningCopy          = "positioning_copy"
+        case warning
     }
 }
 
@@ -431,15 +441,6 @@ struct SaveFireGoalResponse: Codable {
     let lifestylePreset: String?
     let requiredSavingsRate: Double
     let isActive: Bool
-
-    enum CodingKeys: String, CodingKey {
-        case goalId                     = "goal_id"
-        case fireNumber                 = "fire_number"
-        case retirementSpendingMonthly  = "retirement_spending_monthly"
-        case lifestylePreset            = "lifestyle_preset"
-        case requiredSavingsRate        = "required_savings_rate"
-        case isActive                   = "is_active"
-    }
 }
 
 // MARK: - calculate-fire-goal Response

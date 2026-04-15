@@ -394,20 +394,26 @@ class BudgetSetupViewModel {
                 currentNetWorth: currentNetWorth,
                 currentAge: currentAge
             )
-            // Pass retirement spending so backend can compute fire_number and per-plan FIRE dates
+            // Transmit latest ViewModel goal values as override (Step 4 → Step 5 drift safety).
+            // Server priority: request override > fire_goals active row > null.
             if retirementSpendingMonthly > 0 {
                 requestBody.retirementSpendingMonthly = retirementSpendingMonthly
             }
+            if targetRetirementAge > 0 {
+                requestBody.targetRetirementAge = targetRetirementAge
+            }
+            if !selectedAccountIds.isEmpty {
+                requestBody.accountIds = Array(selectedAccountIds)
+            }
+            requestBody.month = DateFormatter.currentMonthString
 
-            let body = try JSONEncoder().encode(requestBody)
-            let request = try await APIService.shared.authenticatedRequest(function: "generate-plans", body: body)
-            let response: PlansResponse = try await APIService.shared.perform(request)
+            let response = try await APIService.shared.generatePlans(data: requestBody)
             plansResponse = response
 
             isLoadingPlans = false
             print("✅ [BudgetSetup] loadPlans success")
             print("   Steady: \(response.plans.steady.savingsRate)%, Recommended: \(response.plans.recommended.savingsRate)%, Accelerate: \(response.plans.accelerate.savingsRate)%")
-            print("   User tier: \(response.userTier)")
+            print("   User tier: \(response.userTier), phase: \(response.phase ?? -1), goalDriven: \(response.goalDriven ?? false)")
         } catch {
             print("❌ [BudgetSetup] loadPlans error: \(error)")
             isLoadingPlans = false

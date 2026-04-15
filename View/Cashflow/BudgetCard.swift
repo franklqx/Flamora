@@ -54,12 +54,13 @@ struct BudgetCard: View {
     @State private var isEditingBudget = false
     @State private var isSaving = false
 
-    @State private var draftNeedsBudget: Double = 0
-    @State private var draftWantsBudget: Double = 0
     @State private var draftNeedsCategories: [BudgetCategoryBudget] = []
     @State private var draftWantsCategories: [BudgetCategoryBudget] = []
 
-    private let tolerance: Double = 0.01
+    // Bucket totals are derived from category amounts (S3-2 category-first).
+    private var draftNeedsBudget: Double { needsCategorySum }
+    private var draftWantsBudget: Double { wantsCategorySum }
+
     private let needsWantsDisplayHeight: CGFloat = 456
     private let allDisplayHeightDelta: CGFloat = 68
     private let ringSectionHeight: CGFloat = 178
@@ -128,23 +129,10 @@ struct BudgetCard: View {
     }
 
     private var draftIsValid: Bool {
-        draftNeedsBudget >= 0
-        && draftWantsBudget >= 0
-        && abs(needsCategorySum - draftNeedsBudget) <= tolerance
-        && abs(wantsCategorySum - draftWantsBudget) <= tolerance
-        && abs((draftNeedsBudget + draftWantsBudget) - draftTotalBudget) <= tolerance
-    }
-
-    private var validationMessage: String? {
-        if abs(needsCategorySum - draftNeedsBudget) > tolerance {
-            let delta = needsCategorySum - draftNeedsBudget
-            return "Needs categories differ by \(formatSignedCurrency(delta))."
-        }
-        if abs(wantsCategorySum - draftWantsBudget) > tolerance {
-            let delta = wantsCategorySum - draftWantsBudget
-            return "Wants categories differ by \(formatSignedCurrency(delta))."
-        }
-        return nil
+        // All per-category amounts must be non-negative; at least one non-zero.
+        let allNonNegative = (draftNeedsCategories + draftWantsCategories).allSatisfy { $0.amount >= 0 }
+        let hasAnyAmount = draftTotalBudget > 0
+        return allNonNegative && hasAnyAmount
     }
 
     init(
@@ -320,45 +308,11 @@ struct BudgetCard: View {
 
     private var budgetEditSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text("TOTAL BUDGET")
-                    .font(.cardHeader)
-                    .foregroundColor(AppColors.inkFaint)
-                BudgetAmountField(value: Binding(
-                    get: { draftTotalBudget },
-                    set: { applyTotalBudgetChange(max($0, 0)) }
-                ))
-            }
-
-            HStack(spacing: AppSpacing.sm) {
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("NEEDS")
-                        .font(.cardHeader)
-                        .foregroundColor(AppColors.budgetNeedsBlue)
-                    BudgetAmountField(value: Binding(
-                        get: { draftNeedsBudget },
-                        set: { applyBucketBudgetChange(.needs, newBudget: max($0, 0)) }
-                    ))
-                }
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("WANTS")
-                        .font(.cardHeader)
-                        .foregroundColor(AppColors.budgetWantsPurple)
-                    BudgetAmountField(value: Binding(
-                        get: { draftWantsBudget },
-                        set: { applyBucketBudgetChange(.wants, newBudget: max($0, 0)) }
-                    ))
-                }
-            }
+            // Read-only derived summary
+            editSummaryRow
 
             categoryEditorSection(title: "Needs categories", scope: .needs, categories: $draftNeedsCategories)
             categoryEditorSection(title: "Wants categories", scope: .wants, categories: $draftWantsCategories)
-
-            if let message = validationMessage {
-                Text(message)
-                    .font(.footnoteRegular)
-                    .foregroundColor(AppColors.error)
-            }
 
             HStack(spacing: AppSpacing.sm) {
                 Button {
@@ -402,6 +356,33 @@ struct BudgetCard: View {
         .padding(.bottom, AppSpacing.xs)
     }
 
+    private var editSummaryRow: some View {
+        HStack(spacing: AppSpacing.md) {
+            summaryColumn(label: "NEEDS", value: draftNeedsBudget, tint: AppColors.budgetNeedsBlue)
+            Rectangle().fill(AppColors.inkTrack).frame(width: 1, height: 30)
+            summaryColumn(label: "WANTS", value: draftWantsBudget, tint: AppColors.budgetWantsPurple)
+            Rectangle().fill(AppColors.inkTrack).frame(width: 1, height: 30)
+            summaryColumn(label: "TOTAL", value: draftTotalBudget, tint: AppColors.inkPrimary)
+        }
+        .padding(.vertical, AppSpacing.sm)
+        .frame(maxWidth: .infinity)
+        .background(AppColors.inkTrack.opacity(0.4))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+    }
+
+    private func summaryColumn(label: String, value: Double, tint: Color) -> some View {
+        VStack(spacing: 2) {
+            Text(label)
+                .font(.cardHeader)
+                .foregroundColor(AppColors.inkFaint)
+            Text(formatCurrency(max(value, 0)))
+                .font(.footnoteBold)
+                .foregroundColor(tint)
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     private func categoryEditorSection(
         title: String,
         scope: BudgetScope,
@@ -419,16 +400,23 @@ struct BudgetCard: View {
             } else {
                 ForEach(categories) { category in
                     HStack(spacing: AppSpacing.sm) {
-                        Text(category.wrappedValue.name)
-                            .font(.footnoteRegular)
-                            .foregroundColor(AppColors.inkSoft)
-                            .lineLimit(1)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(category.wrappedValue.name)
+                                .font(.footnoteRegular)
+                                .foregroundColor(AppColors.inkPrimary)
+                                .lineLimit(1)
+                            if category.wrappedValue.spent > 0 {
+                                Text("Spent \(formatCurrency(category.wrappedValue.spent))")
+                                    .font(.caption)
+                                    .foregroundColor(AppColors.inkFaint)
+                                    .monospacedDigit()
+                            }
+                        }
                         Spacer(minLength: AppSpacing.sm)
                         BudgetAmountField(value: Binding(
                             get: { category.wrappedValue.amount },
                             set: { newAmount in
                                 category.wrappedValue.amount = max(newAmount, 0)
-                                recalcBudgetsFromCategories(scope: scope)
                             }
                         ))
                         .frame(width: 110)
@@ -671,30 +659,19 @@ struct BudgetCard: View {
     }
 
     private func resetDraftFromCurrent() {
-        draftNeedsBudget = max(apiBudget.needsBudget, 0)
-        draftWantsBudget = max(apiBudget.wantsBudget, 0)
+        // S3-2: category-first. Seed directly from current per-category amounts;
+        // bucket totals are derived, no rescaling needed.
         draftNeedsCategories = seededCategories(for: .needs)
         draftWantsCategories = seededCategories(for: .wants)
     }
 
     private func seededCategories(for scope: BudgetScope) -> [BudgetCategoryBudget] {
         let source = scope == .needs ? normalizedNeedsCategories : normalizedWantsCategories
-        let budget = scope == .needs ? max(apiBudget.needsBudget, 0) : max(apiBudget.wantsBudget, 0)
-
         if source.isEmpty {
-            let fallback = BudgetCategoryBudget(name: scope == .needs ? "Needs" : "Wants", parent: scope, amount: budget)
-            return [fallback]
+            return [BudgetCategoryBudget(name: scope == .needs ? "Needs" : "Wants", parent: scope, amount: 0)]
         }
-
-        let providedSum = source.reduce(0) { $0 + max($1.amount, 0) }
-        guard providedSum > 0 else {
-            let equalShare = budget / Double(max(source.count, 1))
-            return source.map { BudgetCategoryBudget(name: $0.name, parent: scope, amount: equalShare) }
-        }
-
         return source.map {
-            let ratio = max($0.amount, 0) / providedSum
-            return BudgetCategoryBudget(name: $0.name, parent: scope, amount: ratio * budget)
+            BudgetCategoryBudget(name: $0.name, parent: scope, amount: max($0.amount, 0), spent: max($0.spent, 0))
         }
     }
 
@@ -725,80 +702,6 @@ struct BudgetCard: View {
         return Array(ordered.prefix(desiredCount))
     }
 
-    private func applyTotalBudgetChange(_ newTotal: Double) {
-        let previousTotal = max(draftNeedsBudget + draftWantsBudget, 0)
-        guard previousTotal > 0 else {
-            draftNeedsBudget = newTotal * 0.5
-            draftWantsBudget = newTotal * 0.5
-            rescaleCategories(in: .needs, newBudget: draftNeedsBudget)
-            rescaleCategories(in: .wants, newBudget: draftWantsBudget)
-            return
-        }
-
-        let needsRatio = draftNeedsBudget / previousTotal
-        draftNeedsBudget = newTotal * needsRatio
-        draftWantsBudget = max(newTotal - draftNeedsBudget, 0)
-        rescaleCategories(in: .needs, newBudget: draftNeedsBudget)
-        rescaleCategories(in: .wants, newBudget: draftWantsBudget)
-    }
-
-    private func applyBucketBudgetChange(_ scope: BudgetScope, newBudget: Double) {
-        switch scope {
-        case .all:
-            return
-        case .needs:
-            draftNeedsBudget = newBudget
-            rescaleCategories(in: .needs, newBudget: newBudget)
-        case .wants:
-            draftWantsBudget = newBudget
-            rescaleCategories(in: .wants, newBudget: newBudget)
-        }
-    }
-
-    private func rescaleCategories(in scope: BudgetScope, newBudget: Double) {
-        switch scope {
-        case .all:
-            return
-        case .needs:
-            let sum = draftNeedsCategories.reduce(0) { $0 + max($1.amount, 0) }
-            if sum <= 0 {
-                let equal = newBudget / Double(max(draftNeedsCategories.count, 1))
-                draftNeedsCategories = draftNeedsCategories.map {
-                    BudgetCategoryBudget(name: $0.name, parent: .needs, amount: equal)
-                }
-            } else {
-                draftNeedsCategories = draftNeedsCategories.map {
-                    let ratio = max($0.amount, 0) / sum
-                    return BudgetCategoryBudget(name: $0.name, parent: .needs, amount: ratio * newBudget)
-                }
-            }
-        case .wants:
-            let sum = draftWantsCategories.reduce(0) { $0 + max($1.amount, 0) }
-            if sum <= 0 {
-                let equal = newBudget / Double(max(draftWantsCategories.count, 1))
-                draftWantsCategories = draftWantsCategories.map {
-                    BudgetCategoryBudget(name: $0.name, parent: .wants, amount: equal)
-                }
-            } else {
-                draftWantsCategories = draftWantsCategories.map {
-                    let ratio = max($0.amount, 0) / sum
-                    return BudgetCategoryBudget(name: $0.name, parent: .wants, amount: ratio * newBudget)
-                }
-            }
-        }
-    }
-
-    private func recalcBudgetsFromCategories(scope: BudgetScope) {
-        switch scope {
-        case .all:
-            return
-        case .needs:
-            draftNeedsBudget = needsCategorySum
-        case .wants:
-            draftWantsBudget = wantsCategorySum
-        }
-    }
-
     private func saveEditedBudget() {
         guard let onSaveBudget else {
             isEditingBudget = false
@@ -822,8 +725,11 @@ struct BudgetCard: View {
             categoryBudgets: categoryMap
         )
 
+        print("▶️ [BudgetCard] saveEditedBudget fired — needs=\(payload.needsBudget) wants=\(payload.wantsBudget) categories=\(payload.categoryBudgets.count)")
+
         Task {
             let success = await onSaveBudget(payload)
+            print("◀️ [BudgetCard] saveEditedBudget returned — success=\(success)")
             await MainActor.run {
                 isSaving = false
                 if success { isEditingBudget = false }
@@ -840,10 +746,6 @@ struct BudgetCard: View {
         return f.string(from: NSNumber(value: value)) ?? "$0"
     }
 
-    private func formatSignedCurrency(_ value: Double) -> String {
-        let prefix = value >= 0 ? "+" : "-"
-        return "\(prefix)\(formatCurrency(abs(value)))"
-    }
 }
 
 private struct BudgetAmountField: View {

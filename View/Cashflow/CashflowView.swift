@@ -381,6 +381,7 @@ private extension CashflowView {
 
     @MainActor
     func saveBudgetEdit(_ payload: BudgetEditPayload) async -> Bool {
+        print("▶️ [CashflowView] saveBudgetEdit ENTER")
         do {
             var requestPayload: [String: Any] = [
                 "month": budgetEditMonthString(from: Date()),
@@ -411,7 +412,9 @@ private extension CashflowView {
                 requestPayload["savings_ratio"] = savingsBudget / totalBudget * 100
             }
 
+            print("▶️ [CashflowView] calling upsertMonthlyBudget with payload keys: \(requestPayload.keys.sorted())")
             try await APIService.shared.upsertMonthlyBudget(payload: requestPayload)
+            print("✅ [CashflowView] upsertMonthlyBudget returned OK")
 
             if let refreshed = try? await APIService.shared.getMonthlyBudget(month: apiMonthString(from: Date())) {
                 apiBudget = refreshed

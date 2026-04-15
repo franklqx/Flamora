@@ -1,15 +1,29 @@
 // supabase/functions/generate-plans/index.ts
 //
-// V3 Budget Module — Plan generation
-// Generates Steady / Recommended / Accelerate plans.
-// Each plan now includes:
-//   - official_fire_date / official_fire_age (projected at that plan's savings rate)
-//   - spending_ceiling_monthly (= monthly_spend, aliased for clarity)
-//   - tradeoff_note (human-readable delta vs baseline)
-//   - positioning_copy (Hero voice one-liner)
-//   - fire_years_vs_baseline (years saved relative to "do nothing")
+// V3 Budget Module — Plan generation (goal-driven)
 //
-// All new fields are additive — old iOS clients that ignore unknown keys are unaffected.
+// New primary flow (S2-1):
+//   When target_retirement_age + retirement_spending_monthly are available,
+//   the server runs FIRECalculator.adjustGoal() and derives plan rates from
+//   its paths (plan_a / plan_b / recommended / current_path).
+//
+//   Mapping with fallback chain:
+//     steady       = plan_b ?? current_path
+//     recommended  = recommended ?? plan_a ?? plan_b ?? current_path
+//     accelerate   = plan_a ?? recommended ?? current_path
+//
+//   Phase 0 special case: plan_b / recommended are null; accelerate is computed
+//   as "retire 5 years earlier than target" to preserve three distinct cards.
+//
+//   Phase 2: accelerate card carries warning=true so iOS can show the warning.
+//
+// Backward-compat flow:
+//   If target_retirement_age is missing (old client / pre-S1 users), falls back
+//   to the legacy flexible-compression rate calculation.
+//
+// Trust boundary: the server does NOT accept client-computed feasibility data.
+// Per-plan FIRE date / tradeoff / positioning copy are produced via existing
+// helpers (fire-math.ts), unchanged from v2.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders, handleCors } from '../_shared/cors.ts'
@@ -21,15 +35,15 @@ import {
   buildTradeoffNote,
 } from '../_shared/fire-math.ts'
 import { ASSUMPTIONS } from '../_shared/fire-assumptions.ts'
+import { FIRECalculator, type AdjustGoalResult, type PathDetail } from '../_shared/fire-calculator.ts'
 
 // ── Global assumptions ────────────────────────────────────────
-// Imported from single source of truth — do not hardcode here.
 const NOMINAL_ANNUAL_RETURN = ASSUMPTIONS.NOMINAL_ANNUAL_RETURN   // display projections
 const REAL_ANNUAL_RETURN    = ASSUMPTIONS.REAL_ANNUAL_RETURN       // feasibility / required savings
 const INFLATION_RATE        = ASSUMPTIONS.INFLATION_RATE
 const MONTHLY_REAL_RATE     = REAL_ANNUAL_RETURN / 12
 
-// Flexible compression ratios
+// Flexible compression ratios (legacy fallback path only)
 const COMPRESSION_STEADY      = 0.10
 const COMPRESSION_RECOMMENDED = 0.25
 const COMPRESSION_ACCELERATE  = 0.40
@@ -43,17 +57,21 @@ interface GeneratePlansRequest {
   avg_monthly_flexible: number
   current_net_worth?: number
   current_age?: number
-  // New optional: if provided, enables FIRE date projection per plan
+  // Goal fields (client may override server's active goal for Step-4-to-Step-5 drift safety)
   fire_number?: number
   retirement_spending_monthly?: number
+  target_retirement_age?: number
   return_assumption?: number    // override (default: REAL_ANNUAL_RETURN)
+  // Audit / scoping only — server does not recompute stats from these
+  account_ids?: string[]
+  month?: string
 }
 
 interface PlanDetail {
   savings_rate: number
   monthly_save: number
   monthly_spend: number
-  spending_ceiling_monthly: number  // NEW: alias for monthly_spend, clearer name
+  spending_ceiling_monthly: number
   flexible_spend: number
   extra_per_month: number
   flexible_compression_pct: number
@@ -63,15 +81,16 @@ interface PlanDetail {
   gain_vs_baseline_10y: number
   feasibility: 'easy' | 'moderate' | 'challenging' | 'extreme'
   status: 'on_track' | 'breakeven' | 'deficit'
-  // NEW: FIRE-aware fields
   official_fire_date: string | null
   official_fire_age: number | null
   fire_years_vs_baseline: number | null
   tradeoff_note: string
   positioning_copy: string
+  // NEW (S2-1): warning flag for Phase 2 accelerate card
+  warning?: boolean
 }
 
-// ── Core portfolio math ───────────────────────────────────────
+// ── Core math helpers ─────────────────────────────────────────
 
 function projectPortfolio(monthlySavings: number, startingPortfolio: number, years: number): number {
   let portfolio = startingPortfolio
@@ -111,31 +130,47 @@ function round2(v: number): number { return Math.round(v * 100) / 100 }
 function roundMoney(v: number): number { return Math.round(v / 10) * 10 }
 function roundRate(v: number): number { return Math.round(v * 10) / 10 }
 
-// ── Plan generation ───────────────────────────────────────────
+/**
+ * Required monthly savings to hit fireNumber in exactly N years (real return).
+ * Used by Phase 0 accelerate synthesis.
+ */
+function requiredMonthlySavingsForYears(
+  currentNW: number,
+  fireNumber: number,
+  years: number
+): number {
+  if (years <= 0) return Math.max(0, fireNumber - currentNW)
+  const months = years * 12
+  const fvPV = currentNW * Math.pow(1 + MONTHLY_REAL_RATE, months)
+  const remaining = fireNumber - fvPV
+  if (remaining <= 0) return 0
+  const factor = (Math.pow(1 + MONTHLY_REAL_RATE, months) - 1) / MONTHLY_REAL_RATE
+  return remaining / factor
+}
 
-function generateAllPlans(
-  input: Required<Pick<GeneratePlansRequest,
-    'current_savings_rate' | 'avg_monthly_income' | 'avg_monthly_savings' |
-    'avg_monthly_fixed' | 'avg_monthly_flexible' | 'current_net_worth' | 'current_age'
-  >> & {
-    fire_number: number | null
-    return_assumption: number
-  }
-) {
+// ── Legacy (compression-based) rate calculation ───────────────
+
+interface GenerateInput {
+  current_savings_rate: number
+  avg_monthly_income: number
+  avg_monthly_savings: number
+  avg_monthly_fixed: number
+  avg_monthly_flexible: number
+  current_net_worth: number
+  current_age: number
+  fire_number: number | null
+  return_assumption: number
+}
+
+function legacyRates(input: GenerateInput) {
   const {
     current_savings_rate: currentRate,
     avg_monthly_income: income,
     avg_monthly_savings: currentSavings,
     avg_monthly_fixed: fixed,
     avg_monthly_flexible: flexible,
-    current_net_worth: netWorth,
-    fire_number: fireNumber,
-    return_assumption: returnRate,
   } = input
 
-  const currentAge = input.current_age
-
-  // ── Rate computation (unchanged from v2) ──
   const maxPossibleSavings = income - fixed
   const maxPossibleRate    = income > 0 ? (maxPossibleSavings / income) * 100 : 0
 
@@ -169,7 +204,131 @@ function generateAllPlans(
   if (recommendedRate <= steadyRate)   recommendedRate = steadyRate + 2
   if (accelerateRate  <= recommendedRate) accelerateRate = recommendedRate + 2
 
-  // ── Baseline ──
+  return { steadyRate, recommendedRate, accelerateRate, maxPossibleRate }
+}
+
+// ── Goal-driven rate calculation (FIRECalculator paths) ───────
+
+interface GoalDrivenRates {
+  steadyRate: number
+  recommendedRate: number
+  accelerateRate: number
+  steadyAge: number | null
+  recommendedAge: number | null
+  accelerateAge: number | null
+  maxPossibleRate: number
+  phase: 0 | 1 | 2
+  phaseSub: string
+  strategy: AdjustGoalResult['strategy']
+  warningOnAccelerate: boolean
+}
+
+function goalDrivenRates(
+  calc: AdjustGoalResult,
+  input: GenerateInput,
+  targetRetirementAge: number,
+  fireNumber: number
+): GoalDrivenRates {
+  const currentPath = calc.current_path
+  const income = input.avg_monthly_income
+  const maxPossibleRate = income > 0 ? ((income - input.avg_monthly_fixed) / income) * 100 : 0
+
+  let steadyRate: number, steadyAge: number | null
+  let recommendedRate: number, recommendedAge: number | null
+  let accelerateRate: number, accelerateAge: number | null
+
+  if (calc.phase === 0) {
+    // Already on track — plan_b / recommended are null.
+    // Steady = current path, Recommended = plan_a (exactly hit target age),
+    // Accelerate = retire 5 years earlier than target (synthesized).
+    const planA = calc.plan_a ?? currentPath
+    steadyRate = currentPath.savings_rate
+    steadyAge = currentPath.retirement_age
+    recommendedRate = planA.savings_rate
+    recommendedAge = planA.retirement_age
+
+    const earlierAge = Math.max(input.current_age + 1, targetRetirementAge - 5)
+    const earlierYears = Math.max(earlierAge - input.current_age, 1)
+    const earlierSavings = requiredMonthlySavingsForYears(input.current_net_worth, fireNumber, earlierYears)
+    accelerateRate = income > 0 ? (earlierSavings / income) * 100 : 0
+    accelerateAge = earlierAge
+  } else {
+    // Phase 1 / 2: fallback chain guarantees three paths even if calc has nulls.
+    const steady = calc.plan_b ?? currentPath
+    const recommended = calc.recommended ?? calc.plan_a ?? calc.plan_b ?? currentPath
+    const accelerate = calc.plan_a ?? calc.recommended ?? currentPath
+
+    steadyRate = steady.savings_rate
+    steadyAge = steady.retirement_age
+    recommendedRate = recommended.savings_rate
+    recommendedAge = recommended.retirement_age
+    accelerateRate = accelerate.savings_rate
+    accelerateAge = accelerate.retirement_age
+  }
+
+  // Enforce strict ordering (steady ≤ recommended ≤ accelerate).
+  // Small floor deltas prevent cards collapsing into each other visually.
+  if (recommendedRate < steadyRate) recommendedRate = steadyRate
+  if (accelerateRate  < recommendedRate) accelerateRate = recommendedRate
+
+  return {
+    steadyRate,
+    recommendedRate,
+    accelerateRate,
+    steadyAge,
+    recommendedAge,
+    accelerateAge,
+    maxPossibleRate,
+    phase: calc.phase,
+    phaseSub: calc.phase_sub,
+    strategy: calc.strategy,
+    warningOnAccelerate: calc.phase === 2,
+  }
+}
+
+// ── Unified plan builder ──────────────────────────────────────
+
+function generateAllPlans(
+  input: GenerateInput,
+  goalDriven: GoalDrivenRates | null
+) {
+  const {
+    current_savings_rate: currentRate,
+    avg_monthly_income: income,
+    avg_monthly_savings: currentSavings,
+    avg_monthly_fixed: fixed,
+    avg_monthly_flexible: flexible,
+    current_net_worth: netWorth,
+    current_age: currentAge,
+    fire_number: fireNumber,
+    return_assumption: returnRate,
+  } = input
+
+  let steadyRate: number, recommendedRate: number, accelerateRate: number
+  let maxPossibleRate: number
+  let steadyAgeOverride: number | null = null
+  let recommendedAgeOverride: number | null = null
+  let accelerateAgeOverride: number | null = null
+  let warningOnAccelerate = false
+
+  if (goalDriven) {
+    steadyRate = goalDriven.steadyRate
+    recommendedRate = goalDriven.recommendedRate
+    accelerateRate = goalDriven.accelerateRate
+    maxPossibleRate = goalDriven.maxPossibleRate
+    steadyAgeOverride = goalDriven.steadyAge
+    recommendedAgeOverride = goalDriven.recommendedAge
+    accelerateAgeOverride = goalDriven.accelerateAge
+    warningOnAccelerate = goalDriven.warningOnAccelerate
+  } else {
+    const legacy = legacyRates(input)
+    steadyRate = legacy.steadyRate
+    recommendedRate = legacy.recommendedRate
+    accelerateRate = legacy.accelerateRate
+    maxPossibleRate = legacy.maxPossibleRate
+  }
+
+  // Baseline (used for projections + tradeoff notes)
   const baselineSave = roundMoney(Math.max(0, currentSavings))
   const baseline = {
     savings_rate:   roundRate(currentRate),
@@ -179,15 +338,14 @@ function generateAllPlans(
     projection_10y: projectPortfolio(baselineSave, netWorth, 10),
   }
 
-  // Baseline FIRE years (for tradeoff notes)
   const baselineFireResult = fireNumber
     ? computeFireDate(netWorth, fireNumber, baselineSave, returnRate, currentAge)
     : null
 
-  // ── Build each plan ──
   function buildPlan(
     rate: number,
-    planType: 'steady' | 'recommended' | 'accelerate'
+    planType: 'steady' | 'recommended' | 'accelerate',
+    fireAgeOverride: number | null,
   ): PlanDetail {
     const monthlySave  = roundMoney(income * (rate / 100))
     const monthlySpend = roundMoney(income - monthlySave)
@@ -201,7 +359,6 @@ function generateAllPlans(
     const p5y  = projectPortfolio(monthlySave, netWorth, 5)
     const p10y = projectPortfolio(monthlySave, netWorth, 10)
 
-    // FIRE date projection for this plan
     let officialFireDate: string | null  = null
     let officialFireAge: number | null   = null
     let fireYearsVsBaseline: number | null = null
@@ -209,7 +366,8 @@ function generateAllPlans(
     if (fireNumber) {
       const fireResult = computeFireDate(netWorth, fireNumber, monthlySave, returnRate, currentAge)
       officialFireDate = fireResult.fireDate !== 'Unknown' ? fireResult.fireDate : null
-      officialFireAge  = fireResult.fireAge
+      // Path age from FIRECalculator wins when available (authoritative source for goal-driven mode).
+      officialFireAge  = fireAgeOverride ?? fireResult.fireAge
 
       if (baselineFireResult && baselineFireResult.yearsRemaining < 99) {
         fireYearsVsBaseline = baselineFireResult.yearsRemaining - fireResult.yearsRemaining
@@ -228,7 +386,7 @@ function generateAllPlans(
       savings_rate:              roundRate(rate),
       monthly_save:              monthlySave,
       monthly_spend:             monthlySpend,
-      spending_ceiling_monthly:  monthlySpend,     // alias
+      spending_ceiling_monthly:  monthlySpend,
       flexible_spend:            flexibleSpend,
       extra_per_month:           extra,
       flexible_compression_pct:  compressionPct,
@@ -247,9 +405,12 @@ function generateAllPlans(
   }
 
   const plans = {
-    steady:      buildPlan(steadyRate,      'steady'),
-    recommended: buildPlan(recommendedRate, 'recommended'),
-    accelerate:  buildPlan(accelerateRate,  'accelerate'),
+    steady:      buildPlan(steadyRate,      'steady',      steadyAgeOverride),
+    recommended: buildPlan(recommendedRate, 'recommended', recommendedAgeOverride),
+    accelerate:  {
+      ...buildPlan(accelerateRate, 'accelerate', accelerateAgeOverride),
+      ...(warningOnAccelerate ? { warning: true } : {}),
+    },
   }
 
   const critical = plans.accelerate.status === 'deficit'
@@ -286,17 +447,17 @@ serve(async (req) => {
       return errorResponse(400, 'INVALID_INPUT', 'avg_monthly_income must be > 0')
     }
 
-    // Resolve net worth, age, and fire_number — client values take priority
-    let netWorth   = body.current_net_worth
-    let currentAge = body.current_age
-    let fireNumber = body.fire_number
+    // Resolve profile + active goal when any goal-related field is missing.
+    let netWorth             = body.current_net_worth
+    let currentAge           = body.current_age
+    let fireNumber           = body.fire_number
+    let retirementSpending   = body.retirement_spending_monthly
+    let targetRetirementAge  = body.target_retirement_age
 
-    // Fetch profile + active goal in parallel when any field is missing
-    if (
-      netWorth   == null ||
-      currentAge == null ||
-      fireNumber == null
-    ) {
+    const needsProfile = netWorth == null || currentAge == null
+    const needsGoal = fireNumber == null || retirementSpending == null || targetRetirementAge == null
+
+    if (needsProfile || needsGoal) {
       const [profileResult, goalResult] = await Promise.all([
         supabase
           .from('user_profiles')
@@ -305,7 +466,7 @@ serve(async (req) => {
           .maybeSingle(),
         supabase
           .from('fire_goals')
-          .select('fire_number, retirement_spending_monthly, withdrawal_rate_assumption, return_assumption, current_age')
+          .select('fire_number, retirement_spending_monthly, target_retirement_age, withdrawal_rate_assumption, return_assumption, current_age')
           .eq('user_id', user.id)
           .eq('is_active', true)
           .maybeSingle(),
@@ -319,22 +480,69 @@ serve(async (req) => {
       if (currentAge == null) {
         currentAge = profileResult.data?.age ?? goalResult.data?.current_age ?? null
       }
+
+      const goal = goalResult.data
+      if (retirementSpending == null) {
+        retirementSpending = goal?.retirement_spending_monthly ?? undefined
+      }
+      if (targetRetirementAge == null) {
+        targetRetirementAge = goal?.target_retirement_age ?? undefined
+      }
       if (fireNumber == null) {
-        const goal = goalResult.data
-        if (goal?.fire_number > 0) {
+        if (goal?.fire_number && goal.fire_number > 0) {
           fireNumber = goal.fire_number
-        } else if (goal?.retirement_spending_monthly > 0) {
+        } else if (retirementSpending && retirementSpending > 0) {
           fireNumber = computeFireNumber(
-            goal.retirement_spending_monthly,
-            goal.withdrawal_rate_assumption ?? 0.04
+            retirementSpending,
+            goal?.withdrawal_rate_assumption ?? ASSUMPTIONS.WITHDRAWAL_RATE
           )
-        } else if (body.retirement_spending_monthly) {
-          fireNumber = computeFireNumber(body.retirement_spending_monthly)
         }
       }
     }
 
     const returnRate = body.return_assumption ?? REAL_ANNUAL_RETURN
+    const resolvedNetWorth   = netWorth ?? 0
+    const resolvedCurrentAge = currentAge ?? 30
+    const resolvedFireNumber = fireNumber ?? null
+
+    // Decide goal-driven vs legacy mode.
+    // Goal-driven requires: target age, retirement spending, income, current age, fire number.
+    const canRunFeasibility =
+      targetRetirementAge != null &&
+      targetRetirementAge > 0 &&
+      retirementSpending != null &&
+      retirementSpending > 0 &&
+      resolvedFireNumber != null &&
+      resolvedFireNumber > 0 &&
+      body.avg_monthly_income > 0 &&
+      currentAge != null &&
+      targetRetirementAge > currentAge
+
+    let goalDriven: GoalDrivenRates | null = null
+
+    if (canRunFeasibility) {
+      const calculator = new FIRECalculator()
+      const currentMonthlyExpenses = (body.avg_monthly_fixed ?? 0) + (body.avg_monthly_flexible ?? 0)
+      const calc = calculator.adjustGoal({
+        monthlyIncome: body.avg_monthly_income,
+        currentAge: resolvedCurrentAge,
+        targetRetirementAge: targetRetirementAge!,
+        desiredMonthlyExpenses: retirementSpending!,
+        currentNetWorth: resolvedNetWorth,
+        currentMonthlyExpenses,
+      })
+      goalDriven = goalDrivenRates(calc, {
+        current_savings_rate:   body.current_savings_rate,
+        avg_monthly_income:     body.avg_monthly_income,
+        avg_monthly_savings:    body.avg_monthly_savings,
+        avg_monthly_fixed:      body.avg_monthly_fixed,
+        avg_monthly_flexible:   body.avg_monthly_flexible,
+        current_net_worth:      resolvedNetWorth,
+        current_age:            resolvedCurrentAge,
+        fire_number:            resolvedFireNumber,
+        return_assumption:      returnRate,
+      }, targetRetirementAge!, resolvedFireNumber!)
+    }
 
     const { baseline, plans, maxPossibleRate, critical } = generateAllPlans({
       current_savings_rate:   body.current_savings_rate,
@@ -342,11 +550,11 @@ serve(async (req) => {
       avg_monthly_savings:    body.avg_monthly_savings,
       avg_monthly_fixed:      body.avg_monthly_fixed,
       avg_monthly_flexible:   body.avg_monthly_flexible,
-      current_net_worth:      netWorth    ?? 0,
-      current_age:            currentAge  ?? 30,
-      fire_number:            fireNumber  ?? null,
+      current_net_worth:      resolvedNetWorth,
+      current_age:            resolvedCurrentAge,
+      fire_number:            resolvedFireNumber,
       return_assumption:      returnRate,
-    })
+    }, goalDriven)
 
     return new Response(
       JSON.stringify({
@@ -354,19 +562,29 @@ serve(async (req) => {
         data: {
           baseline,
           plans,
-          user_tier:       getUserTier(body.current_savings_rate),
+          user_tier:         getUserTier(body.current_savings_rate),
           max_possible_rate: round2(maxPossibleRate),
           critical,
-          current_net_worth: netWorth    ?? 0,
-          current_age:       currentAge  ?? null,
-          fire_number:       fireNumber  ?? null,
+          current_net_worth: resolvedNetWorth,
+          current_age:       currentAge ?? null,
+          fire_number:       resolvedFireNumber,
+          // NEW (S2-1): feasibility context for iOS banner / warnings
+          phase:             goalDriven?.phase ?? null,
+          phase_sub:         goalDriven?.phaseSub ?? null,
+          strategy:          goalDriven?.strategy ?? null,
+          goal_driven:       goalDriven != null,
           assumptions: {
             nominal_return: NOMINAL_ANNUAL_RETURN,
             inflation:      INFLATION_RATE,
             real_return:    returnRate,
           },
         },
-        meta: { timestamp: new Date().toISOString(), user_id: user.id },
+        meta: {
+          timestamp: new Date().toISOString(),
+          user_id: user.id,
+          account_ids: body.account_ids ?? null,
+          month: body.month ?? null,
+        },
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

@@ -30,6 +30,9 @@ struct BS_ChoosePathView: View {
                     if viewModel.isLoadingPlans {
                         loadingSection
                     } else if let plans = viewModel.plansResponse {
+                        phaseBanner(for: plans)
+                            .padding(.horizontal, AppSpacing.lg)
+
                         planCard(plan: plans.plans.steady, name: "Steady", type: .steady,
                                  difficulty: 1, difficultyLabel: "Easy", difficultyColor: AppColors.budgetTeal)
                             .padding(.horizontal, AppSpacing.lg)
@@ -79,11 +82,66 @@ struct BS_ChoosePathView: View {
                 .font(.cardFigurePrimary)
                 .foregroundStyle(AppColors.textPrimary)
 
-            Text("Pick the savings rate that fits your life. Tap a plan to see your estimated FIRE date.")
+            Text("Three paths to your retirement goal. Tap to compare savings rate, spending ceiling, and FIRE age.")
                 .font(.bodySmall)
                 .foregroundStyle(AppColors.textSecondary)
                 .lineSpacing(3)
         }
+    }
+
+    // MARK: - Phase Banner
+
+    @ViewBuilder
+    private func phaseBanner(for response: PlansResponse) -> some View {
+        if response.goalDriven == true, let phase = response.phase {
+            switch phase {
+            case 0:
+                bannerRow(
+                    icon: "checkmark.seal.fill",
+                    tint: AppColors.budgetTeal,
+                    title: "You're on track",
+                    subtitle: "Your current pace already hits your goal. These plans show how much faster you could retire."
+                )
+            case 2:
+                bannerRow(
+                    icon: "exclamationmark.triangle.fill",
+                    tint: AppColors.budgetOrange,
+                    title: "Goal may need adjustment",
+                    subtitle: "The target age + spending combo isn't realistic on today's income. Accelerate shows the best-effort path."
+                )
+            default:
+                EmptyView()
+            }
+        } else {
+            EmptyView()
+        }
+    }
+
+    @ViewBuilder
+    private func bannerRow(icon: String, tint: Color, title: String, subtitle: String) -> some View {
+        HStack(alignment: .top, spacing: AppSpacing.sm) {
+            Image(systemName: icon)
+                .font(.bodySemibold)
+                .foregroundStyle(tint)
+                .padding(.top, 2)
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text(title)
+                    .font(.bodySemibold)
+                    .foregroundStyle(AppColors.textPrimary)
+                Text(subtitle)
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .lineSpacing(2)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(AppSpacing.md)
+        .background(AppColors.surfaceElevated)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .stroke(tint.opacity(0.4), lineWidth: 1)
+        )
     }
 
     // MARK: - Loading
@@ -130,6 +188,20 @@ struct BS_ChoosePathView: View {
                                     .padding(.vertical, 2)
                                     .background(goldColor)
                                     .clipShape(RoundedRectangle(cornerRadius: AppSpacing.xs))
+                            }
+
+                            if plan.warning == true {
+                                HStack(spacing: 3) {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .font(.miniLabel)
+                                    Text("REVIEW GOAL")
+                                        .font(.miniLabel)
+                                }
+                                .foregroundStyle(AppColors.textInverse)
+                                .padding(.horizontal, AppSpacing.sm - 2)
+                                .padding(.vertical, 2)
+                                .background(AppColors.budgetOrange)
+                                .clipShape(RoundedRectangle(cornerRadius: AppSpacing.xs))
                             }
                         }
 
@@ -187,6 +259,8 @@ struct BS_ChoosePathView: View {
                     statColumnSmall(label: "SAVE/MO", value: "$\(formattedInt(plan.monthlySave))")
                     Rectangle().fill(AppColors.overlayWhiteStroke).frame(width: 1, height: AppSpacing.lg)
                     statColumnSmall(label: "RATE", value: formattedPct(plan.savingsRate))
+                    Rectangle().fill(AppColors.overlayWhiteStroke).frame(width: 1, height: AppSpacing.lg)
+                    statColumnSmall(label: "RETIRE AT", value: plan.officialFireAge.map { "Age \($0)" } ?? "—")
                 }
                 .padding(.vertical, AppSpacing.sm)
                 .background(AppColors.backgroundPrimary.opacity(0.3))
@@ -215,20 +289,21 @@ struct BS_ChoosePathView: View {
     @ViewBuilder
     private func fireDetailExpand(plan: PlanDetail) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            // FIRE date + age row
-            if plan.officialFireDate != nil || plan.officialFireAge != nil {
-                HStack(spacing: 0) {
-                    if let fireDate = plan.officialFireDate {
-                        expandStat(label: "FIRE DATE", value: formattedFireDate(fireDate))
+            // FIRE date (age已在折叠态展示，展开态只补充具体日期)
+            if let fireDate = plan.officialFireDate {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("FIRE DATE")
+                            .font(.label)
+                            .tracking(0.8)
+                            .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                        Text(formattedFireDate(fireDate))
+                            .font(.bodySemibold)
+                            .foregroundStyle(AppColors.textPrimary)
                     }
-                    if plan.officialFireDate != nil && plan.officialFireAge != nil {
-                        Rectangle().fill(AppColors.overlayWhiteStroke).frame(width: 1, height: AppSpacing.lg)
-                    }
-                    if let age = plan.officialFireAge {
-                        expandStat(label: "RETIRE AT", value: "Age \(age)")
-                    }
+                    Spacer()
                 }
-                .padding(.vertical, AppSpacing.sm)
+                .padding(AppSpacing.sm)
                 .background(AppColors.backgroundPrimary.opacity(0.3))
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
             }
@@ -294,7 +369,7 @@ struct BS_ChoosePathView: View {
     // MARK: - Assumptions Note
 
     private var assumptionsNote: some View {
-        Text("FIRE date estimates use the 4% withdrawal rule and assume 5.5% real annual returns. Results are projections, not guarantees.")
+        Text("FIRE estimates use the 4% withdrawal rule with 4% real annual returns (inflation-adjusted). Projections, not guarantees.")
             .font(.cardRowMeta)
             .foregroundStyle(AppColors.textTertiary)
             .lineSpacing(3)

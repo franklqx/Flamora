@@ -101,12 +101,15 @@ extension APIService {
     /// Upsert current monthly budget from Cash Flow edit mode.
     /// Reuses the existing `generate-monthly-budget` endpoint for compatibility.
     func upsertMonthlyBudget(payload: [String: Any]) async throws {
+        print("▶️ [APIService] upsertMonthlyBudget START")
         let body = try JSONSerialization.data(withJSONObject: payload)
         let request = try await authenticatedRequest(function: "generate-monthly-budget", body: body)
-        let (_, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw APIError.httpError((response as? HTTPURLResponse)?.statusCode ?? 0)
+        print("▶️ [APIService] upsertMonthlyBudget request built, sending…")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        print("◀️ [APIService] upsertMonthlyBudget status=\(status) body=\(String(data: data, encoding: .utf8) ?? "<nil>")")
+        guard (200...299).contains(status) else {
+            throw APIError.httpError(status)
         }
     }
 }
