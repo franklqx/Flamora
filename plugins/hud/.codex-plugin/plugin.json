@@ -1,0 +1,29 @@
+{
+  "name": "hud",
+  "version": "0.1.0",
+  "description": "Show the local Codex usage HUD.",
+  "author": {
+    "name": "Frank Li"
+  },
+  "license": "UNLICENSED",
+  "keywords": [
+    "codex",
+    "hud",
+    "usage",
+    "tokens",
+    "rate-limits"
+  ],
+  "interface": {
+    "displayName": "HUD",
+    "shortDescription": "Show Codex usage",
+    "longDescription": "Adds a /hud slash command that reports local Codex context usage, rate-limit windows, reset timing, project, model, and git state.",
+    "developerName": "Frank Li",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive"
+    ],
+    "defaultPrompt": [
+      "Show my Codex usage HUD"
+    ]
+  }
+}

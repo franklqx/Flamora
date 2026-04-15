@@ -20,6 +20,7 @@ struct HomeBottomSheet: View {
     let selectedTab: MainTabItem
     let sheetDragGesture: AnyGesture<DragGesture.Value>
     let dragProgress: CGFloat
+    @Binding var tabBarScrollCollapse: CGFloat
     @Environment(PlaidManager.self) private var plaidManager
 
     var body: some View {
@@ -47,17 +48,17 @@ struct HomeBottomSheet: View {
             Group {
                 switch selectedTab {
                 case .home:
-                    HomeRoadmapContent()
+                    HomeRoadmapContent(tabBarScrollCollapse: $tabBarScrollCollapse)
                 case .cashflow:
                     if plaidManager.hasLinkedBank {
-                        CashflowView()
+                        CashflowView(tabBarScrollCollapse: $tabBarScrollCollapse)
                     } else {
-                        CashUnconnectedContent()
+                        CashUnconnectedContent(tabBarScrollCollapse: $tabBarScrollCollapse)
                     }
                 case .investment:
-                    InvestmentSheetContent()
+                    InvestmentSheetContent(tabBarScrollCollapse: $tabBarScrollCollapse)
                 case .settings:
-                    SettingsView(isEmbeddedInSheet: true)
+                    SettingsView(isEmbeddedInSheet: true, tabBarScrollCollapse: $tabBarScrollCollapse)
                 }
             }
             .id(selectedTab)
@@ -98,7 +99,8 @@ struct HomeBottomSheet: View {
             height: 580,
             selectedTab: .home,
             sheetDragGesture: AnyGesture(DragGesture()),
-            dragProgress: 0
+            dragProgress: 0,
+            tabBarScrollCollapse: .constant(0)
         )
         .offset(y: -AppSpacing.homeSheetTopOverlap)
     }
@@ -112,7 +114,8 @@ struct HomeBottomSheet: View {
             height: 480,
             selectedTab: .cashflow,
             sheetDragGesture: AnyGesture(DragGesture()),
-            dragProgress: 0
+            dragProgress: 0,
+            tabBarScrollCollapse: .constant(0)
         )
         .offset(y: -AppSpacing.homeSheetTopOverlap)
     }
@@ -126,7 +129,8 @@ struct HomeBottomSheet: View {
             height: 480,
             selectedTab: .investment,
             sheetDragGesture: AnyGesture(DragGesture()),
-            dragProgress: 0
+            dragProgress: 0,
+            tabBarScrollCollapse: .constant(0)
         )
         .offset(y: -AppSpacing.homeSheetTopOverlap)
     }

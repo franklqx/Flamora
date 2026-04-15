@@ -71,13 +71,11 @@ struct GlassmorphicTabBar: View {
                 }
                 .padding(.horizontal, AppSpacing.xxs)
                 .padding(.vertical, AppSpacing.xs)
-                .background(
-                    Capsule()
-                        .fill(AppColors.tabBarFill)
-                )
+                .background { Capsule().fill(.clear) }
+                .glassEffect(.regular.interactive(), in: Capsule())
                 .overlay(
                     Capsule()
-                        .stroke(AppColors.tabBarBorder, lineWidth: 1)
+                        .stroke(AppColors.tabBarBorder.opacity(0.55), lineWidth: 0.75)
                 )
                 .tabBarShadow()
                 .scaleEffect(

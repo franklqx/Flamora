@@ -85,6 +85,8 @@ struct MainTabView: View {
     @State private var heroSnapshot = HomeHeroSnapshot.empty
     @State private var viewportHeight: CGFloat = 0
     @State private var viewportSafeAreaBottom: CGFloat = 0
+    /// 与 Sheet 收起无关：主内容区 ScrollView 下滑时驱动底部 Tab 形态（对齐系统 `tabBarMinimizeBehavior(.onScrollDown)`）。
+    @State private var scrollDrivenTabBarCollapse: CGFloat = 0
 
     /// Shared with `HomeHeroCardHost` for journey strip + hero snapshot (single load path).
     @State private var homeJourneySetupState: HomeSetupStateResponse?
@@ -154,7 +156,8 @@ struct MainTabView: View {
                     height: sheetHeight + viewportSafeAreaBottom + 2,
                     selectedTab: selectedTab,
                     sheetDragGesture: sheetDragGesture,
-                    dragProgress: sheetDragNormalizedProgress()
+                    dragProgress: sheetDragNormalizedProgress(),
+                    tabBarScrollCollapse: $scrollDrivenTabBarCollapse
                 )
                 .ignoresSafeArea(edges: .bottom)
                 // Drop sheet lower without changing its height.
@@ -224,6 +227,9 @@ struct MainTabView: View {
         }
         .onDisappear {
             simulatorTransitionTask?.cancel()
+        }
+        .onChange(of: selectedTab) { _, _ in
+            scrollDrivenTabBarCollapse = 0
         }
     }
 }
@@ -378,12 +384,16 @@ private extension MainTabView {
     }
 
     /// 0 = 三键展开；1 = 仅右侧单圆。仅形态动画，不扩张 Sheet 绘制区；与 `HomeBottomSheet` 不侵入底部安全区配合使用。
+    /// Sheet 下压与主内容滚动收起取较大值，贴近 iOS 26 Liquid Glass Tab 的「下滑让位」行为。
     var tabBarCollapseProgress: CGFloat {
         guard homeState != .simulator else { return 1 }
         let distance = layoutMetrics.sheetDefault - sheetHeight
         let threshold = layoutMetrics.sheetDefault * 0.45
-        if distance <= 0 { return 0 }
-        return max(0, min(1, distance / threshold))
+        let sheetPart: CGFloat = {
+            if distance <= 0 { return 0 }
+            return max(0, min(1, distance / threshold))
+        }()
+        return max(sheetPart, scrollDrivenTabBarCollapse)
     }
 
     func clampSheetHeight(_ value: CGFloat) -> CGFloat {
@@ -877,6 +887,8 @@ private struct TabHeroTitleContent: View {
 // MARK: - Home Roadmap Content (HTML: .roadmap with 3 steps)
 
 struct HomeRoadmapContent: View {
+    var tabBarScrollCollapse: Binding<CGFloat> = .constant(0)
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppSpacing.sectionGap) {
@@ -889,6 +901,7 @@ struct HomeRoadmapContent: View {
             .padding(.bottom, AppSpacing.lg)
         }
         .scrollContentBackground(.hidden)
+        .tracksTabBarScrollCollapse(tabBarScrollCollapse)
     }
 
     private var roadmapCard: some View {
@@ -1058,6 +1071,8 @@ private struct NotificationsView: View {
 // MARK: - Cash Unconnected Content (HTML: .cash-view unconnected state)
 
 struct CashUnconnectedContent: View {
+    var tabBarScrollCollapse: Binding<CGFloat> = .constant(0)
+
     @Environment(PlaidManager.self) private var plaidManager
     @State private var showTrustBridge = false
 
@@ -1078,6 +1093,7 @@ struct CashUnconnectedContent: View {
             .padding(.bottom, AppSpacing.lg)
         }
         .scrollContentBackground(.hidden)
+        .tracksTabBarScrollCollapse(tabBarScrollCollapse)
         .sheet(isPresented: $showTrustBridge, onDismiss: {
             if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {
                 Task { await plaidManager.startLinkFlow() }

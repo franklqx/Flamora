@@ -24,9 +24,11 @@ struct SettingsView: View {
     @AppStorage(FlamoraStorageKey.budgetSetupCompleted) private var budgetSetupCompleted: Bool = false
     @State private var currentBudget: APIMonthlyBudget = .empty
     let isEmbeddedInSheet: Bool
+    var tabBarScrollCollapse: Binding<CGFloat> = .constant(0)
 
-    init(isEmbeddedInSheet: Bool = false) {
+    init(isEmbeddedInSheet: Bool = false, tabBarScrollCollapse: Binding<CGFloat> = .constant(0)) {
         self.isEmbeddedInSheet = isEmbeddedInSheet
+        self.tabBarScrollCollapse = tabBarScrollCollapse
     }
 
     var body: some View {
@@ -100,6 +102,7 @@ private extension SettingsView {
                 .padding(.bottom, isEmbeddedInSheet ? AppSpacing.lg : AppSpacing.xl)
             }
             .scrollContentBackground(.hidden)
+            .tracksTabBarScrollCollapse(tabBarScrollCollapse)
         }
     }
 }

@@ -21,6 +21,8 @@ enum CashflowJourneyDestination: Equatable, Identifiable {
 }
 
 struct CashflowView: View {
+    var tabBarScrollCollapse: Binding<CGFloat> = .constant(0)
+
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(PlaidManager.self) private var plaidManager
     @AppStorage(FlamoraStorageKey.budgetSetupCompleted) private var budgetSetupCompleted: Bool = false
@@ -168,6 +170,7 @@ struct CashflowView: View {
                     .padding(.top, AppSpacing.md)
                     .padding(.bottom, AppSpacing.lg)
                 }
+                .tracksTabBarScrollCollapse(tabBarScrollCollapse)
             }
         }
         .alert("Bank Connection Failed", isPresented: Binding(

@@ -6,6 +6,8 @@
 import SwiftUI
 
 struct InvestmentSheetContent: View {
+    var tabBarScrollCollapse: Binding<CGFloat> = .constant(0)
+
     @Environment(PlaidManager.self) private var plaidManager
     @StateObject private var store = InvestmentDataStore()
     @State private var showTrustBridge = false
@@ -41,6 +43,7 @@ struct InvestmentSheetContent: View {
             .padding(.bottom, AppSpacing.lg)
         }
         .scrollContentBackground(.hidden)
+        .tracksTabBarScrollCollapse(tabBarScrollCollapse)
         .onAppear {
             store.restoreFromCache()
         }
