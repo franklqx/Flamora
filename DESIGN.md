@@ -27,6 +27,17 @@ The app should feel:
 - On dark hero/fullscreen overlays use `textPrimary`, `textSecondary`, `textTertiary`.
 - Never mix white text into light cards except tiny intentional badge chips.
 
+### 2a) Dual Color Token Clarification
+The codebase has two coexisting token groups. Use them in the right context:
+
+| Token group | Tokens | Use when |
+|---|---|---|
+| Legacy dark tokens | `textPrimary` (#FFF), `backgroundPrimary` (#000), `surface` | Dark hero zone, fullscreen overlays, OB_WelcomeView |
+| Current light tokens | `inkPrimary` (#111827), `shellBg1` (#F7F8FB), `shellBg2` | Shell body, all light-bg OB steps, cards |
+
+Do not use `textPrimary` (white) on light/shellBg backgrounds — it disappears.
+Do not use `inkPrimary` (near-black) on dark hero areas — it clashes.
+
 ### 3) Color Semantics
 - `Needs` = blue family.
 - `Wants` = purple family for budget/category context in Cash Flow cards.
@@ -35,12 +46,12 @@ The app should feel:
 - negative/over-budget = `error`.
 
 ### 4) Typography
-- Keep current token system in `/Users/frankli/Desktop/关羽与吕布/Flamora app/Style/Typography.swift`.
+- Keep current token system in `Style/Typography.swift`.
 - Headline emphasis comes from weight + spacing, not decorative fonts.
 - Card labels should stay compact and uppercase where already used (`cardHeader` + tracking token).
 
 ### 5) Spacing + Radius
-- Keep current semantic scale in `/Users/frankli/Desktop/关羽与吕布/Flamora app/Style/Spacing.swift`.
+- Keep current semantic scale in `Style/Spacing.swift`.
 - Keep radius system in `AppRadius`.
 - Card families should remain consistent:
   - main glass card around `glassCard/glassPanel` feel
@@ -69,6 +80,40 @@ The app should feel:
 - Card stack: Portfolio performance, Allocation, Accounts.
 - Same shell/card language as Cash Flow, with cooler hero gradient variant.
 - Data-heavy cards remain readable first, decorative second.
+
+## Onboarding Design Rules
+
+Onboarding steps are split into two visual zones. Each step must belong to one zone only.
+
+### Zone A — Dark Atmospheric (Welcome only)
+- **Applies to:** `OB_WelcomeView`
+- Background: `Image("AppBackground")` (dark photo)
+- Text tokens: `textPrimary`, `textSecondary` (white family)
+- Fire gradient can appear on dark bg for brand moments (logo, highlights)
+- Button: standard white-fill CTA on dark bg
+
+### Zone B — Light Shell (all other OB steps)
+- **Applies to:** `OB_GoalSetupView`, `OB_IncomeView`, `OB_SpendingView`, `OB_RoadmapView`, `OB_ValueScreenView`, and all other steps
+- Background: `shellBg1` → `shellBg2` gradient (soft off-white)
+- Text tokens: `inkPrimary`, `inkSoft`, `inkFaint`
+- Button: standard white-fill CTA (`AppColors.surface` background, `inkPrimary` text)
+
+### Slider Rule (Zone B only)
+- `UISlider.appearance().thumbTintColor` must be a visible color on light bg
+- Use `uiSliderThumbTint` token (defined in `Style/Colors.swift`)
+- Token value must be brand purple `#A78BFA` — NOT white (`UIColor(1,1,1,1)`)
+- White thumb on shellBg = invisible. This is a P1 visual bug.
+
+### Fire Gradient on Light Background
+- `gradientStart` (#A78BFA, purple) — safe to use as accent on shellBg
+- `gradientMiddle` (#FCA5A5, light pink) — near-invisible on white, avoid for text
+- `gradientEnd` (#FCD34D, gold) — near-invisible on white, avoid for text
+- Rule: on Zone B, only use `gradientStart` for fire gradient accents. If the design calls for a gold/pink moment, use an icon or illustration, not raw gradient color on text.
+
+### OB Step Background Switching
+- The switch happens once: Welcome (Zone A) → everything else (Zone B)
+- There is no back-and-forth between dark and light within the OB flow
+- If a new OB step is added, default to Zone B unless it is a full-screen brand splash
 
 ## Component Standards
 
@@ -172,6 +217,8 @@ The app should feel:
 - Use dark card backgrounds for Budget/Saving cards in the light shell area.
 
 ## QA Checklist (Before Ship)
+
+### Main App
 1. Is this screen visually in the same family as current Home/Cash Flow/Investment?
 2. Is top-level shell light, with dark hero only in the intended zone?
 3. In Cash Flow connected state, are placeholder “connect” blocks fully gone?
@@ -181,6 +228,13 @@ The app should feel:
 7. Does Saving Rate show amount + actual rate + status clearly?
 8. Are invalid edit states blocked with explicit guidance?
 
+### Onboarding
+9. Is OB_WelcomeView the only step with a dark background?
+10. Are all other OB steps using shellBg1/shellBg2?
+11. Is the slider thumb visible on light backgrounds (not white-on-white)?
+12. Is fire gradient only used on dark bg or via `gradientStart` (#A78BFA) on light bg?
+13. Are all OB text labels using `inkPrimary`/`inkSoft`, not `textPrimary` (white)?
+
 ## Decisions Log
 | Date | Decision | Rationale |
 |------|----------|-----------|
@@ -189,3 +243,7 @@ The app should feel:
 | 2026-04-13 | Needs/Wants semantic update to blue/purple backgrounds | Align budget visuals with current product direction and user instruction |
 | 2026-04-14 | Budget + Saving Rate explicitly locked to light-surface style | Remove ambiguity that could reintroduce dark card styling in Cash Flow shell |
 | 2026-04-14 | Tab bar locked to fixed light-glass tokens | Prevent regressions where adaptive material renders tab bar black in dark environments |
+| 2026-04-14 | Onboarding split into Zone A (dark) / Zone B (light) | Welcome uses dark photo bg for brand impact; all other steps use shellBg for consistency with main app |
+| 2026-04-14 | Slider thumb token must be brand purple, not white | White UISlider thumb is invisible on shellBg — P1 visual bug |
+| 2026-04-14 | Fire gradient restricted on light backgrounds | gradientMiddle/gradientEnd are near-white; on light bg only gradientStart (#A78BFA) is safe |
+| 2026-04-14 | Dual token system clarified in 2a | textPrimary/backgroundPrimary = dark zone only; inkPrimary/shellBg1 = light shell only |

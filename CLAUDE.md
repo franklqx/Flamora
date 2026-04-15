@@ -3,7 +3,7 @@
 ## 项目信息
 - iOS SwiftUI app（FIRE 财务自由追踪器）
 - 后端：Supabase Functions
-- 暗色主题，火焰渐变（#A78BFA → #FCA5A5 → #FCD34D）
+- 浅色风格（light-shell system）；火焰渐变（#A78BFA → #FCA5A5 → #FCD34D）仅用于品牌装饰，不用于页面背景
 - 不使用第三方库（纯 Apple 框架）
 - 模拟器名称：iPhone 17 / iPhone 17 Pro / iPhone 17 Pro Max
 

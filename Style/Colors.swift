@@ -339,8 +339,8 @@ struct AppColors {
         chartCoral,
     ]
 
-    /// UIKit 控件（如 `UISlider`）thumb tint，与 `textPrimary`（#FFFFFF）一致。
-    static let uiSliderThumbTint: UIColor = UIColor(red: 1, green: 1, blue: 1, alpha: 1)
+    /// UIKit 控件（如 `UISlider`）thumb tint；Onboarding 浅色底上需可见，与 `gradientStart` 品牌紫一致。
+    static let uiSliderThumbTint: UIColor = UIColor(AppColors.gradientStart)
 
     // MARK: - Budget Setup
     /// Gold accent used for spinners, "Recommended" badge, and difficulty indicators
