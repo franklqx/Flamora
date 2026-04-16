@@ -108,7 +108,7 @@ extension Font {
     // ── Special UI controls ───────────────────────────────────
     static var sheetPrimaryButton: Font { appFont(AppTypography.h4, .bold) }   // 18 / bold
     static var sheetCloseGlyph:    Font { appFont(28, .regular) }              // dismiss ×
-    static var chromeIconMedium:   Font { appFont(AppTypography.h4, .medium) } // tab bar icon
+    static var chromeIconMedium:   Font { appFont(22, .medium) }              // tab bar icon (22pt matches system)
     static var navChevron:         Font { appFont(26, .semibold) }             // full-screen back
     static var categoryRowIcon:    Font { appFont(21, .semibold) }             // list icon
     static var quoteBody:          Font { appFont(AppTypography.h3, .bold) }   // quote card body

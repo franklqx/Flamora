@@ -80,6 +80,8 @@ struct MainTabView: View {
     @State private var sheetHeight = HomeLayoutMetrics.fallback.sheetDefault
     @State private var sheetDragStartHeight = HomeLayoutMetrics.fallback.sheetDefault
     @State private var isSheetDragging = false
+    /// 仅用于「点收拢圆钮恢复 sheet」：先整体偏下，再与高度动画同步归零，观感为自下而上托起。
+    @State private var sheetRestoreRiseOffset: CGFloat = 0
 
     @State private var heroSnapshot = HomeHeroSnapshot.empty
     @State private var viewportHeight: CGFloat = 0
@@ -101,37 +103,22 @@ struct MainTabView: View {
         }
     }
 
-    private var shouldShowCollapsedTabButton: Bool {
-        homeState != .simulator && tabBarCollapseProgress >= 0.9
-    }
-
     var body: some View {
-        let tabBarVisibility: Visibility = shouldShowCollapsedTabButton ? .hidden : .visible
-
-        TabView(selection: $selectedTab) {
+        ZStack(alignment: .bottom) {
             shellContent
-                .tabItem { Label("Home", systemImage: "house.fill") }
-                .tag(MainTabItem.home)
 
-            shellContent
-                .tabItem { Label("Cash", systemImage: "creditcard") }
-                .tag(MainTabItem.cashflow)
-
-            shellContent
-                .tabItem { Label("Invest", systemImage: "chart.line.uptrend.xyaxis") }
-                .tag(MainTabItem.investment)
-        }
-        .tabBarMinimizeBehavior(.never)
-        .toolbar(tabBarVisibility, for: .tabBar)
-        .overlay(alignment: .bottomTrailing) {
-            if shouldShowCollapsedTabButton {
-                collapsedTabButton
-                    .padding(.trailing, AppSpacing.tabBarHorizontalInset)
-                    .padding(.bottom, AppSpacing.sm)
-                    .zIndex(140)
-            }
+            // 悬浮 Liquid Glass Tab Bar — 永远在最顶层（底部间距见 tabBarBottomPadding）
+            LiquidGlassTabBar(
+                selectedTab: $selectedTab,
+                collapseProgress: sheetDragNormalizedProgress(),
+                onTabTapped: { selectedTab = $0 },
+                onCollapsedChromeTap: restoreSheetFromCollapsed
+            )
+            .padding(.bottom, tabBarBottomPadding)
+            .zIndex(200)
         }
         .ignoresSafeArea(.keyboard, edges: .all)
+        .ignoresSafeArea(edges: .bottom)
         .fullScreenCover(isPresented: Binding(
             get: { plaidManager.showBudgetSetup },
             set: { plaidManager.showBudgetSetup = $0 }
@@ -156,21 +143,22 @@ struct MainTabView: View {
         ZStack(alignment: .top) {
             let simulatorFullScreenActive = supportsSimulatorFullScreenBackground && homeState == .simulator
 
+            // 全屏壳渐变：只作最底层背景（zIndex 低于 sheet），叠在 sheet「后面」，不盖在 sheet 上面。
             shellUnderlay
                 .opacity(simulatorFullScreenActive ? 0 : 1)
                 .animation(.easeInOut(duration: 0.18), value: simulatorFullScreenActive)
+                .zIndex(-1)
 
             BrandHeroBackground(
                 isInvestTab: selectedTab == .investment && !simulatorFullScreenActive,
                 gradientHeight: brandGradientDisplayHeight,
-                showsBottomShellLift: !simulatorFullScreenActive,
                 fillViewport: simulatorFullScreenActive
             )
+            .zIndex(0)
 
             // 勿在此处再叠一层实色底（例如整块 `shellBg2` Rectangle + 高 zIndex）：
             // `GlassmorphicTabBar` 的 `glassEffect` 会采样其后方内容；若 Tab 与 Home Indicator
-            // 之间只有均一亮灰，液态玻璃会看起来像整块发白。底部视觉由 `shellUnderlay` 渐变 +
-            // `BrandHeroBackground`（及 Sheet）承担即可。
+            // 之间只有均一亮灰，液态玻璃会看起来像整块发白。底部视觉由 `shellUnderlay` + `BrandHeroBackground`（及 Sheet）承担即可。
 
             HomeHeroCardSurface(
                 snapshot: heroSnapshot,
@@ -195,16 +183,22 @@ struct MainTabView: View {
             .zIndex(80)
 
             if homeState != .simulator {
+                let sheetBottomExtension = max(0, AppSpacing.homeSheetTopOverlap - AppSpacing.md - 2)
 
-                HomeBottomSheet(
-                    // Extend upward while keeping the bottom treatment unchanged.
-                    height: sheetHeight + viewportSafeAreaBottom + 2,
-                    selectedTab: selectedTab,
-                    sheetDragGesture: sheetDragGesture,
-                    dragProgress: sheetDragNormalizedProgress()
-                )
-                // Drop sheet lower without changing its height.
-                .offset(y: -AppSpacing.homeSheetTopOverlap + AppSpacing.md + 2)
+                // Spacer 贴底：填满主列高度，避免 ZStack(alignment: .top) 下 Spacer 塌成 0、sheet 顶在屏顶。
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    HomeBottomSheet(
+                        contentHeight: sheetHeight + HomeLayoutConstants.sheetTopCoverLift,
+                        bottomInset: viewportSafeAreaBottom + 2 + sheetBottomExtension,
+                        selectedTab: selectedTab,
+                        sheetDragGesture: sheetDragGesture,
+                        dragProgress: sheetDragNormalizedProgress()
+                    )
+                    .offset(y: sheetRestoreRiseOffset)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .ignoresSafeArea(edges: .bottom)
                 .zIndex(20)
             }
 
@@ -240,50 +234,20 @@ struct MainTabView: View {
             }
             layoutMetrics = next
         }
+        .ignoresSafeArea(edges: .bottom)
     }
 
-    private var collapsedTabButton: some View {
-        Button(action: collapsedChromeTap) {
-            Image(systemName: collapsedTabSymbol)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Color.white.opacity(0.94))
-                .frame(width: AppSpacing.tabBarCollapsedCircle, height: AppSpacing.tabBarCollapsedCircle)
-                .background {
-                    Circle()
-                        .fill(Color.clear)
-                        .glassEffect(Glass.regular.tint(AppColors.tabBarCollapsedGlassTint), in: Circle())
-                }
-                .overlay {
-                    Circle()
-                        .stroke(AppColors.tabBarHighlight, lineWidth: 0.8)
-                }
-                .shadow(color: Color(hex: "#101846").opacity(0.18), radius: 6, y: 3)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Expand \(collapsedTabLabel)")
-        .transition(.opacity.combined(with: .scale))
-    }
-
-    private var collapsedTabSymbol: String {
-        switch selectedTab {
-        case .home: return "house.fill"
-        case .cashflow: return "creditcard"
-        case .investment: return "chart.line.uptrend.xyaxis"
-        case .settings: return "gearshape.fill"
-        }
-    }
-
-    private var collapsedTabLabel: String {
-        switch selectedTab {
-        case .home: return "Home"
-        case .cashflow: return "Cash"
-        case .investment: return "Invest"
-        case .settings: return "Settings"
-        }
-    }
 }
 
 private extension MainTabView {
+    /// 浮动 Tab bar 与物理底边距离：略贴近系统 Liquid Glass；sheet 收起（collapse 大）时再略下移。
+    var tabBarBottomPadding: CGFloat {
+        let p = sheetDragNormalizedProgress()
+        let safe = viewportSafeAreaBottom
+        let base = max(20, safe - 6)
+        return max(16, base - 10 * p)
+    }
+
     /// Full-viewport height for gradient lerp (fallback before first layout pass).
     var homeGradientFullHeight: CGFloat {
         if viewportHeight > 0 { return viewportHeight }
@@ -312,6 +276,7 @@ private extension MainTabView {
         return collapsed + (full - collapsed) * p
     }
 
+    /// 主壳全屏浅色底，始终画在 `HomeBottomSheet` / Hero 等下层（见 `shellContent` 内 `.zIndex(-1)`）。
     var shellUnderlay: some View {
         LinearGradient(
             colors: [AppColors.shellBg1, AppColors.shellBg2],
@@ -362,8 +327,11 @@ private extension MainTabView {
                     if !isSheetDragging {
                         isSheetDragging = true
                         sheetDragStartHeight = sheetHeight
+                        sheetRestoreRiseOffset = 0
                     }
-                    let nextHeight = sheetDragStartHeight - value.translation.height
+                    // Upward pulls no longer expand the sheet beyond its default height.
+                    let translation = max(0, value.translation.height)
+                    let nextHeight = sheetDragStartHeight - translation
                     sheetHeight = clampSheetHeight(nextHeight)
                     homeState = .expanding(progress: sheetDragNormalizedProgress())
                 }
@@ -381,7 +349,7 @@ private extension MainTabView {
                         enterSimulator()
                         return
                     }
-                    // Sheet 低于默认：收起态不自动回满高，仅吸附到稳定区间（需点左下圆恢复）
+                    // Sheet 低于默认：收起态不自动回满高，仅吸附到稳定区间。
                     if sheetHeight < layoutMetrics.sheetDefault * 0.98 {
                         let lo = layoutMetrics.sheetDefault * HomeLayoutConstants.sheetCollapsedMinFraction
                         let hi = layoutMetrics.sheetDefault * HomeLayoutConstants.sheetCollapsedMaxFraction
@@ -392,14 +360,8 @@ private extension MainTabView {
                         homeState = .sheet
                         return
                     }
-                    if sheetHeight > layoutMetrics.sheetDefault * 1.15 {
-                        withAnimation(HomeLayoutConstants.springAnimation) {
-                            sheetHeight = layoutMetrics.sheetTall
-                        }
-                    } else {
-                        withAnimation(HomeLayoutConstants.springAnimation) {
-                            sheetHeight = layoutMetrics.sheetDefault
-                        }
+                    withAnimation(HomeLayoutConstants.springAnimation) {
+                        sheetHeight = layoutMetrics.sheetDefault
                     }
                     homeState = .sheet
                 }
@@ -432,17 +394,8 @@ private extension MainTabView {
         )
     }
 
-    /// 0 = 三键展开；1 = 仅右侧单圆。仅形态动画，不扩张 Sheet 绘制区；与 `HomeBottomSheet` 不侵入底部安全区配合使用。
-    var tabBarCollapseProgress: CGFloat {
-        guard homeState != .simulator else { return 1 }
-        let distance = layoutMetrics.sheetDefault - sheetHeight
-        let threshold = layoutMetrics.sheetDefault * 0.45
-        if distance <= 0 { return 0 }
-        return max(0, min(1, distance / threshold))
-    }
-
     func clampSheetHeight(_ value: CGFloat) -> CGFloat {
-        let absoluteMax = layoutMetrics.sheetTall + 30
+        let absoluteMax = layoutMetrics.sheetDefault
         var v = max(0, min(absoluteMax, value))
         if v < layoutMetrics.sheetDefault {
             v = min(v, layoutMetrics.sheetDefault - 1)
@@ -451,24 +404,32 @@ private extension MainTabView {
     }
 
     func restoreSheetFromCollapsed() {
-        withAnimation(HomeLayoutConstants.springAnimation) {
-            sheetHeight = layoutMetrics.sheetDefault
-            sheetDragStartHeight = layoutMetrics.sheetDefault
-        }
         homeState = .sheet
-    }
-
-    func collapsedChromeTap() {
-        if homeState == .simulator {
-            exitSimulator()
+        let rise = HomeLayoutConstants.sheetRestoreRiseDistance
+        let needsRiseMotion = sheetHeight < layoutMetrics.sheetDefault * 0.98
+        if needsRiseMotion {
+            // 先摆到略偏下（同一帧不带动画），下一帧再与高度一起弹回，形成「自下而上」升起。
+            sheetRestoreRiseOffset = rise
+            DispatchQueue.main.async {
+                withAnimation(HomeLayoutConstants.springRestoreExpand) {
+                    sheetHeight = layoutMetrics.sheetDefault
+                    sheetDragStartHeight = layoutMetrics.sheetDefault
+                    sheetRestoreRiseOffset = 0
+                }
+            }
         } else {
-            restoreSheetFromCollapsed()
+            withAnimation(HomeLayoutConstants.springRestoreExpand) {
+                sheetHeight = layoutMetrics.sheetDefault
+                sheetDragStartHeight = layoutMetrics.sheetDefault
+                sheetRestoreRiseOffset = 0
+            }
         }
     }
 
     func enterSimulator() {
         simulatorTransitionTask?.cancel()
         homeState = .sheet
+        sheetRestoreRiseOffset = 0
         withAnimation(HomeLayoutConstants.springAnimation) {
             sheetHeight = 0
         }
@@ -488,6 +449,7 @@ private extension MainTabView {
     func exitSimulator() {
         simulatorTransitionTask?.cancel()
         sheetHeight = 0
+        sheetRestoreRiseOffset = 0
         withAnimation(.easeInOut(duration: 0.16)) {
             homeState = .sheet
         }
@@ -513,6 +475,12 @@ private enum HomeLayoutConstants {
     static let sheetSnapDistanceToSimulator: CGFloat = 96
     static let sheetPredictedSnapDistanceToSimulator: CGFloat = 150
     static let springAnimation = Animation.spring(response: 0.42, dampingFraction: 0.82)
+    /// 点击收拢圆钮恢复 sheet：略慢、略阻尼，观感上像从下往上托起 + Tab 自右向左展开（与下拉收拢相反）。
+    static let springRestoreExpand = Animation.spring(response: 0.52, dampingFraction: 0.86)
+    /// 点收拢圆钮恢复时 sheet 先下移的 pt，再弹回 0，与高度动画叠加成自下而上托起。
+    static let sheetRestoreRiseDistance: CGFloat = 120
+    /// 白底 sheet 向上多盖一截，避免壳底在 sheet 顶缘露出一条线。
+    static let sheetTopCoverLift: CGFloat = 18
     /// 收起态松手时 sheet 高度吸附区间（相对 `sheetDefault`）
     static let sheetCollapsedMinFraction: CGFloat = 0.32
     static let sheetCollapsedMaxFraction: CGFloat = 0.96
@@ -551,13 +519,6 @@ private struct HomeHeroCardSurface: View {
                     anchor: .top
                 )
                 .opacity(heroContentOpacity)
-
-            if selectedTab == .home, compactProgress > 0.01 && !isSimulatorShown {
-                HeroCompactStrip(snapshot: snapshot)
-                    .opacity(pow(compactProgress, 1.25))
-                    .padding(.horizontal, AppSpacing.screenPadding)
-                    .padding(.top, 2)
-            }
         }
         .frame(height: heroHeight, alignment: .top)
         .clipShape(
@@ -771,8 +732,6 @@ private struct BrandHeroBackground: View {
     var isInvestTab: Bool = false
     /// Drawn height; 与 `MainTabView.brandGradientDisplayHeight` 一致（各 Tab 均随 sheet 拖拽渐变，不再单独全屏）。
     var gradientHeight: CGFloat
-    /// When false, disable the old shell-lift at the bottom to avoid double white bands during handoff.
-    var showsBottomShellLift: Bool = true
     /// When true, use one full-screen background source for simulator expanded state.
     var fillViewport: Bool = false
 
@@ -840,19 +799,6 @@ private struct BrandHeroBackground: View {
                         endRadius: radialBox * 0.28
                     )
                 }
-
-                if showsBottomShellLift {
-                    VStack {
-                        Spacer(minLength: 0)
-                        LinearGradient(
-                            colors: [Color.clear, AppColors.shellBg1.opacity(0.12)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        .frame(height: min(AppSpacing.xs, targetHeight * 0.022))
-                    }
-                    .frame(height: targetHeight)
-                }
             }
             .frame(width: w, height: targetHeight)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -862,7 +808,7 @@ private struct BrandHeroBackground: View {
         .frame(maxWidth: .infinity, alignment: .top)
         .clipped()
         .allowsHitTesting(false)
-        // 与 `shellUnderlay` 的浅色顶区分开：让品牌渐变铺满状态栏/灵动岛区域，避免顶部一条「白边」
+        // 与最底层 `shellUnderlay` 的浅色顶区分开：让品牌渐变铺满状态栏/灵动岛区域，避免顶部一条「白边」
         .ignoresSafeArea(edges: fillViewport ? .all : .top)
     }
 }

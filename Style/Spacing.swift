@@ -26,11 +26,11 @@ struct AppSpacing {
     /// 底部 Tab 条水平 inset（贴近 iOS 26 默认）
     static let tabBarHorizontalInset: CGFloat = 16
     /// 收拢态单圆按钮边长（系统圆钮 44pt）
-    static let tabBarCollapsedCircle: CGFloat = 44
-    /// 三键胶囊内单行可点区域高度（系统比例）
-    static let tabBarButtonRowHeight: CGFloat = 48
-    /// Tab 图标行占位高度（与 `tabBarButtonRowHeight` 配套）
-    static let tabBarIconRowHeight: CGFloat = 20
+    static let tabBarCollapsedCircle: CGFloat = 50
+    /// 三键胶囊内单行可点区域高度（对齐 HTML 50px）
+    static let tabBarButtonRowHeight: CGFloat = 50
+    /// Tab 图标行占位高度（对齐 HTML 22px icon）
+    static let tabBarIconRowHeight: CGFloat = 22
 
     /// Home hero / Journey 渐变区高度 — 308pt 对应 HTML min-height: 308px（MainTabView 动态分区时的回退）
     static let heroFullHeight: CGFloat = 308

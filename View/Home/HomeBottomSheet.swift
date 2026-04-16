@@ -3,7 +3,7 @@
 //  Flamora app
 //
 //  底部白色可拖动 Sheet，三个 Tab 共用。
-//  上方圆角、下方平直边；壳底对齐主内容 Safe Area 底（Tab 上沿），不单独向下延伸色块。
+//  上方圆角、下方平直边；由 MainTabView 贴屏底并忽略底部安全区，避免 Home Indicator 带露出背景色。
 //
 
 import SwiftUI
@@ -16,11 +16,20 @@ private let sheetShape = UnevenRoundedRectangle(
 )
 
 struct HomeBottomSheet: View {
-    let height: CGFloat
+    /// 主内容区高度（从顶部把手到底部内容结束），不含底部安全区 / chrome 预留。
+    let contentHeight: CGFloat
+    /// 仍属于 sheet 本体的底部延伸区，用来让整张 sheet 从屏幕底部开始。
+    let bottomInset: CGFloat
     let selectedTab: MainTabItem
     let sheetDragGesture: AnyGesture<DragGesture.Value>
     let dragProgress: CGFloat
     @Environment(PlaidManager.self) private var plaidManager
+
+    private let handleHeight: CGFloat = 24
+
+    private var totalHeight: CGFloat {
+        contentHeight + bottomInset
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,7 +39,7 @@ struct HomeBottomSheet: View {
                     .frame(width: 36, height: 4)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 24)
+            .frame(height: handleHeight)
             .contentShape(Rectangle())
             .highPriorityGesture(sheetDragGesture)
             .overlay(alignment: .center) {
@@ -63,10 +72,17 @@ struct HomeBottomSheet: View {
             .id(selectedTab)
             .transition(.opacity)
             .animation(.easeInOut(duration: 0.2), value: selectedTab)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity)
+            .frame(maxHeight: .infinity, alignment: .top)
+            // 用 safeAreaInset 为 Tab/Home Indicator 留白；避免对外层加 bottom padding 时 ScrollView 被提前裁切一条线。
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Color.clear
+                    .frame(height: bottomInset)
+                    .accessibilityHidden(true)
+            }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: height, alignment: .top)
+        .frame(height: totalHeight, alignment: .top)
         .background(
             sheetShape
                 .fill(
@@ -79,7 +95,6 @@ struct HomeBottomSheet: View {
         )
         .clipShape(sheetShape)
         .shadow(color: AppColors.glassCardShadow, radius: 18, y: -4)
-        .frame(maxHeight: .infinity, alignment: .bottom)
     }
 
     private var backLabelText: String {
@@ -92,43 +107,47 @@ struct HomeBottomSheet: View {
 }
 
 #Preview("Home") {
-    ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
-        HomeBottomSheet(
-            height: 580,
-            selectedTab: .home,
-            sheetDragGesture: AnyGesture(DragGesture()),
-            dragProgress: 0
-        )
-        .offset(y: -AppSpacing.homeSheetTopOverlap)
-    }
-    .environment(PlaidManager.shared)
+    HomeBottomSheetPreview(selectedTab: .home)
+        .environment(PlaidManager.shared)
 }
 
 #Preview("Cash") {
-    ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
-        HomeBottomSheet(
-            height: 480,
-            selectedTab: .cashflow,
-            sheetDragGesture: AnyGesture(DragGesture()),
-            dragProgress: 0
-        )
-        .offset(y: -AppSpacing.homeSheetTopOverlap)
-    }
-    .environment(PlaidManager.shared)
+    HomeBottomSheetPreview(selectedTab: .cashflow)
+        .environment(PlaidManager.shared)
 }
 
 #Preview("Investment") {
-    ZStack {
-        AppColors.backgroundPrimary.ignoresSafeArea()
-        HomeBottomSheet(
-            height: 480,
-            selectedTab: .investment,
-            sheetDragGesture: AnyGesture(DragGesture()),
-            dragProgress: 0
-        )
-        .offset(y: -AppSpacing.homeSheetTopOverlap)
-    }
-    .environment(PlaidManager.shared)
+    HomeBottomSheetPreview(selectedTab: .investment)
+        .environment(PlaidManager.shared)
 }
+
+private struct HomeBottomSheetPreview: View {
+    let selectedTab: MainTabItem
+
+    var body: some View {
+        GeometryReader { proxy in
+            let sheetBottomExtension = max(0, AppSpacing.homeSheetTopOverlap - AppSpacing.md - 2)
+            let bottomInset = proxy.safeAreaInsets.bottom + 2 + sheetBottomExtension
+            let sheetTotal = max(0, proxy.size.height - AppSpacing.homeSheetTopOverlap)
+            let contentHeight = max(0, sheetTotal - bottomInset)
+
+            ZStack {
+                AppColors.backgroundPrimary.ignoresSafeArea()
+
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    HomeBottomSheet(
+                        contentHeight: contentHeight,
+                        bottomInset: bottomInset,
+                        selectedTab: selectedTab,
+                        sheetDragGesture: AnyGesture(DragGesture()),
+                        dragProgress: 0
+                    )
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .ignoresSafeArea(edges: .bottom)
+            }
+        }
+    }
+}
+

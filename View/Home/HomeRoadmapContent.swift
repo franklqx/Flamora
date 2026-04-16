@@ -13,11 +13,10 @@ struct HomeRoadmapContent: View {
             VStack(alignment: .leading, spacing: AppSpacing.sectionGap) {
                 roadmapCard
                     .padding(.horizontal, AppSpacing.screenPadding)
-
-                Spacer(minLength: AppSpacing.xl)
             }
             .padding(.top, AppSpacing.cardGap)
-            .padding(.bottom, AppSpacing.lg)
+            // 不在 ScrollView 主轴上使用 Spacer：会导致内容高度/裁切异常，出现「提前被一条线裁掉」。
+            .padding(.bottom, AppSpacing.xl + AppSpacing.lg)
         }
         .scrollContentBackground(.hidden)
     }

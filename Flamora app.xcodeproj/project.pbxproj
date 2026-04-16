@@ -66,6 +66,7 @@
 		15E21AB32F3257B000A9BB60 /* CashflowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB22F3257B000A9BB60 /* CashflowView.swift */; };
 		15E21AB72F3257C600A9BB60 /* InvestmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB62F3257C600A9BB60 /* InvestmentView.swift */; };
 		15E21AB92F3257D700A9BB60 /* GlassmorphicTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */; };
+		EABDEF89FBE940EB9923E4BD /* LiquidGlassTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A76DFA412FAB4ECEB53AA9BB /* LiquidGlassTabBar.swift */; };
 		15E21AD92F3394B100A9BB60 /* FlameIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AD82F3394B100A9BB60 /* FlameIcon.swift */; };
 		15E21AE12F33BB9300A9BB60 /* SavingsTargetCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AE02F33BB9200A9BB60 /* SavingsTargetCard.swift */; };
 		15E21AE32F33BBB600A9BB60 /* SavingsInputSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AE22F33BBB600A9BB60 /* SavingsInputSheet.swift */; };
@@ -195,6 +196,7 @@
 		15E21AB22F3257B000A9BB60 /* CashflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowView.swift; sourceTree = "<group>"; };
 		15E21AB62F3257C600A9BB60 /* InvestmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentView.swift; sourceTree = "<group>"; };
 		15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassmorphicTabBar.swift; sourceTree = "<group>"; };
+		A76DFA412FAB4ECEB53AA9BB /* LiquidGlassTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidGlassTabBar.swift; sourceTree = "<group>"; };
 		15E21AD82F3394B100A9BB60 /* FlameIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlameIcon.swift; sourceTree = "<group>"; };
 		15E21AE02F33BB9200A9BB60 /* SavingsTargetCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsTargetCard.swift; sourceTree = "<group>"; };
 		15E21AE22F33BBB600A9BB60 /* SavingsInputSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsInputSheet.swift; sourceTree = "<group>"; };
@@ -583,7 +585,8 @@
 				1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */,
 				153CA3192F34EDEC001ED98E /* TopHeaderBar.swift */,
 				15E21AD82F3394B100A9BB60 /* FlameIcon.swift */,
-				15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */,
+		15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */,
+		A76DFA412FAB4ECEB53AA9BB /* LiquidGlassTabBar.swift */,
 				15FF6ED92F31043F0005F482 /* GradientButton.swift */,
 				EB0000022F9A00000000EB01 /* ErrorBanner.swift */,
 			);
@@ -791,7 +794,8 @@
 				153CA31A2F34EDEC001ED98E /* TopHeaderBar.swift in Sources */,
 				15E21AAB2F324EFA00A9BB60 /* Spacing.swift in Sources */,
 				1EB2D5B3CC5D45E3A2CC9B26 /* Shadows.swift in Sources */,
-				15E21AB92F3257D700A9BB60 /* GlassmorphicTabBar.swift in Sources */,
+		15E21AB92F3257D700A9BB60 /* GlassmorphicTabBar.swift in Sources */,
+		EABDEF89FBE940EB9923E4BD /* LiquidGlassTabBar.swift in Sources */,
 				12748F2B2F65D00B00410D60 /* BS_ConfirmView.swift in Sources */,
 				12748F2D2F66B21000410D60 /* BS_DiagnosisView.swift in Sources */,
 				12748F2F2F66B21000410D60 /* BS_LoadingView.swift in Sources */,

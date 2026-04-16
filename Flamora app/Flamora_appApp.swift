@@ -20,6 +20,7 @@ struct Flamora_appApp: App {
         Self.registerFonts()
         UIWindow.appearance().backgroundColor = UIColor(AppColors.backgroundPrimary)
         UIScrollView.appearance().delaysContentTouches = false
+        Self.configureTabBarAppearance()
         SubscriptionManager.configure()
     }
 
@@ -41,6 +42,37 @@ struct Flamora_appApp: App {
                 CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
             }
         }
+    }
+
+    /// Force a consistent light Liquid Glass tab bar across all tabs.
+    private static func configureTabBarAppearance() {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithTransparentBackground()
+        appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialLight)
+        appearance.backgroundColor = UIColor.white.withAlphaComponent(0.30)
+        appearance.shadowColor = UIColor.white.withAlphaComponent(0.20)
+
+        let activeColor = UIColor(red: 0.06, green: 0.09, blue: 0.16, alpha: 0.95)
+        let inactiveColor = UIColor(red: 0.06, green: 0.09, blue: 0.16, alpha: 0.62)
+
+        let states: [UITabBarItemAppearance] = [
+            appearance.stackedLayoutAppearance,
+            appearance.inlineLayoutAppearance,
+            appearance.compactInlineLayoutAppearance,
+        ]
+        for state in states {
+            state.normal.iconColor = inactiveColor
+            state.normal.titleTextAttributes = [.foregroundColor: inactiveColor]
+            state.selected.iconColor = activeColor
+            state.selected.titleTextAttributes = [.foregroundColor: activeColor]
+        }
+
+        let tabBar = UITabBar.appearance()
+        tabBar.standardAppearance = appearance
+        tabBar.scrollEdgeAppearance = appearance
+        tabBar.isTranslucent = true
+        tabBar.tintColor = activeColor
+        tabBar.unselectedItemTintColor = inactiveColor
     }
 
     var body: some Scene {

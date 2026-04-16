@@ -158,15 +158,14 @@ struct AppColors {
     ]
 
     /// Home hero — same colors as `heroGradient` with CSS locations 0 / 18% / 42% / 68% / 100%
+    /// 末端不抬到近白，避免与白 sheet 叠出「壳白」挤在屏内；接壳浅色由 `shellUnderlay`（sheet 背后层）承担。
     static var heroBrandLinearGradient: Gradient {
         Gradient(stops: [
             .init(color: Color(hex: "#15162a"), location: 0),
             .init(color: Color(hex: "#242b63"), location: 0.28),
-            // Keep most of the screen in the deep atmosphere; only lift near the very bottom.
             .init(color: Color(hex: "#4f65dc"), location: 0.80),
-            .init(color: Color(hex: "#8ea4f0"), location: 0.94),
-            .init(color: Color(hex: "#d5defa"), location: 0.985),
-            .init(color: Color(hex: "#e7ecff"), location: 1),
+            .init(color: Color(hex: "#6b7fd8"), location: 0.92),
+            .init(color: Color(hex: "#7a90e8"), location: 1),
         ])
     }
     /// Radial glow 1 — purple haze, top-left of hero
@@ -219,13 +218,14 @@ struct AppColors {
     ]
 
     /// Investment tab — same stop layout as `design-reference/home-rebuild-glass-prototype.html` `.invest-view`
+    /// 末端不抬到近白，接壳由 `shellUnderlay`（sheet 后）承担。
     static var investBrandLinearGradient: Gradient {
         Gradient(stops: [
             .init(color: Color(hex: "#13152a"), location: 0),
             .init(color: Color(hex: "#20275f"), location: 0.20),
             .init(color: Color(hex: "#4b61d8"), location: 0.50),
-            .init(color: Color(hex: "#c9d3ff"), location: 0.84),
-            .init(color: Color(hex: "#e9eeff"), location: 1),
+            .init(color: Color(hex: "#7c92e8"), location: 0.88),
+            .init(color: Color(hex: "#8aa0ef"), location: 1),
         ])
     }
 
@@ -235,22 +235,22 @@ struct AppColors {
     // MARK: Tab Bar (glass floating tab bar on light shell)
     /// Tab bar primary fill — kept for fallback surfaces
     static let tabBarFill          = Color.white.opacity(0.52)
-    /// Unified bar track — lower tint to avoid overexposed white block
-    static let tabBarGlassBarTint  = Color.white.opacity(0.18)
-    /// Selected pill tint — subtle system-like liquid emphasis
-    static let tabBarGlassSelectedTint = Color.white.opacity(0.13)
-    /// Collapsed single button tint — cooler and lighter than legacy navy blob
-    static let tabBarCollapsedGlassTint = Color(hex: "#3149BE").opacity(0.34)
-    /// Tab bar border
-    static let tabBarBorder        = Color.white.opacity(0.34)
-    /// Top highlight stroke for glass chrome
-    static let tabBarHighlight     = Color.white.opacity(0.26)
-    /// Tab bar shadow tint
-    static let tabBarShadow        = Color(hex: "#111827").opacity(0.10)
-    /// Active tab item tint
-    static let tabBarActiveItem    = Color(hex: "#0F172A").opacity(0.88)
-    /// Inactive tab label tint
-    static let tabBarInactiveLabel = Color(hex: "#0F172A").opacity(0.62)
+    /// Capsule/circle glass fill (light background, matches HTML rgba(255,255,255,.68))
+    static let tabBarGlassBarTint  = Color.white.opacity(0.68)
+    /// Selected pill — darker than capsule (inverted), matches HTML rgba(0,0,0,.07)
+    static let tabBarGlassSelectedTint = Color.black.opacity(0.07)
+    /// Collapsed circle fill
+    static let tabBarCollapsedGlassTint = Color.white.opacity(0.68)
+    /// Capsule/circle border
+    static let tabBarBorder        = Color.black.opacity(0.08)
+    /// Inner top highlight
+    static let tabBarHighlight     = Color.white.opacity(0.90)
+    /// Drop shadow tint
+    static let tabBarShadow        = Color.black.opacity(0.10)
+    /// Active tab icon/label — pure black
+    static let tabBarActiveItem    = Color.black.opacity(0.88)
+    /// Inactive tab icon/label — same black tone; selected state is expressed by the pill.
+    static let tabBarInactiveLabel = tabBarActiveItem
 
     // MARK: Simulator trend chart (integrated on atmospheric gradient)
     /// Vertical bar fill — soft white capsules on gradient
