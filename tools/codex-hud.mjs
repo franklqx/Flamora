@@ -16,18 +16,20 @@ const cwd = process.cwd();
 let frame = 0;
 
 const colors = {
-  dim: "\x1b[2m",
-  green: "\x1b[32m",
-  yellow: "\x1b[33m",
-  red: "\x1b[31m",
-  cyan: "\x1b[36m",
-  magenta: "\x1b[35m",
+  dim: "",
+  green: "\x1b[92m",
+  yellow: "\x1b[93m",
+  red: "\x1b[91m",
+  cyan: "\x1b[96m",
+  magenta: "\x1b[95m",
   reset: "\x1b[0m",
 };
 
 function color(name, text) {
   if (noColor) return text;
-  return `${colors[name] || ""}${text}${colors.reset}`;
+  const code = colors[name] || "";
+  if (!code) return text;
+  return `${code}${text}${colors.reset}`;
 }
 
 function pad(text, width) {
@@ -267,6 +269,7 @@ function render() {
     color("magenta", gitInfo()),
   ].filter(Boolean).join(` ${color("dim", "│")} `);
   const lines = [
+    "codex-hud:",
     header,
     contextLine(session.token),
     usageLine(session.token?.rate_limits),

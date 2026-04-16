@@ -59,9 +59,9 @@ struct TabBarShadowModifier: ViewModifier {
         content
             .shadow(
                 color: AppColors.tabBarShadow,
-                radius: 20,
+                radius: 14,
                 x: 0,
-                y: 18
+                y: 10
             )
     }
 }

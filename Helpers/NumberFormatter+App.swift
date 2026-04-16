@@ -3,7 +3,7 @@
 //  Flamora app
 //
 //  Shared number and date formatting utilities.
-//  Replaces duplicated compactCurrency() in JourneyView and formatCurrency() in SimulatorView.
+//  Replaces duplicated compactCurrency() in legacy Home shell and formatCurrency() in SimulatorView.
 //
 
 import Foundation

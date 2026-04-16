@@ -2,7 +2,7 @@
 //  FIRECountdownCard.swift
 //  Flamora app
 //
-//  Home Hero card for JourneyView.
+//  OLDDESIGN — hero card used by archived `JourneyView.swift`; live Home uses `HomeHeroCardSurface`.
 //  Phase 4: state-driven hero shell for the rebuilt Home experience.
 //
 

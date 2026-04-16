@@ -21,16 +21,16 @@ struct AppSpacing {
     static let cardGap: CGFloat = 16
     static let screenPadding: CGFloat = 16
     static let sectionGap: CGFloat = 24
-    /// 与压缩后 `GlassmorphicTabBar` 占位对齐（含 Home Indicator 区缓冲）
-    static let tabBarReserve: CGFloat = 70
-    /// 底部 Tab 条水平 inset（与历史 FabBar 一致）
-    static let tabBarHorizontalInset: CGFloat = 21
-    /// Sheet 收起态右侧单圆按钮边长（对齐参考图圆钮 44–48pt 量级）
-    static let tabBarCollapsedCircle: CGFloat = 46
-    /// 三键胶囊内单行可点区域高度
-    static let tabBarButtonRowHeight: CGFloat = 52
+    /// 与系统尺寸 tabbar 占位对齐（含 Home Indicator 区缓冲）
+    static let tabBarReserve: CGFloat = 68
+    /// 底部 Tab 条水平 inset（贴近 iOS 26 默认）
+    static let tabBarHorizontalInset: CGFloat = 16
+    /// 收拢态单圆按钮边长（系统圆钮 44pt）
+    static let tabBarCollapsedCircle: CGFloat = 44
+    /// 三键胶囊内单行可点区域高度（系统比例）
+    static let tabBarButtonRowHeight: CGFloat = 48
     /// Tab 图标行占位高度（与 `tabBarButtonRowHeight` 配套）
-    static let tabBarIconRowHeight: CGFloat = 24
+    static let tabBarIconRowHeight: CGFloat = 20
 
     /// Home hero / Journey 渐变区高度 — 308pt 对应 HTML min-height: 308px（MainTabView 动态分区时的回退）
     static let heroFullHeight: CGFloat = 308

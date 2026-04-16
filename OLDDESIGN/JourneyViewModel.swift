@@ -2,11 +2,8 @@
 //  JourneyViewModel.swift
 //  Flamora app
 //
-//  Owns all Home data-loading state for JourneyView (tab Home).
-//  MainTabView’s HomeHeroCardHost loads hero data separately for the shell hero.
-//
-//  Reload triggers live in the View layer: `.task(id:)` on Plaid-dependent identity plus
-//  a generation counter for savings check-in — all call loadData().
+//  Archived with `JourneyView` (OLDDESIGN). Not part of the shipping target; kept for reference.
+//  MainTabView uses `HomeHeroCardSurface` for hero data.
 //
 
 import SwiftUI
@@ -44,12 +41,10 @@ final class JourneyViewModel {
         return plaidManager.hasLinkedBank ? .accountsLinked : .noGoal
     }
 
-    /// True when the user has an active FIRE goal saved (non-nil activeGoalId from get-setup-state).
     var hasFireGoal: Bool {
         setupState?.activeGoalId != nil
     }
 
-    /// True when the full setup flow is complete (plan applied, stage == .active).
     var budgetSetupCompleted: Bool {
         homeSetupStage == .active
     }
@@ -114,7 +109,6 @@ final class JourneyViewModel {
         let monthStr = DateFormatter.currentMonthString
         let state = await fetchSetupState()
 
-        // Only update on success — keeps homeSetupStage stable during scroll
         if let state { setupState = state }
         if !hasCompletedInitialHomeLoad { hasCompletedInitialHomeLoad = true }
 

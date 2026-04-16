@@ -2,7 +2,7 @@
 //  LegendItemView.swift
 //  Flamora app
 //
-//  Shared chart-legend item used in JourneyView (HomeSandboxShell) and SimulatorView.
+//  Shared chart-legend item used by SimulatorView (Home).
 //  Two visual styles:
 //    .dot  — filled circle 8×8  (sandbox shell)
 //    .dash — filled capsule 18×3 (simulator chart)

@@ -70,7 +70,6 @@ private struct HomeViewportHeightKey: PreferenceKey {
 
 struct MainTabView: View {
     @State private var selectedTab: MainTabItem = .home
-    @State private var highlightedTab: MainTabItem = .home
     @State private var homeState: HomeState = .sheet
     @State private var simulatorDisplayState: SimulatorDisplayState = .results
     @State private var showNotifications = false
@@ -102,7 +101,58 @@ struct MainTabView: View {
         }
     }
 
+    private var shouldShowCollapsedTabButton: Bool {
+        homeState != .simulator && tabBarCollapseProgress >= 0.9
+    }
+
     var body: some View {
+        let tabBarVisibility: Visibility = shouldShowCollapsedTabButton ? .hidden : .visible
+
+        TabView(selection: $selectedTab) {
+            shellContent
+                .tabItem { Label("Home", systemImage: "house.fill") }
+                .tag(MainTabItem.home)
+
+            shellContent
+                .tabItem { Label("Cash", systemImage: "creditcard") }
+                .tag(MainTabItem.cashflow)
+
+            shellContent
+                .tabItem { Label("Invest", systemImage: "chart.line.uptrend.xyaxis") }
+                .tag(MainTabItem.investment)
+        }
+        .tabBarMinimizeBehavior(.never)
+        .toolbar(tabBarVisibility, for: .tabBar)
+        .overlay(alignment: .bottomTrailing) {
+            if shouldShowCollapsedTabButton {
+                collapsedTabButton
+                    .padding(.trailing, AppSpacing.tabBarHorizontalInset)
+                    .padding(.bottom, AppSpacing.sm)
+                    .zIndex(140)
+            }
+        }
+        .ignoresSafeArea(.keyboard, edges: .all)
+        .fullScreenCover(isPresented: Binding(
+            get: { plaidManager.showBudgetSetup },
+            set: { plaidManager.showBudgetSetup = $0 }
+        ), onDismiss: {
+            plaidManager.lastConnectionTime = Date()
+            NotificationCenter.default.post(name: .budgetSetupFlowDidDismiss, object: nil)
+        }) {
+            BudgetSetupView()
+        }
+        .sheet(isPresented: $showNotifications) {
+            NotificationsView()
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView(isEmbeddedInSheet: false)
+        }
+        .onDisappear {
+            simulatorTransitionTask?.cancel()
+        }
+    }
+
+    private var shellContent: some View {
         ZStack(alignment: .top) {
             let simulatorFullScreenActive = supportsSimulatorFullScreenBackground && homeState == .simulator
 
@@ -117,13 +167,10 @@ struct MainTabView: View {
                 fillViewport: simulatorFullScreenActive
             )
 
-            Rectangle()
-                // Bottom safe-area strip: above sheet in Home, behind background in simulator.
-                .fill(AppColors.shellBg2)
-                .frame(height: AppSpacing.tabBarButtonRowHeight + (AppSpacing.xs * 2) - 2)
-                .ignoresSafeArea(edges: .bottom)
-                .frame(maxHeight: .infinity, alignment: .bottom)
-                .zIndex(homeState == .simulator ? -10 : 30)
+            // 勿在此处再叠一层实色底（例如整块 `shellBg2` Rectangle + 高 zIndex）：
+            // `GlassmorphicTabBar` 的 `glassEffect` 会采样其后方内容；若 Tab 与 Home Indicator
+            // 之间只有均一亮灰，液态玻璃会看起来像整块发白。底部视觉由 `shellUnderlay` 渐变 +
+            // `BrandHeroBackground`（及 Sheet）承担即可。
 
             HomeHeroCardSurface(
                 snapshot: heroSnapshot,
@@ -156,7 +203,6 @@ struct MainTabView: View {
                     sheetDragGesture: sheetDragGesture,
                     dragProgress: sheetDragNormalizedProgress()
                 )
-                .ignoresSafeArea(edges: .bottom)
                 // Drop sheet lower without changing its height.
                 .offset(y: -AppSpacing.homeSheetTopOverlap + AppSpacing.md + 2)
                 .zIndex(20)
@@ -194,36 +240,45 @@ struct MainTabView: View {
             }
             layoutMetrics = next
         }
-        .overlay(alignment: .bottom) {
-            MainTabBarInset(
-                selectedTab: $highlightedTab,
-                collapseProgress: tabBarCollapseProgress,
-                onTabTapped: handleTabTap,
-                onCollapsedChromeTap: collapsedChromeTap,
-                onCollapseScrubChanged: handleTabBarCollapseScrubChanged,
-                onCollapseScrubEnded: handleTabBarCollapseScrubEnded,
-                onTabScrubbed: handleTabScrubbed
-            )
-            .padding(.bottom, -13)
+    }
+
+    private var collapsedTabButton: some View {
+        Button(action: collapsedChromeTap) {
+            Image(systemName: collapsedTabSymbol)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Color.white.opacity(0.94))
+                .frame(width: AppSpacing.tabBarCollapsedCircle, height: AppSpacing.tabBarCollapsedCircle)
+                .background {
+                    Circle()
+                        .fill(Color.clear)
+                        .glassEffect(Glass.regular.tint(AppColors.tabBarCollapsedGlassTint), in: Circle())
+                }
+                .overlay {
+                    Circle()
+                        .stroke(AppColors.tabBarHighlight, lineWidth: 0.8)
+                }
+                .shadow(color: Color(hex: "#101846").opacity(0.18), radius: 6, y: 3)
         }
-        .ignoresSafeArea(.keyboard, edges: .all)
-        .fullScreenCover(isPresented: Binding(
-            get: { plaidManager.showBudgetSetup },
-            set: { plaidManager.showBudgetSetup = $0 }
-        ), onDismiss: {
-            plaidManager.lastConnectionTime = Date()
-            NotificationCenter.default.post(name: .budgetSetupFlowDidDismiss, object: nil)
-        }) {
-            BudgetSetupView()
+        .buttonStyle(.plain)
+        .accessibilityLabel("Expand \(collapsedTabLabel)")
+        .transition(.opacity.combined(with: .scale))
+    }
+
+    private var collapsedTabSymbol: String {
+        switch selectedTab {
+        case .home: return "house.fill"
+        case .cashflow: return "creditcard"
+        case .investment: return "chart.line.uptrend.xyaxis"
+        case .settings: return "gearshape.fill"
         }
-        .sheet(isPresented: $showNotifications) {
-            NotificationsView()
-        }
-        .sheet(isPresented: $showSettings) {
-            SettingsView(isEmbeddedInSheet: false)
-        }
-        .onDisappear {
-            simulatorTransitionTask?.cancel()
+    }
+
+    private var collapsedTabLabel: String {
+        switch selectedTab {
+        case .home: return "Home"
+        case .cashflow: return "Cash"
+        case .investment: return "Invest"
+        case .settings: return "Settings"
         }
     }
 }
@@ -442,13 +497,6 @@ private extension MainTabView {
         }
     }
 
-    func handleTabTap(_ tab: MainTabItem) {
-        withAnimation(HomeLayoutConstants.springAnimation) {
-            selectedTab = tab
-            highlightedTab = tab
-        }
-    }
-
     func openSettingsFromHeader() {
         if homeState == .simulator {
             exitSimulator()
@@ -456,45 +504,6 @@ private extension MainTabView {
             restoreSheetFromCollapsed()
         }
         showSettings = true
-    }
-
-    /// Interactive vertical scrub on tab bar: drag down to collapse, drag up to restore.
-    func handleTabBarCollapseScrubChanged(_ progress: CGFloat) {
-        let p = max(0, min(1, progress))
-        simulatorTransitionTask?.cancel()
-        if homeState == .simulator {
-            homeState = .sheet
-        }
-        sheetHeight = clampSheetHeight(layoutMetrics.sheetDefault * (1 - p))
-        sheetDragStartHeight = sheetHeight
-    }
-
-    /// Snap after scrub ends (restore / collapsed stable range / simulator).
-    func handleTabBarCollapseScrubEnded(_ progress: CGFloat) {
-        let p = max(0, min(1, progress))
-        if p > 0.9 {
-            enterSimulator()
-            return
-        }
-        if p < 0.08 {
-            restoreSheetFromCollapsed()
-            return
-        }
-
-        let lo = layoutMetrics.sheetDefault * HomeLayoutConstants.sheetCollapsedMinFraction
-        let hi = layoutMetrics.sheetDefault * HomeLayoutConstants.sheetCollapsedMaxFraction
-        let target = min(max(layoutMetrics.sheetDefault * (1 - p), lo), hi)
-        withAnimation(HomeLayoutConstants.springAnimation) {
-            sheetHeight = target
-            sheetDragStartHeight = target
-        }
-        homeState = .sheet
-    }
-
-    /// Horizontal scrub on tab bar: slide to neighboring tabs.
-    func handleTabScrubbed(_ tab: MainTabItem) {
-        guard tab != selectedTab else { return }
-        handleTabTap(tab)
     }
 }
 
@@ -874,117 +883,6 @@ private struct TabHeroTitleContent: View {
     }
 }
 
-// MARK: - Home Roadmap Content (HTML: .roadmap with 3 steps)
-
-struct HomeRoadmapContent: View {
-    var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: AppSpacing.sectionGap) {
-                roadmapCard
-                    .padding(.horizontal, AppSpacing.screenPadding)
-
-                Spacer(minLength: AppSpacing.xl)
-            }
-            .padding(.top, AppSpacing.cardGap)
-            .padding(.bottom, AppSpacing.lg)
-        }
-        .scrollContentBackground(.hidden)
-    }
-
-    private var roadmapCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("What happens next")
-                .font(.cardHeader)
-                .foregroundStyle(AppColors.inkFaint)
-                .tracking(AppTypography.Tracking.cardHeader)
-                .textCase(.uppercase)
-                .padding(.bottom, AppSpacing.sm)
-
-            Text("Three steps to unlock Home.")
-                .font(.h3)
-                .foregroundStyle(AppColors.inkPrimary)
-                .tracking(-0.5)
-                .padding(.bottom, AppSpacing.md)
-
-            VStack(spacing: 0) {
-                roadmapStep(
-                    index: 1,
-                    isCurrent: true,
-                    title: "Set your FIRE goal",
-                    detail: "Tell Flamora what future you're aiming for."
-                )
-                roadmapStep(
-                    index: 2,
-                    isCurrent: false,
-                    title: "Connect your accounts",
-                    detail: "Bring in your real numbers when you're ready."
-                )
-                roadmapStep(
-                    index: 3,
-                    isCurrent: false,
-                    title: "Choose your path",
-                    detail: "Apply the version of FIRE that fits your life.",
-                    isLast: true
-                )
-            }
-        }
-        .padding(AppSpacing.cardPadding)
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.glassPanel)
-                .fill(AppColors.glassCardBg)
-                .shadow(color: AppColors.glassCardShadow, radius: 24, y: 8)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.glassPanel)
-                .stroke(AppColors.glassCardBorder, lineWidth: 1)
-        )
-        .frame(minHeight: AppSpacing.homeSheetPrimaryCardMinHeight, alignment: .top)
-    }
-
-    private func roadmapStep(index: Int, isCurrent: Bool, title: String, detail: String, isLast: Bool = false) -> some View {
-        HStack(alignment: .center, spacing: AppSpacing.md) {
-            ZStack {
-                Circle()
-                    .fill(isCurrent ? AppColors.inkPrimary : AppColors.inkPrimary.opacity(0.06))
-                    .frame(width: 32, height: 32)
-                Text("\(index)")
-                    .font(.smallLabel)
-                    .foregroundStyle(isCurrent ? AppColors.ctaWhite : AppColors.inkSoft)
-            }
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.inlineLabel)
-                    .foregroundStyle(AppColors.inkPrimary)
-                Text(detail)
-                    .font(.caption)
-                    .foregroundStyle(AppColors.inkSoft)
-                    .lineSpacing(2)
-            }
-
-            Spacer(minLength: 0)
-
-            ZStack {
-                Circle()
-                    .strokeBorder(AppColors.inkBorder, lineWidth: 1)
-                    .background(Circle().fill(AppColors.ctaWhite))
-                    .frame(width: 34, height: 34)
-                Image(systemName: "chevron.right")
-                    .font(.footnoteSemibold)
-                    .foregroundStyle(AppColors.inkPrimary.opacity(0.54))
-            }
-        }
-        .padding(.vertical, AppSpacing.rowItem)
-        .overlay(alignment: .bottom) {
-            if !isLast {
-                Rectangle()
-                    .fill(AppColors.inkDivider)
-                    .frame(height: 1)
-            }
-        }
-    }
-}
-
 private struct NotificationsView: View {
     @Environment(\.dismiss) private var dismiss
 
@@ -1085,32 +983,6 @@ struct CashUnconnectedContent: View {
         }) {
             PlaidTrustBridgeView()
         }
-    }
-}
-
-// MARK: - Bottom tab (safeAreaInset slot)
-
-/// 贴在底部安全区；`collapseProgress` 仅驱动 `GlassmorphicTabBar` 形态，Sheet 不得 ignoresSafeArea(.bottom) 以免盖住 Tab。
-private struct MainTabBarInset: View {
-    @Binding var selectedTab: MainTabItem
-    var collapseProgress: CGFloat
-    let onTabTapped: (MainTabItem) -> Void
-    let onCollapsedChromeTap: () -> Void
-    let onCollapseScrubChanged: (CGFloat) -> Void
-    let onCollapseScrubEnded: (CGFloat) -> Void
-    let onTabScrubbed: (MainTabItem) -> Void
-
-    var body: some View {
-        GlassmorphicTabBar(
-            selectedTab: $selectedTab,
-            collapseProgress: collapseProgress,
-            onTabTapped: onTabTapped,
-            onCollapsedChromeTap: onCollapsedChromeTap,
-            onCollapseScrubChanged: onCollapseScrubChanged,
-            onCollapseScrubEnded: onCollapseScrubEnded,
-            onTabScrubbed: onTabScrubbed
-        )
-        .ignoresSafeArea(edges: .bottom)
     }
 }
 

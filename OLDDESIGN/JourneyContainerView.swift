@@ -5,8 +5,8 @@
 //  Journey 的容器视图
 //  SimulatorView 已提升到 MainTabView 作为全局覆盖层
 //
-//  当前主导航的 Home sheet 使用 `HomeRoadmapContent`（见 MainTabView），本容器未接入根视图；
-//  保留供 JourneyViewModel / 组件复用与未来合并，见 docs/engineering/2026-04-09-home-rebuild-implementation-spec.md §2.1。
+//  当前主导航的 Home sheet 使用 `HomeRoadmapContent`（`View/Home/HomeRoadmapContent.swift`），本容器未接入根视图。
+//  `JourneyView` / `JourneyViewModel` / `JourneyTodoList` 与本文件一同保留在 OLDDESIGN 供对照，不加入编译目标。
 //
 
 import SwiftUI

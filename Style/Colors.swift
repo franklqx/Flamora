@@ -233,16 +233,24 @@ struct AppColors {
     static let investHeroGlowPurple2 = Color(hex: "#a78bfa").opacity(0.28)
 
     // MARK: Tab Bar (glass floating tab bar on light shell)
-    /// Tab bar primary fill — rgba(255,255,255,0.68)
-    static let tabBarFill          = Color.white.opacity(0.68)
-    /// Tab bar border — rgba(255,255,255,0.82)
-    static let tabBarBorder        = Color.white.opacity(0.82)
-    /// Tab bar shadow tint — rgba(17,24,39,0.16)
-    static let tabBarShadow        = Color(hex: "#111827").opacity(0.16)
-    /// Active tab item fill — rgba(255,255,255,0.72)
-    static let tabBarActiveItem    = Color.white.opacity(0.72)
-    /// Inactive tab label — rgba(17,24,39,0.58)
-    static let tabBarInactiveLabel = Color(hex: "#111827").opacity(0.58)
+    /// Tab bar primary fill — kept for fallback surfaces
+    static let tabBarFill          = Color.white.opacity(0.52)
+    /// Unified bar track — lower tint to avoid overexposed white block
+    static let tabBarGlassBarTint  = Color.white.opacity(0.18)
+    /// Selected pill tint — subtle system-like liquid emphasis
+    static let tabBarGlassSelectedTint = Color.white.opacity(0.13)
+    /// Collapsed single button tint — cooler and lighter than legacy navy blob
+    static let tabBarCollapsedGlassTint = Color(hex: "#3149BE").opacity(0.34)
+    /// Tab bar border
+    static let tabBarBorder        = Color.white.opacity(0.34)
+    /// Top highlight stroke for glass chrome
+    static let tabBarHighlight     = Color.white.opacity(0.26)
+    /// Tab bar shadow tint
+    static let tabBarShadow        = Color(hex: "#111827").opacity(0.10)
+    /// Active tab item tint
+    static let tabBarActiveItem    = Color(hex: "#0F172A").opacity(0.88)
+    /// Inactive tab label tint
+    static let tabBarInactiveLabel = Color(hex: "#0F172A").opacity(0.62)
 
     // MARK: Simulator trend chart (integrated on atmospheric gradient)
     /// Vertical bar fill — soft white capsules on gradient

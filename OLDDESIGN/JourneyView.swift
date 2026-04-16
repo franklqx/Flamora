@@ -2,6 +2,8 @@
 //  JourneyView.swift
 //  Flamora app
 //
+//  OLDDESIGN — not linked from MainTabView. See `View/Home/` for shipping Home shell.
+//
 //  Phase 4 Home rebuild shell:
 //  - Act 1: official Hero + guided card or action strip
 //  - Act 2: sandbox shell
