@@ -25,7 +25,7 @@ struct BS_DiagnosisView: View {
     
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
             
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -82,12 +82,12 @@ struct BS_DiagnosisView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Financial Snapshot")
                 .font(.cardFigurePrimary)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(AppColors.inkPrimary)
             
             if let stats = viewModel.spendingStats {
                 Text("Based on \(stats.totalTransactions) transactions over \(stats.monthsAnalyzed) months.")
                     .font(.bodySmall)
-                    .foregroundStyle(AppColors.textSecondary)
+                    .foregroundStyle(AppColors.inkSoft)
                     .lineSpacing(3)
             }
         }
@@ -121,22 +121,22 @@ struct BS_DiagnosisView: View {
                 Text(label)
                     .font(.miniLabel)
                     .tracking(0.08 * 9)
-                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                    .foregroundStyle(AppColors.inkFaint)
 
                 Text("\(isNegative ? "-" : "")$\(formatted(abs(value)))")
                     .font(.sheetPrimaryButton)
-                    .foregroundStyle(isNegative ? AppColors.error : AppColors.textPrimary)
+                    .foregroundStyle(isNegative ? AppColors.error : AppColors.inkPrimary)
                     .minimumScaleFactor(0.7)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(AppSpacing.sm + AppSpacing.xs)
-            .background(isSelected ? AppColors.overlayWhiteMid : AppColors.overlayWhiteWash)
+            .background(isSelected ? AppColors.glassCardBg : AppColors.glassCardBg)
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.md)
                     .stroke(
-                        isSelected ? AppColors.overlayWhiteAt25 : AppColors.overlayWhiteStroke,
+                        isSelected ? AppColors.inkBorder : AppColors.inkBorder,
                         lineWidth: 1
                     )
             )
@@ -158,7 +158,7 @@ struct BS_DiagnosisView: View {
                 VStack(spacing: AppSpacing.sm) {
                     Text("No data yet")
                         .font(.footnoteRegular)
-                        .foregroundStyle(AppColors.textSecondary)
+                        .foregroundStyle(AppColors.inkSoft)
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 160)
@@ -179,13 +179,13 @@ struct BS_DiagnosisView: View {
                                 path.addLine(to: CGPoint(x: geo.size.width, y: avgY))
                             }
                             .stroke(style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                            .foregroundStyle(AppColors.overlayWhiteAt25)
+                            .foregroundStyle(AppColors.inkBorder)
                         }
 
                         if average > 0 {
                             Text("avg $\(formatted(average))")
                                 .font(.cardRowMeta)
-                                .foregroundStyle(AppColors.overlayWhiteForegroundSoft)
+                                .foregroundStyle(AppColors.inkSoft)
                                 .frame(maxWidth: .infinity, alignment: .trailing)
                                 .frame(maxHeight: .infinity, alignment: .top)
                         }
@@ -194,7 +194,7 @@ struct BS_DiagnosisView: View {
                             ForEach(Array(barValues.enumerated()), id: \.offset) { _, value in
                                 let normalizedHeight = (value / maxVal) * chartHeight * 0.85
                                 UnevenRoundedRectangle(topLeadingRadius: AppSpacing.xs, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: AppSpacing.xs)
-                                    .fill(AppColors.overlayWhiteMid)
+                                    .fill(AppColors.accentBlueBright.opacity(0.5))
                                     .frame(width: barWidth, height: max(6, normalizedHeight))
                             }
                         }
@@ -209,18 +209,18 @@ struct BS_DiagnosisView: View {
                     ForEach(Array(labels.enumerated()), id: \.offset) { _, label in
                         Text(label)
                             .font(.cardRowMeta)
-                            .foregroundStyle(AppColors.overlayWhiteForegroundSoft)
+                            .foregroundStyle(AppColors.inkSoft)
                             .frame(maxWidth: .infinity)
                     }
                 }
             }
         }
         .padding(AppSpacing.md)
-        .background(AppColors.overlayWhiteWash)
+        .background(AppColors.glassCardBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
         )
     }
     
@@ -244,7 +244,7 @@ struct BS_DiagnosisView: View {
             Text("AI INSIGHTS")
                 .font(.label)
                 .tracking(1.0)
-                .foregroundStyle(AppColors.overlayWhiteForegroundSoft)
+                .foregroundStyle(AppColors.inkSoft)
                 .padding(.bottom, AppSpacing.xs)
             
             ForEach(Array(insights.enumerated()), id: \.element.id) { index, insight in
@@ -258,20 +258,20 @@ struct BS_DiagnosisView: View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text(insight.title)
                 .font(.figureSecondarySemibold)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(AppColors.inkPrimary)
 
             Text(insight.description)
                 .font(.footnoteRegular)
-                .foregroundStyle(AppColors.overlayWhiteOnPhoto)
+                .foregroundStyle(AppColors.inkSoft)
                 .lineSpacing(4)
         }
         .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.overlayWhiteWash)
+        .background(AppColors.glassCardBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(insight.type) insight: \(insight.title). \(insight.description)")
@@ -284,18 +284,18 @@ struct BS_DiagnosisView: View {
         if viewModel.isLoadingFeasibility {
             HStack(spacing: AppSpacing.sm) {
                 ProgressView()
-                    .tint(AppColors.textSecondary)
+                    .tint(AppColors.inkSoft)
                 Text("Analyzing your goal...")
                     .font(.footnoteRegular)
-                    .foregroundStyle(AppColors.textSecondary)
+                    .foregroundStyle(AppColors.inkSoft)
             }
             .frame(maxWidth: .infinity)
             .padding(AppSpacing.md)
-            .background(AppColors.overlayWhiteWash)
+            .background(AppColors.glassCardBg)
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.md)
-                    .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                    .stroke(AppColors.inkBorder, lineWidth: 1)
             )
         } else if let f = viewModel.goalFeasibility {
             goalGapCard(f)
@@ -312,7 +312,7 @@ struct BS_DiagnosisView: View {
             Text("YOUR GOAL GAP")
                 .font(.label)
                 .tracking(1.0)
-                .foregroundStyle(AppColors.overlayWhiteForegroundSoft)
+                .foregroundStyle(AppColors.inkSoft)
 
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(statusLabel)
@@ -320,14 +320,14 @@ struct BS_DiagnosisView: View {
                     .foregroundStyle(statusColor)
                 Text(copy)
                     .font(.footnoteRegular)
-                    .foregroundStyle(AppColors.textSecondary)
+                    .foregroundStyle(AppColors.inkSoft)
                     .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             if !isOnTrack {
                 Rectangle()
-                    .fill(AppColors.overlayWhiteStroke)
+                    .fill(AppColors.inkBorder)
                     .frame(height: 1)
                     .padding(.vertical, AppSpacing.xs)
 
@@ -341,7 +341,7 @@ struct BS_DiagnosisView: View {
                 HStack {
                     Text("Gap")
                         .font(.inlineLabel)
-                        .foregroundStyle(AppColors.textSecondary)
+                        .foregroundStyle(AppColors.inkSoft)
                     Spacer()
                     Text(gap > 0 ? "+$\(formatted(gap))/mo" : "None")
                         .font(.inlineFigureBold)
@@ -351,11 +351,11 @@ struct BS_DiagnosisView: View {
         }
         .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.overlayWhiteWash)
+        .background(AppColors.glassCardBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
         )
     }
 
@@ -364,15 +364,15 @@ struct BS_DiagnosisView: View {
         HStack {
             Text(label)
                 .font(.inlineLabel)
-                .foregroundStyle(AppColors.textSecondary)
+                .foregroundStyle(AppColors.inkSoft)
             Spacer()
             HStack(spacing: AppSpacing.xs) {
                 Text("$\(formatted(amount))")
                     .font(.inlineFigureBold)
-                    .foregroundStyle(AppColors.textPrimary)
+                    .foregroundStyle(AppColors.inkPrimary)
                 Text("(\(Int(rate.rounded()))%)")
                     .font(.footnoteRegular)
-                    .foregroundStyle(AppColors.textSecondary)
+                    .foregroundStyle(AppColors.inkSoft)
             }
         }
     }
@@ -415,7 +415,7 @@ struct BS_DiagnosisView: View {
     
     private var stickyBottomCTA: some View {
         VStack(spacing: 0) {
-            LinearGradient(colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary], startPoint: .top, endPoint: .bottom)
+            LinearGradient(colors: [Color.clear, AppColors.shellBg2], startPoint: .top, endPoint: .bottom)
                 .frame(height: AppRadius.button)
             
             Button {
@@ -423,17 +423,15 @@ struct BS_DiagnosisView: View {
             } label: {
                 Text("Continue")
                     .font(.sheetPrimaryButton)
-                    .foregroundStyle(AppColors.textInverse)
+                    .foregroundStyle(AppColors.ctaWhite)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
-                    .background(
-                        LinearGradient(colors: AppColors.gradientFire, startPoint: .leading, endPoint: .trailing)
-                    )
+                    .background(AppColors.inkPrimary)
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
             }
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.md)
-            .background(AppColors.backgroundPrimary)
+            .background(AppColors.shellBg2)
         }
     }
     

@@ -42,7 +42,7 @@ struct OB_AgeView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("YOUR AGE")
                             .font(.cardRowMeta)
-                            .foregroundColor(AppColors.textTertiary)
+                            .foregroundColor(AppColors.inkFaint)
                             .tracking(0.8)
 
                         ageGlassCard
@@ -53,7 +53,7 @@ struct OB_AgeView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("PRIMARY CURRENCY")
                             .font(.cardRowMeta)
-                            .foregroundColor(AppColors.textTertiary)
+                            .foregroundColor(AppColors.inkFaint)
                             .tracking(0.8)
 
                         currencyButton
@@ -124,7 +124,7 @@ struct OB_AgeView: View {
                         ZStack(alignment: .leading) {
                             // 底色轨道
                             Capsule()
-                                .fill(AppColors.glassPillStroke)
+                                .fill(AppColors.inkBorder)
                                 .frame(width: trackWidth, height: 4)
 
                             // 渐变进度
@@ -154,11 +154,11 @@ struct OB_AgeView: View {
                 HStack {
                     Text("\(Int(ageRange.lowerBound))")
                         .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(AppColors.inkFaint)
                     Spacer()
                     Text("\(Int(ageRange.upperBound))")
                         .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(AppColors.inkFaint)
                 }
                 .frame(height: 18)
             }
@@ -207,7 +207,7 @@ struct OB_AgeView: View {
 
                 Image(systemName: "chevron.down")
                     .font(.footnoteSemibold)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundColor(AppColors.inkFaint)
             }
             .padding(.horizontal, 20)
             .frame(height: 64)
@@ -224,7 +224,7 @@ struct OB_AgeView: View {
 
     private var accentGradient: LinearGradient {
         LinearGradient(
-            colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd],
+            colors: AppColors.gradientShellAccent,
             startPoint: .leading,
             endPoint: .trailing
         )

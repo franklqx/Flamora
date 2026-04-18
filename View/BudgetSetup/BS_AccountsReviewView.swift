@@ -18,7 +18,7 @@ struct BS_AccountsReviewView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
@@ -56,11 +56,11 @@ struct BS_AccountsReviewView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Your Connected Accounts")
                 .font(.cardFigurePrimary)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(AppColors.inkPrimary)
 
             Text("These are the accounts we'll analyze for your financial snapshot. Make sure the right ones are included.")
                 .font(.bodySmall)
-                .foregroundStyle(AppColors.textSecondary)
+                .foregroundStyle(AppColors.inkSoft)
                 .lineSpacing(3)
         }
     }
@@ -70,10 +70,10 @@ struct BS_AccountsReviewView: View {
     private var loadingSection: some View {
         VStack(spacing: AppSpacing.md) {
             ProgressView()
-                .tint(AppColors.overlayWhiteOnPhoto)
+                .tint(AppColors.inkPrimary)
             Text("Loading your accounts...")
                 .font(.footnoteRegular)
-                .foregroundStyle(AppColors.textSecondary)
+                .foregroundStyle(AppColors.inkSoft)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, AppSpacing.xxl)
@@ -85,15 +85,15 @@ struct BS_AccountsReviewView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("No accounts found")
                 .font(.bodySemibold)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(AppColors.inkPrimary)
             Text("Go back and connect at least one checking or credit account to continue.")
                 .font(.bodySmall)
-                .foregroundStyle(AppColors.textSecondary)
+                .foregroundStyle(AppColors.inkSoft)
                 .lineSpacing(3)
         }
         .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.overlayWhiteWash)
+        .background(AppColors.glassCardBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
     }
 
@@ -117,7 +117,7 @@ struct BS_AccountsReviewView: View {
         VStack(alignment: .leading, spacing: 0) {
             Text(title)
                 .font(.footnoteSemibold)
-                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                .foregroundStyle(AppColors.inkFaint)
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.top, AppSpacing.md)
                 .padding(.bottom, AppSpacing.sm)
@@ -125,18 +125,18 @@ struct BS_AccountsReviewView: View {
             ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
                 if index > 0 {
                     Divider()
-                        .background(AppColors.overlayWhiteStroke)
+                        .background(AppColors.inkBorder)
                         .padding(.horizontal, AppSpacing.md)
                 }
                 accountRow(account: account)
             }
             .padding(.bottom, AppSpacing.sm)
         }
-        .background(AppColors.surfaceElevated)
+        .background(AppColors.glassCardBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
         )
     }
 
@@ -146,22 +146,22 @@ struct BS_AccountsReviewView: View {
             // Type icon
             ZStack {
                 Circle()
-                    .fill(AppColors.overlayWhiteWash)
+                    .fill(AppColors.glassCardBg)
                     .frame(width: AppSpacing.xl, height: AppSpacing.xl)
                 Image(systemName: iconName(for: account.type))
                     .font(.bodySmall)
-                    .foregroundStyle(AppColors.textSecondary)
+                    .foregroundStyle(AppColors.inkSoft)
             }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(account.name)
                     .font(.bodySmall)
-                    .foregroundStyle(AppColors.textPrimary)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .lineLimit(1)
                 if let mask = account.mask {
                     Text("••••\(mask)")
                         .font(.footnoteRegular)
-                        .foregroundStyle(AppColors.textTertiary)
+                        .foregroundStyle(AppColors.inkFaint)
                 }
             }
 
@@ -170,7 +170,7 @@ struct BS_AccountsReviewView: View {
             if let balance = account.balanceCurrent {
                 Text("$\(formattedInt(balance))")
                     .font(.bodySmallSemibold)
-                    .foregroundStyle(AppColors.textPrimary)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .monospacedDigit()
             }
         }
@@ -183,7 +183,7 @@ struct BS_AccountsReviewView: View {
     private var stickyBottomCTA: some View {
         VStack(spacing: 0) {
             LinearGradient(
-                colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary],
+                colors: [Color.clear, AppColors.shellBg2],
                 startPoint: .top, endPoint: .bottom
             )
             .frame(height: AppRadius.button)
@@ -199,17 +199,17 @@ struct BS_AccountsReviewView: View {
             } label: {
                 Group {
                     if isProceeding {
-                        ProgressView().tint(AppColors.textInverse)
+                        ProgressView().tint(AppColors.ctaWhite)
                     } else {
                         Text("Looks Good, Continue")
                             .font(.sheetPrimaryButton)
                     }
                 }
-                .foregroundStyle(AppColors.textInverse)
+                .foregroundStyle(AppColors.ctaWhite)
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
                 .background(
-                    LinearGradient(colors: AppColors.gradientFire, startPoint: .leading, endPoint: .trailing)
+                    AppColors.inkPrimary
                         .opacity(!viewModel.plaidAccounts.isEmpty && !isProceeding ? 1 : 0.4)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
@@ -217,7 +217,7 @@ struct BS_AccountsReviewView: View {
             .disabled(viewModel.plaidAccounts.isEmpty || isProceeding)
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.md)
-            .background(AppColors.backgroundPrimary)
+            .background(AppColors.shellBg2)
         }
     }
 

@@ -15,7 +15,7 @@ struct BudgetSetupView: View {
 
     var body: some View {
         ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
             if viewModel.isResumingState {
                 BudgetSetupBootstrapView()
@@ -84,7 +84,7 @@ private struct BudgetSetupNavigationBar: View {
                         Text("Back")
                     }
                     .font(.bodySmall)
-                    .foregroundStyle(AppColors.textSecondary)
+                    .foregroundStyle(AppColors.inkSoft)
                 }
                 .buttonStyle(.plain)
             } else {
@@ -97,9 +97,9 @@ private struct BudgetSetupNavigationBar: View {
             Button(action: onClose) {
                 Image(systemName: "xmark")
                     .font(.bodySemibold)
-                    .foregroundStyle(AppColors.textPrimary)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .frame(width: 32, height: 32)
-                    .background(AppColors.overlayWhiteWash)
+                    .background(AppColors.glassCardBg)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
@@ -115,12 +115,12 @@ private struct BudgetSetupBootstrapView: View {
     var body: some View {
         VStack(spacing: AppSpacing.md) {
             ProgressView()
-                .tint(AppColors.textPrimary)
+                .tint(AppColors.inkPrimary)
             Text("Loading your setup...")
                 .font(.bodySmall)
-                .foregroundStyle(AppColors.textSecondary)
+                .foregroundStyle(AppColors.inkSoft)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppColors.backgroundPrimary.ignoresSafeArea())
+        .background(LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
     }
 }

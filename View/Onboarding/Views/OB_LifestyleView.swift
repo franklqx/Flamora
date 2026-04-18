@@ -50,7 +50,7 @@ struct OB_LifestyleView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("RETIREMENT LIFESTYLE")
                                 .font(.cardRowMeta)
-                                .foregroundColor(AppColors.textTertiary)
+                                .foregroundColor(AppColors.inkFaint)
                                 .tracking(0.8)
 
                             VStack(spacing: 12) {
@@ -86,7 +86,7 @@ struct OB_LifestyleView: View {
                             HStack(spacing: 8) {
                                 Text(data.currencySymbol)
                                     .font(.h4)
-                                    .foregroundColor(AppColors.textTertiary)
+                                    .foregroundColor(AppColors.inkFaint)
                                 TextField("Monthly amount", text: $customAmountText)
                                     .font(.h4)
                                     .foregroundStyle(AppColors.inkPrimary)
@@ -94,7 +94,7 @@ struct OB_LifestyleView: View {
                                     .focused($isCustomInputFocused)
                                 Text("/mo")
                                     .font(.bodySmall)
-                                    .foregroundColor(AppColors.textTertiary)
+                                    .foregroundColor(AppColors.inkFaint)
                             }
                             .padding(.horizontal, 20)
                             .frame(height: 56)
@@ -102,7 +102,7 @@ struct OB_LifestyleView: View {
                             .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
                             .overlay(
                                 RoundedRectangle(cornerRadius: AppRadius.lg)
-                                    .stroke(LinearGradient(colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd], startPoint: .leading, endPoint: .trailing), lineWidth: 1.5)
+                                    .stroke(LinearGradient(colors: AppColors.gradientShellAccent, startPoint: .leading, endPoint: .trailing), lineWidth: 1.5)
                             )
                             .id("customInput")
                             .transition(.move(edge: .top).combined(with: .opacity))
@@ -194,7 +194,7 @@ struct OB_LifestyleView: View {
                     Image(systemName: "checkmark.circle")
                         .font(.detailTitle)
                         .foregroundStyle(LinearGradient(
-                            colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd],
+                            colors: AppColors.gradientShellAccent,
                             startPoint: .leading,
                             endPoint: .trailing
                         ))
@@ -205,7 +205,7 @@ struct OB_LifestyleView: View {
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.lg)
-                    .stroke(isSelected ? LinearGradient(colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd], startPoint: .leading, endPoint: .trailing) : LinearGradient(colors: [AppColors.inkBorder], startPoint: .leading, endPoint: .trailing), lineWidth: isSelected ? 1.5 : 1)
+                    .stroke(isSelected ? LinearGradient(colors: AppColors.gradientShellAccent, startPoint: .leading, endPoint: .trailing) : LinearGradient(colors: [AppColors.inkBorder], startPoint: .leading, endPoint: .trailing), lineWidth: isSelected ? 1.5 : 1)
             )
         }
         .buttonStyle(.plain)

@@ -42,7 +42,7 @@ struct BS_LoadingView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppColors.backgroundPrimary.ignoresSafeArea())
+        .background(LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
     }
 
     // MARK: - Normal loading view
@@ -70,16 +70,16 @@ struct BS_LoadingView: View {
 
             Image(systemName: "exclamationmark.circle")
                 .font(.system(size: 44, weight: .regular))
-                .foregroundStyle(AppColors.textSecondary)
+                .foregroundStyle(AppColors.inkSoft)
 
             VStack(spacing: AppSpacing.sm) {
                 Text("Something went wrong")
                     .font(.h4)
-                    .foregroundStyle(AppColors.textPrimary)
+                    .foregroundStyle(AppColors.inkPrimary)
 
                 Text(viewModel.loadingError ?? "This is taking longer than expected.\nPlease check your connection and try again.")
                     .font(.bodySmall)
-                    .foregroundStyle(AppColors.textSecondary)
+                    .foregroundStyle(AppColors.inkSoft)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, AppSpacing.xl)
             }
@@ -87,10 +87,10 @@ struct BS_LoadingView: View {
             Button(action: retryLoading) {
                 Text("Try Again")
                     .font(.sheetPrimaryButton)
-                    .foregroundStyle(AppColors.textInverse)
+                    .foregroundStyle(AppColors.ctaWhite)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
-                    .background(AppColors.textPrimary)
+                    .background(AppColors.inkPrimary)
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
             }
             .padding(.horizontal, AppSpacing.screenPadding)
@@ -147,11 +147,11 @@ struct BS_LoadingView: View {
                 switch state {
                 case .pending:
                     Circle()
-                        .stroke(AppColors.overlayWhiteAt25, lineWidth: 1.5)
+                        .stroke(AppColors.inkFaint, lineWidth: 1.5)
                         .frame(width: AppRadius.button, height: AppRadius.button)
                     Text("\(number)")
                         .font(.smallLabel)
-                        .foregroundStyle(AppColors.overlayWhiteAt25)
+                        .foregroundStyle(AppColors.inkFaint)
 
                 case .active:
                     Circle()
@@ -169,7 +169,7 @@ struct BS_LoadingView: View {
                         .frame(width: AppRadius.button, height: AppRadius.button)
                     Image(systemName: "checkmark")
                         .font(.smallLabel)
-                        .foregroundStyle(AppColors.textInverse)
+                        .foregroundStyle(AppColors.ctaWhite)
                 }
             }
             .animation(.easeOut(duration: 0.3), value: state == .done)
@@ -177,9 +177,9 @@ struct BS_LoadingView: View {
             Text(label)
                 .font(state == .active ? .bodySmallSemibold : .bodySmall)
                 .foregroundStyle(
-                    state == .pending ? AppColors.overlayWhiteAt25 :
-                    state == .active ? AppColors.overlayWhiteOnGlass :
-                    AppColors.overlayWhiteOnPhoto
+                    state == .pending ? AppColors.inkFaint :
+                    state == .active ? AppColors.inkPrimary :
+                    AppColors.inkSoft
                 )
                 .animation(.easeOut(duration: 0.3), value: state == .active)
         }

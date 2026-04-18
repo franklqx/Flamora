@@ -20,7 +20,7 @@ struct BS_GoalSetupView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
@@ -77,11 +77,11 @@ struct BS_GoalSetupView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Set Your FIRE Goal")
                 .font(.cardFigurePrimary)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(AppColors.inkPrimary)
 
             Text("How much would you spend each month in retirement? We'll use this to calculate your FIRE number.")
                 .font(.bodySmall)
-                .foregroundStyle(AppColors.textSecondary)
+                .foregroundStyle(AppColors.inkSoft)
                 .lineSpacing(3)
         }
     }
@@ -93,16 +93,16 @@ struct BS_GoalSetupView: View {
             Text("MONTHLY RETIREMENT SPENDING")
                 .font(.cardHeader)
                 .tracking(1.2)
-                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                .foregroundStyle(AppColors.inkFaint)
 
             HStack(spacing: AppSpacing.xs) {
                 Text("$")
                     .font(.h2)
-                    .foregroundStyle(AppColors.textPrimary)
+                    .foregroundStyle(AppColors.inkPrimary)
 
                 TextField("5,000", text: $spendingText)
                     .font(.h1)
-                    .foregroundStyle(AppColors.textPrimary)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .keyboardType(.numberPad)
                     .focused($spendingFieldFocused)
                     .onChange(of: spendingText) { _, newValue in
@@ -114,17 +114,17 @@ struct BS_GoalSetupView: View {
                     .onSubmit { spendingFieldFocused = false }
             }
             .padding(AppSpacing.md)
-            .background(AppColors.overlayWhiteWash)
+            .background(AppColors.glassCardBg)
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.card)
-                    .stroke(spendingFieldFocused ? AppColors.textPrimary : AppColors.overlayWhiteStroke, lineWidth: spendingFieldFocused ? 2 : 1)
+                    .stroke(spendingFieldFocused ? AppColors.inkPrimary : AppColors.inkBorder, lineWidth: spendingFieldFocused ? 2 : 1)
             )
             .onTapGesture { spendingFieldFocused = true }
 
             Text("Include rent/mortgage, food, transport, healthcare, and lifestyle costs.")
                 .font(.footnoteRegular)
-                .foregroundStyle(AppColors.textTertiary)
+                .foregroundStyle(AppColors.inkFaint)
                 .lineSpacing(2)
         }
     }
@@ -141,19 +141,19 @@ struct BS_GoalSetupView: View {
             Text("TARGET RETIREMENT AGE")
                 .font(.cardHeader)
                 .tracking(1.2)
-                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                .foregroundStyle(AppColors.inkFaint)
 
             HStack {
                 if age > 0 {
                     Text("Age \(age)")
                         .font(.h3)
-                        .foregroundStyle(AppColors.textPrimary)
+                        .foregroundStyle(AppColors.inkPrimary)
                         .monospacedDigit()
                         .animation(.easeOut(duration: 0.15), value: age)
                 } else {
                     Text("Not set")
                         .font(.h3)
-                        .foregroundStyle(AppColors.textTertiary)
+                        .foregroundStyle(AppColors.inkFaint)
                 }
 
                 Spacer()
@@ -168,8 +168,8 @@ struct BS_GoalSetupView: View {
                         Image(systemName: "minus.circle.fill")
                             .font(.h3)
                             .foregroundStyle(atMin || age == 0
-                                             ? AppColors.textTertiary.opacity(0.4)
-                                             : AppColors.textSecondary)
+                                             ? AppColors.inkFaint.opacity(0.4)
+                                             : AppColors.inkSoft)
                     }
                     .buttonStyle(.plain)
                     .disabled(atMin || age == 0)
@@ -186,24 +186,24 @@ struct BS_GoalSetupView: View {
                         Image(systemName: "plus.circle.fill")
                             .font(.h3)
                             .foregroundStyle(atMax
-                                             ? AppColors.textTertiary.opacity(0.4)
-                                             : AppColors.textPrimary)
+                                             ? AppColors.inkFaint.opacity(0.4)
+                                             : AppColors.inkPrimary)
                     }
                     .buttonStyle(.plain)
                     .disabled(atMax)
                 }
             }
             .padding(AppSpacing.md)
-            .background(AppColors.overlayWhiteWash)
+            .background(AppColors.glassCardBg)
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.card)
-                    .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                    .stroke(AppColors.inkBorder, lineWidth: 1)
             )
 
             Text("When do you want to stop working?")
                 .font(.footnoteRegular)
-                .foregroundStyle(AppColors.textTertiary)
+                .foregroundStyle(AppColors.inkFaint)
         }
     }
 
@@ -214,7 +214,7 @@ struct BS_GoalSetupView: View {
             Text("LIFESTYLE")
                 .font(.cardHeader)
                 .tracking(1.2)
-                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                .foregroundStyle(AppColors.inkFaint)
 
             HStack(spacing: AppSpacing.sm) {
                 presetButton(label: "Lean", value: "lean",
@@ -238,21 +238,21 @@ struct BS_GoalSetupView: View {
             VStack(spacing: AppSpacing.xs) {
                 Text(label)
                     .font(.bodySemibold)
-                    .foregroundStyle(isSelected ? AppColors.textPrimary : AppColors.textSecondary)
+                    .foregroundStyle(isSelected ? AppColors.inkPrimary : AppColors.inkSoft)
                 Text(description)
                     .font(.footnoteRegular)
-                    .foregroundStyle(isSelected ? AppColors.textSecondary : AppColors.textTertiary)
+                    .foregroundStyle(isSelected ? AppColors.inkSoft : AppColors.inkFaint)
                     .multilineTextAlignment(.center)
                     .lineSpacing(2)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, AppSpacing.md)
             .padding(.horizontal, AppSpacing.sm)
-            .background(isSelected ? AppColors.overlayWhiteMid : AppColors.surfaceElevated)
+            .background(isSelected ? AppColors.glassCardBg : AppColors.glassCardBg)
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.card)
-                    .stroke(isSelected ? AppColors.textPrimary : AppColors.borderLight, lineWidth: isSelected ? 2 : 1)
+                    .stroke(isSelected ? AppColors.inkPrimary : AppColors.inkBorder, lineWidth: isSelected ? 2 : 1)
             )
         }
         .buttonStyle(.plain)
@@ -271,21 +271,21 @@ struct BS_GoalSetupView: View {
                 Text("YOUR FIRE NUMBER")
                     .font(.cardHeader)
                     .tracking(1.2)
-                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                    .foregroundStyle(AppColors.inkFaint)
 
                 HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
                     Text("≈ $\(formattedCompact(fireNumber))")
                         .font(.h2)
-                        .foregroundStyle(AppColors.textPrimary)
+                        .foregroundStyle(AppColors.inkPrimary)
                         .monospacedDigit()
                     Text("to retire")
                         .font(.bodySmall)
-                        .foregroundStyle(AppColors.textSecondary)
+                        .foregroundStyle(AppColors.inkSoft)
                 }
 
                 Text("Based on the 4% safe withdrawal rule: $\(formattedCompact(spending * 12))/yr × 25")
                     .font(.footnoteRegular)
-                    .foregroundStyle(AppColors.textTertiary)
+                    .foregroundStyle(AppColors.inkFaint)
                     .lineSpacing(2)
 
                 // PMT estimate — only when target age is set
@@ -301,27 +301,27 @@ struct BS_GoalSetupView: View {
                         : "Roughly $\(formattedCompact(required))/mo to get there"
 
                     Divider()
-                        .background(AppColors.overlayWhiteStroke)
+                        .background(AppColors.inkBorder)
                         .padding(.vertical, AppSpacing.xs)
 
                     HStack(spacing: AppSpacing.xs) {
                         Image(systemName: "chart.line.uptrend.xyaxis")
                             .font(.footnoteRegular)
-                            .foregroundStyle(AppColors.textSecondary)
+                            .foregroundStyle(AppColors.inkSoft)
                         Text(pmtLine)
                             .font(.footnoteSemibold)
-                            .foregroundStyle(AppColors.textSecondary)
+                            .foregroundStyle(AppColors.inkSoft)
                     }
                     .transition(.opacity.combined(with: .offset(y: 4)))
                 }
             }
             .padding(AppSpacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(AppColors.overlayWhiteWash)
+            .background(AppColors.glassCardBg)
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.card)
-                    .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                    .stroke(AppColors.inkBorder, lineWidth: 1)
             )
             .animation(.easeOut(duration: 0.2), value: age)
             .transition(.opacity.combined(with: .offset(y: 4)))
@@ -337,7 +337,7 @@ struct BS_GoalSetupView: View {
 
         return VStack(spacing: 0) {
             LinearGradient(
-                colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary],
+                colors: [Color.clear, AppColors.shellBg2],
                 startPoint: .top, endPoint: .bottom
             )
             .frame(height: AppRadius.button)
@@ -353,25 +353,22 @@ struct BS_GoalSetupView: View {
             } label: {
                 Group {
                     if viewModel.isSavingGoal {
-                        ProgressView().tint(AppColors.textInverse)
+                        ProgressView().tint(AppColors.ctaWhite)
                     } else {
                         Text("Continue")
                             .font(.sheetPrimaryButton)
                     }
                 }
-                .foregroundStyle(AppColors.textInverse)
+                .foregroundStyle(AppColors.ctaWhite)
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
-                .background(
-                    LinearGradient(colors: AppColors.gradientFire, startPoint: .leading, endPoint: .trailing)
-                        .opacity(canProceed ? 1 : 0.4)
-                )
+                .background(AppColors.inkPrimary.opacity(canProceed ? 1 : 0.4))
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
             }
             .disabled(!canProceed)
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.md)
-            .background(AppColors.backgroundPrimary)
+            .background(AppColors.shellBg2)
         }
     }
 

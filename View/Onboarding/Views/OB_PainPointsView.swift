@@ -97,7 +97,7 @@ private struct ChallengeCard: View {
                         .fill(
                             isSelected
                                 ? AnyShapeStyle(LinearGradient(
-                                    colors: AppColors.gradientFire,
+                                    colors: AppColors.gradientShellAccent,
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                   ))
@@ -136,7 +136,7 @@ private struct ChallengeCard: View {
                             .font(.h3)
                             .foregroundStyle(
                                 LinearGradient(
-                                    colors: AppColors.gradientFire,
+                                    colors: AppColors.gradientShellAccent,
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -159,7 +159,7 @@ private struct ChallengeCard: View {
                 RoundedRectangle(cornerRadius: AppRadius.lg)
                     .stroke(
                         isSelected
-                            ? LinearGradient(colors: AppColors.gradientFire, startPoint: .leading, endPoint: .trailing)
+                            ? LinearGradient(colors: AppColors.gradientShellAccent, startPoint: .leading, endPoint: .trailing)
                             : LinearGradient(colors: [AppColors.inkBorder], startPoint: .leading, endPoint: .trailing),
                         lineWidth: isSelected ? 1 : 0.75
                     )

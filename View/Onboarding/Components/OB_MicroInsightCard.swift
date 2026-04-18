@@ -22,7 +22,7 @@ struct OB_MicroInsightCard: View {
                     Image(systemName: sys)
                         .font(.categoryRowIcon)
                         .foregroundStyle(LinearGradient(
-                            colors: [AppColors.gradientEnd, AppColors.gradientMiddle, AppColors.gradientStart],
+                            colors: AppColors.gradientShellAccent,
                             startPoint: .leading,
                             endPoint: .trailing
                         ))

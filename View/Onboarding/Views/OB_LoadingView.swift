@@ -37,7 +37,7 @@ struct OB_LoadingView: View {
                     Circle()
                         .fill(
                             RadialGradient(
-                                colors: [AppColors.gradientStart.opacity(0.15), Color.clear],
+                                colors: [AppColors.accentBlueBright.opacity(0.15), Color.clear],
                                 center: .center, startRadius: 0, endRadius: 80
                             )
                         )
@@ -49,7 +49,7 @@ struct OB_LoadingView: View {
                         .fontWeight(.light)
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [AppColors.gradientEnd, AppColors.gradientMiddle, AppColors.gradientStart],
+                                colors: AppColors.gradientShellAccent,
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -80,7 +80,7 @@ struct OB_LoadingView: View {
                         Capsule()
                             .fill(
                                 LinearGradient(
-                                    colors: [AppColors.gradientEnd, AppColors.gradientMiddle, AppColors.gradientStart],
+                                    colors: AppColors.gradientShellAccent,
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
@@ -111,7 +111,7 @@ struct OB_LoadingView: View {
                 case .done:
                     Image(systemName: "checkmark")
                         .font(.inlineLabel)
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(AppColors.inkFaint)
                         .frame(width: 20, height: 20)
                 }
             }

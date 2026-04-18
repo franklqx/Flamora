@@ -59,7 +59,7 @@ struct OB_EditableAmountDisplay: View {
                 Text(suffix)
                     .font(.h3)
                     .fontWeight(.regular)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundColor(AppColors.inkFaint)
             }
             Spacer()
         }

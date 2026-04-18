@@ -17,7 +17,7 @@ struct BS_AccountSelectionView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -80,22 +80,22 @@ struct BS_AccountSelectionView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text(plaidManager.hasLinkedBank ? "Select Accounts" : "Connect Your Bank")
                 .font(.h1)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(AppColors.inkPrimary)
 
             if plaidManager.hasLinkedBank {
                 Text("Choose which accounts to include in your budget analysis. We recommend selecting your everyday spending accounts.")
                     .font(.inlineLabel)
-                    .foregroundStyle(AppColors.textSecondary)
+                    .foregroundStyle(AppColors.inkSoft)
                     .lineSpacing(3)
 
                 Text("Investment accounts stay in the Investment module and won’t be used to build this budget.")
                     .font(.caption)
-                    .foregroundStyle(AppColors.textTertiary)
+                    .foregroundStyle(AppColors.inkFaint)
                     .lineSpacing(3)
             } else {
                 Text("Link your bank to build a personalized budget based on real spending data.")
                     .font(.inlineLabel)
-                    .foregroundStyle(AppColors.textSecondary)
+                    .foregroundStyle(AppColors.inkSoft)
                     .lineSpacing(3)
             }
         }
@@ -106,10 +106,10 @@ struct BS_AccountSelectionView: View {
     private var loadingState: some View {
         VStack(spacing: AppSpacing.md) {
             ProgressView()
-                .tint(AppColors.textPrimary)
+                .tint(AppColors.inkPrimary)
             Text("Loading your accounts...")
                 .font(.inlineLabel)
-                .foregroundStyle(AppColors.textSecondary)
+                .foregroundStyle(AppColors.inkSoft)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, AppSpacing.navBarTopSpace)
@@ -124,7 +124,7 @@ struct BS_AccountSelectionView: View {
                 .foregroundStyle(AppColors.warning)
             Text(error)
                 .font(.inlineLabel)
-                .foregroundStyle(AppColors.textSecondary)
+                .foregroundStyle(AppColors.inkSoft)
                 .multilineTextAlignment(.center)
             Button("Retry") {
                 Task { await viewModel.loadAccounts() }
@@ -147,11 +147,11 @@ struct BS_AccountSelectionView: View {
                     .foregroundStyle(AppColors.accentAmber)
                 Text("Link your first account")
                     .font(.h4)
-                    .foregroundStyle(AppColors.textPrimary)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .multilineTextAlignment(.center)
                 Text("We'll analyze your last 6 months of transactions to build a personalized budget.")
                     .font(.footnoteRegular)
-                    .foregroundStyle(AppColors.textSecondary)
+                    .foregroundStyle(AppColors.inkSoft)
                     .multilineTextAlignment(.center)
                     .lineSpacing(3)
             }
@@ -173,12 +173,10 @@ struct BS_AccountSelectionView: View {
                     Text("Connect Bank Account")
                         .font(.sheetPrimaryButton)
                 }
-                .foregroundStyle(AppColors.textInverse)
+                .foregroundStyle(AppColors.ctaWhite)
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
-                .background(
-                    LinearGradient(colors: AppColors.gradientFire, startPoint: .leading, endPoint: .trailing)
-                )
+                .background(AppColors.inkPrimary)
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
             }
             .buttonStyle(.plain)
@@ -193,10 +191,10 @@ struct BS_AccountSelectionView: View {
         VStack(spacing: AppSpacing.md) {
             Image(systemName: "building.columns")
                 .font(.h3)
-                .foregroundStyle(AppColors.textSecondary)
+                .foregroundStyle(AppColors.inkSoft)
             Text("No accounts connected yet.\nAdd a bank account to get started.")
                 .font(.inlineLabel)
-                .foregroundStyle(AppColors.textSecondary)
+                .foregroundStyle(AppColors.inkSoft)
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
         }
@@ -214,16 +212,16 @@ struct BS_AccountSelectionView: View {
 
                 if account.id != viewModel.plaidAccounts.last?.id {
                     Rectangle()
-                        .fill(AppColors.surfaceBorder)
+                        .fill(AppColors.inkBorder)
                         .frame(height: 1)
                 }
             }
         }
-        .background(AppColors.surface.opacity(0.5))
+        .background(AppColors.glassCardBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.surfaceBorder, lineWidth: 1)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
         )
     }
 
@@ -242,13 +240,13 @@ struct BS_AccountSelectionView: View {
                         .frame(width: 24, height: 24)
                         .overlay(
                             RoundedRectangle(cornerRadius: AppRadius.sm)
-                                .stroke(isSelected ? Color.clear : AppColors.surfaceBorder, lineWidth: 1.5)
+                                .stroke(isSelected ? Color.clear : AppColors.inkBorder, lineWidth: 1.5)
                         )
 
                     if isSelected {
                         Image(systemName: "checkmark")
                             .font(.footnoteBold)
-                            .foregroundStyle(AppColors.textInverse)
+                            .foregroundStyle(AppColors.ctaWhite)
                     }
                 }
 
@@ -257,27 +255,27 @@ struct BS_AccountSelectionView: View {
                     HStack(spacing: AppSpacing.sm) {
                         Text(account.name)
                             .font(.figureSecondarySemibold)
-                            .foregroundStyle(AppColors.textPrimary)
+                            .foregroundStyle(AppColors.inkPrimary)
 
                         if let mask = account.mask {
                             Text("••\(mask)")
                                 .font(.footnoteRegular)
-                                .foregroundStyle(AppColors.textTertiary)
+                                .foregroundStyle(AppColors.inkFaint)
                         }
                     }
 
                     HStack(spacing: AppSpacing.sm) {
                         Text(account.type)
                             .font(.caption)
-                            .foregroundStyle(isTransactionAccount ? AppColors.accentGreen : AppColors.textSecondary)
+                            .foregroundStyle(isTransactionAccount ? AppColors.accentGreen : AppColors.inkSoft)
 
                         if let institution = account.institutionName {
                             Text("·")
                                 .font(.caption)
-                                .foregroundStyle(AppColors.textMuted)
+                                .foregroundStyle(AppColors.inkFaint)
                             Text(institution)
                                 .font(.caption)
-                                .foregroundStyle(AppColors.textSecondary)
+                                .foregroundStyle(AppColors.inkSoft)
                         }
                     }
                 }
@@ -288,7 +286,7 @@ struct BS_AccountSelectionView: View {
                 if let balance = account.balanceCurrent {
                     Text("$\(formattedBalance(balance))")
                         .font(.inlineLabel)
-                        .foregroundStyle(AppColors.textTertiary)
+                        .foregroundStyle(AppColors.inkFaint)
                         .monospacedDigit()
                 }
             }
@@ -323,7 +321,7 @@ struct BS_AccountSelectionView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, AppSpacing.md)
             .padding(.vertical, AppSpacing.rowItem)
-            .background(AppColors.surface.opacity(0.5))
+            .background(AppColors.glassCardBg)
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.lg)
@@ -338,7 +336,7 @@ struct BS_AccountSelectionView: View {
     private var stickyBottomCTA: some View {
         VStack(spacing: 0) {
             LinearGradient(
-                colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary],
+                colors: [Color.clear, AppColors.shellBg2],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -351,25 +349,13 @@ struct BS_AccountSelectionView: View {
                 } label: {
                     Text("Continue (\(viewModel.selectedTransactionAccountCount) selected)")
                         .font(.sheetPrimaryButton)
-                        .foregroundStyle(AppColors.textInverse)
+                        .foregroundStyle(AppColors.ctaWhite)
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
                         .background(
-                            Group {
-                                if viewModel.canProceedFromAccountSelection {
-                                    LinearGradient(
-                                        colors: AppColors.gradientFire,
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                } else {
-                                    LinearGradient(
-                                        colors: [AppColors.textMuted, AppColors.textMuted],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                }
-                            }
+                            viewModel.canProceedFromAccountSelection
+                                ? AppColors.inkPrimary
+                                : AppColors.inkFaint
                         )
                         .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
                 }
@@ -378,12 +364,12 @@ struct BS_AccountSelectionView: View {
                 if plaidManager.hasLinkedBank && !viewModel.canProceedFromAccountSelection && !viewModel.plaidAccounts.isEmpty {
                     Text("Select at least one checking or credit card account")
                         .font(.caption)
-                        .foregroundStyle(AppColors.textSecondary)
+                        .foregroundStyle(AppColors.inkSoft)
                 }
             }
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.md)
-            .background(AppColors.backgroundPrimary)
+            .background(AppColors.shellBg2)
         }
     }
 

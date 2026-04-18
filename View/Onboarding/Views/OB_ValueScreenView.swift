@@ -145,7 +145,7 @@ private struct ValueMoneyTrackingContent: View {
                             VStack(spacing: AppSpacing.xs / 2) {
                                 Text("TOTAL")
                                     .font(.label)
-                                    .foregroundColor(AppColors.textTertiary)
+                                    .foregroundColor(AppColors.inkFaint)
                                     .tracking(1)
                                 Text("$3,200")
                                     .font(.detailTitle)
@@ -237,7 +237,7 @@ private struct ValueMoneyTrackingContent: View {
                         .foregroundColor(AppColors.inkPrimary)
                     Image(systemName: "chevron.right")
                         .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(AppColors.inkFaint)
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 }
                 .padding(.vertical, AppSpacing.sm + AppSpacing.xs)
@@ -342,7 +342,7 @@ private struct ValueSavingContent: View {
                             .font(.label)
                             .tracking(1)
                     }
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundColor(AppColors.inkFaint)
                     Spacer()
                     Text("2026")
                         .font(.cardRowMeta)
@@ -381,7 +381,7 @@ private struct ValueSavingContent: View {
                             Text("SAVING RATE")
                                 .font(.miniLabel)
                         }
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(AppColors.inkFaint)
                         Text("20%")
                             .font(.h4)
                             .foregroundColor(AppColors.inkPrimary)
@@ -394,7 +394,7 @@ private struct ValueSavingContent: View {
                             Text("TARGET SAVING")
                                 .font(.miniLabel)
                         }
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(AppColors.inkFaint)
                         Text("$200")
                             .font(.h4)
                             .foregroundColor(AppColors.inkPrimary)
@@ -431,7 +431,7 @@ private struct ValueSavingContent: View {
                     .fill(
                         isCompleted
                             ? AnyShapeStyle(LinearGradient(
-                                colors: [AppColors.gradientEnd, AppColors.gradientMiddle, AppColors.gradientStart],
+                                colors: AppColors.gradientShellAccent,
                                 startPoint: startPt,
                                 endPoint: endPt
                             ))
@@ -442,12 +442,12 @@ private struct ValueSavingContent: View {
                 Image(systemName: isCompleted ? "checkmark" : "plus")
                     .font(isCompleted ? .bodyRegular : .h4)
                     .fontWeight(.medium)
-                    .foregroundColor(isCompleted ? AppColors.inkPrimary : AppColors.textTertiary)
+                    .foregroundColor(isCompleted ? AppColors.inkPrimary : AppColors.inkFaint)
             }
 
             Text(months[index])
                 .font(.miniLabel)
-                .foregroundColor(AppColors.textTertiary)
+                .foregroundColor(AppColors.inkFaint)
         }
     }
 }
@@ -485,7 +485,7 @@ private struct ValueInvestingContent: View {
                         Text("COST OF WAITING")
                             .font(.miniLabel)
                             .fontWeight(.bold)
-                            .foregroundColor(AppColors.textTertiary)
+                            .foregroundColor(AppColors.inkFaint)
                             .tracking(0.5)
                         Text("$213,000")
                             .font(.bodySemibold)
@@ -514,7 +514,7 @@ private struct ValueInvestingContent: View {
                 HStack {
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
                         HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
-                            Circle().fill(AppColors.gradientStart).frame(width: 8, height: 8)
+                            Circle().fill(AppColors.accentBlueBright).frame(width: 8, height: 8)
                             Text("Start now")
                                 .font(.caption)
                                 .foregroundColor(AppColors.inkSoft)
@@ -526,7 +526,7 @@ private struct ValueInvestingContent: View {
                     Spacer()
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
                         HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
-                            Circle().fill(AppColors.textTertiary).frame(width: 8, height: 8)
+                            Circle().fill(AppColors.inkFaint).frame(width: 8, height: 8)
                             Text("Wait 5 yrs")
                                 .font(.caption)
                                 .foregroundColor(AppColors.inkSoft)
@@ -599,9 +599,8 @@ private struct CompoundGrowthChart: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                AppColors.gradientEnd.opacity(0.15),
-                                AppColors.gradientMiddle.opacity(0.08),
-                                AppColors.gradientStart.opacity(0.02),
+                                AppColors.accentBlueBright.opacity(0.15),
+                                AppColors.accentBlueBright.opacity(0.02),
                             ],
                             startPoint: .top,
                             endPoint: .bottom
@@ -612,7 +611,7 @@ private struct CompoundGrowthChart: View {
                 strokePath(points: waitPts)
                     .trim(from: 0, to: drawProgress)
                     .stroke(
-                        AppColors.textTertiary,
+                        AppColors.inkFaint,
                         style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
                     )
 
@@ -621,7 +620,7 @@ private struct CompoundGrowthChart: View {
                     .trim(from: 0, to: drawProgress)
                     .stroke(
                         LinearGradient(
-                            colors: [AppColors.gradientEnd, AppColors.gradientMiddle, AppColors.gradientStart],
+                            colors: AppColors.gradientShellAccent,
                             startPoint: .leading,
                             endPoint: .trailing
                         ),
@@ -634,7 +633,7 @@ private struct CompoundGrowthChart: View {
                     Circle()
                         .fill(
                             LinearGradient(
-                                colors: [AppColors.gradientEnd, AppColors.gradientMiddle, AppColors.gradientStart],
+                                colors: AppColors.gradientShellAccent,
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -644,7 +643,7 @@ private struct CompoundGrowthChart: View {
 
                     // "Wait 5 yrs" endpoint — gray dot
                     Circle()
-                        .fill(AppColors.textTertiary)
+                        .fill(AppColors.inkFaint)
                         .frame(width: 8, height: 8)
                         .position(waitEnd)
                 }
@@ -652,7 +651,7 @@ private struct CompoundGrowthChart: View {
                 // Y-axis label
                 Text("$550k")
                     .font(.miniLabel)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundColor(AppColors.inkFaint)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
                 // X-axis labels
@@ -664,7 +663,7 @@ private struct CompoundGrowthChart: View {
                     Text("Year 30")
                 }
                 .font(.miniLabel)
-                .foregroundColor(AppColors.textTertiary)
+                .foregroundColor(AppColors.inkFaint)
                 .frame(maxHeight: .infinity, alignment: .bottom)
             }
         }
@@ -760,7 +759,7 @@ private struct ValueFireContent: View {
                         .fill(
                             isLit
                                 ? AnyShapeStyle(LinearGradient(
-                                    colors: [AppColors.gradientEnd, AppColors.gradientMiddle, AppColors.gradientStart],
+                                    colors: AppColors.gradientShellAccent,
                                     startPoint: .bottomLeading,
                                     endPoint: .topTrailing
                                 ))
@@ -770,13 +769,13 @@ private struct ValueFireContent: View {
 
                     Image(systemName: steps[index].icon)
                         .font(.chromeIconMedium)
-                        .foregroundColor(isLit ? AppColors.inkPrimary : AppColors.textTertiary)
+                        .foregroundColor(isLit ? AppColors.inkPrimary : AppColors.inkFaint)
                 }
 
                 // Right: text centered to icon
                 Text(steps[index].text)
                     .font(isLit ? .bodySemibold : .bodyRegular)
-                    .foregroundColor(isLit ? AppColors.inkPrimary : AppColors.textTertiary)
+                    .foregroundColor(isLit ? AppColors.inkPrimary : AppColors.inkFaint)
 
                 Spacer()
             }

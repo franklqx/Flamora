@@ -65,7 +65,7 @@ struct OB_PaywallView: View {
                         Image(systemName: "flame")
                             .font(.h1)
                             .foregroundStyle(LinearGradient(
-                                colors: AppColors.gradientFire,
+                                colors: AppColors.gradientShellAccent,
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ))
@@ -138,7 +138,7 @@ struct OB_PaywallView: View {
                                 .font(.detailTitle)
                                 .foregroundStyle(
                                     LinearGradient(
-                                        colors: AppColors.gradientFire,
+                                        colors: AppColors.gradientShellAccent,
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     )
@@ -172,7 +172,7 @@ struct OB_PaywallView: View {
                                 .padding(.vertical, 4)
                                 .background(
                                     LinearGradient(
-                                        colors: AppColors.gradientFire,
+                                        colors: AppColors.gradientShellAccent,
                                         startPoint: .leading,
                                         endPoint: .trailing
                                     )
@@ -187,7 +187,7 @@ struct OB_PaywallView: View {
                             RoundedRectangle(cornerRadius: AppRadius.lg)
                                 .stroke(
                                     LinearGradient(
-                                        colors: AppColors.gradientFire,
+                                        colors: AppColors.gradientShellAccent,
                                         startPoint: .leading,
                                         endPoint: .trailing
                                     ),

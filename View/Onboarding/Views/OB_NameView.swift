@@ -63,7 +63,7 @@ struct OB_NameView: View {
                     .allowsHitTesting(false)
 
                 TextField("", text: $data.userName,
-                          prompt: Text("Your name").foregroundColor(AppColors.textTertiary))
+                          prompt: Text("Your name").foregroundColor(AppColors.inkFaint))
                     .font(.bodyRegular)
                     .foregroundStyle(AppColors.inkPrimary)
                     .textContentType(.givenName)

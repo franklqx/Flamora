@@ -32,7 +32,7 @@ struct OB_OnboardingHeader: View {
                     Capsule()
                         .fill(
                             LinearGradient(
-                                colors: [AppColors.gradientEnd, AppColors.gradientMiddle, AppColors.gradientStart],
+                                colors: AppColors.gradientShellAccent,
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )

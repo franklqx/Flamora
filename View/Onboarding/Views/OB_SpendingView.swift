@@ -53,7 +53,7 @@ struct OB_SpendingView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("MONTHLY SPENDING")
                             .font(.cardRowMeta)
-                            .foregroundColor(AppColors.textTertiary)
+                            .foregroundColor(AppColors.inkFaint)
                             .tracking(0.8)
 
                         spendingCard
@@ -65,7 +65,7 @@ struct OB_SpendingView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("SAVINGS RATE")
                                 .font(.cardRowMeta)
-                                .foregroundColor(AppColors.textTertiary)
+                                .foregroundColor(AppColors.inkFaint)
                                 .tracking(0.8)
 
                             savingsRateCard
@@ -136,7 +136,7 @@ struct OB_SpendingView: View {
 
                         ZStack(alignment: .leading) {
                             Capsule()
-                                .fill(AppColors.glassPillStroke)
+                                .fill(AppColors.inkBorder)
                                 .frame(width: trackWidth, height: 4)
                             Capsule()
                                 .fill(accentGradient)
@@ -168,11 +168,11 @@ struct OB_SpendingView: View {
                 HStack {
                     Text("\(data.currencySymbol)0")
                         .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(AppColors.inkFaint)
                     Spacer()
                     Text("\(data.currencySymbol)20K+")
                         .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(AppColors.inkFaint)
                 }
                 .frame(height: 18)
             }
@@ -191,7 +191,7 @@ struct OB_SpendingView: View {
 
     private var accentGradient: LinearGradient {
         LinearGradient(
-            colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd],
+            colors: AppColors.gradientShellAccent,
             startPoint: .leading,
             endPoint: .trailing
         )
@@ -234,7 +234,7 @@ struct OB_SpendingView: View {
                 VStack(spacing: AppSpacing.xs) {
                     Text("Income")
                         .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(AppColors.inkFaint)
                     Text("\(data.currencySymbol)\(formattedAmount(income))")
                         .font(.bodySmall)
                         .fontWeight(.medium)
@@ -244,12 +244,12 @@ struct OB_SpendingView: View {
                 Text("−")
                     .font(.h4)
                     .fontWeight(.light)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundColor(AppColors.inkFaint)
                 Spacer()
                 VStack(spacing: AppSpacing.xs) {
                     Text("Spending")
                         .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(AppColors.inkFaint)
                     Text("\(data.currencySymbol)\(formattedAmount(spendingValue))")
                         .font(.bodySmall)
                         .fontWeight(.medium)
@@ -259,12 +259,12 @@ struct OB_SpendingView: View {
                 Text("=")
                     .font(.h4)
                     .fontWeight(.light)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundColor(AppColors.inkFaint)
                 Spacer()
                 VStack(spacing: 4) {
                     Text("Saved")
                         .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(AppColors.inkFaint)
                     Text("\(data.currencySymbol)\(formattedAmount(monthlySavings))")
                         .font(.bodySmall)
                         .fontWeight(.semibold)

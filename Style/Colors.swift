@@ -97,6 +97,12 @@ struct AppColors {
         Color(hex: "#818CF8")
     ]
 
+    // MARK: - Light Shell Accent Gradient (blue → indigo-purple, for accents on light-shell backgrounds)
+    static let gradientShellAccent: [Color] = [
+        Color(hex: "#60A5FA"),   // sky blue
+        Color(hex: "#818CF8"),   // indigo-purple
+    ]
+
     // MARK: - Daily Quote Card
     static let dailyQuoteBg        = Color(hex: "#1D3A28")
     static let dailyQuoteAccent    = Color(hex: "#4ADE80")
@@ -347,8 +353,8 @@ struct AppColors {
         chartCoral,
     ]
 
-    /// UIKit 控件（如 `UISlider`）thumb tint；Onboarding 浅色底上需可见，与 `gradientStart` 品牌紫一致。
-    static let uiSliderThumbTint: UIColor = UIColor(AppColors.gradientStart)
+    /// UIKit 控件（如 `UISlider`）thumb tint；Onboarding 浅色底上需可见，与 `gradientShellAccent` 蓝一致。
+    static let uiSliderThumbTint: UIColor = UIColor(Color(hex: "#60A5FA"))
 
     // MARK: - Budget Setup
     /// Gold accent used for spinners, "Recommended" badge, and difficulty indicators

@@ -109,7 +109,7 @@ struct MotivationCard: View {
                         .fill(
                             isSelected
                                 ? AnyShapeStyle(LinearGradient(
-                                    colors: AppColors.gradientFire,
+                                    colors: AppColors.gradientShellAccent,
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                   ))
@@ -145,7 +145,7 @@ struct MotivationCard: View {
                         Image(systemName: "checkmark.circle")
                             .foregroundStyle(
                                 LinearGradient(
-                                    colors: AppColors.gradientFire,
+                                    colors: AppColors.gradientShellAccent,
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -169,7 +169,7 @@ struct MotivationCard: View {
                 RoundedRectangle(cornerRadius: AppRadius.lg)
                     .stroke(
                         isSelected
-                            ? LinearGradient(colors: AppColors.gradientFire, startPoint: .leading, endPoint: .trailing)
+                            ? LinearGradient(colors: AppColors.gradientShellAccent, startPoint: .leading, endPoint: .trailing)
                             : LinearGradient(colors: [AppColors.inkBorder], startPoint: .leading, endPoint: .trailing),
                         lineWidth: isSelected ? 1 : 0.75
                     )

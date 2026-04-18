@@ -44,7 +44,7 @@ struct OB_IncomeView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("MONTHLY INCOME")
                             .font(.cardRowMeta)
-                            .foregroundColor(AppColors.textTertiary)
+                            .foregroundColor(AppColors.inkFaint)
                             .tracking(0.8)
 
                         incomeCard
@@ -124,7 +124,7 @@ struct OB_IncomeView: View {
 
                         ZStack(alignment: .leading) {
                             Capsule()
-                                .fill(AppColors.glassPillStroke)
+                                .fill(AppColors.inkBorder)
                                 .frame(width: trackWidth, height: 4)
                             Capsule()
                                 .fill(accentGradient)
@@ -156,11 +156,11 @@ struct OB_IncomeView: View {
                 HStack {
                     Text("\(data.currencySymbol)0")
                         .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(AppColors.inkFaint)
                     Spacer()
                     Text("\(data.currencySymbol)20K+")
                         .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(AppColors.inkFaint)
                 }
                 .frame(height: 18)
             }
@@ -179,7 +179,7 @@ struct OB_IncomeView: View {
 
     private var accentGradient: LinearGradient {
         LinearGradient(
-            colors: [AppColors.gradientStart, AppColors.gradientMiddle, AppColors.gradientEnd],
+            colors: AppColors.gradientShellAccent,
             startPoint: .leading,
             endPoint: .trailing
         )

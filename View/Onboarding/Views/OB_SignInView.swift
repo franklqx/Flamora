@@ -100,7 +100,7 @@ struct OB_SignInView: View {
                         .frame(height: 1)
                     Text("OR SIGN UP WITH EMAIL")
                         .font(.cardRowMeta)
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(AppColors.inkFaint)
                         .fixedSize()
                     Rectangle()
                         .fill(AppColors.inkBorder)
@@ -113,7 +113,7 @@ struct OB_SignInView: View {
                 VStack(spacing: AppSpacing.sm + AppSpacing.xs) {
                     TextField("",
                         text: $email,
-                        prompt: Text("Email address").foregroundColor(AppColors.textTertiary))
+                        prompt: Text("Email address").foregroundColor(AppColors.inkFaint))
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .autocorrectionDisabled()
@@ -126,7 +126,7 @@ struct OB_SignInView: View {
 
                     SecureField("",
                         text: $password,
-                        prompt: Text("Password (min. 6 chars)").foregroundColor(AppColors.textTertiary))
+                        prompt: Text("Password (min. 6 chars)").foregroundColor(AppColors.inkFaint))
                         .textContentType(.oneTimeCode)
                         .focused($focusedField, equals: .password)
                         .padding()
@@ -172,10 +172,10 @@ struct OB_SignInView: View {
                     VStack(spacing: 2) {
                         Text("BY CONTINUING, YOU AGREE TO OUR")
                             .font(.label)
-                            .foregroundColor(AppColors.textTertiary)
+                            .foregroundColor(AppColors.inkFaint)
                         Text("TERMS & PRIVACY")
                             .font(.label)
-                            .foregroundColor(AppColors.textTertiary)
+                            .foregroundColor(AppColors.inkFaint)
                             .underline()
                     }
                     .multilineTextAlignment(.center)

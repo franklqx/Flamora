@@ -39,7 +39,7 @@ struct OB_SocialProofView: View {
 
                             Text("ON YOUR OWN")
                                 .font(.caption)
-                                .foregroundColor(AppColors.textTertiary)
+                                .foregroundColor(AppColors.inkFaint)
                                 .opacity(showLabels ? 1 : 0)
                         }
                         .opacity(showLeftCard ? 1 : 0)
@@ -49,7 +49,7 @@ struct OB_SocialProofView: View {
                             RoundedRectangle(cornerRadius: AppRadius.md)
                                 .fill(
                                     LinearGradient(
-                                        colors: [AppColors.gradientEnd, AppColors.gradientMiddle, AppColors.gradientStart],
+                                        colors: AppColors.gradientShellAccent,
                                         startPoint: .bottomLeading,
                                         endPoint: .topTrailing
                                     )
@@ -80,7 +80,7 @@ struct OB_SocialProofView: View {
 
                             Text("WITH \(Text("FLAMORA").font(.caption.italic()).foregroundStyle(AppColors.inkPrimary))")
                                 .font(.caption)
-                                .foregroundColor(AppColors.textTertiary)
+                                .foregroundColor(AppColors.inkFaint)
                                 .opacity(showLabels ? 1 : 0)
                         }
                     }

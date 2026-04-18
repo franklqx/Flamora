@@ -19,7 +19,7 @@ struct BS_ConfirmView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
@@ -59,7 +59,7 @@ struct BS_ConfirmView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Review Plan")
                 .font(.cardFigurePrimary)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(AppColors.inkPrimary)
         }
     }
 
@@ -74,14 +74,14 @@ struct BS_ConfirmView: View {
             ZStack {
                 ConfirmTopSemiRing(startProgress: 0, endProgress: 1)
                     .stroke(
-                        AppColors.overlayWhiteWash,
+                        AppColors.glassCardBg,
                         style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                     )
 
                 ConfirmTopSemiRing(startProgress: 0, endProgress: CGFloat(ringProgress))
                     .stroke(
                         LinearGradient(
-                            colors: AppColors.gradientFire,
+                            colors: AppColors.gradientShellAccent,
                             startPoint: .leading,
                             endPoint: .trailing
                         ),
@@ -91,12 +91,12 @@ struct BS_ConfirmView: View {
                 VStack(spacing: AppSpacing.xs) {
                     Text("$\(formattedInt(plan.totalSpend))")
                         .font(.h1)
-                        .foregroundStyle(AppColors.textPrimary)
+                        .foregroundStyle(AppColors.inkPrimary)
                         .monospacedDigit()
 
                     Text("Monthly spend budget")
                         .font(.bodySmall)
-                        .foregroundStyle(AppColors.textSecondary)
+                        .foregroundStyle(AppColors.inkSoft)
                 }
                 .frame(maxWidth: .infinity)
                 .multilineTextAlignment(.center)
@@ -109,11 +109,11 @@ struct BS_ConfirmView: View {
         }
         .padding(AppSpacing.lg)
         .frame(maxWidth: .infinity)
-        .background(AppColors.overlayWhiteWash)
+        .background(AppColors.glassCardBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
         )
     }
 
@@ -133,17 +133,17 @@ struct BS_ConfirmView: View {
             ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
                 if index > 0 {
                     Rectangle()
-                        .fill(AppColors.overlayWhiteWash)
+                        .fill(AppColors.glassCardBg)
                         .frame(height: 1)
                 }
                 HStack {
                     Text(row.label)
                         .font(.bodySmall)
-                        .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                        .foregroundStyle(AppColors.inkFaint)
                     Spacer()
                     Text(row.value)
                         .font(.bodySmallSemibold)
-                        .foregroundStyle(row.isRate ? goldColor : AppColors.textPrimary)
+                        .foregroundStyle(row.isRate ? goldColor : AppColors.inkPrimary)
                         .monospacedDigit()
                 }
                 .padding(.vertical, AppSpacing.sm + AppSpacing.xs)
@@ -151,11 +151,11 @@ struct BS_ConfirmView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.overlayWhiteWash)
+        .background(AppColors.glassCardBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
         )
     }
 
@@ -167,16 +167,16 @@ struct BS_ConfirmView: View {
                 .font(.bodyRegular)
             Text("You can adjust your budget anytime in Settings.")
                 .font(.footnoteRegular)
-                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                .foregroundStyle(AppColors.inkFaint)
                 .lineSpacing(3)
         }
         .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.overlayWhiteWash)
+        .background(AppColors.glassCardBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
         )
     }
 
@@ -184,7 +184,7 @@ struct BS_ConfirmView: View {
 
     private var stickyBottomCTA: some View {
         VStack(spacing: 0) {
-            LinearGradient(colors: [AppColors.backgroundPrimary.opacity(0), AppColors.backgroundPrimary], startPoint: .top, endPoint: .bottom)
+            LinearGradient(colors: [Color.clear, AppColors.shellBg2], startPoint: .top, endPoint: .bottom)
                 .frame(height: AppRadius.button)
 
             VStack(spacing: 0) {
@@ -199,19 +199,16 @@ struct BS_ConfirmView: View {
                 } label: {
                     HStack(spacing: AppSpacing.sm) {
                         if viewModel.isSaving {
-                            ProgressView().tint(AppColors.textPrimary)
+                            ProgressView().tint(AppColors.inkPrimary)
                         }
                         Text(viewModel.isSaving ? "Saving..." : "Start My Journey")
                             .font(.sheetPrimaryButton)
                     }
-                    .foregroundStyle(AppColors.textInverse)
+                    .foregroundStyle(AppColors.ctaWhite)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
-                    .background(
-                        LinearGradient(colors: AppColors.gradientFire, startPoint: .leading, endPoint: .trailing)
-                    )
+                    .background(AppColors.inkPrimary)
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
-                    .shadow(color: AppColors.gradientMiddle.opacity(0.25), radius: AppSpacing.md, y: AppSpacing.sm)
                 }
                 .disabled(viewModel.isSaving)
 
@@ -224,7 +221,7 @@ struct BS_ConfirmView: View {
             }
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.md)
-            .background(AppColors.backgroundPrimary)
+            .background(AppColors.shellBg2)
         }
     }
 
