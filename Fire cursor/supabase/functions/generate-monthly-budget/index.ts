@@ -21,6 +21,16 @@ interface GenerateBudgetRequest {
   needs_budget?: number
   wants_budget?: number
   savings_budget?: number
+  committed_savings_rate?: number
+  committed_monthly_save?: number
+  committed_spend_ceiling?: number
+  committed_plan_label?: string
+  snapshot_avg_income?: number
+  snapshot_avg_spend?: number
+  snapshot_net_worth?: number
+  snapshot_essential_floor?: number
+  snapshot_date?: string
+  retirement_spending_monthly?: number
   // Per-category budget amounts; keys are canonical TransactionCategoryCatalog ids
   category_budgets?: Record<string, number>
 }
@@ -244,6 +254,16 @@ serve(async (req) => {
         fixed_budget: body.fixed_budget ?? null,
         flexible_budget: body.flexible_budget ?? null,
         selected_plan: body.selected_plan ?? null,
+        committed_savings_rate: body.committed_savings_rate ?? null,
+        committed_monthly_save: body.committed_monthly_save ?? null,
+        committed_spend_ceiling: body.committed_spend_ceiling ?? null,
+        committed_plan_label: body.committed_plan_label ?? null,
+        snapshot_avg_income: body.snapshot_avg_income ?? null,
+        snapshot_avg_spend: body.snapshot_avg_spend ?? null,
+        snapshot_net_worth: body.snapshot_net_worth ?? null,
+        snapshot_essential_floor: body.snapshot_essential_floor ?? null,
+        snapshot_date: body.snapshot_date ?? null,
+        retirement_spending_monthly: body.retirement_spending_monthly ?? null,
         is_custom: isCustom,
         category_budgets: body.category_budgets ?? {},
         updated_at: new Date().toISOString(),
@@ -280,6 +300,16 @@ serve(async (req) => {
           fixed_budget: budget.fixed_budget,
           flexible_budget: budget.flexible_budget,
           selected_plan: budget.selected_plan,
+          committed_savings_rate: budget.committed_savings_rate,
+          committed_monthly_save: budget.committed_monthly_save,
+          committed_spend_ceiling: budget.committed_spend_ceiling,
+          committed_plan_label: budget.committed_plan_label,
+          snapshot_avg_income: budget.snapshot_avg_income,
+          snapshot_avg_spend: budget.snapshot_avg_spend,
+          snapshot_net_worth: budget.snapshot_net_worth,
+          snapshot_essential_floor: budget.snapshot_essential_floor,
+          snapshot_date: budget.snapshot_date,
+          retirement_spending_monthly: budget.retirement_spending_monthly,
           is_custom: budget.is_custom,
           category_budgets: budget.category_budgets ?? {},
         },
@@ -293,8 +323,9 @@ serve(async (req) => {
     )
   } catch (error) {
     console.error('Error in generate-monthly-budget:', error)
+    const message = error instanceof Error ? error.message : 'An unexpected error occurred'
     return new Response(
-      JSON.stringify({ success: false, error: { code: 'INTERNAL_SERVER_ERROR', message: error.message || 'An unexpected error occurred' } }),
+      JSON.stringify({ success: false, error: { code: 'INTERNAL_SERVER_ERROR', message } }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

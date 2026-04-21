@@ -1,0 +1,13 @@
+{
+  "windowStartMonth": "2026-02",
+  "windowEndMonth": "2026-04",
+  "comment": "Spend without income — must not crash; hasDeficit=true (savings is negative even without income).",
+  "transactions": [
+    { "amount": 1500, "date": "2026-02-02", "name": "Rent", "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_RENT" },
+    { "amount": 300,  "date": "2026-02-07", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 1500, "date": "2026-03-02", "name": "Rent", "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_RENT" },
+    { "amount": 300,  "date": "2026-03-07", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 1500, "date": "2026-04-02", "name": "Rent", "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_RENT" },
+    { "amount": 300,  "date": "2026-04-07", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" }
+  ]
+}

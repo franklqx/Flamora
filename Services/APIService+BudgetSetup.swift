@@ -53,9 +53,8 @@ extension APIService {
 
     // MARK: - Plan Generation
 
-    /// Generate Steady / Recommended / Accelerate plans.
-    /// Pass `fireNumber` or `retirementSpendingMonthly` in the request to enable
-    /// FIRE date projections per plan (server fetches from fire_goals if absent).
+    /// Generate dynamic 1-3 budget plans aligned to the Phase C/D contract.
+    /// Server returns `plans[]` plus committed defaults for Step 5 → Step 6 handoff.
     func generatePlans(data: GeneratePlansRequest) async throws -> PlansResponse {
         let body = try JSONEncoder().encode(data)
         let request = try await authenticatedRequest(function: "generate-plans", body: body)

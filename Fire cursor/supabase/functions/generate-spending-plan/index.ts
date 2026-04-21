@@ -29,10 +29,12 @@ interface FlexibleCategoryInput {
 
 interface GenerateSpendingPlanRequest {
   selected_plan_rate: number
-  selected_plan_name: string          // "steady" | "recommended" | "accelerate" | "custom"
+  selected_plan_name: string
   avg_monthly_income: number
   fixed_expenses: FixedExpenseInput[]
   flexible_breakdown: FlexibleCategoryInput[]
+  committed_monthly_save?: number
+  committed_spend_ceiling?: number
   month: string                       // "YYYY-MM-01"
 }
 
@@ -122,8 +124,14 @@ serve(async (req) => {
     // ============================================================
     // 3. Compute budget splits
     // ============================================================
-    const totalSavings = roundMoney(income * (planRate / 100))
-    const totalSpend = roundMoney(income - totalSavings)
+    const hasCommittedEnvelope =
+      body.committed_spend_ceiling !== undefined || body.committed_monthly_save !== undefined
+    const totalSavings = hasCommittedEnvelope
+      ? roundMoney(Math.max(0, body.committed_monthly_save ?? Math.max(0, income - (body.committed_spend_ceiling ?? income))))
+      : roundMoney(income * (planRate / 100))
+    const totalSpend = hasCommittedEnvelope
+      ? roundMoney(Math.max(0, body.committed_spend_ceiling ?? Math.max(0, income - totalSavings)))
+      : roundMoney(income - totalSavings)
     const totalFixedRaw = fixedExpenses.reduce((sum, f) => sum + f.monthly_amount, 0)
     const totalFixed = Math.min(totalSpend, roundMoney(totalFixedRaw))
     const totalFlexible = roundMoney(Math.max(0, totalSpend - totalFixed))
@@ -161,9 +169,10 @@ serve(async (req) => {
     // ============================================================
     // 6. Compute ratios for backward compatibility
     // ============================================================
-    const savingsRatio = planRate
-    const fixedRatio = income > 0 ? round2((totalFixed / income) * 100) : 0
-    const flexibleRatio = income > 0 ? round2((totalFlexible / income) * 100) : 0
+    const ratioDenominator = Math.max(0.01, totalSavings + totalFixed + totalFlexible)
+    const savingsRatio = round2((totalSavings / ratioDenominator) * 100)
+    const fixedRatio = round2((totalFixed / ratioDenominator) * 100)
+    const flexibleRatio = round2((totalFlexible / ratioDenominator) * 100)
 
     // ============================================================
     // 7. Return spending plan (do NOT save yet — user confirms in Step 5)
@@ -205,8 +214,9 @@ serve(async (req) => {
     )
   } catch (error) {
     console.error('Error in generate-spending-plan:', error)
+    const message = error instanceof Error ? error.message : 'An unexpected error occurred'
     return new Response(
-      JSON.stringify({ success: false, error: { code: 'INTERNAL_SERVER_ERROR', message: error.message || 'An unexpected error occurred' } }),
+      JSON.stringify({ success: false, error: { code: 'INTERNAL_SERVER_ERROR', message } }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

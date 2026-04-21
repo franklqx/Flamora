@@ -61,7 +61,17 @@ final class Flamora_appUITests: XCTestCase {
 
         let sheet = app.otherElements["home_bottom_sheet"]
         XCTAssertTrue(sheet.waitForExistence(timeout: 5), "Main sheet should exist")
-        sheet.swipeUp()
+
+        // Swipe DOWN on the drag-handle (NOT the whole sheet — the gesture only lives on the
+        // 24pt handle area; the body is a ScrollView and would absorb the swipe). Pulling the
+        // sheet down past the threshold flips homeState into `.simulator`, which mounts
+        // `CashflowExpandedOverlayView`. (sheetDragGesture only reacts to downward translation
+        // — see `MainTabView.sheetDragGesture`.)
+        let sheetHandle = app.otherElements["home_bottom_sheet_handle"]
+        XCTAssertTrue(sheetHandle.waitForExistence(timeout: 3), "Sheet drag handle should exist")
+        let handleStart = sheetHandle.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        let dragTarget = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95))
+        handleStart.press(forDuration: 0.05, thenDragTo: dragTarget)
 
         let detailTray = app.otherElements["cashflow_day_detail_tray"]
         XCTAssertFalse(detailTray.waitForExistence(timeout: 3),
@@ -85,7 +95,17 @@ final class Flamora_appUITests: XCTestCase {
 
         let sheet = app.otherElements["home_bottom_sheet"]
         XCTAssertTrue(sheet.waitForExistence(timeout: 5), "Main sheet should exist")
-        sheet.swipeUp()
+
+        // Swipe DOWN on the drag-handle (NOT the whole sheet — the gesture only lives on the
+        // 24pt handle area; the body is a ScrollView and would absorb the swipe). Pulling the
+        // sheet down past the threshold flips homeState into `.simulator`, which mounts
+        // `CashflowExpandedOverlayView`. (sheetDragGesture only reacts to downward translation
+        // — see `MainTabView.sheetDragGesture`.)
+        let sheetHandle = app.otherElements["home_bottom_sheet_handle"]
+        XCTAssertTrue(sheetHandle.waitForExistence(timeout: 3), "Sheet drag handle should exist")
+        let handleStart = sheetHandle.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        let dragTarget = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95))
+        handleStart.press(forDuration: 0.05, thenDragTo: dragTarget)
 
         // Switch to the Trend surface.
         app.buttons["Trend"].firstMatch.tap()

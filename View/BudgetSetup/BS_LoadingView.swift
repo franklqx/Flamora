@@ -3,7 +3,7 @@
 //  Flamora app
 //
 //  Budget Setup — Step 1: Loading
-//  V2: Dual-ring spinner + 3 sequential checklist items (Labor Illusion, 4.2s min)
+//  V3: Dual-ring spinner + 3 sequential checklist items for Budget Setup
 //
 
 import SwiftUI
@@ -132,9 +132,9 @@ struct BS_LoadingView: View {
 
     private var checklistSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
-            checklistRow(number: 1, label: "Understanding your cashflow", state: step1State)
-            checklistRow(number: 2, label: "Refining spending patterns", state: step2State)
-            checklistRow(number: 3, label: "Synthesizing AI insights", state: step3State)
+            checklistRow(number: 1, label: "Reading your recent money flow", state: step1State)
+            checklistRow(number: 2, label: "Separating essentials from one-offs", state: step2State)
+            checklistRow(number: 3, label: "Preparing your starting reality", state: step3State)
         }
         .padding(.horizontal, AppSpacing.xl + AppSpacing.lg)
     }

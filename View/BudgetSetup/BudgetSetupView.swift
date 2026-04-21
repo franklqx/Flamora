@@ -3,7 +3,8 @@
 //  Flamora app
 //
 //  Budget Setup — Main container with step navigation
-//  V3: goalSetup → accountSelection → loading → accountsReview → diagnosis → choosePath → confirm
+//  V3 (Phase E): connect → loading → reality → target → plan → confirm
+//  See `~/.claude/plans/budget-plan-budget-plan-gentle-blossom.md` § "最终流程"
 //
 
 import SwiftUI
@@ -21,10 +22,7 @@ struct BudgetSetupView: View {
                 BudgetSetupBootstrapView()
             } else {
                 switch viewModel.currentStep {
-                case .goalSetup:
-                    BS_GoalSetupView(viewModel: viewModel)
-
-                case .accountSelection:
+                case .connect:
                     BS_AccountSelectionView(viewModel: viewModel)
 
                 case .loading:
@@ -32,13 +30,13 @@ struct BudgetSetupView: View {
                         viewModel.goToStep(viewModel.postLoadingStep)
                     }
 
-                case .accountsReview:
-                    BS_AccountsReviewView(viewModel: viewModel)
-
-                case .diagnosis:
+                case .reality:
                     BS_DiagnosisView(viewModel: viewModel)
 
-                case .choosePath:
+                case .target:
+                    BS_TargetView(viewModel: viewModel)
+
+                case .plan:
                     BS_ChoosePathView(viewModel: viewModel)
 
                 case .confirm:
@@ -51,7 +49,7 @@ struct BudgetSetupView: View {
         }
         .overlay(alignment: .top) {
             BudgetSetupNavigationBar(
-                showsBack: viewModel.currentStep != .goalSetup && viewModel.currentStep != .loading,
+                showsBack: viewModel.currentStep != .connect && viewModel.currentStep != .loading,
                 onBack: { viewModel.goBack() },
                 onClose: { showDiscardConfirmation = true }
             )

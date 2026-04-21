@@ -12,10 +12,10 @@ import Foundation
 
 struct ActivePlanModel: Codable {
     let planId: String
-    let planType: String             // "steady" | "recommended" | "accelerate"
-    let planLabel: String            // "Steady" | "Recommended" | "Accelerate"
+    let planType: String             // "target-aligned" | "comfortable" | "accelerated" | ...
+    let planLabel: String
     let savingsTargetMonthly: Double
-    let savingsRateTarget: Double    // percentage e.g. 25.0
+    let savingsRateTarget: Double    // kept as percentage for active_plans backward compatibility
     let spendingCeilingMonthly: Double
     let fixedBudgetMonthly: Double
     let flexibleBudgetMonthly: Double
@@ -71,19 +71,25 @@ struct ApplyPlanRequest: Encodable {
         case positioningCopy         = "positioning_copy"
     }
 
-    /// Build from a `PlanDetail` after plan selection.
-    static func from(planDetail: PlanDetail, planType: String) -> ApplyPlanRequest {
+    /// Build from a Phase D `BudgetPlanOption` after plan selection.
+    /// `active_plans` still stores a percentage-style savings rate for backward compatibility.
+    static func from(
+        plan: BudgetPlanOption,
+        committedPlanLabel: String,
+        fixedBudgetMonthly: Double,
+        flexibleBudgetMonthly: Double
+    ) -> ApplyPlanRequest {
         ApplyPlanRequest(
-            planType:               planType,
-            savingsTargetMonthly:   planDetail.monthlySave,
-            savingsRateTarget:      planDetail.savingsRate,
-            spendingCeilingMonthly: planDetail.monthlySpend,
-            fixedBudgetMonthly:     planDetail.monthlySpend - planDetail.flexibleSpend,
-            flexibleBudgetMonthly:  planDetail.flexibleSpend,
-            officialFireDate:       planDetail.officialFireDate,
-            officialFireAge:        planDetail.officialFireAge,
-            tradeoffNote:           planDetail.tradeoffNote,
-            positioningCopy:        planDetail.positioningCopy
+            planType:               committedPlanLabel,
+            savingsTargetMonthly:   plan.monthlySave,
+            savingsRateTarget:      plan.savingsRate * 100,
+            spendingCeilingMonthly: plan.committedSpendCeiling,
+            fixedBudgetMonthly:     fixedBudgetMonthly,
+            flexibleBudgetMonthly:  flexibleBudgetMonthly,
+            officialFireDate:       nil,
+            officialFireAge:        plan.projectedFireAge,
+            tradeoffNote:           plan.sub,
+            positioningCopy:        plan.headline
         )
     }
 }

@@ -38,6 +38,18 @@ struct SpendingStatsResponse: Codable {
     let totalTransactions: Int
 
     let monthlyBreakdown: [MonthlyBreakdownItem]
+
+    // V3 additions
+    var hasDeficit: Bool? = nil
+    var deficitAmount: Double? = nil
+    var essentialFloor: Double? = nil
+    var avgWants: Double? = nil
+    var uncategorizedShareOfSpend: Double? = nil
+    var canonicalBreakdown: [CanonicalBreakdownItem]? = nil
+    var oneTimeTransactions: [OneTimeTransactionItem]? = nil
+    var outlierThreshold: Double? = nil
+    var monthlyBreakdownV3: [MonthlyBreakdownV3Item]? = nil
+    var monthsInWindow: Int? = nil
 }
 
 struct FixedExpenseItem: Codable, Identifiable {
@@ -67,105 +79,95 @@ struct MonthlyBreakdownItem: Codable, Identifiable {
     let savings: Double
 }
 
+struct CanonicalBreakdownItem: Codable, Identifiable {
+    var id: String { canonicalId }
+    let canonicalId: String
+    let parent: String
+    let avgMonthly: Double
+    let transactionCount: Int
+}
+
+struct OneTimeTransactionItem: Codable, Identifiable {
+    var id: String { "\(date)-\(canonicalId)-\(amount)" }
+    let amount: Double
+    let date: String
+    let name: String?
+    let pfcDetailed: String?
+    let canonicalId: String
+}
+
+struct MonthlyBreakdownV3Item: Codable, Identifiable {
+    var id: String { month }
+    let month: String
+    let status: String
+    let income: Double
+    let needsSpend: Double
+    let wantsSpend: Double
+    let uncategorizedSpend: Double
+    let totalSpend: Double
+    let savings: Double
+}
+
 // MARK: - generate-plans Response
 
 struct PlansResponse: Codable {
-    let baseline: BaselinePlan
-    let plans: ThreePlans
-    let userTier: String                  // "in_debt", "beginner", "intermediate", "advanced"
-    let maxPossibleRate: Double
-    let critical: Bool
+    let plans: [BudgetPlanOption]
+    let planCount: Int
+    let primaryPlanLabel: String
     let currentNetWorth: Double
     let currentAge: Int
+    let targetRetirementAge: Int
+    let retirementSpendingMonthly: Double
+    let fireNumber: Double
+    let customSlider: CustomSliderRange
     let assumptions: PlanAssumptions?
-
-    // S2-1: goal-driven feasibility context (nil when backend falls back to legacy mode)
-    var phase: Int? = nil                 // 0 / 1 / 2
-    var phaseSub: String? = nil           // "0a","0b","0c","0d","1","2"
-    var strategy: String? = nil           // "goal_achievable" | "user_choice" | "impossible"
-    var goalDriven: Bool? = nil
+    let committedDefaults: CommittedPlanDefaults
 }
 
-struct BaselinePlan: Codable {
-    let savingsRate: Double
+struct BudgetPlanOption: Codable, Identifiable {
+    var id: String { "\(label)-\(monthlySave)-\(projectedFireAge)" }
+    let feasibility: String
+    let anchor: String
+    let label: String
+    let reason: String?
+    let limitReason: String?
     let monthlySave: Double
-    let projection1y: Double
-    let projection5y: Double
-    let projection10y: Double
-
-    // .convertFromSnakeCase capitalises the letter after a digit boundary:
-    // "projection_1y" → "projection1Y" (capital Y), not "projection1y".
-    // Raw values here must match what the strategy actually produces.
-    enum CodingKeys: String, CodingKey {
-        case savingsRate
-        case monthlySave
-        case projection1y  = "projection1Y"
-        case projection5y  = "projection5Y"
-        case projection10y = "projection10Y"
-    }
+    let monthlyBudget: Double
+    let committedSpendCeiling: Double
+    let savingsRate: Double              // ratio 0...1
+    let fireNumber: Double
+    let fireAgeMonths: Double?
+    let projectedFireAge: Int
+    let fireAgeYears: Int
+    let gapMonths: Double?
+    let gapYears: Int
+    let headline: String
+    let sub: String
+    let badge: String?
+    let cta: PlanCTA?
 }
 
-struct ThreePlans: Codable {
-    let steady: PlanDetail
-    let recommended: PlanDetail
-    let accelerate: PlanDetail
+struct PlanCTA: Codable {
+    let label: String
+    let action: String
 }
 
-struct PlanDetail: Codable, Identifiable {
-    var id: String { "\(savingsRate)" }
-    let savingsRate: Double
-    let monthlySave: Double
-    let monthlySpend: Double
-    let flexibleSpend: Double
-    let extraPerMonth: Double
-    let flexibleCompressionPct: Double
-    let projection1y: Double
-    let projection5y: Double
-    let projection10y: Double
-    let gainVsBaseline10y: Double
-    let feasibility: String               // "easy", "moderate", "challenging", "extreme"
-    let status: String                    // "on_track", "breakeven", "deficit"
+struct CustomSliderRange: Codable {
+    let isAvailable: Bool
+    let minMonthlySave: Double?
+    let maxMonthlySave: Double?
+}
 
-    // v3 FIRE-aware fields — optional so existing decoders don't break
-    var spendingCeilingMonthly: Double? = nil  // alias for monthlySpend
-    var officialFireDate: String? = nil
-    var officialFireAge: Int? = nil
-    var fireYearsVsBaseline: Double? = nil
-    var tradeoffNote: String? = nil
-    var positioningCopy: String? = nil
-
-    // S2-1: Phase 2 accelerate warning flag (goal-driven mode only)
-    var warning: Bool? = nil
-
-    // .convertFromSnakeCase capitalises the letter after a digit boundary:
-    // "projection_1y" → "projection1Y" (capital Y), "gain_vs_baseline_10y" → "gainVsBaseline10Y".
-    enum CodingKeys: String, CodingKey {
-        case savingsRate
-        case monthlySave
-        case monthlySpend
-        case flexibleSpend
-        case extraPerMonth
-        case flexibleCompressionPct
-        case projection1y             = "projection1Y"
-        case projection5y             = "projection5Y"
-        case projection10y            = "projection10Y"
-        case gainVsBaseline10y        = "gainVsBaseline10Y"
-        case feasibility
-        case status
-        case spendingCeilingMonthly   = "spending_ceiling_monthly"
-        case officialFireDate         = "official_fire_date"
-        case officialFireAge          = "official_fire_age"
-        case fireYearsVsBaseline      = "fire_years_vs_baseline"
-        case tradeoffNote             = "tradeoff_note"
-        case positioningCopy          = "positioning_copy"
-        case warning
-    }
+struct CommittedPlanDefaults: Codable {
+    let committedPlanLabel: String
+    let committedMonthlySave: Double
+    let committedSavingsRate: Double
+    let committedSpendCeiling: Double
 }
 
 struct PlanAssumptions: Codable {
-    let nominalReturn: Double
-    let inflation: Double
     let realReturn: Double
+    let withdrawalRate: Double
 }
 
 // MARK: - generate-spending-plan Response
@@ -225,6 +227,7 @@ struct GeneratePlansRequest: Encodable {
     let currentSavingsRate: Double
     let avgMonthlyIncome: Double
     let avgMonthlySavings: Double
+    let avgMonthlyExpenses: Double
     let avgMonthlyFixed: Double
     let avgMonthlyFlexible: Double
     let currentNetWorth: Double
@@ -236,6 +239,9 @@ struct GeneratePlansRequest: Encodable {
 
     // v3 optional fields for FIRE-aware plan generation
     var targetRetirementAge: Int? = nil       // "target_retirement_age"
+    var withdrawalRate: Double? = nil         // "withdrawal_rate"
+    var essentialFloor: Double? = nil         // "essential_floor"
+    var avgWants: Double? = nil               // "avg_wants"
     var accountIds: [String]? = nil           // "account_ids"
     var month: String? = nil                  // "month"
 
@@ -243,6 +249,7 @@ struct GeneratePlansRequest: Encodable {
         case currentSavingsRate        = "current_savings_rate"
         case avgMonthlyIncome          = "avg_monthly_income"
         case avgMonthlySavings         = "avg_monthly_savings"
+        case avgMonthlyExpenses        = "avg_monthly_expenses"
         case avgMonthlyFixed           = "avg_monthly_fixed"
         case avgMonthlyFlexible        = "avg_monthly_flexible"
         case currentNetWorth           = "current_net_worth"
@@ -251,6 +258,9 @@ struct GeneratePlansRequest: Encodable {
         case retirementSpendingMonthly = "retirement_spending_monthly"
         case returnAssumption          = "return_assumption"
         case targetRetirementAge       = "target_retirement_age"
+        case withdrawalRate            = "withdrawal_rate"
+        case essentialFloor            = "essential_floor"
+        case avgWants                  = "avg_wants"
         case accountIds                = "account_ids"
         case month
     }
@@ -264,6 +274,8 @@ struct GenerateSpendingPlanRequest: Encodable {
     let avgMonthlyIncome: Double
     let fixedExpenses: [FixedExpenseInput]
     let flexibleBreakdown: [FlexibleBreakdownInput]
+    var committedMonthlySave: Double? = nil
+    var committedSpendCeiling: Double? = nil
     let month: String
 
     enum CodingKeys: String, CodingKey {
@@ -272,6 +284,8 @@ struct GenerateSpendingPlanRequest: Encodable {
         case avgMonthlyIncome = "avg_monthly_income"
         case fixedExpenses = "fixed_expenses"
         case flexibleBreakdown = "flexible_breakdown"
+        case committedMonthlySave = "committed_monthly_save"
+        case committedSpendCeiling = "committed_spend_ceiling"
         case month
     }
 }
@@ -405,12 +419,30 @@ struct UserProfileForBudget: Codable {
     let currencyCode: String
 }
 
+// MARK: - update-user-profile Response
+//
+// Mirrors the success payload returned by the partial-update endpoint. We
+// only decode the fields the manual-mode flow actually consumes; extra
+// keys (timezone / has_linked_bank / etc.) are ignored by Codable.
+
+struct UpdatedUserProfile: Codable {
+    let userId: String
+    let monthlyIncome: Double?
+    let currentNetWorth: Double?
+    let age: Int?
+    let currencyCode: String?
+    let plaidNetWorth: Double?
+}
+
 // MARK: - save-fire-goal v1 (spending-based, no target age required)
 
 struct SaveFireGoalRequest: Encodable {
     // v1 minimum required
     let retirementSpendingMonthly: Double
-    let lifestylePreset: String           // "lean" | "current" | "fat"
+    // V3 (Phase E): lifestylePreset is deprecated. Field kept Encodable-optional so
+    // server still accepts (or ignores) the legacy "lifestyle_preset" key. New flows
+    // pass nil; only retirement_spending_monthly is the source of truth.
+    let lifestylePreset: String?
 
     // Optional — provide for FIRE date computation accuracy
     var fireNumber: Double? = nil

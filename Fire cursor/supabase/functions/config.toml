@@ -69,3 +69,6 @@ verify_jwt = false
 
 [functions.mark-setup-step]
 verify_jwt = false
+
+[functions.update-user-profile]
+verify_jwt = false
