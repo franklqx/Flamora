@@ -10,7 +10,17 @@ import { corsHeaders, handleCors } from '../_shared/cors.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 interface ApplySelectedPlanRequest {
-  plan_type: 'steady' | 'recommended' | 'accelerate'
+  plan_type:
+    | 'steady'
+    | 'recommended'
+    | 'accelerate'
+    | 'target-aligned'
+    | 'comfortable'
+    | 'accelerated'
+    | 'closest_near'
+    | 'closest_far'
+    | 'already_fire'
+    | 'custom'
   savings_target_monthly: number
   savings_rate_target: number
   spending_ceiling_monthly: number
@@ -26,6 +36,13 @@ const PLAN_LABELS: Record<string, string> = {
   steady:      'Steady',
   recommended: 'Recommended',
   accelerate:  'Accelerate',
+  'target-aligned': 'Target-aligned',
+  comfortable: 'Comfortable',
+  accelerated: 'Accelerated',
+  closest_near: 'Closest reasonable',
+  closest_far: 'Adjust target',
+  already_fire: 'Already FIRE',
+  custom: 'Custom',
 }
 
 Deno.serve(async (req) => {
@@ -52,9 +69,20 @@ Deno.serve(async (req) => {
     const body: ApplySelectedPlanRequest = await req.json()
 
     // ── Validate ──────────────────────────────────────────────
-    const validPlanTypes = ['steady', 'recommended', 'accelerate']
+    const validPlanTypes = [
+      'steady',
+      'recommended',
+      'accelerate',
+      'target-aligned',
+      'comfortable',
+      'accelerated',
+      'closest_near',
+      'closest_far',
+      'already_fire',
+      'custom',
+    ]
     if (!body.plan_type || !validPlanTypes.includes(body.plan_type)) {
-      return errorResponse(400, 'INVALID_PLAN_TYPE', 'plan_type must be steady | recommended | accelerate')
+      return errorResponse(400, 'INVALID_PLAN_TYPE', 'plan_type is not recognized')
     }
     if (!body.savings_target_monthly || body.savings_target_monthly < 0) {
       return errorResponse(400, 'INVALID_SAVINGS', 'savings_target_monthly must be >= 0')
@@ -143,7 +171,8 @@ Deno.serve(async (req) => {
     )
   } catch (error) {
     console.error('Error in apply-selected-plan:', error)
-    return errorResponse(500, 'INTERNAL_SERVER_ERROR', error.message)
+    const message = error instanceof Error ? error.message : 'An unexpected error occurred'
+    return errorResponse(500, 'INTERNAL_SERVER_ERROR', message)
   }
 })
 

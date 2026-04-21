@@ -1,0 +1,48 @@
+{
+  "windowStartMonth": "2025-11",
+  "windowEndMonth": "2026-04",
+  "comment": "6 stable months, 5 spend categories per month, deterministic. Each per-cat MAD = 0 → no outliers.",
+  "transactions": [
+    { "amount": -5000, "date": "2025-11-01", "name": "Payroll", "pfc_primary": "INCOME", "pfc_detailed": null },
+    { "amount": 1500,  "date": "2025-11-02", "name": "Rent",    "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_RENT" },
+    { "amount": 100,   "date": "2025-11-05", "name": "ConEd",   "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY" },
+    { "amount": 400,   "date": "2025-11-07", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 300,   "date": "2025-11-15", "name": "Restaurants", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": null },
+    { "amount": 200,   "date": "2025-11-20", "name": "Target",  "pfc_primary": "GENERAL_MERCHANDISE", "pfc_detailed": null },
+
+    { "amount": -5000, "date": "2025-12-01", "name": "Payroll", "pfc_primary": "INCOME", "pfc_detailed": null },
+    { "amount": 1500,  "date": "2025-12-02", "name": "Rent",    "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_RENT" },
+    { "amount": 100,   "date": "2025-12-05", "name": "ConEd",   "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY" },
+    { "amount": 400,   "date": "2025-12-07", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 300,   "date": "2025-12-15", "name": "Restaurants", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": null },
+    { "amount": 200,   "date": "2025-12-20", "name": "Target",  "pfc_primary": "GENERAL_MERCHANDISE", "pfc_detailed": null },
+
+    { "amount": -5000, "date": "2026-01-01", "name": "Payroll", "pfc_primary": "INCOME", "pfc_detailed": null },
+    { "amount": 1500,  "date": "2026-01-02", "name": "Rent",    "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_RENT" },
+    { "amount": 100,   "date": "2026-01-05", "name": "ConEd",   "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY" },
+    { "amount": 400,   "date": "2026-01-07", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 300,   "date": "2026-01-15", "name": "Restaurants", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": null },
+    { "amount": 200,   "date": "2026-01-20", "name": "Target",  "pfc_primary": "GENERAL_MERCHANDISE", "pfc_detailed": null },
+
+    { "amount": -5000, "date": "2026-02-01", "name": "Payroll", "pfc_primary": "INCOME", "pfc_detailed": null },
+    { "amount": 1500,  "date": "2026-02-02", "name": "Rent",    "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_RENT" },
+    { "amount": 100,   "date": "2026-02-05", "name": "ConEd",   "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY" },
+    { "amount": 400,   "date": "2026-02-07", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 300,   "date": "2026-02-15", "name": "Restaurants", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": null },
+    { "amount": 200,   "date": "2026-02-20", "name": "Target",  "pfc_primary": "GENERAL_MERCHANDISE", "pfc_detailed": null },
+
+    { "amount": -5000, "date": "2026-03-01", "name": "Payroll", "pfc_primary": "INCOME", "pfc_detailed": null },
+    { "amount": 1500,  "date": "2026-03-02", "name": "Rent",    "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_RENT" },
+    { "amount": 100,   "date": "2026-03-05", "name": "ConEd",   "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY" },
+    { "amount": 400,   "date": "2026-03-07", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 300,   "date": "2026-03-15", "name": "Restaurants", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": null },
+    { "amount": 200,   "date": "2026-03-20", "name": "Target",  "pfc_primary": "GENERAL_MERCHANDISE", "pfc_detailed": null },
+
+    { "amount": -5000, "date": "2026-04-01", "name": "Payroll", "pfc_primary": "INCOME", "pfc_detailed": null },
+    { "amount": 1500,  "date": "2026-04-02", "name": "Rent",    "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_RENT" },
+    { "amount": 100,   "date": "2026-04-05", "name": "ConEd",   "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY" },
+    { "amount": 400,   "date": "2026-04-07", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 300,   "date": "2026-04-15", "name": "Restaurants", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": null },
+    { "amount": 200,   "date": "2026-04-20", "name": "Target",  "pfc_primary": "GENERAL_MERCHANDISE", "pfc_detailed": null }
+  ]
+}

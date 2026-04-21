@@ -1,0 +1,25 @@
+{
+  "windowStartMonth": "2026-02",
+  "windowEndMonth": "2026-04",
+  "comment": "Groceries 12 txns ($80/$100/$120 mix) → MAD non-zero per-cat, threshold ~130 → all regular. One $3000 travel txn alone in its category → falls back to global threshold (~160) → flagged as one-time.",
+  "transactions": [
+    { "amount": -4000, "date": "2026-02-01", "name": "Payroll", "pfc_primary": "INCOME", "pfc_detailed": null },
+    { "amount": 80,    "date": "2026-02-03", "name": "Trader Joes", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 100,   "date": "2026-02-10", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 120,   "date": "2026-02-17", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 100,   "date": "2026-02-24", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+
+    { "amount": -4000, "date": "2026-03-01", "name": "Payroll", "pfc_primary": "INCOME", "pfc_detailed": null },
+    { "amount": 80,    "date": "2026-03-03", "name": "Trader Joes", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 100,   "date": "2026-03-10", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 120,   "date": "2026-03-17", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 100,   "date": "2026-03-24", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 3000,  "date": "2026-03-15", "name": "Hawaii Trip", "pfc_primary": "TRAVEL", "pfc_detailed": null },
+
+    { "amount": -4000, "date": "2026-04-01", "name": "Payroll", "pfc_primary": "INCOME", "pfc_detailed": null },
+    { "amount": 80,    "date": "2026-04-03", "name": "Trader Joes", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 100,   "date": "2026-04-10", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 120,   "date": "2026-04-17", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 100,   "date": "2026-04-24", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK", "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" }
+  ]
+}

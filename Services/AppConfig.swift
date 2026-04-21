@@ -34,20 +34,41 @@ enum AppConfig {
     // MARK: - Private
 
     private static func required(_ key: String) -> String {
-        guard let value = Bundle.main.infoDictionary?[key] as? String,
-              !value.isEmpty,
-              !value.hasPrefix("$(") // xcconfig 未替换时的占位符
+        guard let value = Bundle.main.infoDictionary?[key] as? String
         else {
             fatalError("""
                 [AppConfig] Missing or unresolved config key: '\(key)'.
 
                 To fix:
                 1. Copy Config.xcconfig.example → Config.xcconfig at the project root.
-                2. Fill in the real values in Config.xcconfig.
+                2. Fill in the real values in Config.xcconfig (not the example placeholder).
                 3. Make sure Config.xcconfig is referenced in Xcode's project settings
                    (target → Build Settings → Based on Configuration File).
                 """)
         }
-        return value
+
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmed.isEmpty,
+              !trimmed.hasPrefix("$("), // xcconfig 未替换时的占位符
+              !looksLikeExamplePlaceholder(trimmed)
+        else {
+            fatalError("""
+                [AppConfig] Missing or unresolved config key: '\(key)'.
+
+                To fix:
+                1. Copy Config.xcconfig.example → Config.xcconfig at the project root.
+                2. Fill in the real values in Config.xcconfig (not the example placeholder).
+                3. Make sure Config.xcconfig is referenced in Xcode's project settings
+                   (target → Build Settings → Based on Configuration File).
+                """)
+        }
+
+        return trimmed
+    }
+
+    private static func looksLikeExamplePlaceholder(_ value: String) -> Bool {
+        let normalized = value.lowercased()
+        return normalized.hasPrefix("your_") && normalized.hasSuffix("_here")
     }
 }

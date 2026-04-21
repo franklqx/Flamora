@@ -338,6 +338,7 @@ private extension CashflowExpandedOverlayView {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier(view.rawValue)
             }
         }
         .padding(4)
@@ -399,13 +400,18 @@ private extension CashflowExpandedOverlayView {
             if !isPlaceholder {
                 calendarDetailTray
             } else {
-                Text("Connect a bank account to see daily spending detail.")
-                    .font(.footnoteRegular)
-                    .foregroundStyle(AppColors.heroTextHint)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, AppSpacing.sm)
-                    .accessibilityIdentifier("cashflow_calendar_connect_hint")
+                // Wrap in VStack so the accessibility tree exposes this as an
+                // `otherElement` (matches the test query `app.otherElements[...]`).
+                VStack(spacing: 0) {
+                    Text("Connect a bank account to see daily spending detail.")
+                        .font(.footnoteRegular)
+                        .foregroundStyle(AppColors.heroTextHint)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                }
+                .padding(.top, AppSpacing.sm)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("cashflow_calendar_connect_hint")
             }
         }
     }
@@ -558,6 +564,9 @@ private extension CashflowExpandedOverlayView {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppSpacing.xl)
+        // Promote container to an `otherElement` in the a11y tree so XCUI can
+        // resolve `app.otherElements["cashflow_trend_empty_state"]`.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("cashflow_trend_empty_state")
     }
 
@@ -585,108 +594,16 @@ private extension CashflowExpandedOverlayView {
 
     private var categoriesSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("Categories")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(AppColors.inkMeta)
-                    .textCase(.uppercase)
-                    .tracking(0.8)
-                Spacer()
-                Text("\(selectedPoint.label) \(currentYear)")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppColors.inkSoft)
-            }
+            categoriesHeader
 
-            if selectedCategory != nil {
-                VStack(alignment: .leading, spacing: 10) {
-                    Button(action: { self.selectedCategory = nil }) {
-                        Label("Back to all categories", systemImage: "chevron.left")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(AppColors.inkSoft)
-                    }
-                    .buttonStyle(.plain)
-
-                    HStack(spacing: 8) {
-                        metricCard(title: "Average", value: NumberFormatter.appCurrency(averageForSelectedCategory))
-                        metricCard(title: "Peak", value: peakMetricValue)
-                        metricCard(title: "Share", value: "\(Int(shareForSelectedCategory.rounded()))%")
-                    }
-
-                    VStack(spacing: 8) {
-                        ForEach(seriesForSelectedCategory) { point in
-                            Button(action: { selectedMonthIndex = point.id }) {
-                                HStack {
-                                    Text(point.label)
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(AppColors.inkPrimary)
-                                    Spacer()
-                                    Text(NumberFormatter.appCurrency(point.value))
-                                        .font(.subheadline.weight(.bold))
-                                        .foregroundStyle(AppColors.inkPrimary)
-                                }
-                                .padding(.vertical, 10)
-                                .padding(.horizontal, 12)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 14)
-                                        .fill(point.id == selectedMonthIndex ? Color.white.opacity(0.92) : Color.white.opacity(0.58))
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 14)
-                                        .stroke(Color.white.opacity(0.7), lineWidth: 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
+            Group {
+                if selectedCategory != nil {
+                    selectedCategoryContent
+                } else {
+                    allCategoriesContent
                 }
-                .redacted(reason: isPlaceholder ? .placeholder : [])
-            } else {
-                VStack(spacing: 8) {
-                    ForEach(categoryRows) { row in
-                        Button(action: { selectedCategory = row.name }) {
-                            HStack(spacing: 10) {
-                                RoundedRectangle(cornerRadius: 9)
-                                    .fill(AppColors.overlayWhiteMid)
-                                    .frame(width: 28, height: 28)
-                                    .overlay(
-                                        Image(systemName: row.icon)
-                                            .font(.caption.weight(.semibold))
-                                            .foregroundStyle(AppColors.inkSoft)
-                                    )
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(row.name)
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(AppColors.inkPrimary)
-                                    Text("\(Int((row.percentage * 100).rounded()))%")
-                                        .font(.caption2.weight(.bold))
-                                        .foregroundStyle(AppColors.inkMeta)
-                                }
-                                Spacer()
-                                Text(row.amount == 0 ? "—" : NumberFormatter.appCurrency(row.amount))
-                                    .font(.subheadline.weight(.bold))
-                                    .foregroundStyle(AppColors.inkPrimary)
-                            }
-                            .padding(10)
-                            .background(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [Color.white.opacity(0.8), Color.white.opacity(0.56)],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .stroke(Color.white.opacity(0.7), lineWidth: 1)
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .redacted(reason: isPlaceholder ? .placeholder : [])
             }
+            .redacted(reason: isPlaceholder ? .placeholder : [])
         }
         .padding(16)
         .background(
@@ -705,6 +622,133 @@ private extension CashflowExpandedOverlayView {
         )
         .shadow(color: Color.black.opacity(0.12), radius: 20, y: 8)
         .accessibilityIdentifier("cashflow_categories_section")
+    }
+
+    private var categoriesHeader: some View {
+        HStack {
+            Text("Categories")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(AppColors.inkMeta)
+                .textCase(.uppercase)
+                .tracking(0.8)
+            Spacer()
+            Text("\(selectedPoint.label) \(currentYear)")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppColors.inkSoft)
+        }
+    }
+
+    private var selectedCategoryContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button(action: { selectedCategory = nil }) {
+                Label("Back to all categories", systemImage: "chevron.left")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppColors.inkSoft)
+            }
+            .buttonStyle(.plain)
+
+            selectedCategoryMetrics
+            selectedCategorySeriesList
+        }
+    }
+
+    private var selectedCategoryMetrics: some View {
+        HStack(spacing: 8) {
+            metricCard(title: "Average", value: NumberFormatter.appCurrency(averageForSelectedCategory))
+            metricCard(title: "Peak", value: peakMetricValue)
+            metricCard(title: "Share", value: "\(Int(shareForSelectedCategory.rounded()))%")
+        }
+    }
+
+    private var selectedCategorySeriesList: some View {
+        VStack(spacing: 8) {
+            ForEach(seriesForSelectedCategory) { point in
+                selectedCategoryPointRow(point)
+            }
+        }
+    }
+
+    private func selectedCategoryPointRow(_ point: TrendPoint) -> some View {
+        Button(action: { selectedMonthIndex = point.id }) {
+            HStack {
+                Text(point.label)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppColors.inkPrimary)
+                Spacer()
+                Text(NumberFormatter.appCurrency(point.value))
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(AppColors.inkPrimary)
+            }
+            .padding(.vertical, 10)
+            .padding(.horizontal, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(point.id == selectedMonthIndex ? Color.white.opacity(0.92) : Color.white.opacity(0.58))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.white.opacity(0.7), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var allCategoriesContent: some View {
+        VStack(spacing: 8) {
+            ForEach(categoryRows) { row in
+                categoryRowButton(row)
+            }
+        }
+    }
+
+    private func categoryRowButton(_ row: CashCategoryRow) -> some View {
+        Button(action: { selectedCategory = row.name }) {
+            HStack(spacing: 10) {
+                RoundedRectangle(cornerRadius: 9)
+                    .fill(AppColors.overlayWhiteMid)
+                    .frame(width: 28, height: 28)
+                    .overlay(
+                        Image(systemName: row.icon)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(AppColors.inkSoft)
+                    )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(row.name)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppColors.inkPrimary)
+                    Text("\(Int((row.percentage * 100).rounded()))%")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(AppColors.inkMeta)
+                }
+
+                Spacer()
+
+                Text(row.amount == 0 ? "—" : NumberFormatter.appCurrency(row.amount))
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(AppColors.inkPrimary)
+            }
+            .padding(10)
+            .background(categoryRowBackground)
+            .overlay(categoryRowBorder)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var categoryRowBackground: some View {
+        RoundedRectangle(cornerRadius: 14)
+            .fill(
+                LinearGradient(
+                    colors: [Color.white.opacity(0.8), Color.white.opacity(0.56)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+    }
+
+    private var categoryRowBorder: some View {
+        RoundedRectangle(cornerRadius: 14)
+            .stroke(Color.white.opacity(0.7), lineWidth: 1)
     }
 
     private func metricCard(title: String, value: String) -> some View {

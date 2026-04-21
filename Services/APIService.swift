@@ -263,6 +263,31 @@ class APIService {
         return try await perform(request)
     }
 
+    /// Partial update for `user_profiles`. Used by the manual-mode budget
+    /// setup to keep `monthly_income` / `current_net_worth` / `age` in sync
+    /// with what the user just typed, so downstream readers (Home Hero,
+    /// `get-active-fire-goal`, `generate-plans`, etc.) don't see stale
+    /// onboarding estimates. Pass `nil` for any field you don't want to touch.
+    @discardableResult
+    func updateUserProfile(
+        age: Int? = nil,
+        monthlyIncome: Double? = nil,
+        currentNetWorth: Double? = nil,
+        currentMonthlyExpenses: Double? = nil,
+        currencyCode: String? = nil
+    ) async throws -> UpdatedUserProfile {
+        var payload: [String: Any] = [:]
+        if let age { payload["age"] = age }
+        if let monthlyIncome { payload["monthly_income"] = monthlyIncome }
+        if let currentNetWorth { payload["current_net_worth"] = currentNetWorth }
+        if let currentMonthlyExpenses { payload["current_monthly_expenses"] = currentMonthlyExpenses }
+        if let currencyCode { payload["currency_code"] = currencyCode }
+        let body = try JSONSerialization.data(withJSONObject: payload, options: [])
+        let request = try await authenticatedRequest(function: "update-user-profile", body: body)
+        let result: UpdatedUserProfile = try await perform(request)
+        return result
+    }
+
     func updateTransactionClassification(
         transactionId: String,
         category: String?,

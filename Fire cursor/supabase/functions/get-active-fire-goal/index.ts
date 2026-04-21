@@ -146,6 +146,13 @@ Deno.serve(async (req) => {
       steady: 'Steady',
       recommended: 'Recommended',
       accelerate: 'Accelerate',
+      'target-aligned': 'Target-aligned',
+      comfortable: 'Comfortable',
+      accelerated: 'Accelerated',
+      closest_near: 'Closest reasonable',
+      closest_far: 'Adjust target',
+      already_fire: 'Already FIRE',
+      custom: 'Custom',
     }
     const activePlanType  = activePlan?.plan_type ?? null
     const activePlanLabel = activePlanType ? (PLAN_LABELS[activePlanType] ?? activePlanType) : null
@@ -200,7 +207,8 @@ Deno.serve(async (req) => {
     )
   } catch (error) {
     console.error('Error in get-active-fire-goal:', error)
-    return errorResponse(500, 'INTERNAL_SERVER_ERROR', error.message)
+    const message = error instanceof Error ? error.message : 'An unexpected error occurred'
+    return errorResponse(500, 'INTERNAL_SERVER_ERROR', message)
   }
 })
 

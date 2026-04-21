@@ -2,14 +2,13 @@
 //  BudgetSetupViewModel.swift
 //  Flamora app
 //
-//  V3 ViewModel for Budget Setup flow
-//  Step 0: Goal Setup (retirement spending + lifestyle preset)
-//  Step 1: Connect Accounts (Plaid)
-//  Step 2: Loading (calculate-spending-stats + AI diagnosis)
-//  Step 3: Accounts Review (confirm linked accounts)
-//  Step 4: Financial Snapshot (diagnosis)
-//  Step 5: Choose Plan (3 cards: Steady / Recommended / Accelerate)
-//  Step 6: Apply Plan (confirm + apply-selected-plan)
+//  V3 ViewModel for Budget Setup flow (Phase E refactor — 6-step contract)
+//  Step 1 Connect:  Plaid Link or Skip → manual 4 fields
+//  Step 2 Loading:  calculate-spending-stats + (no AI diagnosis in V3)
+//  Step 3 Reality:  3 metric blocks + sparkline + one-time note
+//  Step 4 Target:   target age slider + retirement spending sheet
+//  Step 5 Plan:     1-3 dynamic plans + custom save slider + caps sheet entry
+//  Step 6 Confirm:  Monthly save · Monthly budget · FIRE progress
 //
 
 import Foundation
@@ -23,27 +22,58 @@ class BudgetSetupViewModel {
     // MARK: - Navigation
 
     enum Step: Int, CaseIterable {
-        case goalSetup       = 0
-        case accountSelection = 1
-        case loading         = 2
-        case accountsReview  = 3
-        case diagnosis       = 4
-        case choosePath      = 5
-        case confirm         = 6
+        case connect = 0
+        case loading = 1
+        case reality = 2
+        case target  = 3
+        case plan    = 4
+        case confirm = 5
     }
 
-    var currentStep: Step = .goalSetup
+    var currentStep: Step = .connect
     var isNavigatingForward = true
-    var postLoadingStep: Step = .accountsReview
+    var postLoadingStep: Step = .reality
     var isResumingState = true
 
-    // MARK: - Step 0: Goal Setup
+    // MARK: - Step 4: Target (FIRE goal)
 
     var retirementSpendingMonthly: Double = 0
     var targetRetirementAge: Int = 0
-    var lifestylePreset: String = "current"   // "lean" | "current" | "fat"
-    var isSavingGoal = false
-    var goalSaveError: String?
+
+    // MARK: - Step 1: Manual input branch (Skip Plaid)
+    //
+    // Per plan §"无 Plaid 手动输入分支": user enters 4 numbers, downstream
+    // algorithm receives the same essentialFloor / avgWants / avgIncome /
+    // netWorth shape as the Plaid path. essentialSpending is taken as a
+    // direct floor (not multiplied by 0.6 — user already estimated essentials).
+
+    var isManualMode: Bool = false
+    var manualIncome: Double = 0
+    var manualEssentialSpending: Double = 0
+    var manualOtherSpending: Double = 0
+    var manualNetWorth: Double = 0
+    /// Manual-mode age input. Pre-filled from `loadProfile()` when an
+    /// onboarding profile already supplies one; otherwise the user must
+    /// enter it before continuing. `generate-plans` requires a current
+    /// age (server returns 400 MISSING_CURRENT_AGE without it), so we
+    /// hard-block the CTA rather than silently failing later.
+    var manualAge: Int = 0
+
+    var canProceedFromManualInput: Bool {
+        manualIncome > 0
+            && (manualEssentialSpending + manualOtherSpending) > 0
+            && effectiveManualAge > 0
+    }
+
+    /// Resolve the age the manual flow will commit. Prefer the user's
+    /// edit (`manualAge`); fall back to whatever onboarding stored on the
+    /// profile (`currentAge`). Both can be 0 for a fresh-signup user that
+    /// somehow reached manual mode without an onboarding profile.
+    var effectiveManualAge: Int {
+        if manualAge > 0 { return manualAge }
+        if currentAge > 0 { return currentAge }
+        return 0
+    }
 
     // MARK: - Step 1: Account Selection
 
@@ -90,36 +120,56 @@ class BudgetSetupViewModel {
     var isLoadingFeasibility = false
     
     // MARK: - Step 3: Plans
-    
-    var plansResponse: PlansResponse?
+
+    var plans: [BudgetPlanOption] = []
     var isLoadingPlans = false
-    
-    enum PlanSelection: String, CaseIterable {
-        case steady
-        case recommended
-        case accelerate
+    var selectedPlanIndex: Int = 0
+    var customSliderRange: CustomSliderRange?
+
+    var committedSavingsRate: Double?
+    var committedMonthlySave: Double?
+    var committedSpendCeiling: Double?
+    var committedPlanLabel: String?
+
+    var selectedPlan: BudgetPlanOption? {
+        guard plans.indices.contains(selectedPlanIndex) else { return nil }
+        return plans[selectedPlanIndex]
     }
 
-    var selectedPlanType: PlanSelection = .recommended
-
-    var selectedPlan: PlanDetail? {
-        guard let plans = plansResponse?.plans else { return nil }
-        switch selectedPlanType {
-        case .steady:       return plans.steady
-        case .recommended:  return plans.recommended
-        case .accelerate:   return plans.accelerate
-        }
-    }
-
-    var baseline: BaselinePlan? { plansResponse?.baseline }
-    var userTier: String { plansResponse?.userTier ?? "beginner" }
+    var primaryPlan: BudgetPlanOption? { plans.first }
 
     var selectedPlanName: String {
-        switch selectedPlanType {
-        case .steady:       return "Steady"
-        case .recommended:  return "Recommended"
-        case .accelerate:   return "Accelerate"
-        }
+        let rawLabel = committedPlanLabel ?? selectedPlan?.label ?? "target-aligned"
+        return displayName(for: rawLabel)
+    }
+
+    var fireProgressRatio: Double {
+        guard let selectedPlan else { return 0 }
+        guard selectedPlan.fireNumber > 0 else { return 0 }
+        return min(1, max(0, currentNetWorth / selectedPlan.fireNumber))
+    }
+
+    var hasCustomSaveAdjustment: Bool {
+        customSliderRange?.isAvailable == true
+    }
+
+    var isUsingCustomPlan: Bool {
+        committedPlanLabel == "custom"
+    }
+
+    var currentSnapshotIncome: Double {
+        if isManualMode { return manualIncome }
+        return spendingStats?.avgMonthlyIncome ?? monthlyIncome
+    }
+
+    var currentSnapshotSpend: Double {
+        if isManualMode { return manualEssentialSpending + manualOtherSpending }
+        return spendingStats?.avgMonthlyExpenses ?? 0
+    }
+
+    var currentSnapshotEssentialFloor: Double {
+        if isManualMode { return manualEssentialSpending }
+        return spendingStats?.essentialFloor ?? spendingStats?.avgMonthlyFixed ?? 0
     }
 
     // MARK: - Step 4: Spending Plan
@@ -179,6 +229,86 @@ class BudgetSetupViewModel {
 
     private func roundPercentage(_ value: Double) -> Double {
         (value * 10).rounded() / 10
+    }
+
+    func displayName(for label: String) -> String {
+        switch label {
+        case "target-aligned": return "Target-aligned"
+        case "closest_near": return "Closest reasonable"
+        case "closest_far": return "Adjust target"
+        case "already_fire": return "Already FIRE"
+        case "comfortable": return "Comfortable"
+        case "accelerated": return "Accelerated"
+        case "custom": return "Custom"
+        default:
+            return label
+                .replacingOccurrences(of: "_", with: " ")
+                .replacingOccurrences(of: "-", with: " ")
+                .capitalized
+        }
+    }
+
+    func selectPlan(at index: Int) {
+        guard plans.indices.contains(index) else { return }
+        selectedPlanIndex = index
+        syncCommittedState(with: plans[index])
+    }
+
+    private func syncCommittedState(with plan: BudgetPlanOption) {
+        committedPlanLabel = plan.label
+        committedMonthlySave = plan.monthlySave
+        committedSavingsRate = plan.savingsRate
+        committedSpendCeiling = plan.committedSpendCeiling
+    }
+
+    func resetCommittedToSelectedPlan() {
+        guard let selectedPlan else { return }
+        syncCommittedState(with: selectedPlan)
+    }
+
+    func applyCustomMonthlySave(_ value: Double) {
+        let income = currentSnapshotIncome
+        guard income > 0 else { return }
+        let clamped = max(0, min(value, income))
+        committedPlanLabel = "custom"
+        committedMonthlySave = clamped
+        committedSavingsRate = income > 0 ? clamped / income : 0
+        committedSpendCeiling = max(0, income - clamped)
+    }
+
+    var committedProjectedFireAge: Int? {
+        guard let selectedPlan else { return nil }
+        guard let monthlySave = committedMonthlySave else { return selectedPlan.projectedFireAge }
+        let months = FIREMath.monthsToFIRE(
+            netWorth: currentNetWorth,
+            monthlySave: monthlySave,
+            fireNumber: selectedPlan.fireNumber,
+            annualRealReturn: FIREAssumptions.realAnnualReturn
+        )
+        guard months.isFinite else { return nil }
+        return currentAge + Int(ceil(months / 12))
+    }
+
+    var committedGapYears: Int {
+        guard let committedProjectedFireAge else { return 0 }
+        return max(0, committedProjectedFireAge - targetRetirementAge)
+    }
+
+    func seedDefaultsForTargetStep() {
+        if retirementSpendingMonthly <= 0 {
+            retirementSpendingMonthly = max(0, currentSnapshotSpend)
+        }
+        if targetRetirementAge <= currentAge {
+            targetRetirementAge = max(currentAge + 1, min(80, currentAge + 15))
+        }
+    }
+
+    func enterManualMode() {
+        isManualMode = true
+    }
+
+    func exitManualMode() {
+        isManualMode = false
     }
     
     /// Client-side compound growth projection (matches backend formula)
@@ -245,14 +375,8 @@ class BudgetSetupViewModel {
 
         // Restore goal fields from DB — covers old users, mid-flow exits, multi-device
         await restoreFromActiveFireGoal()
-
-        if spendingStats != nil {
-            await loadDiagnosis()
-        } else {
-            isLoadingDiagnosis = false
-        }
-
-        await loadGoalFeasibility()
+        seedDefaultsForTargetStep()
+        isLoadingDiagnosis = false
     }
 
     private func restoreFromActiveFireGoal() async {
@@ -278,6 +402,13 @@ class BudgetSetupViewModel {
             currentAge = profile.age
             currentNetWorth = profile.plaidNetWorth ?? profile.currentNetWorth
             currencyCode = profile.currencyCode
+            // Seed manual-mode age from the profile so returning manual
+            // users don't have to retype it. The CTA still requires
+            // `effectiveManualAge > 0`; if the profile somehow has age 0
+            // we fall through to the inline age input.
+            if manualAge <= 0 && profile.age > 0 {
+                manualAge = profile.age
+            }
             isLoadingProfile = false
             print("✅ [BudgetSetup] loadProfile success — income: \(monthlyIncome), age: \(currentAge)")
         } catch {
@@ -287,6 +418,36 @@ class BudgetSetupViewModel {
         }
     }
     
+    /// Push the latest manual numbers into `user_profiles` so downstream
+    /// readers (Home Hero, `get-active-fire-goal`, `generate-plans`) see the
+    /// values the user just typed instead of whatever onboarding stored.
+    /// Idempotent and safe to call repeatedly. Best-effort — failures are
+    /// logged but never bubble up, because the calling flow always carries
+    /// the same numbers in its outgoing request bodies.
+    private func syncManualProfileSnapshot() async {
+        guard isManualMode else { return }
+
+        let ageToSync: Int? = effectiveManualAge > 0 ? effectiveManualAge : nil
+        let incomeToSync: Double? = manualIncome > 0 ? manualIncome : nil
+        let netWorthToSync: Double? = manualNetWorth
+        let expensesToSync: Double? = (manualEssentialSpending + manualOtherSpending) > 0
+            ? (manualEssentialSpending + manualOtherSpending)
+            : nil
+
+        do {
+            _ = try await APIService.shared.updateUserProfile(
+                age: ageToSync,
+                monthlyIncome: incomeToSync,
+                currentNetWorth: netWorthToSync,
+                currentMonthlyExpenses: expensesToSync,
+                currencyCode: nil
+            )
+            print("✅ [BudgetSetup] syncManualProfileSnapshot success — age: \(ageToSync ?? -1), income: \(incomeToSync ?? -1), netWorth: \(netWorthToSync ?? .nan)")
+        } catch {
+            print("⚠️ [BudgetSetup] syncManualProfileSnapshot failed: \(error)")
+        }
+    }
+
     private func loadSpendingStats() async {
         do {
             var requestBody: [String: Any] = ["months": 6]
@@ -389,6 +550,7 @@ class BudgetSetupViewModel {
                 currentSavingsRate: stats.currentSavingsRate,
                 avgMonthlyIncome: stats.avgMonthlyIncome,
                 avgMonthlySavings: stats.avgMonthlySavings,
+                avgMonthlyExpenses: stats.avgMonthlyExpenses,
                 avgMonthlyFixed: stats.avgMonthlyFixed,
                 avgMonthlyFlexible: stats.avgMonthlyFlexible,
                 currentNetWorth: currentNetWorth,
@@ -402,29 +564,54 @@ class BudgetSetupViewModel {
             if targetRetirementAge > 0 {
                 requestBody.targetRetirementAge = targetRetirementAge
             }
+            requestBody.essentialFloor = stats.essentialFloor ?? stats.avgMonthlyFixed
+            requestBody.avgWants = stats.avgWants ?? stats.avgMonthlyFlexible
             if !selectedAccountIds.isEmpty {
                 requestBody.accountIds = Array(selectedAccountIds)
             }
             requestBody.month = DateFormatter.currentMonthString
 
             let response = try await APIService.shared.generatePlans(data: requestBody)
-            plansResponse = response
+            plans = response.plans
+            customSliderRange = response.customSlider
+            selectedPlanIndex = 0
+
+            if let primary = response.plans.first {
+                syncCommittedState(with: primary)
+            }
+            committedPlanLabel = response.committedDefaults.committedPlanLabel
+            committedMonthlySave = response.committedDefaults.committedMonthlySave
+            committedSavingsRate = response.committedDefaults.committedSavingsRate
+            committedSpendCeiling = response.committedDefaults.committedSpendCeiling
 
             isLoadingPlans = false
             print("✅ [BudgetSetup] loadPlans success")
-            print("   Steady: \(response.plans.steady.savingsRate)%, Recommended: \(response.plans.recommended.savingsRate)%, Accelerate: \(response.plans.accelerate.savingsRate)%")
-            print("   User tier: \(response.userTier), phase: \(response.phase ?? -1), goalDriven: \(response.goalDriven ?? false)")
+            print("   Returned \(response.planCount) plan(s), primary: \(response.primaryPlanLabel)")
+            if let primary = response.plans.first {
+                print("   Primary save: $\(primary.monthlySave), budget: $\(primary.monthlyBudget), FIRE age: \(primary.projectedFireAge)")
+            }
         } catch {
             print("❌ [BudgetSetup] loadPlans error: \(error)")
             isLoadingPlans = false
         }
     }
 
-    // MARK: - Goal Setup API
+    // MARK: - Step 4 Target: Save FIRE goal
+    //
+    // V3: lifestylePreset removed entirely. retirementSpendingMonthly is the
+    // direct dollar figure from the Step 4 sheet. saveFireGoal is now called
+    // from Step 4 Continue, NOT from a dedicated Step 0 page.
+
+    var isSavingGoal = false
+    var goalSaveError: String?
 
     func saveFireGoal() async -> Bool {
         guard retirementSpendingMonthly > 0 else {
             goalSaveError = "Please enter your expected monthly spending in retirement."
+            return false
+        }
+        guard targetRetirementAge > 0, targetRetirementAge > currentAge else {
+            goalSaveError = "Please pick a target retirement age above your current age."
             return false
         }
         isSavingGoal = true
@@ -432,9 +619,9 @@ class BudgetSetupViewModel {
         do {
             var request = SaveFireGoalRequest(
                 retirementSpendingMonthly: retirementSpendingMonthly,
-                lifestylePreset: lifestylePreset
+                lifestylePreset: nil
             )
-            if targetRetirementAge > 0 { request.targetRetirementAge = targetRetirementAge }
+            request.targetRetirementAge = targetRetirementAge
             if currentAge > 0 { request.currentAge = currentAge }
             _ = try await APIService.shared.saveFireGoal(data: request)
             isSavingGoal = false
@@ -452,7 +639,17 @@ class BudgetSetupViewModel {
     func applyPlan() async -> Bool {
         guard let plan = selectedPlan else { return false }
         do {
-            let request = ApplyPlanRequest.from(planDetail: plan, planType: selectedPlanType.rawValue)
+            let fixedBudgetMonthly = spendingPlan?.fixedBudget.total
+                ?? min(plan.committedSpendCeiling, spendingStats?.avgMonthlyFixed ?? 0)
+            let flexibleBudgetMonthly = spendingPlan?.flexibleBudget.total
+                ?? max(0, plan.committedSpendCeiling - fixedBudgetMonthly)
+
+            let request = ApplyPlanRequest.from(
+                plan: plan,
+                committedPlanLabel: committedPlanLabel ?? plan.label,
+                fixedBudgetMonthly: fixedBudgetMonthly,
+                flexibleBudgetMonthly: flexibleBudgetMonthly
+            )
             _ = try await APIService.shared.applySelectedPlan(data: request)
             try await APIService.shared.markSetupStep("snapshot_reviewed")
             print("✅ [BudgetSetup] applyPlan success")
@@ -480,10 +677,138 @@ class BudgetSetupViewModel {
         return planApplied
     }
 
-    /// Continue from Connected Accounts Review.
-    /// If initial stats are already loaded, go straight to diagnosis.
-    /// Otherwise, enter loading and continue to diagnosis after loading completes.
-    func continueFromAccountsReview() async {
+    /// V3 (Phase E): Continue from Step 1 Connect into Loading → Reality.
+    /// Replaces `continueFromAccountsReview` (BS_AccountsReviewView is deleted).
+    /// Marks the server step so resumeFromSetupState can route correctly.
+    func continueFromConnect() async {
+        if isManualMode {
+            // Manual mode skips the Loading view entirely, so we must hydrate the
+            // bits the Loading path normally fills before synthesizing stats:
+            //   • loadProfile()   → currentAge / currencyCode (generate-plans needs current_age)
+            //   • restoreFromActiveFireGoal() → returning manual users keep saved goal prefill
+            // Both are best-effort; manual values override anything they set.
+            await loadProfile()
+            await restoreFromActiveFireGoal()
+            // loadProfile flips `loadingError` on failure, but we never show the
+            // Loading view here, so swallow the message — UI cues for missing
+            // manual numbers are surfaced inline in BS_AccountSelectionView.
+            loadingError = nil
+            isLoadingProfile = false
+            isLoadingStats = false
+            isLoadingDiagnosis = false
+
+            let totalSpend = manualEssentialSpending + manualOtherSpending
+            let monthlySave = manualIncome - totalSpend
+            let savingsRatePct = manualIncome > 0 ? max(0, (monthlySave / manualIncome) * 100) : 0
+            let currentMonth = DateFormatter.currentMonthString.prefix(7)
+
+            spendingStats = SpendingStatsResponse(
+                avgMonthlyIncome: manualIncome,
+                avgMonthlyExpenses: totalSpend,
+                avgMonthlySavings: monthlySave,
+                currentSavingsRate: savingsRatePct,
+                avgMonthlyFixed: manualEssentialSpending,
+                avgMonthlyFlexible: manualOtherSpending,
+                fixedExpenses: [
+                    FixedExpenseItem(
+                        name: "essentials",
+                        pfcDetailed: nil,
+                        avgMonthlyAmount: manualEssentialSpending,
+                        monthsAppeared: 1,
+                        variancePct: 0,
+                        isAlwaysFixed: true
+                    )
+                ],
+                flexibleBreakdown: manualOtherSpending > 0 ? [
+                    FlexibleBreakdownItem(
+                        subcategory: "other",
+                        avgMonthlyAmount: manualOtherSpending,
+                        shareOfFlexible: 1,
+                        transactionCount: 1
+                    )
+                ] : [],
+                incomeSource: "manual",
+                monthsAnalyzed: 1,
+                dataQuality: "limited",
+                totalTransactions: 0,
+                monthlyBreakdown: [
+                    MonthlyBreakdownItem(
+                        month: String(currentMonth),
+                        income: manualIncome,
+                        fixed: manualEssentialSpending,
+                        flexible: manualOtherSpending,
+                        savings: monthlySave
+                    )
+                ],
+                hasDeficit: monthlySave < 0,
+                deficitAmount: max(0, -monthlySave),
+                essentialFloor: manualEssentialSpending,
+                avgWants: manualOtherSpending,
+                uncategorizedShareOfSpend: 0,
+                canonicalBreakdown: [
+                    CanonicalBreakdownItem(
+                        canonicalId: "essentials",
+                        parent: "needs",
+                        avgMonthly: manualEssentialSpending,
+                        transactionCount: 1
+                    ),
+                    CanonicalBreakdownItem(
+                        canonicalId: "other",
+                        parent: "wants",
+                        avgMonthly: manualOtherSpending,
+                        transactionCount: manualOtherSpending > 0 ? 1 : 0
+                    )
+                ],
+                oneTimeTransactions: [],
+                outlierThreshold: nil,
+                monthlyBreakdownV3: [
+                    MonthlyBreakdownV3Item(
+                        month: String(currentMonth),
+                        status: "complete",
+                        income: manualIncome,
+                        needsSpend: manualEssentialSpending,
+                        wantsSpend: manualOtherSpending,
+                        uncategorizedSpend: 0,
+                        totalSpend: totalSpend,
+                        savings: monthlySave
+                    )
+                ],
+                monthsInWindow: 1
+            )
+            monthlyIncome = manualIncome
+            currentNetWorth = manualNetWorth
+            // Commit the manual age into `currentAge` so generate-plans /
+            // generate-spending-plan / calculate-fire-goal request bodies
+            // pick it up via `currentAge > 0` checks below. The CTA
+            // already enforces `effectiveManualAge > 0` so this is safe.
+            if effectiveManualAge > 0 {
+                currentAge = effectiveManualAge
+            }
+            seedDefaultsForTargetStep()
+
+            // Sync the manual snapshot back to `user_profiles` so other
+            // surfaces (Home Hero, get-active-fire-goal's net-worth
+            // fallback, generate-plans' age fallback) immediately see the
+            // numbers the user just typed instead of stale onboarding
+            // estimates. This is best-effort: we still proceed even if
+            // the call fails — the request bodies below carry the same
+            // values explicitly.
+            await syncManualProfileSnapshot()
+
+            // Best-effort: tell the server we cleared the Connect step so a
+            // mid-flow resume routes back into Reality (not Connect).
+            do {
+                try await APIService.shared.markSetupStep("accounts_reviewed")
+            } catch {
+                print("⚠️ [BudgetSetup] mark accounts_reviewed (manual) failed: \(error)")
+            }
+
+            await MainActor.run {
+                goToStep(.reality)
+            }
+            return
+        }
+
         do {
             try await APIService.shared.markSetupStep("accounts_reviewed")
         } catch {
@@ -491,10 +816,10 @@ class BudgetSetupViewModel {
         }
 
         await MainActor.run {
-            if spendingStats != nil && diagnosis != nil && loadingError == nil {
-                goToStep(.diagnosis)
+            if spendingStats != nil && loadingError == nil {
+                goToStep(.reality)
             } else {
-                prepareLoading(nextStep: .diagnosis)
+                prepareLoading(nextStep: .reality)
                 goToStep(.loading)
             }
         }
@@ -503,45 +828,39 @@ class BudgetSetupViewModel {
     // MARK: - Setup Resume
 
     /// Reads the server-side setup state and advances currentStep to the correct resume point.
+    /// V3 (Phase E): goal is collected in Step 4 Target (after Reality), so we no longer
+    /// gate routing on `targetRetirementAge` — users always flow through Reality first.
     func resumeFromSetupState() async {
         defer { isResumingState = false }
 
-        // Restore goal fields before routing so we can check targetRetirementAge
+        // Restore goal fields before routing so Step 4 sliders pre-fill.
         await restoreFromActiveFireGoal()
 
         do {
             let state = try await APIService.shared.getSetupState()
 
-            // Intercept: goal exists but targetRetirementAge was never filled in
-            // (old users created before S1-1). Must complete goal setup before continuing.
-            if state.resumeStage != .noGoal && targetRetirementAge == 0 {
-                goalSaveError = "We need one more detail — please set your target retirement age to continue."
-                currentStep = .goalSetup
-                print("⚠️ [BudgetSetup] intercepted: goal exists but targetRetirementAge == nil → goalSetup")
-                return
-            }
-
             switch state.resumeStage {
-            case .noGoal:
-                currentStep = .goalSetup
-            case .goalSet:
-                currentStep = .accountSelection
+            case .noGoal, .goalSet:
+                // Both pre-Plaid stages land on Step 1 Connect.
+                currentStep = .connect
             case .accountsLinked:
+                // Accounts are linked but stats not yet computed → enter Loading → Reality.
                 if plaidAccounts.isEmpty {
                     await loadAccounts()
                 }
-                currentStep = .accountsReview
+                prepareLoading(nextStep: .reality)
+                currentStep = .loading
             case .snapshotPending:
-                prepareLoading(nextStep: .diagnosis)
+                prepareLoading(nextStep: .reality)
                 currentStep = .loading
-            case .planPending:
-                prepareLoading(nextStep: .choosePath)
-                currentStep = .loading
-            case .active:
-                prepareLoading(nextStep: .choosePath)
+            case .planPending, .active:
+                // Stats + (maybe) plan exist. If we have a target age, go to Plan.
+                // Otherwise the user never finished Step 4 → land on Target.
+                let nextAfterLoading: Step = (targetRetirementAge > 0) ? .plan : .target
+                prepareLoading(nextStep: nextAfterLoading)
                 currentStep = .loading
             }
-            print("✅ [BudgetSetup] resumeFromSetupState → \(state.resumeStage)")
+            print("✅ [BudgetSetup] resumeFromSetupState → \(state.resumeStage) → \(currentStep)")
         } catch {
             print("⚠️ [BudgetSetup] resumeFromSetupState failed (starting fresh): \(error)")
         }
@@ -584,11 +903,13 @@ class BudgetSetupViewModel {
             }
             
             let requestBody = GenerateSpendingPlanRequest(
-                selectedPlanRate: plan.savingsRate,
-                selectedPlanName: selectedPlanType.rawValue,
+                selectedPlanRate: (committedSavingsRate ?? plan.savingsRate) * 100,
+                selectedPlanName: committedPlanLabel ?? plan.label,
                 avgMonthlyIncome: stats.avgMonthlyIncome,
                 fixedExpenses: fixedInputs,
                 flexibleBreakdown: flexInputs,
+                committedMonthlySave: committedMonthlySave ?? plan.monthlySave,
+                committedSpendCeiling: committedSpendCeiling ?? plan.committedSpendCeiling,
                 month: monthString
             )
             
@@ -608,9 +929,38 @@ class BudgetSetupViewModel {
     func updateFlexibleAmount(subcategory: String, amount: Double) {
         editedFlexibleAmounts[subcategory] = max(0, amount)
     }
+
+    func suggestedCategoryBudgets() -> [String: Double] {
+        guard let stats = spendingStats else { return [:] }
+        let totalSpend = max(0.01, currentSnapshotSpend)
+        let ceiling = committedSpendCeiling ?? currentSnapshotSpend
+        var suggested: [String: Double] = [:]
+        for item in stats.fixedExpenses {
+            suggested[item.name] = roundBudgetAmount(item.avgMonthlyAmount / totalSpend * ceiling)
+        }
+        for item in stats.flexibleBreakdown {
+            suggested[item.subcategory] = roundBudgetAmount(item.avgMonthlyAmount / totalSpend * ceiling)
+        }
+        return suggested
+    }
+
+    func ensureCategoryBudgetsSeeded() {
+        if categoryBudgets.isEmpty {
+            categoryBudgets = suggestedCategoryBudgets()
+        }
+    }
+
+    var categoryBudgetTotal: Double {
+        categoryBudgets.values.reduce(0, +)
+    }
+
+    var categoryBudgetRemaining: Double {
+        (committedSpendCeiling ?? currentSnapshotSpend) - categoryBudgetTotal
+    }
     
     func saveFinalBudget() async -> Bool {
         guard let plan = spendingPlan else { return false }
+        guard let selectedPlan else { return false }
         
         isSaving = true
         saveError = nil
@@ -645,7 +995,17 @@ class BudgetSetupViewModel {
                 "savings_rate": plan.planRate,
                 "fixed_budget": plan.fixedBudget.total,
                 "flexible_budget": plan.flexibleBudget.total,
-                "selected_plan": plan.planName,
+                "selected_plan": committedPlanLabel ?? selectedPlan.label,
+                "committed_savings_rate": committedSavingsRate ?? selectedPlan.savingsRate,
+                "committed_monthly_save": committedMonthlySave ?? selectedPlan.monthlySave,
+                "committed_spend_ceiling": committedSpendCeiling ?? selectedPlan.committedSpendCeiling,
+                "committed_plan_label": committedPlanLabel ?? selectedPlan.label,
+                "snapshot_avg_income": spendingStats?.avgMonthlyIncome ?? monthlyIncome,
+                "snapshot_avg_spend": spendingStats?.avgMonthlyExpenses ?? 0,
+                "snapshot_net_worth": currentNetWorth,
+                "snapshot_essential_floor": spendingStats?.essentialFloor ?? spendingStats?.avgMonthlyFixed ?? 0,
+                "snapshot_date": ISO8601DateFormatter().string(from: Date()),
+                "retirement_spending_monthly": retirementSpendingMonthly,
                 "source": "setup"
             ]
 
@@ -665,6 +1025,14 @@ class BudgetSetupViewModel {
                 throw APIError.httpError(statusCode)
             }
             print("✅ [BudgetSetup] saveFinalBudget success")
+            // Defensive re-sync: the user may have edited the manual
+            // numbers between Connect and Confirm. The Connect-time
+            // sync covers the common path; this catches any drift so
+            // the snapshot stored on user_profiles always matches the
+            // budget snapshot we just wrote.
+            if isManualMode {
+                await syncManualProfileSnapshot()
+            }
             isSaving = false
             return true
         } catch {
@@ -695,7 +1063,7 @@ class BudgetSetupViewModel {
     func goBack() {
         let targetRaw = currentStep.rawValue - 1
         guard let previous = Step(rawValue: targetRaw),
-              previous.rawValue >= Step.goalSetup.rawValue else { return }
+              previous.rawValue >= Step.connect.rawValue else { return }
         isNavigatingForward = false
         withAnimation(.easeOut(duration: 0.3)) {
             currentStep = previous

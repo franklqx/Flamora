@@ -42,6 +42,7 @@ struct HomeBottomSheet: View {
             .frame(height: handleHeight)
             .contentShape(Rectangle())
             .highPriorityGesture(sheetDragGesture)
+            .accessibilityIdentifier("home_bottom_sheet_handle")
             .overlay(alignment: .center) {
                 let labelOpacity = max(0, min(1, (dragProgress - 0.72) / 0.28))
                 if labelOpacity > 0 {
@@ -95,6 +96,8 @@ struct HomeBottomSheet: View {
         )
         .clipShape(sheetShape)
         .shadow(color: AppColors.glassCardShadow, radius: 18, y: -4)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("home_bottom_sheet")
     }
 
     private var backLabelText: String {

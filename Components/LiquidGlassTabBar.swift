@@ -101,7 +101,18 @@ struct LiquidGlassTabBar: View {
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
+        .accessibilityIdentifier(Self.accessibilityIdentifier(for: tab.item))
         .animation(.spring(response: 0.28, dampingFraction: 0.78), value: selectedTab)
+    }
+
+    /// Stable accessibility identifiers consumed by `Flamora_appUITests`.
+    private static func accessibilityIdentifier(for item: MainTabItem) -> String {
+        switch item {
+        case .home: return "tab_home"
+        case .cashflow: return "tab_cashflow"
+        case .investment: return "tab_investment"
+        case .settings: return "tab_settings"
+        }
     }
 
     // MARK: - Collapse circle

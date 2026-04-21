@@ -2,8 +2,15 @@
 //  BS_ConfirmView.swift
 //  Flamora app
 //
-//  Budget Setup — Step 6: Confirm & Save
-//  V2: Budget ring + extra savings compound growth + plan details
+//  Budget Setup — Step 6: Confirm & Save (V3, Phase E rewrite)
+//
+//  Spec (`~/.claude/plans/budget-plan-budget-plan-gentle-blossom.md` §"每页契约" Step 6):
+//    • Monthly save · Monthly budget · FIRE progress 进度条
+//    • Progress bar shows: $net_worth of $fire_number · 火焰渐变填充
+//      · X% complete / ~Xy to age N · ✓ on-track 徽章
+//    • already_fire 态：save = $0, budget = retirement_spending_monthly,
+//      100% bar + "🎉 You're free" 徽章, 不再展示 ~Xy to age N
+//    • 不再单独展示 "Projected FIRE years" / "at age X" — 合并进 progress bar
 //
 
 import SwiftUI
@@ -12,10 +19,12 @@ struct BS_ConfirmView: View {
     @Bindable var viewModel: BudgetSetupViewModel
     var onComplete: () -> Void
 
-    private let goldColor   = AppColors.budgetGold
-
     @State private var showContent = false
-    @State private var ringProgress: Double = 0
+    @State private var animatedProgress: Double = 0
+
+    private var isAlreadyFire: Bool {
+        viewModel.committedPlanLabel == "already_fire"
+    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -28,16 +37,14 @@ struct BS_ConfirmView: View {
                     headerSection
                         .padding(.horizontal, AppSpacing.lg)
 
-                    if let plan = viewModel.spendingPlan {
-                        budgetSummaryRing(plan: plan)
-                            .padding(.horizontal, AppSpacing.lg)
+                    metricsStack
+                        .padding(.horizontal, AppSpacing.lg)
 
-                        planDetailsCard(plan: plan)
-                            .padding(.horizontal, AppSpacing.lg)
+                    fireProgressCard
+                        .padding(.horizontal, AppSpacing.lg)
 
-                        tipCard
-                            .padding(.horizontal, AppSpacing.lg)
-                    }
+                    tipCard
+                        .padding(.horizontal, AppSpacing.lg)
 
                     Spacer().frame(height: AppSpacing.tabBarReserve + AppSpacing.md + AppSpacing.md + AppSpacing.sm)
                 }
@@ -46,7 +53,9 @@ struct BS_ConfirmView: View {
             .offset(y: showContent ? 0 : AppSpacing.md)
             .onAppear {
                 withAnimation(.easeOut(duration: 0.6)) { showContent = true }
-                withAnimation(.easeOut(duration: 1.2).delay(0.3)) { ringProgress = 1.0 }
+                withAnimation(.easeOut(duration: 1.2).delay(0.3)) {
+                    animatedProgress = isAlreadyFire ? 1.0 : viewModel.fireProgressRatio
+                }
             }
 
             stickyBottomCTA
@@ -57,58 +66,59 @@ struct BS_ConfirmView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Review Plan")
+            Text(isAlreadyFire ? "You're already free" : "Review Plan")
                 .font(.cardFigurePrimary)
                 .foregroundStyle(AppColors.inkPrimary)
+
+            Text(isAlreadyFire
+                 ? "Your net worth already covers your FIRE number. Start tracking your sustainable spending."
+                 : "Confirm your monthly commitments. You can adjust these anytime in Settings.")
+                .font(.bodySmall)
+                .foregroundStyle(AppColors.inkSoft)
+                .lineSpacing(3)
         }
     }
 
-    // MARK: - Budget Summary Ring
+    // MARK: - Metric stack (Monthly save · Monthly budget)
 
-    private func budgetSummaryRing(plan: SpendingPlanResponse) -> some View {
-        let ringWidth: CGFloat = 220
-        let ringHeight: CGFloat = 176
-        let lineWidth: CGFloat = 20
+    private var metricsStack: some View {
+        VStack(spacing: AppSpacing.cardGap) {
+            metricCard(
+                title: "MONTHLY SAVE",
+                value: monthlySaveDisplay,
+                accentTint: AppColors.accentAmber,
+                subtitle: monthlySaveSubtitle
+            )
 
-        return VStack(spacing: 0) {
-            ZStack {
-                ConfirmTopSemiRing(startProgress: 0, endProgress: 1)
-                    .stroke(
-                        AppColors.glassCardBg,
-                        style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
-                    )
-
-                ConfirmTopSemiRing(startProgress: 0, endProgress: CGFloat(ringProgress))
-                    .stroke(
-                        LinearGradient(
-                            colors: AppColors.gradientShellAccent,
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        ),
-                        style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
-                    )
-
-                VStack(spacing: AppSpacing.xs) {
-                    Text("$\(formattedInt(plan.totalSpend))")
-                        .font(.h1)
-                        .foregroundStyle(AppColors.inkPrimary)
-                        .monospacedDigit()
-
-                    Text("Monthly spend budget")
-                        .font(.bodySmall)
-                        .foregroundStyle(AppColors.inkSoft)
-                }
-                .frame(maxWidth: .infinity)
-                .multilineTextAlignment(.center)
-                .padding(.top, 92)
-            }
-            .frame(width: ringWidth, height: ringHeight)
-            .frame(maxWidth: .infinity)
-            .padding(.top, AppSpacing.md)
-            .padding(.bottom, AppSpacing.sm)
+            metricCard(
+                title: "MONTHLY BUDGET",
+                value: monthlyBudgetDisplay,
+                accentTint: AppColors.budgetTeal,
+                subtitle: monthlyBudgetSubtitle
+            )
         }
-        .padding(AppSpacing.lg)
-        .frame(maxWidth: .infinity)
+    }
+
+    private func metricCard(title: String, value: String, accentTint: Color, subtitle: String?) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text(title)
+                .font(.label)
+                .tracking(1)
+                .foregroundStyle(AppColors.inkFaint)
+
+            Text(value)
+                .font(.cardFigurePrimary)
+                .foregroundStyle(accentTint)
+                .monospacedDigit()
+
+            if let subtitle {
+                Text(subtitle)
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.inkSoft)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(AppSpacing.md)
         .background(AppColors.glassCardBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
         .overlay(
@@ -117,39 +127,67 @@ struct BS_ConfirmView: View {
         )
     }
 
-    // MARK: - Plan Details Card
+    // MARK: - FIRE progress card
 
-    private func planDetailsCard(plan: SpendingPlanResponse) -> some View {
-        let income = max(plan.totalIncome, viewModel.spendingStats?.avgMonthlyIncome ?? viewModel.monthlyIncome)
-        let rows: [(label: String, value: String, isRate: Bool)] = [
-            ("Plan", viewModel.selectedPlanName, false),
-            ("Monthly income", "$\(formattedInt(income))", false),
-            ("Monthly budget", "$\(formattedInt(plan.totalSpend))", false),
-            ("Monthly savings", "$\(formattedInt(plan.totalSavings))", false),
-            ("Savings rate", formattedPct(plan.planRate), true)
-        ]
+    private var fireProgressCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("FIRE PROGRESS")
+                    .font(.label)
+                    .tracking(1)
+                    .foregroundStyle(AppColors.inkFaint)
+                Spacer()
+                progressBadge
+            }
 
-        return VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
-                if index > 0 {
-                    Rectangle()
+            // Headline: net worth / fire number
+            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
+                Text("$\(formattedCompact(viewModel.currentNetWorth))")
+                    .font(.h2)
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .monospacedDigit()
+                Text("of $\(formattedCompact(targetFireNumber))")
+                    .font(.bodySmall)
+                    .foregroundStyle(AppColors.inkSoft)
+                    .monospacedDigit()
+            }
+
+            // Progress bar with flame gradient
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: AppRadius.sm)
                         .fill(AppColors.glassCardBg)
-                        .frame(height: 1)
+                        .frame(height: 14)
+                    RoundedRectangle(cornerRadius: AppRadius.sm)
+                        .fill(
+                            LinearGradient(
+                                colors: AppColors.gradientShellAccent,
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: max(8, geo.size.width * CGFloat(animatedProgress)), height: 14)
                 }
-                HStack {
-                    Text(row.label)
-                        .font(.bodySmall)
+            }
+            .frame(height: 14)
+
+            // Footnote: X% complete · ~Xy to age N (suppressed in already_fire)
+            HStack {
+                Text(progressPercentText)
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(AppColors.inkPrimary)
+                if let etaText {
+                    Text("·")
+                        .font(.footnoteRegular)
                         .foregroundStyle(AppColors.inkFaint)
-                    Spacer()
-                    Text(row.value)
-                        .font(.bodySmallSemibold)
-                        .foregroundStyle(row.isRate ? goldColor : AppColors.inkPrimary)
-                        .monospacedDigit()
+                    Text(etaText)
+                        .font(.footnoteRegular)
+                        .foregroundStyle(AppColors.inkSoft)
                 }
-                .padding(.vertical, AppSpacing.sm + AppSpacing.xs)
-                .padding(.horizontal, AppSpacing.md)
+                Spacer()
             }
         }
+        .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AppColors.glassCardBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
@@ -159,7 +197,34 @@ struct BS_ConfirmView: View {
         )
     }
 
-    // MARK: - Tip Card
+    @ViewBuilder
+    private var progressBadge: some View {
+        if isAlreadyFire {
+            badgePill(text: "🎉 You're free", tint: AppColors.accentAmber)
+        } else if viewModel.fireProgressRatio >= 0.999 {
+            badgePill(text: "✓ Reached", tint: AppColors.accentAmber)
+        } else if isOnTrack {
+            badgePill(text: "✓ On track", tint: AppColors.budgetTeal)
+        } else {
+            EmptyView()
+        }
+    }
+
+    private func badgePill(text: String, tint: Color) -> some View {
+        Text(text)
+            .font(.footnoteSemibold)
+            .foregroundStyle(tint)
+            .padding(.horizontal, AppSpacing.sm)
+            .padding(.vertical, AppSpacing.xs)
+            .background(AppColors.glassCardBg)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(tint.opacity(0.3), lineWidth: 1)
+            )
+    }
+
+    // MARK: - Tip card
 
     private var tipCard: some View {
         HStack(alignment: .top, spacing: AppSpacing.sm + AppSpacing.xs) {
@@ -201,7 +266,7 @@ struct BS_ConfirmView: View {
                         if viewModel.isSaving {
                             ProgressView().tint(AppColors.inkPrimary)
                         }
-                        Text(viewModel.isSaving ? "Saving..." : "Start My Journey")
+                        Text(viewModel.isSaving ? "Saving..." : (isAlreadyFire ? "Start tracking" : "Start My Journey"))
                             .font(.sheetPrimaryButton)
                     }
                     .foregroundStyle(AppColors.ctaWhite)
@@ -225,7 +290,64 @@ struct BS_ConfirmView: View {
         }
     }
 
-    // MARK: - Helpers
+    // MARK: - Derived values
+
+    private var monthlySaveDisplay: String {
+        if isAlreadyFire { return "$0" }
+        let value = viewModel.committedMonthlySave ?? viewModel.spendingPlan?.totalSavings ?? 0
+        return "$\(formattedInt(value))"
+    }
+
+    private var monthlySaveSubtitle: String? {
+        if isAlreadyFire { return "Your portfolio funds itself." }
+        let rate = (viewModel.committedSavingsRate ?? 0) * 100
+        guard rate > 0 else { return nil }
+        return "\(formattedPct(rate)) of monthly income"
+    }
+
+    private var monthlyBudgetDisplay: String {
+        let value: Double
+        if isAlreadyFire {
+            value = viewModel.retirementSpendingMonthly
+        } else {
+            value = viewModel.committedSpendCeiling ?? viewModel.spendingPlan?.totalSpend ?? 0
+        }
+        return "$\(formattedInt(value))"
+    }
+
+    private var monthlyBudgetSubtitle: String? {
+        isAlreadyFire ? "Sustainable spending" : "Spend ceiling per month"
+    }
+
+    private var targetFireNumber: Double {
+        if let plan = viewModel.selectedPlan, plan.fireNumber > 0 { return plan.fireNumber }
+        // Fallback: 25× annual retirement spending (4% rule)
+        return max(0, viewModel.retirementSpendingMonthly) * 12 / 0.04
+    }
+
+    private var progressPercentText: String {
+        let pct = isAlreadyFire ? 100 : Int((viewModel.fireProgressRatio * 100).rounded())
+        return "\(pct)% complete"
+    }
+
+    /// `~Xy to age N` — suppressed in already_fire branch per spec.
+    private var etaText: String? {
+        if isAlreadyFire { return nil }
+        guard let plan = viewModel.selectedPlan else { return nil }
+        let age = plan.projectedFireAge
+        guard age > viewModel.currentAge else { return nil }
+        let years = age - viewModel.currentAge
+        return "~\(years)y to age \(age)"
+    }
+
+    /// "On track" if user's selected plan hits or beats their target age.
+    private var isOnTrack: Bool {
+        guard let plan = viewModel.selectedPlan else { return false }
+        guard viewModel.targetRetirementAge > 0 else { return false }
+        return plan.projectedFireAge <= viewModel.targetRetirementAge
+    }
+
+    // MARK: - Formatting helpers
 
     private func formattedInt(_ value: Double) -> String {
         let formatter = NumberFormatter()
@@ -244,41 +366,6 @@ struct BS_ConfirmView: View {
         if value >= 1_000_000 { return String(format: "%.1fM", value / 1_000_000) }
         if value >= 1_000 { return "\(Int(value / 1_000))K" }
         return formattedInt(value)
-    }
-}
-
-private struct ConfirmTopSemiRing: Shape {
-    let startProgress: CGFloat
-    let endProgress: CGFloat
-
-    func path(in rect: CGRect) -> Path {
-        let clampedStart = min(max(startProgress, 0), 1)
-        let clampedEnd = min(max(endProgress, 0), 1)
-        guard clampedEnd > clampedStart else { return Path() }
-
-        let radius = min(rect.width / 2, rect.height) - 10
-        let center = CGPoint(x: rect.midX, y: rect.maxY - 10)
-        let startAngle = Double.pi * Double(1 - clampedStart)
-        let endAngle = Double.pi * Double(1 - clampedEnd)
-        let steps = max(Int(ceil((clampedEnd - clampedStart) * 48)), 2)
-        var path = Path()
-
-        for step in 0...steps {
-            let progress = Double(step) / Double(steps)
-            let angle = startAngle + (endAngle - startAngle) * progress
-            let cosValue = CGFloat(Foundation.cos(angle))
-            let sinValue = CGFloat(Foundation.sin(angle))
-            let point = CGPoint(
-                x: center.x + radius * cosValue,
-                y: center.y - radius * sinValue
-            )
-            if step == 0 {
-                path.move(to: point)
-            } else {
-                path.addLine(to: point)
-            }
-        }
-        return path
     }
 }
 

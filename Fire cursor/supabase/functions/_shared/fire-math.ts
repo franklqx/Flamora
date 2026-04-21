@@ -158,3 +158,72 @@ function arrivalDateFromMonths(monthsFromNow: number): string {
   d.setMonth(d.getMonth() + monthsFromNow)
   return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`
 }
+
+// ============================================================================
+// V3 Budget Module — closed-form FIRE math
+// ============================================================================
+//
+// Used by: generate-plans (V3 rewrite), Step 5/6 ETA, iOS FIREMath.swift mirror.
+//
+// Why a second pair of functions instead of refactoring computeFireDate:
+//   - computeFireDate uses iterative monthly compounding with a 600-month ceiling and
+//     returns formatted strings for the legacy 3-plan UI. Many callers depend on it.
+//   - V3 needs a numeric months-to-FIRE for math composition and a closed-form
+//     solveRequiredSave for the inverse direction. Closed-form is also faster.
+//   - Once V3 ships and legacy callers migrate, computeFireDate can be retired.
+//
+// Cross-runtime alignment: mirror in Helpers/FIREMath.swift; covered by
+// _tests/fire-math-alignment.test.ts and FlamoraTests/FIREMathTests.swift.
+
+/**
+ * Months to reach `fireNumber` from `netWorth`, contributing `monthlySave` per month
+ * at `annualRealReturn` (e.g. 0.04). Closed-form solution of FV(n) = fireNumber.
+ *
+ * Boundary handling:
+ *   - `netWorth >= fireNumber` → 0 (already there)
+ *   - Otherwise the math handles save = 0 correctly via compounding alone:
+ *     when `den = netWorth * r > 0`, result = ln(FV/PV) / ln(1+r).
+ *   - `den <= 0` → Infinity (no growth path: zero NW & no save, or decumulation
+ *     exceeds compounding). This is the rigorous "unreachable" predicate.
+ *
+ * NOTE: An earlier draft short-circuited `monthlySave <= 0 → Infinity`. That was
+ * wrong for users with positive net worth who stop saving — compounding alone
+ * still reaches FIRE in finite time. The `den <= 0` check covers the truly
+ * impossible cases.
+ */
+export function monthsToFIRE(
+  netWorth: number,
+  monthlySave: number,
+  fireNumber: number,
+  annualRealReturn: number
+): number {
+  if (netWorth >= fireNumber) return 0
+  const r = annualRealReturn / 12
+  const num = fireNumber * r + monthlySave
+  const den = netWorth * r + monthlySave
+  if (den <= 0) return Infinity
+  if (num <= 0) return Infinity  // pathological: save so negative that even FV*r can't offset
+  return Math.log(num / den) / Math.log(1 + r)
+}
+
+/**
+ * Required monthly save to reach `fireNumber` in exactly `targetMonths` months,
+ * starting from `netWorth` at `annualRealReturn`. Closed-form inverse of FV.
+ *
+ * Returns 0 if already at FIRE. Returns Infinity if targetMonths is non-positive
+ * (window invalid — caller should treat as "target unreachable").
+ */
+export function solveRequiredSave(
+  netWorth: number,
+  targetMonths: number,
+  fireNumber: number,
+  annualRealReturn: number
+): number {
+  if (netWorth >= fireNumber) return 0
+  if (targetMonths <= 0) return Infinity
+  const r = annualRealReturn / 12
+  const growth = Math.pow(1 + r, targetMonths)
+  const num = (fireNumber - netWorth * growth) * r
+  const den = growth - 1
+  return Math.max(0, num / den)
+}

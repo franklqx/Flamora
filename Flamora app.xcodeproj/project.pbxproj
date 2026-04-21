@@ -47,8 +47,7 @@
 		12748F2F2F66B21000410D60 /* BS_LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748F2E2F66B21000410D60 /* BS_LoadingView.swift */; };
 		12748F302F66B21000410D60 /* BS_AccountSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748F312F66B21000410D60 /* BS_AccountSelectionView.swift */; };
 		12748FE92F7276F100410D60 /* BS_ChoosePathView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748FE82F7276F100410D60 /* BS_ChoosePathView.swift */; };
-		12748FEF2F7277AA00410D60 /* BS_GoalSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748FEE2F7277AA00410D60 /* BS_GoalSetupView.swift */; };
-		12748FF12F7277AA00410D60 /* BS_AccountsReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748FF02F7277AA00410D60 /* BS_AccountsReviewView.swift */; };
+		12748FEF2F7277AB00410D60 /* BS_TargetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748FEE2F7277AB00410D60 /* BS_TargetView.swift */; };
 		1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */; };
 		1508AF372F5D1A2600D59781 /* OB_BarChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1508AF362F5D1A2600D59781 /* OB_BarChartView.swift */; };
 		152BE0842F67A66C00CACBBC /* GlassPillSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152BE0832F67A66C00CACBBC /* GlassPillSelector.swift */; };
@@ -66,7 +65,6 @@
 		15E21AB32F3257B000A9BB60 /* CashflowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB22F3257B000A9BB60 /* CashflowView.swift */; };
 		15E21AB72F3257C600A9BB60 /* InvestmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB62F3257C600A9BB60 /* InvestmentView.swift */; };
 		15E21AB92F3257D700A9BB60 /* GlassmorphicTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */; };
-		EABDEF89FBE940EB9923E4BD /* LiquidGlassTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A76DFA412FAB4ECEB53AA9BB /* LiquidGlassTabBar.swift */; };
 		15E21AD92F3394B100A9BB60 /* FlameIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AD82F3394B100A9BB60 /* FlameIcon.swift */; };
 		15E21AE12F33BB9300A9BB60 /* SavingsTargetCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AE02F33BB9200A9BB60 /* SavingsTargetCard.swift */; };
 		15E21AE32F33BBB600A9BB60 /* SavingsInputSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AE22F33BBB600A9BB60 /* SavingsInputSheet.swift */; };
@@ -104,10 +102,12 @@
 		CDAA000D2FA0000000000001 /* InvestmentHeroData.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA000C2FA0000000000001 /* InvestmentHeroData.swift */; };
 		CDBB00022FA1000000000001 /* CashAccountsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00012FA1000000000001 /* CashAccountsCard.swift */; };
 		CDBB00042FA1000000000001 /* CashAccountDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00032FA1000000000001 /* CashAccountDetailView.swift */; };
+		CDFM00022FB0000000000001 /* FIREMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDFM00012FB0000000000001 /* FIREMath.swift */; };
 		CF10A0012F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF10A0002F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift */; };
 		CF10A0112F50000100A9BB60 /* CashflowExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF10A0102F50000100A9BB60 /* CashflowExpandedOverlayView.swift */; };
 		CF20A0112F70000100A9BB60 /* HomeExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */; };
 		CF30A0012F80000100A9BB60 /* HomeBottomSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF30A0002F80000100A9BB60 /* HomeBottomSheet.swift */; };
+		EABDEF89FBE940EB9923E4BD /* LiquidGlassTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A76DFA412FAB4ECEB53AA9BB /* LiquidGlassTabBar.swift */; };
 		EB0000012F9A00000000EB01 /* ErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB0000022F9A00000000EB01 /* ErrorBanner.swift */; };
 		F10000022FB0000000000001 /* InvestmentDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000012FB0000000000001 /* InvestmentDataStore.swift */; };
 		F10000042FB0000000000001 /* InvestmentExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000032FB0000000000001 /* InvestmentExpandedOverlayView.swift */; };
@@ -174,8 +174,7 @@
 		12748F2E2F66B21000410D60 /* BS_LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_LoadingView.swift; sourceTree = "<group>"; };
 		12748F312F66B21000410D60 /* BS_AccountSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_AccountSelectionView.swift; sourceTree = "<group>"; };
 		12748FE82F7276F100410D60 /* BS_ChoosePathView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_ChoosePathView.swift; sourceTree = "<group>"; };
-		12748FEE2F7277AA00410D60 /* BS_GoalSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_GoalSetupView.swift; sourceTree = "<group>"; };
-		12748FF02F7277AA00410D60 /* BS_AccountsReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_AccountsReviewView.swift; sourceTree = "<group>"; };
+		12748FEE2F7277AB00410D60 /* BS_TargetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_TargetView.swift; sourceTree = "<group>"; };
 		1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBackgroundView.swift; sourceTree = "<group>"; };
 		150899942F30F60F003DDFBF /* Flamora app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Flamora app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899A32F30F611003DDFBF /* Flamora appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -196,7 +195,6 @@
 		15E21AB22F3257B000A9BB60 /* CashflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowView.swift; sourceTree = "<group>"; };
 		15E21AB62F3257C600A9BB60 /* InvestmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentView.swift; sourceTree = "<group>"; };
 		15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassmorphicTabBar.swift; sourceTree = "<group>"; };
-		A76DFA412FAB4ECEB53AA9BB /* LiquidGlassTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidGlassTabBar.swift; sourceTree = "<group>"; };
 		15E21AD82F3394B100A9BB60 /* FlameIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlameIcon.swift; sourceTree = "<group>"; };
 		15E21AE02F33BB9200A9BB60 /* SavingsTargetCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsTargetCard.swift; sourceTree = "<group>"; };
 		15E21AE22F33BBB600A9BB60 /* SavingsInputSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsInputSheet.swift; sourceTree = "<group>"; };
@@ -238,6 +236,7 @@
 		15FF6ED92F31043F0005F482 /* GradientButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientButton.swift; sourceTree = "<group>"; };
 		30135FBE8062413AB05D409B /* AppLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLinks.swift; sourceTree = "<group>"; };
 		8E03E4A8398A47FD9CC3F0BF /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		A76DFA412FAB4ECEB53AA9BB /* LiquidGlassTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidGlassTabBar.swift; sourceTree = "<group>"; };
 		A896C70355034867B690BCB2 /* PlaidTrustBridgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidTrustBridgeView.swift; sourceTree = "<group>"; };
 		AA5B00042F38500000001004 /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
 		AAB934E0EA2D41B4B246F19E /* SafariView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariView.swift; sourceTree = "<group>"; };
@@ -257,6 +256,7 @@
 		CDAA000C2FA0000000000001 /* InvestmentHeroData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentHeroData.swift; sourceTree = "<group>"; };
 		CDBB00012FA1000000000001 /* CashAccountsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountsCard.swift; sourceTree = "<group>"; };
 		CDBB00032FA1000000000001 /* CashAccountDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountDetailView.swift; sourceTree = "<group>"; };
+		CDFM00012FB0000000000001 /* FIREMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIREMath.swift; sourceTree = "<group>"; };
 		CF10A0002F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowSpendingOverviewPrototypeCard.swift; sourceTree = "<group>"; };
 		CF10A0102F50000100A9BB60 /* CashflowExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowExpandedOverlayView.swift; sourceTree = "<group>"; };
 		CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeExpandedOverlayView.swift; sourceTree = "<group>"; };
@@ -398,8 +398,7 @@
 				12748FE82F7276F100410D60 /* BS_ChoosePathView.swift */,
 				12748F2E2F66B21000410D60 /* BS_LoadingView.swift */,
 				12748F312F66B21000410D60 /* BS_AccountSelectionView.swift */,
-				12748FEE2F7277AA00410D60 /* BS_GoalSetupView.swift */,
-				12748FF02F7277AA00410D60 /* BS_AccountsReviewView.swift */,
+				12748FEE2F7277AB00410D60 /* BS_TargetView.swift */,
 			);
 			path = BudgetSetup;
 			sourceTree = "<group>";
@@ -585,8 +584,8 @@
 				1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */,
 				153CA3192F34EDEC001ED98E /* TopHeaderBar.swift */,
 				15E21AD82F3394B100A9BB60 /* FlameIcon.swift */,
-		15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */,
-		A76DFA412FAB4ECEB53AA9BB /* LiquidGlassTabBar.swift */,
+				15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */,
+				A76DFA412FAB4ECEB53AA9BB /* LiquidGlassTabBar.swift */,
 				15FF6ED92F31043F0005F482 /* GradientButton.swift */,
 				EB0000022F9A00000000EB01 /* ErrorBanner.swift */,
 			);
@@ -597,6 +596,7 @@
 			isa = PBXGroup;
 			children = (
 				CDAA00012FA0000000000001 /* CategoryDisplayHelper.swift */,
+				CDFM00012FB0000000000001 /* FIREMath.swift */,
 				PH0C00022F40000000000003 /* NumberFormatter+App.swift */,
 			);
 			path = Helpers;
@@ -794,8 +794,8 @@
 				153CA31A2F34EDEC001ED98E /* TopHeaderBar.swift in Sources */,
 				15E21AAB2F324EFA00A9BB60 /* Spacing.swift in Sources */,
 				1EB2D5B3CC5D45E3A2CC9B26 /* Shadows.swift in Sources */,
-		15E21AB92F3257D700A9BB60 /* GlassmorphicTabBar.swift in Sources */,
-		EABDEF89FBE940EB9923E4BD /* LiquidGlassTabBar.swift in Sources */,
+				15E21AB92F3257D700A9BB60 /* GlassmorphicTabBar.swift in Sources */,
+				EABDEF89FBE940EB9923E4BD /* LiquidGlassTabBar.swift in Sources */,
 				12748F2B2F65D00B00410D60 /* BS_ConfirmView.swift in Sources */,
 				12748F2D2F66B21000410D60 /* BS_DiagnosisView.swift in Sources */,
 				12748F2F2F66B21000410D60 /* BS_LoadingView.swift in Sources */,
@@ -827,6 +827,7 @@
 				12748F232F65CA7300410D60 /* BudgetSetupViewModel.swift in Sources */,
 				AAOB00012F38500000000001 /* OnboardingData.swift in Sources */,
 				CDAA00022FA0000000000001 /* CategoryDisplayHelper.swift in Sources */,
+				CDFM00022FB0000000000001 /* FIREMath.swift in Sources */,
 				PH0C00032F40000000000003 /* NumberFormatter+App.swift in Sources */,
 				12123E452F48D7E20011B385 /* PlaidLinkPresenter.swift in Sources */,
 				124C46492F56F65E00E4EA8B /* OB_IntroView.swift in Sources */,
@@ -851,8 +852,7 @@
 				124C465E2F56F65E00E4EA8B /* OB_ContainerView.swift in Sources */,
 				124C465F2F56F65E00E4EA8B /* OB_SignInView.swift in Sources */,
 				12748FE92F7276F100410D60 /* BS_ChoosePathView.swift in Sources */,
-				12748FEF2F7277AA00410D60 /* BS_GoalSetupView.swift in Sources */,
-				12748FF12F7277AA00410D60 /* BS_AccountsReviewView.swift in Sources */,
+				12748FEF2F7277AB00410D60 /* BS_TargetView.swift in Sources */,
 				124C46612F56F65E00E4EA8B /* OB_PrimaryButton.swift in Sources */,
 				12748F202F65CA4000410D60 /* APIService+BudgetSetup.swift in Sources */,
 				124C46632F56F65E00E4EA8B /* OB_BackButton.swift in Sources */,
@@ -1024,7 +1024,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 526LTP6Z7D;
+				DEVELOPMENT_TEAM = H9BUW6F8JV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Flamora-App-Info.plist";
@@ -1039,7 +1039,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.SL.fire.Flamora-app8";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.LL.fire.Flamora-app8";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -1059,7 +1059,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 526LTP6Z7D;
+				DEVELOPMENT_TEAM = H9BUW6F8JV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Flamora-App-Info.plist";
@@ -1074,7 +1074,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.SL.fire.Flamora-app8";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.LL.fire.Flamora-app8";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;

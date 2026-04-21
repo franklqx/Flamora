@@ -15,6 +15,13 @@ struct BS_AccountSelectionView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @State private var showTrustBridge = false
 
+    private static let currencyFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        return formatter
+    }()
+
     var body: some View {
         ZStack(alignment: .bottom) {
             LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
@@ -27,12 +34,19 @@ struct BS_AccountSelectionView: View {
                         .padding(.horizontal, AppSpacing.lg)
                         .padding(.bottom, AppSpacing.lg)
 
-                    if viewModel.isLoadingAccounts {
+                    if viewModel.isManualMode {
+                        manualEntrySection
+                            .padding(.horizontal, AppSpacing.lg)
+                    } else if viewModel.isLoadingAccounts {
                         loadingState
                     } else if let error = viewModel.accountsError {
                         errorState(error)
                     } else if !plaidManager.hasLinkedBank {
-                        connectAccountsCTA
+                        VStack(spacing: AppSpacing.md) {
+                            connectAccountsCTA
+                            manualAlternateCard
+                        }
+                        .padding(.horizontal, AppSpacing.lg)
                     } else if viewModel.plaidAccounts.isEmpty {
                         emptyState
                     } else {
@@ -40,6 +54,10 @@ struct BS_AccountSelectionView: View {
                             .padding(.horizontal, AppSpacing.lg)
 
                         addAccountButton
+                            .padding(.horizontal, AppSpacing.lg)
+                            .padding(.top, AppSpacing.md)
+
+                        manualAlternateCard
                             .padding(.horizontal, AppSpacing.lg)
                             .padding(.top, AppSpacing.md)
                     }
@@ -78,11 +96,16 @@ struct BS_AccountSelectionView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text(plaidManager.hasLinkedBank ? "Select Accounts" : "Connect Your Bank")
+            Text(viewModel.isManualMode ? "Add Your Numbers" : plaidManager.hasLinkedBank ? "Select Accounts" : "Connect Your Bank")
                 .font(.h1)
                 .foregroundStyle(AppColors.inkPrimary)
 
-            if plaidManager.hasLinkedBank {
+            if viewModel.isManualMode {
+                Text("No bank link is required. Add four simple numbers and we'll build the same budget plan flow from there.")
+                    .font(.inlineLabel)
+                    .foregroundStyle(AppColors.inkSoft)
+                    .lineSpacing(3)
+            } else if plaidManager.hasLinkedBank {
                 Text("Choose which accounts to include in your budget analysis. We recommend selecting your everyday spending accounts.")
                     .font(.inlineLabel)
                     .foregroundStyle(AppColors.inkSoft)
@@ -181,7 +204,6 @@ struct BS_AccountSelectionView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, AppSpacing.lg)
         .padding(.top, AppSpacing.md)
     }
 
@@ -331,6 +353,189 @@ struct BS_AccountSelectionView: View {
         .buttonStyle(.plain)
     }
 
+    private var manualAlternateCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text("Prefer to start manually?")
+                .font(.bodySemibold)
+                .foregroundStyle(AppColors.inkPrimary)
+            Text("You can enter income, essentials, other spending, and net worth now, then connect banks later if you want a richer picture.")
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.inkSoft)
+                .lineSpacing(3)
+
+            Button {
+                viewModel.enterManualMode()
+            } label: {
+                Text("Enter Numbers Instead")
+                    .font(.bodySmallSemibold)
+                    .foregroundStyle(AppColors.accentAmber)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(AppColors.glassCardBg)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppRadius.button)
+                            .stroke(AppColors.accentAmber.opacity(0.35), lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(AppSpacing.md)
+        .background(AppColors.glassCardBg)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
+        )
+    }
+
+    private var manualEntrySection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text("Manual Snapshot")
+                        .font(.h4)
+                        .foregroundStyle(AppColors.inkPrimary)
+                    Text("These four numbers create your starting reality. You can refine the details later.")
+                        .font(.footnoteRegular)
+                        .foregroundStyle(AppColors.inkSoft)
+                        .lineSpacing(3)
+                }
+                Spacer()
+                if plaidManager.hasLinkedBank {
+                    Button("Use linked accounts") {
+                        viewModel.exitManualMode()
+                    }
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(AppColors.accentAmber)
+                }
+            }
+
+            manualAgeField
+            manualField(
+                title: "Monthly income",
+                subtitle: "Take-home pay in a typical month",
+                value: $viewModel.manualIncome
+            )
+            manualField(
+                title: "Essential spending",
+                subtitle: "Rent, groceries, bills, transport, healthcare",
+                value: $viewModel.manualEssentialSpending
+            )
+            manualField(
+                title: "Other spending",
+                subtitle: "Eating out, shopping, travel, subscriptions",
+                value: $viewModel.manualOtherSpending
+            )
+            manualField(
+                title: "Current net worth",
+                subtitle: "Cash + investments - debt",
+                value: $viewModel.manualNetWorth
+            )
+
+            if !viewModel.canProceedFromManualInput {
+                Text(manualValidationHint)
+                    .font(.caption)
+                    .foregroundStyle(AppColors.inkSoft)
+            }
+        }
+        .padding(AppSpacing.md)
+        .background(AppColors.glassCardBg)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
+        )
+    }
+
+    /// Manual-mode age input. Pre-filled from `user_profiles.age` when
+    /// onboarding already supplied one (silent for the common case);
+    /// blank for fresh-signup users so they're prompted before the CTA
+    /// will activate. Without this, downstream `generate-plans` would
+    /// silently 400 with `MISSING_CURRENT_AGE`.
+    private var manualAgeField: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text("Current age")
+                .font(.bodySmallSemibold)
+                .foregroundStyle(AppColors.inkPrimary)
+            Text("Used to project your FIRE timeline")
+                .font(.caption)
+                .foregroundStyle(AppColors.inkSoft)
+
+            HStack(spacing: AppSpacing.sm) {
+                TextField(
+                    "0",
+                    value: $viewModel.manualAge,
+                    formatter: Self.ageFormatter
+                )
+                .font(.bodySmall)
+                .foregroundStyle(AppColors.inkPrimary)
+                .keyboardType(.numberPad)
+                Text("yrs")
+                    .font(.bodySemibold)
+                    .foregroundStyle(AppColors.inkFaint)
+            }
+            .padding(.horizontal, AppSpacing.md)
+            .frame(height: 48)
+            .background(AppColors.shellBg2.opacity(0.65))
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.md)
+                    .stroke(AppColors.inkBorder, lineWidth: 1)
+            )
+        }
+    }
+
+    private static let ageFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .none
+        formatter.allowsFloats = false
+        formatter.minimum = 0
+        formatter.maximum = 120
+        return formatter
+    }()
+
+    /// Tailored hint that points at whichever required field is missing.
+    /// Keeps the user from having to guess why the CTA is disabled.
+    private var manualValidationHint: String {
+        if viewModel.effectiveManualAge <= 0 {
+            return "Add your age so we can project your FIRE timeline."
+        }
+        if viewModel.manualIncome <= 0 {
+            return "Add your monthly income so we can build a realistic plan."
+        }
+        return "Add at least your essential or other spending so we can build a realistic plan."
+    }
+
+    private func manualField(title: String, subtitle: String, value: Binding<Double>) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text(title)
+                .font(.bodySmallSemibold)
+                .foregroundStyle(AppColors.inkPrimary)
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(AppColors.inkSoft)
+
+            HStack(spacing: AppSpacing.sm) {
+                Text("$")
+                    .font(.bodySemibold)
+                    .foregroundStyle(AppColors.inkFaint)
+                TextField("0", value: value, formatter: Self.currencyFormatter)
+                    .font(.bodySmall)
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .keyboardType(.decimalPad)
+            }
+            .padding(.horizontal, AppSpacing.md)
+            .frame(height: 48)
+            .background(AppColors.shellBg2.opacity(0.65))
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.md)
+                    .stroke(AppColors.inkBorder, lineWidth: 1)
+            )
+        }
+    }
+
     // MARK: - Sticky CTA
 
     private var stickyBottomCTA: some View {
@@ -344,25 +549,32 @@ struct BS_AccountSelectionView: View {
 
             VStack(spacing: AppSpacing.sm) {
                 Button {
-                    viewModel.prepareLoading(nextStep: .accountsReview)
-                    viewModel.goToStep(.loading)
+                    Task { await viewModel.continueFromConnect() }
                 } label: {
-                    Text("Continue (\(viewModel.selectedTransactionAccountCount) selected)")
+                    Text(primaryButtonTitle)
                         .font(.sheetPrimaryButton)
                         .foregroundStyle(AppColors.ctaWhite)
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
                         .background(
-                            viewModel.canProceedFromAccountSelection
+                            canContinue
                                 ? AppColors.inkPrimary
                                 : AppColors.inkFaint
                         )
                         .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
                 }
-                .disabled(!viewModel.canProceedFromAccountSelection)
+                .disabled(!canContinue)
 
-                if plaidManager.hasLinkedBank && !viewModel.canProceedFromAccountSelection && !viewModel.plaidAccounts.isEmpty {
+                if viewModel.isManualMode && !viewModel.canProceedFromManualInput {
+                    Text(manualValidationHint)
+                        .font(.caption)
+                        .foregroundStyle(AppColors.inkSoft)
+                } else if plaidManager.hasLinkedBank && !viewModel.canProceedFromAccountSelection && !viewModel.plaidAccounts.isEmpty {
                     Text("Select at least one checking or credit card account")
+                        .font(.caption)
+                        .foregroundStyle(AppColors.inkSoft)
+                } else if !plaidManager.hasLinkedBank && !viewModel.isManualMode {
+                    Text("Connect at least one account or switch to manual entry")
                         .font(.caption)
                         .foregroundStyle(AppColors.inkSoft)
                 }
@@ -371,6 +583,20 @@ struct BS_AccountSelectionView: View {
             .padding(.bottom, AppSpacing.md)
             .background(AppColors.shellBg2)
         }
+    }
+
+    private var canContinue: Bool {
+        viewModel.isManualMode ? viewModel.canProceedFromManualInput : viewModel.canProceedFromAccountSelection
+    }
+
+    private var primaryButtonTitle: String {
+        if viewModel.isManualMode {
+            return "Continue with manual numbers"
+        }
+        if viewModel.selectedTransactionAccountCount > 0 {
+            return "Continue (\(viewModel.selectedTransactionAccountCount) selected)"
+        }
+        return "Continue"
     }
 
     // MARK: - Helpers

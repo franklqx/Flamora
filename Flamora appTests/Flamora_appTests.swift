@@ -66,31 +66,12 @@ final class Flamora_appTests: XCTestCase {
     }
 
     // MARK: - Expanded overlay routing
-
-    func testHomeTabRoutesHomeOverlay() {
-        XCTAssertEqual(MainTabView.overlayKind(for: .home, hasLinkedBank: false), .home)
-    }
-
-    func testCashflowTabRoutesCashflowOverlay() {
-        XCTAssertEqual(MainTabView.overlayKind(for: .cashflow, hasLinkedBank: false), .cashflow)
-    }
-
-    /// Investment must never route to the simulator overlay.
-    func testInvestmentTabDoesNotRouteToSimulatorWhenConnected() {
-        let kind = MainTabView.overlayKind(for: .investment, hasLinkedBank: true)
-        XCTAssertEqual(kind, .investment, "Investment tab should show InvestmentView overlay when connected")
-        XCTAssertNotEqual(kind, .simulator)
-    }
-
-    func testInvestmentTabRoutesLockedOverlayWhenUnconnected() {
-        let kind = MainTabView.overlayKind(for: .investment, hasLinkedBank: false)
-        XCTAssertEqual(kind, .investmentLocked, "Investment tab should show locked overlay when unconnected")
-        XCTAssertNotEqual(kind, .simulator)
-    }
-
-    func testSettingsTabFallsBackToSimulator() {
-        XCTAssertEqual(MainTabView.overlayKind(for: .settings, hasLinkedBank: false), .simulator)
-    }
+    //
+    // The previous `MainTabView.overlayKind(for:hasLinkedBank:)` static helper was
+    // removed in commit a3bb9f2 ("Liquid Glass tab bar"). Routing now lives inline
+    // in `MainTabView.simulatorOverlay`, switching directly on `selectedTab` —
+    // there is no longer an `OverlayKind` enum to assert against. If routing
+    // becomes pluggable again, reintroduce a pure helper and reinstate the tests.
 
     // MARK: - TabContentCache monthly summaries
 
