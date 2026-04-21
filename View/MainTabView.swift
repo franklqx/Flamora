@@ -831,25 +831,30 @@ private struct TabHeroTitleContent: View {
 
 private struct NotificationsView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var recentReports: [ReportFeedItem] = []
+    @State private var selectedReport: ReportSnapshot? = nil
+    @State private var isLoading = false
 
     var body: some View {
         NavigationStack {
             ZStack {
-                AppColors.backgroundPrimary.ignoresSafeArea()
+                LinearGradient(
+                    colors: [AppColors.shellBg1, AppColors.shellBg2],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: AppSpacing.sectionGap) {
-                        reportSection(
-                            title: "Monthly Reports",
-                            icon: "calendar",
-                            message: "Your monthly summaries will appear here."
-                        )
-
-                        reportSection(
-                            title: "Annual Reports",
-                            icon: "chart.bar.doc.horizontal",
-                            message: "Your annual reviews will appear here."
-                        )
+                        if isLoading && recentReports.isEmpty {
+                            loadingCard
+                        } else if recentReports.isEmpty {
+                            emptyCard
+                        } else {
+                            unreadSection
+                            recentSection
+                        }
                     }
                     .padding(AppSpacing.cardPadding)
                     .padding(.bottom, AppSpacing.xl)
@@ -860,41 +865,185 @@ private struct NotificationsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
-                        .foregroundStyle(AppColors.textPrimary)
+                        .foregroundStyle(AppColors.inkPrimary)
                         .fontWeight(.semibold)
                 }
             }
-            .preferredColorScheme(.dark)
+        }
+        .task {
+            await loadRecentReports()
+        }
+        .fullScreenCover(item: $selectedReport, onDismiss: {
+            Task { await loadRecentReports() }
+        }) { report in
+            reportDestination(for: report)
         }
     }
 
-    private func reportSection(title: String, icon: String, message: String) -> some View {
+    private var unreadSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sectionLabelGap) {
-            Text(title.uppercased())
-                .font(.miniLabel)
-                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+            Text("NEW REPORTS")
+                .font(.cardHeader)
+                .foregroundStyle(AppColors.inkFaint)
+                .tracking(AppTypography.Tracking.cardHeader)
 
-            HStack(spacing: AppSpacing.md) {
-                Image(systemName: icon)
-                    .font(.h4)
-                    .foregroundStyle(AppColors.textPrimary)
-                    .frame(width: 34, height: 34)
-                    .background(AppColors.overlayWhiteWash)
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm))
+            cardContainer {
+                let unread = recentReports.filter(\.isUnread)
+                if unread.isEmpty {
+                    HStack(spacing: AppSpacing.md) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.figureSecondarySemibold)
+                            .foregroundStyle(AppColors.success)
 
-                Text(message)
-                    .font(.bodySmall)
-                    .foregroundStyle(AppColors.textSecondary)
+                        Text("You're caught up. New reports will land here first.")
+                            .font(.footnoteRegular)
+                            .foregroundStyle(AppColors.inkSoft)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(AppSpacing.cardPadding)
+                } else {
+                    ForEach(Array(unread.enumerated()), id: \.element.id) { index, item in
+                        ReportFeedRow(item: item) {
+                            Task { await openReport(id: item.reportId) }
+                        }
 
-                Spacer(minLength: 0)
+                        if index < unread.count - 1 {
+                            divider
+                        }
+                    }
+                }
             }
+        }
+    }
+
+    private var recentSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sectionLabelGap) {
+            Text("RECENT")
+                .font(.cardHeader)
+                .foregroundStyle(AppColors.inkFaint)
+                .tracking(AppTypography.Tracking.cardHeader)
+
+            cardContainer {
+                let recent = recentReports.filter { !$0.isUnread }
+                if recent.isEmpty {
+                    HStack(spacing: AppSpacing.md) {
+                        Image(systemName: "clock")
+                            .font(.figureSecondarySemibold)
+                            .foregroundStyle(AppColors.inkSoft)
+
+                        Text("Viewed reports will stay here for quick access.")
+                            .font(.footnoteRegular)
+                            .foregroundStyle(AppColors.inkSoft)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(AppSpacing.cardPadding)
+                } else {
+                    ForEach(Array(recent.enumerated()), id: \.element.id) { index, item in
+                        ReportFeedRow(item: item) {
+                            Task { await openReport(id: item.reportId) }
+                        }
+
+                        if index < recent.count - 1 {
+                            divider
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var loadingCard: some View {
+        cardContainer {
+            HStack(spacing: AppSpacing.md) {
+                ProgressView()
+                    .tint(AppColors.inkPrimary)
+                Text("Loading recent reports...")
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.inkSoft)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(AppSpacing.cardPadding)
-            .background(AppColors.surface)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.card)
-                    .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
-            )
+        }
+    }
+
+    private var emptyCard: some View {
+        cardContainer {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text("No reports yet")
+                    .font(.inlineLabel)
+                    .foregroundStyle(AppColors.inkPrimary)
+
+                Text("Your latest weekly, monthly, and annual stories will appear here once they are generated.")
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.inkSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(AppSpacing.cardPadding)
+        }
+    }
+
+    private var divider: some View {
+        Rectangle()
+            .fill(AppColors.inkDivider)
+            .frame(height: 0.5)
+            .padding(.leading, 58)
+    }
+
+    private func cardContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(spacing: 0) {
+            content()
+        }
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .fill(
+                    LinearGradient(
+                        colors: [AppColors.glassCardBg, AppColors.glassCardBg2],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
+    }
+
+    private func loadRecentReports() async {
+        guard !isLoading else { return }
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            recentReports = try await APIService.shared.getRecentReports()
+        } catch {
+            recentReports = []
+        }
+    }
+
+    private func openReport(id: String) async {
+        do {
+            selectedReport = try await APIService.shared.getReportDetail(id: id)
+            await loadRecentReports()
+        } catch {
+            #if DEBUG
+            print("❌ [NotificationsView] failed to open report: \(error)")
+            #endif
+        }
+    }
+
+    @ViewBuilder
+    private func reportDestination(for report: ReportSnapshot) -> some View {
+        switch report.kind {
+        case .weekly:
+            WeeklyReportView(report: report)
+        case .monthly:
+            MonthlyReportView(report: report)
+        case .annual:
+            AnnualReportView(report: report)
+        case .issueZero:
+            IssueZeroView(report: report)
         }
     }
 }

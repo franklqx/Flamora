@@ -216,6 +216,163 @@ Onboarding steps are split into two visual zones. Each step must belong to one z
 - Introduce one-off accent colors that break semantic mapping.
 - Use dark card backgrounds for Budget/Saving cards in the light shell area.
 
+## Report Screens — Story Format (v2)
+
+Report screens (`MonthlyReportView`, `IssueZeroView`, `AnnualReportView`) are **full-bleed dark contexts** — an intentional exception to the light-shell system. They are presented as modal full-screen covers, not embedded in the shell tab stack.
+
+**Design direction:** Instagram Stories / Spotify Wrapped. One metric per full-screen slide. Swipe left/right (or tap zones) to advance. No scrolling within a story.
+
+**Approved:** 2026-04-20.
+
+---
+
+### Story Anatomy (shared across all three views)
+
+```
+┌─────────────────────────────────┐
+│  ███░░░░  progress segments     │  2pt height, overlayWhiteStroke track, textPrimary fill
+│                                 │
+│  SECTION LABEL                  │  cardHeader (11pt bold, tracking 0.8, textSecondary)
+│                                 │
+│                                 │
+│         [hero number]           │  .storyHero token: 64pt bold, −2pt kerning
+│         [supporting line]       │  .supportingText (15pt regular), textSecondary
+│                                 │
+│         [context rows]          │  .inlineLabel / .footnoteSemibold
+│                                 │
+│  ← tap zone     tap zone →      │  left 30% prev / right 70% next (invisible)
+│                                 │
+│         ● ○ ○ ○ ○               │  18×6pt active pill / 6×6pt inactive circle
+└─────────────────────────────────┘
+```
+
+**Progress bar:** One segment per story. Active + prior segments fill `textPrimary`; future = `overlayWhiteStroke`. 4pt gap between segments. 2pt height. Full width with `AppSpacing.md` horizontal padding.
+
+**Hero number:** `.storyHero` (64pt bold, −2px kerning). Color rules:
+- Gradient text (`gradientFire`) — directional FIRE delta (e.g. "−2 mo")
+- `success` (#10B981) — positive rate or savings
+- `warning` (#F59E0B) — spending outlier
+- `error` (#EF4444) — negative delta
+- `textPrimary` — neutral values (income, totals)
+
+**Background per story type:** Radial gradient from dim accent outward to `backgroundPrimary` (#000):
+- Purple stories: `rgba(167,139,250,0.22)` radial center
+- Green stories: `rgba(16,185,129,0.20)` radial center
+- Amber stories: `rgba(252,211,77,0.18)` radial center
+- Blue stories: `rgba(147,197,253,0.18)` radial center
+- Dark/insight stories: flat `#0A0A0A`
+
+**Dot indicators:** Bottom-center. Active: 18×6pt rounded pill, `textPrimary`. Inactive: 6×6pt circle, `overlayWhiteForegroundSoft`. 4pt gap between dots.
+
+**Tap zones:** Two invisible full-height `Color.clear` overlays. Left 30% → previous story. Right 70% → next. First story left-tap = dismiss. Last story right-tap = dismiss.
+
+**Navigation:** `TabView` with `.tabViewStyle(.page(indexDisplayMode: .never))`. Custom dot indicators drawn manually (SwiftUI PageTabViewStyle dots don't match design spec).
+
+---
+
+### New Typography Token Required
+
+Add to `Style/Typography.swift` before implementing any report view:
+
+```swift
+// In AppTypography constants
+static let storyHero: CGFloat = 64
+
+// In Font extension (MARK: Display / Hero)
+static var storyHero: Font { appFont(AppTypography.storyHero, .bold) }
+```
+
+Usage with kerning (not built into token — apply at call site):
+```swift
+Text(deltaLabel)
+    .font(.storyHero)
+    .kerning(-2)
+```
+
+---
+
+### MonthlyReportView — 5 Stories
+
+Trigger: push notification tap ("Your April report is ready") or home card entry point.
+
+| # | Label | Background | Hero | Supporting content |
+|---|-------|------------|------|--------------------|
+| 1 | FIRE DATE | purple | Delta months, grad-text (e.g. "−2 mo") | "vs last month" + stat rows: FIRE date / prior month / started |
+| 2 | SAVINGS RATE | green | Rate %, `success` color | "$X saved this month" + 3-month avg + best month row |
+| 3 | SPENDING | amber | Total spend, `textPrimary` at 40pt | Top 3 category rows; outlier row in `warning` with "↑ 2.1× avg" note |
+| 4 | INCOME | blue | Total income, `textPrimary` at 56pt | Extra income badge (green pill); salary / side / avg rows |
+| 5 | AI INSIGHT | dark | No hero number — 2-sentence AI text block | Left accent bar (4pt, gradientFire). Source: "Powered by Llama 3.3 via Groq" |
+
+Story 5 layout: `HStack` with 4pt gradient accent bar + body text block, centered vertically. No hero number.
+
+---
+
+### IssueZeroView — 4 Stories
+
+Trigger: user connects first bank account. Presented immediately after connection success, before returning to Home.
+
+| # | Label | Background | Hero | Supporting content |
+|---|-------|------------|------|--------------------|
+| 1 | (none) | purple | "Here's what\nwe found." — `.h1`, `textPrimary` | Month range of data analyzed (e.g. "Based on 6 months of transactions") |
+| 2 | SAVINGS RATE | green | Avg savings rate %, `success` | "across X months of data" |
+| 3 | TOP CATEGORY | amber | Top spend category total, `warning` | "$X/mo on [Category]" sub-label |
+| 4 | WHAT'S NEXT | dark | "Starting next month" — `.h2`, `textPrimary` | Bullet list (monthly reports + annual summary). Primary CTA button at bottom. |
+
+Story 4 is the only story with a tappable CTA button ("Got it"). Button style: standard white-bg / black-text, height 52pt, `AppRadius.button` corners.
+
+---
+
+### AnnualReportView — 4 Stories
+
+Trigger: Jan 1 push notification, or home card entry point (available from Jan 1 onwards).
+
+| # | Label | Background | Hero | Supporting content |
+|---|-------|------------|------|--------------------|
+| 1 | YOUR [YEAR] IN FIRE | purple | Annual delta months, grad-text (e.g. "−14 mo") | "FIRE date moved X months closer this year" + FIRE date now / prior / net worth growth |
+| 2 | YEAR IN NUMBERS | dark | No hero — 2×2 stat grid | Avg savings rate / Total saved / Best month / Investment return |
+| 3 | BIGGEST OUTLIER | amber | Annual top category total, `warning` | YoY comparison + monthly avg + savings impact note |
+| 4 | YEAR IN REVIEW | dark | No hero — AI text block | Same layout as MonthlyReportView story 5 (accent bar + body) |
+
+Story 2 grid cell spec: `footnoteSemibold` label (textSecondary, uppercase), `cardFigurePrimary` value (textPrimary). Grid: 2 columns, 12pt gap. Cell: `rgba(255,255,255,0.04)` fill, `surfaceBorder` stroke, `AppRadius.md` corner radius, `AppSpacing.md` padding.
+
+---
+
+### SwiftUI Implementation Skeleton
+
+```swift
+// Story container
+TabView(selection: $currentStory) {
+    ForEach(stories.indices, id: \.self) { i in
+        StorySlideView(story: stories[i])
+            .tag(i)
+    }
+}
+.tabViewStyle(.page(indexDisplayMode: .never))
+.ignoresSafeArea()
+.overlay(alignment: .top) { ProgressSegments(total: stories.count, current: currentStory) }
+.overlay(alignment: .bottom) { DotIndicators(total: stories.count, current: currentStory) }
+
+// Gradient text hero
+Text(hero)
+    .font(.storyHero)
+    .kerning(-2)
+    .foregroundStyle(
+        LinearGradient(
+            colors: AppColors.gradientFire,
+            startPoint: .leading, endPoint: .trailing
+        )
+    )
+
+// Progress segment
+RoundedRectangle(cornerRadius: 1)
+    .fill(index <= current
+        ? AppColors.textPrimary
+        : AppColors.overlayWhiteStroke)
+    .frame(height: 2)
+```
+
+---
+
 ## QA Checklist (Before Ship)
 
 ### Main App
@@ -247,3 +404,11 @@ Onboarding steps are split into two visual zones. Each step must belong to one z
 | 2026-04-14 | Slider thumb token must be brand purple, not white | White UISlider thumb is invisible on shellBg — P1 visual bug |
 | 2026-04-14 | Fire gradient restricted on light backgrounds | gradientMiddle/gradientEnd are near-white; on light bg only gradientStart (#A78BFA) is safe |
 | 2026-04-14 | Dual token system clarified in 2a | textPrimary/backgroundPrimary = dark zone only; inkPrimary/shellBg1 = light shell only |
+| 2026-04-20 | Report screens use full-bleed dark context, not light shell | Story format is a modal full-screen cover, not a tab-embedded card; dark bg matches the immersive story metaphor |
+| 2026-04-20 | Report screens use story/swipe format (not card stack) | One metric per screen eliminates information overload; matches user mental model from Instagram Stories / Spotify Wrapped |
+| 2026-04-20 | Gradient text only for directional FIRE delta; typed colors for other metrics | Gradient carries "progress toward FIRE" meaning — using it for all numbers dilutes the signal |
+| 2026-04-20 | Distinct radial bg accent per story type (purple/green/amber/blue/dark) | Visual landmark — user knows what category they're on without reading the section label |
+| 2026-04-20 | IssueZeroView story 4 is the only story with a CTA button | Issue Zero closes the onboarding loop — needs explicit dismiss. Monthly/Annual are informational; swipe-dismiss is sufficient |
+| 2026-04-20 | AnnualReportView story 2 uses 2×2 stat grid instead of single hero | Annual summary has 4 equally weighted stats; no single metric dominates the year |
+| 2026-04-20 | New token .storyHero (64pt bold) required before report views | 64pt exceeds existing .currencyHero (48pt) and .display (40pt); needs its own token, not a hardcoded size |
+| 2026-04-20 | Shareable screenshot card deferred from v2 | Story format is the priority; ImageRenderer export adds complexity without confirmed user demand at launch |

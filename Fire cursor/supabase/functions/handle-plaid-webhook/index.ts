@@ -3,6 +3,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders, handleCors } from '../_shared/cors.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { ensureIssueZeroReport } from '../_shared/report-builder.ts'
 
 serve(async (req) => {
   const corsResponse = handleCors(req)
@@ -318,6 +319,12 @@ async function syncTransactions(
 
   // 同步后更新账户余额
   await updateAccountBalances(supabase, plaidItem)
+
+  try {
+    await ensureIssueZeroReport(supabase, plaidItem.user_id)
+  } catch (reportError) {
+    console.error('[sync] Issue Zero regeneration failed:', reportError)
+  }
 
   console.log(`[sync] Complete: +${totalAdded} added, ~${totalModified} modified, -${totalRemoved} removed`)
 }

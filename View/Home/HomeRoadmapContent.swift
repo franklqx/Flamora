@@ -2,24 +2,152 @@
 //  HomeRoadmapContent.swift
 //  Flamora app
 //
-//  Home Tab sheet primary content — “What happens next” roadmap (HTML: .roadmap).
+//  Home Tab sheet primary content.
+//
+//  布局：顶部 Roadmap 引导（仅在未连接银行时显示）+ 下方 3 张卡片（未连接 = 锁态，连接后 = 真实数据）。
+//    • NetWorthCard —— 净资产 + 6/1/3/12/ALL 时间段 trend chart
+//    • SavingsRateCard —— 本月储蓄率，点击 → SavingsInputSheet 记录金额
+//    • ReportsEntryCard —— Monthly / Issue Zero / Annual 入口（Reports Phase 3 实装）
 //
 
 import SwiftUI
 
 struct HomeRoadmapContent: View {
+    private struct SavingsEditTarget: Identifiable, Equatable {
+        let year: Int
+        let monthIndex: Int
+
+        var id: String { "\(year)-\(monthIndex)" }
+    }
+
+    @Environment(PlaidManager.self) private var plaidManager
+
+    @State private var netWorthSummary: APINetWorthSummary? = nil
+    @State private var budget: APIMonthlyBudget? = nil
+    @State private var savingsByYear: [Int: [Double?]] = TabContentCache.shared.cashflowSavingsByYear
+        ?? CashflowDetailEmptyStates.savingsMonthlyAmountsEmptyCurrentYear()
+    @State private var isLoading: Bool = false
+
+    @State private var editingSavingsTarget: SavingsEditTarget? = nil
+    @State private var editingSavingsAmount: Double = 0
+    @State private var showSavingsDetail: Bool = false
+    @State private var showNetWorthDetail: Bool = false
+    @State private var latestMonthlyReport: ReportSnapshot? = nil
+    @State private var latestIssueZeroReport: ReportSnapshot? = nil
+    @State private var latestAnnualReport: ReportSnapshot? = nil
+    @State private var selectedReport: ReportSnapshot? = nil
+
+    // 趋势图数据 — 后端 `getNetWorthHistory` endpoint 上线前用 mock。
+    @State private var netWorthHistory: [NetWorthRange: [NetWorthPoint]] = HomeNetWorthCard.mockHistory()
+
+    private var isConnected: Bool { plaidManager.hasLinkedBank }
+    private var hasBudgetSetup: Bool { (budget?.savingsRatio ?? 0) > 0 }
+
+    /// 月收入 = needs + wants + savings（50/30/20 模型里三者相加即收入）。
+    private var monthlyIncome: Double {
+        guard let b = budget else { return 0 }
+        return b.needsBudget + b.wantsBudget + b.savingsBudget
+    }
+
+    private var targetRatePercent: Double { budget?.savingsRatio ?? 20 }
+    private var targetAmount: Double { budget?.savingsBudget ?? 0 }
+    private var currentYear: Int { Calendar.current.component(.year, from: Date()) }
+    private var currentYearSavings: [Double?] {
+        savingsByYear[currentYear] ?? Array(repeating: nil, count: 12)
+    }
+    private var savingsSnapshot: SavingsTrackingSnapshot? {
+        guard hasBudgetSetup else { return nil }
+        return SavingsTrackingBuilder.snapshot(
+            year: currentYear,
+            monthlyAmounts: currentYearSavings,
+            targetAmount: targetAmount,
+            targetRatePercent: targetRatePercent
+        )
+    }
+
+    /// 所有 3 步完成 → 隐藏 Roadmap。当前仅以 bank 连接作为代理（FIRE goal / path 选择需后续加 flag）。
+    private var showRoadmap: Bool { !isConnected }
+
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: AppSpacing.sectionGap) {
-                roadmapCard
-                    .padding(.horizontal, AppSpacing.screenPadding)
+            VStack(alignment: .leading, spacing: AppSpacing.cardGap) {
+                if showRoadmap {
+                    roadmapCard
+                }
+
+                HomeNetWorthCard(
+                    summary: netWorthSummary,
+                    history: netWorthHistory,
+                    isConnected: isConnected,
+                    onCardTap: { showNetWorthDetail = true }
+                )
+
+                HomeSavingsRateCard(
+                    snapshot: savingsSnapshot,
+                    isConnected: isConnected,
+                    hasBudgetSetup: hasBudgetSetup,
+                    onMonthTap: beginEditingSavingsMonth,
+                    onCardTap: { showSavingsDetail = true }
+                )
+
+                HomeReportsEntryCard(
+                    isConnected: isConnected && hasBudgetSetup,
+                    monthlyReport: latestMonthlyReport,
+                    issueZeroReport: unreadIssueZeroReport,
+                    annualReport: latestAnnualReport,
+                    onSelect: handleReportSelection
+                )
             }
+            .padding(.horizontal, AppSpacing.screenPadding)
             .padding(.top, AppSpacing.cardGap)
-            // 不在 ScrollView 主轴上使用 Spacer：会导致内容高度/裁切异常，出现「提前被一条线裁掉」。
             .padding(.bottom, AppSpacing.xl + AppSpacing.lg)
         }
         .scrollContentBackground(.hidden)
+        .task {
+            await loadInitialData()
+        }
+        .onChange(of: plaidManager.hasLinkedBank) { _, _ in
+            Task { await loadInitialData() }
+        }
+        .onChange(of: plaidManager.lastConnectionTime) { _, _ in
+            Task { await loadInitialData() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .savingsCheckInDidPersist)) { _ in
+            syncSavingsFromCache()
+            Task { await loadInitialData() }
+        }
+        .sheet(item: $editingSavingsTarget, onDismiss: handleSavingsSheetDismiss) { target in
+            SavingsInputSheet(amount: $editingSavingsAmount) { value in
+                Task { await persistSavings(value, year: target.year, monthIndex: target.monthIndex) }
+            }
+        }
+        .fullScreenCover(isPresented: $showSavingsDetail, onDismiss: {
+            syncSavingsFromCache()
+        }) {
+            SavingsTargetDetailView2(
+                savingsRatioPercent: targetRatePercent,
+                savingsBudgetTarget: targetAmount,
+                monthlyAmountsByYear: savingsByYear,
+                onMonthlyAmountsChange: { updated in
+                    savingsByYear = updated
+                    TabContentCache.shared.setCashflowSavingsByYear(updated)
+                }
+            )
+        }
+        .fullScreenCover(isPresented: $showNetWorthDetail) {
+            NetWorthDetailView(
+                summary: netWorthSummary,
+                history: netWorthHistory
+            )
+        }
+        .fullScreenCover(item: $selectedReport, onDismiss: {
+            Task { await loadInitialData() }
+        }) { report in
+            reportDestination(for: report)
+        }
     }
+
+    // MARK: - Roadmap card (未连接状态的 3 步引导)
 
     private var roadmapCard: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -68,7 +196,6 @@ struct HomeRoadmapContent: View {
             RoundedRectangle(cornerRadius: AppRadius.glassPanel)
                 .stroke(AppColors.glassCardBorder, lineWidth: 1)
         )
-        .frame(minHeight: AppSpacing.homeSheetPrimaryCardMinHeight, alignment: .top)
     }
 
     private func roadmapStep(index: Int, isCurrent: Bool, title: String, detail: String, isLast: Bool = false) -> some View {
@@ -111,6 +238,128 @@ struct HomeRoadmapContent: View {
                     .fill(AppColors.inkDivider)
                     .frame(height: 1)
             }
+        }
+    }
+
+    // MARK: - Data loading
+
+    private func loadInitialData() async {
+        guard !isLoading else { return }
+        isLoading = true
+        defer { isLoading = false }
+
+        syncSavingsFromCache()
+
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM"
+        let currentMonth = f.string(from: Date())
+
+        async let summary: APINetWorthSummary? = try? await APIService.shared.getNetWorthSummary()
+        async let monthBudget: APIMonthlyBudget? = try? await APIService.shared.getMonthlyBudget(month: currentMonth)
+        async let monthlyReport: ReportSnapshot? = try? await APIService.shared.getLatestReport(kind: .monthly)
+        async let issueZeroReport: ReportSnapshot? = try? await APIService.shared.getLatestReport(kind: .issueZero)
+        async let annualReport: ReportSnapshot? = try? await APIService.shared.getLatestReport(kind: .annual)
+        async let savingsSeries: [Int: [Double?]]? = loadSavingsByYearFromAPI()
+
+        let (s, b, monthly, issueZero, annual, series) = await (summary, monthBudget, monthlyReport, issueZeroReport, annualReport, savingsSeries)
+        await MainActor.run {
+            if let s { self.netWorthSummary = s }
+            if let b {
+                self.budget = b
+                if let currentMonthValue = b.savingsActual {
+                    self.setSavingsAmount(currentMonthValue, year: currentYear, monthIndex: currentMonthIndex)
+                }
+            }
+            if let series {
+                self.savingsByYear = series
+                TabContentCache.shared.setCashflowSavingsByYear(series)
+            }
+            self.latestMonthlyReport = monthly
+            self.latestIssueZeroReport = issueZero
+            self.latestAnnualReport = annual
+        }
+    }
+
+    private func handleSavingsSheetDismiss() {
+        syncSavingsFromCache()
+    }
+
+    private var unreadIssueZeroReport: ReportSnapshot? {
+        guard let report = latestIssueZeroReport, report.viewedAt == nil else { return nil }
+        return report
+    }
+
+    private func handleReportSelection(_ kind: HomeReportKind) {
+        switch kind {
+        case .monthly:
+            selectedReport = latestMonthlyReport
+        case .issueZero:
+            selectedReport = unreadIssueZeroReport
+        case .annual:
+            selectedReport = latestAnnualReport
+        }
+    }
+
+    @ViewBuilder
+    private func reportDestination(for report: ReportSnapshot) -> some View {
+        switch report.kind {
+        case .weekly:
+            WeeklyReportView(report: report)
+        case .monthly:
+            MonthlyReportView(report: report)
+        case .annual:
+            AnnualReportView(report: report)
+        case .issueZero:
+            IssueZeroView(report: report)
+        }
+    }
+
+    private func beginEditingSavingsMonth(_ node: SavingsMonthNode) {
+        guard node.isEditable else { return }
+        editingSavingsAmount = node.amount ?? 0
+        editingSavingsTarget = SavingsEditTarget(year: node.year, monthIndex: node.monthIndex)
+    }
+
+    private func syncSavingsFromCache() {
+        if let cached = TabContentCache.shared.cashflowSavingsByYear {
+            savingsByYear = cached
+        }
+    }
+
+    private var currentMonthIndex: Int {
+        Calendar.current.component(.month, from: Date()) - 1
+    }
+
+    private func setSavingsAmount(_ amount: Double?, year: Int, monthIndex: Int) {
+        var updated = savingsByYear
+        var yearData = updated[year] ?? Array(repeating: nil, count: 12)
+        while yearData.count < 12 { yearData.append(nil) }
+        yearData[monthIndex] = amount
+        updated[year] = yearData
+        savingsByYear = updated
+        TabContentCache.shared.setCashflowSavingsByYear(updated)
+    }
+
+    private func loadSavingsByYearFromAPI() async -> [Int: [Double?]]? {
+        guard plaidManager.hasLinkedBank else { return nil }
+        let through = Calendar.current.component(.month, from: Date())
+        let summaries = await CashflowAPICharts.fetchMonthlySummaries(year: currentYear, throughMonth: through)
+        guard !summaries.isEmpty else { return nil }
+        return CashflowAPICharts.savingsMonthlyAmountsByYear(summaries: summaries, year: currentYear)
+    }
+
+    @MainActor
+    private func persistSavings(_ value: Double, year: Int, monthIndex: Int) async {
+        let month = String(format: "%04d-%02d", year, monthIndex + 1)
+        do {
+            _ = try await APIService.shared.saveSavingsCheckIn(month: month, savingsActual: value)
+            setSavingsAmount(value, year: year, monthIndex: monthIndex)
+            NotificationCenter.default.post(name: .savingsCheckInDidPersist, object: nil)
+            if year == currentYear, let b = try? await APIService.shared.getMonthlyBudget(month: month) {
+                self.budget = b
+            }
+        } catch {
+            print("❌ [HomeRoadmapContent] Failed to persist savings: \(error)")
         }
     }
 }

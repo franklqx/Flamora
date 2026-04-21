@@ -2,33 +2,28 @@
 //  SavingsTargetDetailView2.swift
 //  Flamora app
 //
-//  Savings target detail view - complete rewrite
+//  Full-year savings tracking detail.
 //
 
 import SwiftUI
+import Charts
 
 struct SavingsTargetDetailView2: View {
-    /// API 储蓄比例（百分比，如 25 表示 25%）。
     private let savingsRatioPercent: Double
-    private let targetRate: Double
     private let targetAmount: Double
+    private let onMonthlyAmountsChange: (([Int: [Double?]]) -> Void)?
 
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedYear: Int
+    @State private var selectedMonthIndex: Int
     @State private var monthlyAmountsByYear: [Int: [Double?]]
-    @State private var chartHoverIndex: Int? = nil
-    @State private var dragOffset: CGFloat = 0
     @State private var editingMonthIndex: Int? = nil
     @State private var editingAmountValue: Double = 0
     @State private var isShowingEditSheet: Bool = false
     @State private var isPersistingEdit: Bool = false
-    private let onMonthlyAmountsChange: (([Int: [Double?]]) -> Void)?
+    @State private var dragOffset: CGFloat = 0
 
-    private let months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
-    private let monthsShort = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
-
-    /// 阶段 0 / 路线图 0.2：目标与序列由调用方传入；年度月度序列在阶段 2 可换为 API。
     init(
         savingsRatioPercent: Double,
         savingsBudgetTarget: Double,
@@ -36,143 +31,77 @@ struct SavingsTargetDetailView2: View {
         onMonthlyAmountsChange: (([Int: [Double?]]) -> Void)? = nil
     ) {
         self.savingsRatioPercent = savingsRatioPercent
-        self.targetRate = savingsRatioPercent / 100.0
         self.targetAmount = savingsBudgetTarget
         self.onMonthlyAmountsChange = onMonthlyAmountsChange
-        let byYear = monthlyAmountsByYear
-        let latest = byYear.keys.sorted().last ?? Calendar.current.component(.year, from: Date())
-        _selectedYear = State(initialValue: latest)
-        _monthlyAmountsByYear = State(initialValue: byYear)
+
+        let latestYear = monthlyAmountsByYear.keys.sorted().last ?? Calendar.current.component(.year, from: Date())
+        let currentMonthIndex = Calendar.current.component(.month, from: Date()) - 1
+        _selectedYear = State(initialValue: latestYear)
+        _selectedMonthIndex = State(initialValue: currentMonthIndex)
+        _monthlyAmountsByYear = State(initialValue: monthlyAmountsByYear)
     }
 
     private var availableYears: [Int] { monthlyAmountsByYear.keys.sorted() }
     private var canGoPrev: Bool { (availableYears.first ?? Int.max) < selectedYear }
-    private var canGoNext: Bool { (availableYears.last  ?? Int.min) > selectedYear }
-
+    private var canGoNext: Bool { (availableYears.last ?? Int.min) > selectedYear }
     private var currentMonthlyAmounts: [Double?] {
         monthlyAmountsByYear[selectedYear] ?? Array(repeating: nil, count: 12)
     }
-
+    private var snapshot: SavingsTrackingSnapshot {
+        SavingsTrackingBuilder.snapshot(
+            year: selectedYear,
+            monthlyAmounts: currentMonthlyAmounts,
+            targetAmount: targetAmount,
+            targetRatePercent: savingsRatioPercent
+        )
+    }
+    private var selectedNode: SavingsMonthNode {
+        snapshot.fullYearNodes[min(max(selectedMonthIndex, 0), 11)]
+    }
+    private var inferredMonthlyIncome: Double? {
+        guard targetAmount > 0, savingsRatioPercent > 0 else { return nil }
+        return targetAmount / (savingsRatioPercent / 100.0)
+    }
     private var annualSaved: Double {
         currentMonthlyAmounts.compactMap { $0 }.reduce(0, +)
     }
+    private var annualAverageRateText: String {
+        snapshot.ytdAverageText
+    }
 
-    private func navigateYear(_ delta: Int) {
-        guard let idx = availableYears.firstIndex(of: selectedYear) else { return }
-        let newIdx = idx + delta
-        guard newIdx >= 0 && newIdx < availableYears.count else { return }
-        withAnimation(.easeInOut(duration: 0.2)) {
-            selectedYear = availableYears[newIdx]
-            chartHoverIndex = nil
-        }
+    private var shellBackground: LinearGradient {
+        LinearGradient(
+            colors: [AppColors.shellBg1, AppColors.shellBg2],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+
+    private var cardBackground: LinearGradient {
+        LinearGradient(
+            colors: [AppColors.glassCardBg, AppColors.glassCardBg2],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 
     var body: some View {
         ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            shellBackground.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    // Header
-                    HStack(alignment: .firstTextBaseline) {
-                        Text("Savings")
-                            .font(.cardFigurePrimary)
-                            .foregroundStyle(AppColors.textPrimary)
-
-                        Spacer()
-
-                        Button(action: { dismiss() }) {
-                            Image(systemName: "xmark")
-                                .font(.bodySmallSemibold)
-                                .foregroundStyle(AppColors.textPrimary)
-                                .padding(.top, 2)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.bottom, -4)
-
-                    // Total saved
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text(formatMoney(annualSaved))
-                            .font(.display)
-                            .foregroundStyle(AppColors.textPrimary)
-
-                        Text("Total saved this year")
-                            .font(.supportingText)
-                            .foregroundColor(AppColors.textTertiary)
-                    }
-
-                    // Chart section with year picker
-                    VStack(alignment: .leading, spacing: AppSpacing.md) {
-                        HStack {
-                            Text("ANNUAL TREND")
-                                .font(.cardHeader)
-                                .foregroundColor(AppColors.textTertiary)
-                                .tracking(1.5)
-
-                            Spacer()
-
-                            yearPicker
-                        }
-
-                        chartView
-                            .frame(height: 220)
-                            .padding(.top, AppSpacing.xs)
-                    }
-                    .padding(.top, AppSpacing.sm)
-
-                    // Target info — 仅在 Budget Setup 完成（targetAmount > 0）后展示
-                    if targetAmount > 0 {
-                        HStack(spacing: AppSpacing.xl) {
-                            VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
-                                Text("TARGET SAVINGS RATE")
-                                    .font(.cardHeader)
-                                    .foregroundColor(AppColors.textTertiary)
-
-                                Text("\(Int(savingsRatioPercent))%")
-                                    .font(.detailTitle)
-                                    .foregroundStyle(AppColors.textPrimary)
-                            }
-
-                            Divider()
-                                .frame(height: 50)
-                                .background(AppColors.surfaceBorder)
-
-                            VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
-                                Text("MONTHLY SAVINGS TARGET")
-                                    .font(.cardHeader)
-                                    .foregroundColor(AppColors.textTertiary)
-
-                                Text(formatMoney(targetAmount))
-                                    .font(.detailTitle)
-                                    .foregroundStyle(AppColors.textPrimary)
-                            }
-
-                            Spacer()
-                        }
-                        .padding(.vertical, AppSpacing.sm)
-                    }
-
-                    // Monthly milestones
-                    VStack(alignment: .leading, spacing: AppSpacing.md) {
-                        Text("MONTHLY SAVINGS")
-                            .font(.smallLabel)
-                            .foregroundColor(AppColors.textTertiary)
-
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.sm + AppSpacing.xs) {
-                            ForEach(0..<12) { index in
-                                monthCard(index: index)
-                            }
-                        }
-                    }
-                    .padding(.top, AppSpacing.sm)
+                VStack(alignment: .leading, spacing: AppSpacing.cardGap) {
+                    header
+                    yearOverviewCard
+                    selectedMonthCard
+                    trendCard
+                    summaryCard
                 }
                 .padding(.horizontal, AppSpacing.screenPadding)
                 .padding(.top, AppSpacing.screenPadding)
                 .padding(.bottom, AppSpacing.tabBarReserve + AppSpacing.md)
             }
         }
-        .preferredColorScheme(.dark)
         .offset(y: dragOffset)
         .simultaneousGesture(
             DragGesture()
@@ -195,234 +124,327 @@ struct SavingsTargetDetailView2: View {
             SavingsInputSheet(amount: $editingAmountValue)
                 .presentationDragIndicator(.visible)
         }
+        .onChange(of: selectedYear) { _, _ in
+            if selectedMonthIndex < 0 || selectedMonthIndex > 11 {
+                selectedMonthIndex = Calendar.current.component(.month, from: Date()) - 1
+            }
+        }
     }
 
-    // MARK: - Year Picker
+    private var header: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("Savings")
+                .font(.h1)
+                .foregroundStyle(AppColors.inkPrimary)
+                .tracking(-0.5)
+
+            Spacer()
+
+            Button {
+                dismiss()
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(AppColors.inkTrack)
+                        .frame(width: 34, height: 34)
+                    Image(systemName: "xmark")
+                        .font(.footnoteSemibold)
+                        .foregroundStyle(AppColors.inkPrimary)
+                }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var yearOverviewCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack {
+                Text("MONTHLY CHECK-INS")
+                    .font(.cardHeader)
+                    .foregroundStyle(AppColors.inkFaint)
+                    .tracking(AppTypography.Tracking.cardHeader)
+
+                Spacer()
+
+                yearPicker
+            }
+
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: AppSpacing.sm + AppSpacing.xs), count: 4),
+                spacing: AppSpacing.md
+            ) {
+                ForEach(snapshot.fullYearNodes) { node in
+                    Button {
+                        selectedMonthIndex = node.monthIndex
+                        if node.isEditable {
+                            beginEditMonth(index: node.monthIndex)
+                        }
+                    } label: {
+                        SavingsMonthOrb(
+                            node: node,
+                            isSelected: node.monthIndex == selectedMonthIndex,
+                            diameter: 52
+                        )
+                        .opacity(node.isEditable ? 1.0 : 0.72)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            Text("This page tracks the entire year. Tap any completed or current month to update its savings check-in.")
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.inkSoft)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
+    }
+
+    private var selectedMonthCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text("SELECTED MONTH")
+                .font(.cardHeader)
+                .foregroundStyle(AppColors.inkFaint)
+                .tracking(AppTypography.Tracking.cardHeader)
+
+            HStack(alignment: .firstTextBaseline) {
+                Text(selectedNode.label)
+                    .font(.detailTitle)
+                    .foregroundStyle(AppColors.inkPrimary)
+                Spacer()
+                statusChip(for: selectedNode)
+            }
+
+            HStack(spacing: AppSpacing.md) {
+                monthMetric(label: "Saved", value: selectedNode.amount.map(formatMoney) ?? "—")
+                monthMetric(label: "Target", value: targetAmount > 0 ? formatMoney(targetAmount) : "—")
+                monthMetric(label: "Rate", value: monthRateText(for: selectedNode))
+            }
+
+            Text(monthHelperText(for: selectedNode))
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.inkSoft)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
+    }
+
+    private func monthMetric(label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(AppColors.inkFaint)
+            Text(value)
+                .font(.footnoteBold)
+                .foregroundStyle(AppColors.inkPrimary)
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func statusChip(for node: SavingsMonthNode) -> some View {
+        let tone: Color
+        let text: String
+        switch node.state {
+        case .future:
+            tone = AppColors.inkSoft
+            text = "Future month"
+        case .pending:
+            tone = AppColors.inkPrimary
+            text = "Ready to check in"
+        case .missed:
+            tone = AppColors.inkSoft
+            text = "No savings recorded"
+        case .belowTarget:
+            tone = AppColors.warning
+            text = "Below target"
+        case .onTarget:
+            tone = AppColors.success
+            text = "On target"
+        }
+
+        return Text(text)
+            .font(.segmentLabel(selected: true))
+            .foregroundStyle(tone)
+            .padding(.horizontal, AppSpacing.sm)
+            .padding(.vertical, 4)
+            .background(tone.opacity(0.12))
+            .clipShape(Capsule())
+    }
+
+    private var trendCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack {
+                Text("ANNUAL TREND")
+                    .font(.cardHeader)
+                    .foregroundStyle(AppColors.inkFaint)
+                    .tracking(AppTypography.Tracking.cardHeader)
+                Spacer()
+            }
+
+            Chart {
+                if targetAmount > 0 {
+                    RuleMark(y: .value("Target", targetAmount))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                        .foregroundStyle(AppColors.inkFaint)
+                }
+
+                ForEach(snapshot.fullYearNodes) { node in
+                    BarMark(
+                        x: .value("Month", node.shortLabel),
+                        y: .value("Saved", node.amount ?? 0)
+                    )
+                    .foregroundStyle(barStyle(for: node))
+                    .cornerRadius(8)
+                }
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading) { _ in
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [2, 3]))
+                        .foregroundStyle(AppColors.inkDivider)
+                    AxisValueLabel()
+                        .font(.caption)
+                        .foregroundStyle(AppColors.inkFaint)
+                }
+            }
+            .chartXAxis {
+                AxisMarks { value in
+                    AxisValueLabel()
+                        .font(.caption)
+                        .foregroundStyle(AppColors.inkFaint)
+                }
+            }
+            .frame(height: 220)
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
+    }
+
+    private func barStyle(for node: SavingsMonthNode) -> AnyShapeStyle {
+        switch node.state {
+        case .future:
+            return AnyShapeStyle(AppColors.inkTrack)
+        case .pending:
+            return AnyShapeStyle(AppColors.glassBlockBg)
+        case .missed:
+            return AnyShapeStyle(AppColors.inkTrack)
+        case .belowTarget:
+            return AnyShapeStyle(AppColors.inkPrimary.opacity(0.72))
+        case .onTarget:
+            return AnyShapeStyle(
+                LinearGradient(
+                    colors: AppColors.gradientShellAccent,
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+        }
+    }
+
+    private var summaryCard: some View {
+        HStack(spacing: AppSpacing.md) {
+            summaryMetric(label: "YTD AVG", value: annualAverageRateText)
+            summaryMetric(label: "ON TARGET", value: "\(snapshot.monthsOnTarget)")
+            summaryMetric(label: "SAVED", value: formatMoney(annualSaved))
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
+    }
+
+    private func summaryMetric(label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(AppColors.inkFaint)
+            Text(value)
+                .font(.footnoteBold)
+                .foregroundStyle(AppColors.inkPrimary)
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
 
     private var yearPicker: some View {
-        HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
+        HStack(spacing: AppSpacing.sm) {
             Button { navigateYear(-1) } label: {
                 Image(systemName: "chevron.left")
-                    .font(.footnoteRegular)
-                    .foregroundColor(canGoPrev ? AppColors.textSecondary : AppColors.textTertiary)
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(canGoPrev ? AppColors.inkPrimary : AppColors.inkFaint)
+                    .frame(width: 26, height: 26)
+                    .background(Circle().fill(AppColors.inkTrack))
             }
             .disabled(!canGoPrev)
             .buttonStyle(.plain)
 
             Text(String(selectedYear))
-                .font(.footnoteRegular)
-                .foregroundColor(AppColors.textSecondary)
-                .frame(minWidth: 36)
+                .font(.inlineLabel)
+                .foregroundStyle(AppColors.inkPrimary)
+                .frame(minWidth: 40)
+                .monospacedDigit()
 
             Button { navigateYear(1) } label: {
                 Image(systemName: "chevron.right")
-                    .font(.footnoteRegular)
-                    .foregroundColor(canGoNext ? AppColors.textSecondary : AppColors.textTertiary)
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(canGoNext ? AppColors.inkPrimary : AppColors.inkFaint)
+                    .frame(width: 26, height: 26)
+                    .background(Circle().fill(AppColors.inkTrack))
             }
             .disabled(!canGoNext)
             .buttonStyle(.plain)
         }
     }
 
-    // MARK: - Chart View
-
-    /// 动态图表最大值：取实际储蓄数据与目标值中的较大者，避免固定量程失真。
-    private var maxChartAmount: Double {
-        let dataMax = currentMonthlyAmounts.compactMap { $0 }.max() ?? 0
-        return max(dataMax, targetAmount, 1)
-    }
-
-    private var chartView: some View {
-        GeometryReader { geometry in
-            let barAreaHeight = geometry.size.height - 30 // 30 for month labels
-            let targetRatio = CGFloat(targetAmount / maxChartAmount)
-            let targetY = geometry.size.height - 30 - barAreaHeight * targetRatio
-
-            ZStack(alignment: .bottomLeading) {
-                // Target line — 仅在 Budget Setup 完成后展示
-                if targetAmount > 0 {
-                    Path { path in
-                        path.move(to: CGPoint(x: 0, y: targetY))
-                        path.addLine(to: CGPoint(x: geometry.size.width, y: targetY))
-                    }
-                    .stroke(style: StrokeStyle(lineWidth: 1, dash: [5, 5]))
-                    .foregroundColor(AppColors.textTertiary)
-                }
-
-                HStack(alignment: .bottom, spacing: AppSpacing.sm) {
-                    ForEach(0..<12) { index in
-                        barView(index: index, maxHeight: barAreaHeight)
-                    }
-                }
-
-                chartHoverOverlay(geometry: geometry)
-
-                // Target label — 仅在 Budget Setup 完成后展示
-                if targetAmount > 0 {
-                    Text("TARGET")
-                        .font(.label)
-                        .foregroundColor(AppColors.textTertiary)
-                        .position(x: geometry.size.width - 30, y: targetY - 10)
-                }
-            }
-        }
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 30)
-                .onEnded { value in
-                    guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                    navigateYear(value.translation.width < 0 ? 1 : -1)
-                }
-        )
-    }
-
-    private func barView(index: Int, maxHeight: CGFloat) -> some View {
-        let amount = index < currentMonthlyAmounts.count ? currentMonthlyAmounts[index] : nil
-        let height = calculateHeight(amount: amount, maxHeight: maxHeight)
-        let isTarget = targetAmount > 0 && (amount ?? 0) >= targetAmount
-
-        return VStack(spacing: AppSpacing.sm + AppSpacing.xs) {
-            RoundedRectangle(cornerRadius: AppRadius.sm)
-                .fill(barColor(amount: amount, isTarget: isTarget))
-                .frame(height: height)
-
-            Text(monthsShort[index])
-                .font(.cardHeader)
-                .foregroundColor(AppColors.textSecondary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private func chartHoverOverlay(geometry: GeometryProxy) -> some View {
-        let step = geometry.size.width / 12
-        let maxHeight = geometry.size.height - 30
-
-        return ZStack {
-            if let index = chartHoverIndex {
-                let amount = index < currentMonthlyAmounts.count ? currentMonthlyAmounts[index] : nil
-                let barHeight = calculateHeight(amount: amount, maxHeight: maxHeight)
-                let xPosition = step * (CGFloat(index) + 0.5)
-                let yPosition = max(18, geometry.size.height - barHeight - 40)
-
-                VStack(spacing: AppSpacing.sm) {
-                    Text(months[index])
-                        .font(.label)
-                        .foregroundColor(AppColors.textSecondary)
-
-                    Text(amount == nil ? "--" : formatMoney(amount ?? 0))
-                        .font(.smallLabel)
-                        .foregroundStyle(AppColors.textPrimary)
-                }
-                .padding(.vertical, AppSpacing.sm)
-                .padding(.horizontal, AppSpacing.sm + AppSpacing.xs)
-                .background(AppColors.surface)
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppRadius.md)
-                        .stroke(AppColors.surfaceBorder, lineWidth: 1)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-                .position(x: xPosition, y: yPosition)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { value in
-                    let clampedX = min(max(value.location.x, 0), geometry.size.width - 1)
-                    let index = Int(clampedX / step)
-                    chartHoverIndex = min(max(index, 0), 11)
-                }
-                .onEnded { _ in
-                    chartHoverIndex = nil
-                }
-        )
-        .onTapGesture {
-            chartHoverIndex = nil
+    private func navigateYear(_ delta: Int) {
+        guard let idx = availableYears.firstIndex(of: selectedYear) else { return }
+        let newIdx = idx + delta
+        guard newIdx >= 0 && newIdx < availableYears.count else { return }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            selectedYear = availableYears[newIdx]
+            selectedMonthIndex = min(selectedMonthIndex, 11)
         }
     }
 
-    private func calculateHeight(amount: Double?, maxHeight: CGFloat) -> CGFloat {
-        guard let amount = amount, amount > 0 else { return 20 }
-        let ratio = min(amount / maxChartAmount, 1.0)
-        return max(20, maxHeight * CGFloat(ratio))
+    private func monthRateText(for node: SavingsMonthNode) -> String {
+        guard let amount = node.amount, let inferredMonthlyIncome, inferredMonthlyIncome > 0 else { return "—" }
+        let rate = (amount / inferredMonthlyIncome) * 100
+        return "\(Int(rate.rounded()))%"
     }
 
-    private func barColor(amount: Double?, isTarget: Bool) -> AnyShapeStyle {
-        if amount == nil {
-            return AnyShapeStyle(AppColors.surfaceBorder)
+    private func monthHelperText(for node: SavingsMonthNode) -> String {
+        switch node.state {
+        case .future:
+            return "This month is still ahead. Once you reach it, the circle will be ready for a check-in."
+        case .pending:
+            return "You're in the current month and haven't checked in yet. Tap the month circle to record your amount."
+        case .missed:
+            return "No savings were recorded for this month. You can still tap it to fill in the final amount."
+        case .belowTarget:
+            return "You checked in for this month, but it landed below your target. That's still valuable signal for the year."
+        case .onTarget:
+            return "This month hit your savings target. Keep stacking months like this and the yearly average stays strong."
         }
-        let gradient = LinearGradient(
-            colors: isTarget
-                ? [AppColors.accentPurple, AppColors.accentPink, AppColors.accentAmber]
-                : AppColors.gradientFire,
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        return AnyShapeStyle(gradient)
     }
-
-    // MARK: - Month Card
-
-    private func monthCard(index: Int) -> some View {
-        let amount = index < currentMonthlyAmounts.count ? currentMonthlyAmounts[index] : nil
-        let hasTarget = targetAmount > 0
-        let isTarget = hasTarget && (amount ?? 0) >= targetAmount
-        let hasData = amount != nil
-
-        return VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
-            HStack {
-                Text(months[index])
-                    .font(.smallLabel)
-                    .foregroundColor(hasData ? AppColors.textSecondary : AppColors.textTertiary)
-
-                Spacer()
-
-                if isTarget {
-                    flameBadge
-                }
-            }
-
-            if let amount = amount {
-                if hasTarget {
-                    Text("Saved \(formatMoney(amount)) / Target \(formatMoney(targetAmount))")
-                        .font(.bodySmallSemibold)
-                        .foregroundStyle(AppColors.textPrimary)
-                } else {
-                    Text(formatMoney(amount))
-                        .font(.bodySmallSemibold)
-                        .foregroundStyle(AppColors.textPrimary)
-                }
-            } else {
-                Text("No check-in yet")
-                    .font(.bodySmallSemibold)
-                    .foregroundColor(AppColors.textTertiary)
-            }
-        }
-        .padding(AppSpacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(hasData ? AppColors.surfaceBorder : AppColors.surfaceBorder.opacity(0.5), lineWidth: 1)
-        )
-        .opacity(hasData ? 1.0 : 0.7)
-        .onTapGesture { beginEditMonth(index: index) }
-    }
-
-    private var flameBadge: some View {
-        LinearGradient(
-            colors: [AppColors.accentPurple, AppColors.accentPink, AppColors.accentAmber],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        .mask(
-            FlameIcon(size: 16, color: AppColors.textPrimary)
-        )
-        .frame(width: 16, height: 16)
-    }
-
-    // MARK: - Month Editing
 
     private func beginEditMonth(index: Int) {
         editingMonthIndex = index
@@ -438,6 +460,7 @@ struct SavingsTargetDetailView2: View {
         arr[idx] = editingAmountValue > 0 ? editingAmountValue : nil
         monthlyAmountsByYear[selectedYear] = arr
         onMonthlyAmountsChange?(monthlyAmountsByYear)
+        TabContentCache.shared.setCashflowSavingsByYear(monthlyAmountsByYear)
         Task { await persistEditedAmount(year: selectedYear, monthIndex: idx, amount: arr[idx]) }
         editingMonthIndex = nil
     }
@@ -451,14 +474,11 @@ struct SavingsTargetDetailView2: View {
         do {
             let month = String(format: "%04d-%02d", year, monthIndex + 1)
             _ = try await APIService.shared.saveSavingsCheckIn(month: month, savingsActual: amount)
-            TabContentCache.shared.setCashflowSavingsByYear(monthlyAmountsByYear)
             NotificationCenter.default.post(name: .savingsCheckInDidPersist, object: nil)
         } catch {
             print("❌ [SavingsTargetDetailView2] Failed to persist savings check-in: \(error)")
         }
     }
-
-    // MARK: - Helper
 
     private func formatMoney(_ value: Double) -> String {
         let formatter = NumberFormatter()
@@ -471,13 +491,14 @@ struct SavingsTargetDetailView2: View {
 
 #Preview {
     SavingsTargetDetailView2(
-        savingsRatioPercent: MockData.apiMonthlyBudget.savingsRatio,
-        savingsBudgetTarget: MockData.apiMonthlyBudget.savingsBudget,
-        monthlyAmountsByYear: MockData.savingsByYear
+        savingsRatioPercent: 18,
+        savingsBudgetTarget: 1_000,
+        monthlyAmountsByYear: [
+            2026: [1_200, 800, nil, 1_450, nil, nil, nil, nil, nil, nil, nil, nil]
+        ]
     )
 }
 
-/// Home → Plan → 储蓄全屏：无父级传入 `apiBudget` 时在内部拉取当月预算（与 `CashflowView` 显式传入二选一）。
 struct SavingsTargetDetailView2Container: View {
     @Environment(PlaidManager.self) private var plaidManager
     @State private var apiBudget: APIMonthlyBudget = TabContentCache.shared.cashflowBudget ?? APIMonthlyBudget.empty
@@ -515,16 +536,19 @@ struct SavingsTargetDetailView2Container: View {
     }
 
     private func loadBudgetAndSavingsSeries() async {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM"
-        let month = f.string(from: Date())
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM"
+        let month = formatter.string(from: Date())
+
         async let budgetResult = try? await APIService.shared.getMonthlyBudget(month: month)
         async let savingsSeries = loadSavingsByYearFromAPI()
-        let (b, series) = await (budgetResult, savingsSeries)
-        if let b {
-            apiBudget = b
-            TabContentCache.shared.setCashflowBudget(b)
+        let (budget, series) = await (budgetResult, savingsSeries)
+
+        if let budget {
+            apiBudget = budget
+            TabContentCache.shared.setCashflowBudget(budget)
         }
+
         if let cached = TabContentCache.shared.cashflowSavingsByYear {
             monthlyAmountsByYear = cached
         } else if let series {
@@ -535,12 +559,11 @@ struct SavingsTargetDetailView2Container: View {
         }
     }
 
-    /// 已连接银行时用多月份 `get-spending-summary` 推导每月储蓄；否则为当年全 nil 序列（非 Mock）。
     private func loadSavingsByYearFromAPI() async -> [Int: [Double?]]? {
         guard plaidManager.hasLinkedBank else { return nil }
-        let cal = Calendar.current
-        let year = cal.component(.year, from: Date())
-        let through = cal.component(.month, from: Date())
+        let calendar = Calendar.current
+        let year = calendar.component(.year, from: Date())
+        let through = calendar.component(.month, from: Date())
         let summaries = await CashflowAPICharts.fetchMonthlySummaries(year: year, throughMonth: through)
         guard !summaries.isEmpty else { return nil }
         return CashflowAPICharts.savingsMonthlyAmountsByYear(summaries: summaries, year: year)

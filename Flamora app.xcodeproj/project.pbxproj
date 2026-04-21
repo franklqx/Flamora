@@ -15,6 +15,10 @@
 		12123E382F4859CB0011B385 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E362F4859CB0011B385 /* SubscriptionManager.swift */; };
 		12123E422F485B920011B385 /* PaywallSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E3E2F485B920011B385 /* PaywallSheet.swift */; };
 		12123E432F485B920011B385 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E3C2F485B920011B385 /* SettingsView.swift */; };
+		RPT000012FC000000000001 /* ReportModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = RPT000022FC000000000002 /* ReportModels.swift */; };
+		RPT000032FC000000000003 /* ReportViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = RPT000042FC000000000004 /* ReportViews.swift */; };
+		SAV000012FC100000000001 /* SavingsTrackingUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = SAV000022FC100000000002 /* SavingsTrackingUI.swift */; };
+		SAV000032FC100000000003 /* NetWorthDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SAV000042FC100000000004 /* NetWorthDetailView.swift */; };
 		12123E452F48D7E20011B385 /* PlaidLinkPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E442F48D7E20011B385 /* PlaidLinkPresenter.swift */; };
 		124C46492F56F65E00E4EA8B /* OB_IntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46372F56F65E00E4EA8B /* OB_IntroView.swift */; };
 		124C464A2F56F65E00E4EA8B /* OB_MotivationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C463B2F56F65E00E4EA8B /* OB_MotivationView.swift */; };
@@ -115,6 +119,9 @@
 		F10000082FB0000000000001 /* SheetPrimaryCTAButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000072FB0000000000001 /* SheetPrimaryCTAButton.swift */; };
 		F10000A22FB1000000000001 /* PortfolioModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000A12FB1000000000001 /* PortfolioModels.swift */; };
 		F10000C22FB3000000000002 /* HomeRoadmapContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000C12FB3000000000001 /* HomeRoadmapContent.swift */; };
+		F10000C42FB3000000000004 /* HomeNetWorthCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000C32FB3000000000003 /* HomeNetWorthCard.swift */; };
+		F10000C62FB3000000000006 /* HomeSavingsRateCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000C52FB3000000000005 /* HomeSavingsRateCard.swift */; };
+		F10000C82FB3000000000008 /* HomeReportsEntryCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000C72FB3000000000007 /* HomeReportsEntryCard.swift */; };
 		PH0B00022F40000000000002 /* LegendItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0B00012F40000000000002 /* LegendItemView.swift */; };
 		PH0C00032F40000000000003 /* NumberFormatter+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0C00022F40000000000003 /* NumberFormatter+App.swift */; };
 		PH0D000A2F4000000000000A /* HomeJourneyProgressStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = PH0D000B2F4000000000000B /* HomeJourneyProgressStrip.swift */; };
@@ -142,6 +149,8 @@
 		12123E362F4859CB0011B385 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
 		12123E3C2F485B920011B385 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		12123E3E2F485B920011B385 /* PaywallSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallSheet.swift; sourceTree = "<group>"; };
+		SAV000022FC100000000002 /* SavingsTrackingUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsTrackingUI.swift; sourceTree = "<group>"; };
+		SAV000042FC100000000004 /* NetWorthDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetWorthDetailView.swift; sourceTree = "<group>"; };
 		12123E442F48D7E20011B385 /* PlaidLinkPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidLinkPresenter.swift; sourceTree = "<group>"; };
 		124C462E2F56F65E00E4EA8B /* OB_MicroInsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_MicroInsightCard.swift; sourceTree = "<group>"; };
 		124C46302F56F65E00E4EA8B /* OB_PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_PrimaryButton.swift; sourceTree = "<group>"; };
@@ -269,10 +278,17 @@
 		F10000072FB0000000000001 /* SheetPrimaryCTAButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetPrimaryCTAButton.swift; sourceTree = "<group>"; };
 		F10000A12FB1000000000001 /* PortfolioModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioModels.swift; sourceTree = "<group>"; };
 		F10000C12FB3000000000001 /* HomeRoadmapContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRoadmapContent.swift; sourceTree = "<group>"; };
+		F10000C32FB3000000000003 /* HomeNetWorthCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeNetWorthCard.swift; sourceTree = "<group>"; };
+		F10000C52FB3000000000005 /* HomeSavingsRateCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeSavingsRateCard.swift; sourceTree = "<group>"; };
+		F10000C72FB3000000000007 /* HomeReportsEntryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeReportsEntryCard.swift; sourceTree = "<group>"; };
+		F10000C92FB3000000000009 /* SavingsInputSheet.swift (archived) */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SavingsInputSheet.swift"; path = SavingsInputSheet.swift; sourceTree = "<group>"; };
+		F10000CA2FB300000000000A /* SavingsTargetDetailView2.swift (archived) */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SavingsTargetDetailView2.swift"; path = SavingsTargetDetailView2.swift; sourceTree = "<group>"; };
 		F3D88B1E877C494CB82A4469 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		PH0B00012F40000000000002 /* LegendItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegendItemView.swift; sourceTree = "<group>"; };
 		PH0C00022F40000000000003 /* NumberFormatter+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NumberFormatter+App.swift"; sourceTree = "<group>"; };
 		PH0D000B2F4000000000000B /* HomeJourneyProgressStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeJourneyProgressStrip.swift; sourceTree = "<group>"; };
+		RPT000022FC000000000002 /* ReportModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportModels.swift; sourceTree = "<group>"; };
+		RPT000042FC000000000004 /* ReportViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -337,6 +353,7 @@
 				AAB934E0EA2D41B4B246F19E /* SafariView.swift */,
 				A896C70355034867B690BCB2 /* PlaidTrustBridgeView.swift */,
 				F10000072FB0000000000001 /* SheetPrimaryCTAButton.swift */,
+				SAV000022FC100000000002 /* SavingsTrackingUI.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -462,6 +479,7 @@
 				CD2604070000000000000003 /* HomeHeroModel.swift */,
 				CD2604070000000000000005 /* ActivePlanModel.swift */,
 				CD2604070000000000000007 /* SimulatorPreviewModel.swift */,
+				RPT000022FC000000000002 /* ReportModels.swift */,
 				CD11E0052F90000000000001 /* CashflowDetailEmptyStates.swift */,
 				CD11E0072F90000000000001 /* FIREAssumptions.swift */,
 				1571A1D92F3C2A5B0024A729 /* OnboardingModels.swift */,
@@ -474,6 +492,10 @@
 			isa = PBXGroup;
 			children = (
 				F10000C12FB3000000000001 /* HomeRoadmapContent.swift */,
+				F10000C32FB3000000000003 /* HomeNetWorthCard.swift */,
+				SAV000042FC100000000004 /* NetWorthDetailView.swift */,
+				F10000C52FB3000000000005 /* HomeSavingsRateCard.swift */,
+				F10000C72FB3000000000007 /* HomeReportsEntryCard.swift */,
 				CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */,
 				CF30A0002F80000100A9BB60 /* HomeBottomSheet.swift */,
 				PH0D000B2F4000000000000B /* HomeJourneyProgressStrip.swift */,
@@ -488,6 +510,7 @@
 			children = (
 				12748F212F65CA5C00410D60 /* BudgetSetup */,
 				124C46482F56F65E00E4EA8B /* Onboarding */,
+				RPT000052FC000000000005 /* Reports */,
 				12123E3D2F485B920011B385 /* Settings */,
 				12123E402F485B920011B385 /* Shared */,
 				15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */,
@@ -496,6 +519,14 @@
 				15E21AA42F3248F500A9BB60 /* Home */,
 			);
 			path = View;
+			sourceTree = "<group>";
+		};
+		RPT000052FC000000000005 /* Reports */ = {
+			isa = PBXGroup;
+			children = (
+				RPT000042FC000000000004 /* ReportViews.swift */,
+			);
+			path = Reports;
 			sourceTree = "<group>";
 		};
 		15E21AE72F33BC5E00A9BB60 /* Cashflow */ = {
@@ -562,6 +593,8 @@
 				15E99F652F906CD6008E9FBA /* SavingsRateCard.swift */,
 				15E99F662F906CD6008E9FBA /* SmoothPath.swift */,
 				15E99F672F906CD6008E9FBA /* TabBarVisibilityPreferenceKey.swift */,
+				F10000C92FB3000000000009 /* SavingsInputSheet.swift (archived) */,
+				F10000CA2FB300000000000A /* SavingsTargetDetailView2.swift (archived) */,
 			);
 			path = OLDDESIGN;
 			sourceTree = "<group>";
@@ -765,6 +798,7 @@
 				12123E372F4859CB0011B385 /* PlaidManager.swift in Sources */,
 				12123E382F4859CB0011B385 /* SubscriptionManager.swift in Sources */,
 				15E21AB72F3257C600A9BB60 /* InvestmentView.swift in Sources */,
+				RPT000012FC000000000001 /* ReportModels.swift in Sources */,
 				152BE0842F67A66C00CACBBC /* GlassPillSelector.swift in Sources */,
 				EB0000012F9A00000000EB01 /* ErrorBanner.swift in Sources */,
 				152BE0862F67A67000CACBBC /* ChartInteractionLayer.swift in Sources */,
@@ -778,7 +812,13 @@
 				CDAA000D2FA0000000000001 /* InvestmentHeroData.swift in Sources */,
 				12748F252F65CCEE00410D60 /* BudgetSetupView.swift in Sources */,
 				15FF6EE02F310A040005F482 /* Typography.swift in Sources */,
+				RPT000032FC000000000003 /* ReportViews.swift in Sources */,
+				SAV000012FC100000000001 /* SavingsTrackingUI.swift in Sources */,
 				F10000C22FB3000000000002 /* HomeRoadmapContent.swift in Sources */,
+				F10000C42FB3000000000004 /* HomeNetWorthCard.swift in Sources */,
+				SAV000032FC100000000003 /* NetWorthDetailView.swift in Sources */,
+				F10000C62FB3000000000006 /* HomeSavingsRateCard.swift in Sources */,
+				F10000C82FB3000000000008 /* HomeReportsEntryCard.swift in Sources */,
 				PH0B00022F40000000000002 /* LegendItemView.swift in Sources */,
 				1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */,
 				PH0D000A2F4000000000000A /* HomeJourneyProgressStrip.swift in Sources */,

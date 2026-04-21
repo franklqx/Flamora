@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "html-preview",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": ["-c", "cd /tmp && python3 -m http.server --directory /tmp 7890"],
+      "port": 7890,
+      "autoPort": true
+    }
+  ]
+}

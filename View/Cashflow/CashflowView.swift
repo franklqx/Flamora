@@ -150,19 +150,6 @@ struct CashflowView: View {
                             }
                         )
                         .padding(.horizontal, AppSpacing.screenPadding)
-
-                        SavingsTargetCard(
-                            currentAmount: $currentSavings,
-                            targetAmount: apiBudget.savingsBudget,
-                            actualRate: actualSavingsRate,
-                            targetRatePercent: apiBudget.savingsRatio,
-                            monthlyCheckins: monthlySavingsCheckins,
-                            isConnected: plaidManager.hasLinkedBank,
-                            hasBudgetSetup: hasBudget,
-                            onAdd: { showSavingsInput = true },
-                            onCardTap: { showSavingsSummary = true }
-                        )
-                        .padding(.horizontal, AppSpacing.screenPadding)
                     }
                     .frame(minHeight: proxy.size.height, alignment: .top)
                     .padding(.top, AppSpacing.md)

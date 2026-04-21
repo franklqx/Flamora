@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Liquid Glass Tab Bar</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%; height: 100dvh;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    background: #f2f2f7;
+  }
+
+  #phone {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #f2f2f7;
+  }
+
+  /* 内容区域 */
+  .content {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-start;
+    gap: 8px;
+    padding: 52px 0 130px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 顶部卡片 */
+  .card {
+    width: min(340px, 88vw);
+    background: #fff;
+    border-radius: 20px;
+    padding: 24px 22px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  }
+  .card-label { font-size: 11px; font-weight: 600; color: rgba(0,0,0,.38); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px; }
+  .card-value { font-size: 38px; font-weight: 700; color: #111; letter-spacing: -1.5px; }
+  .card-sub   { font-size: 13px; color: rgba(0,0,0,.44); margin-top: 4px; }
+
+  /* 列表 */
+  .list {
+    width: min(340px, 88vw);
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .row-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .row-text { flex: 1; }
+  .row-title  { font-size: 14px; font-weight: 500; color: rgba(0,0,0,.88); }
+  .row-sub    { font-size: 11px; color: rgba(0,0,0,.38); margin-top: 1px; }
+  .row-amount { font-size: 14px; font-weight: 600; color: rgba(0,0,0,.65); }
+  .row-amount.green { color: #34c759; }
+
+  /* 控制条 */
+  .controls {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    display: flex; flex-direction: row; align-items: center;
+    justify-content: center; gap: 12px;
+    padding: 10px 16px;
+    background: rgba(242,242,247,.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 0.5px solid rgba(0,0,0,.10);
+    z-index: 100;
+  }
+  .ctrl-state { font-size: 12px; font-weight: 600; color: rgba(0,0,0,.55); white-space: nowrap; }
+  input[type=range] {
+    width: 140px;
+    accent-color: #007aff;
+    cursor: pointer;
+  }
+
+  /* ── TAB BAR ── */
+  .tabbar-root {
+    position: absolute;
+    bottom: 34px; left: 0; right: 0;
+    display: flex; align-items: center;
+    justify-content: center;
+    padding: 0 16px;
+  }
+
+  /* 展开胶囊 — 零模糊，完全透视内容 */
+  .tab-capsule {
+    display: flex; align-items: center;
+    padding: 4px;
+    background: rgba(255,255,255,.68);
+    border-radius: 999px;
+    border: 0.5px solid rgba(0,0,0,.08);
+    box-shadow:
+      0 2px 16px rgba(0,0,0,.10),
+      0 0.5px 2px rgba(0,0,0,.06),
+      inset 0 1px 0 rgba(255,255,255,.90);
+    transform-origin: right center;
+    will-change: transform, opacity, filter;
+    transition: opacity .30s ease, transform .30s cubic-bezier(.4,0,.2,1), filter .26s ease;
+  }
+
+  .tab-btn {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 3px;
+    width: 86px; height: 50px;
+    border: none; background: none;
+    cursor: pointer; border-radius: 999px;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+    transition: color .18s ease;
+    z-index: 1;
+  }
+
+  .tab-btn svg {
+    width: 22px; height: 22px;
+    transition: transform .22s cubic-bezier(.34,1.4,.64,1);
+  }
+
+  .tab-btn .lbl {
+    font-size: 10px; font-weight: 600;
+    letter-spacing: .02em; line-height: 1;
+  }
+
+  /* 选中 pill — 比胶囊更深（反色） */
+  .tab-btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 999px;
+    background: rgba(0,0,0,.07);
+    border: 0.5px solid rgba(0,0,0,.06);
+    opacity: 0; transform: scale(.82);
+    transition: opacity .22s ease, transform .26s cubic-bezier(.34,1.3,.64,1);
+  }
+  .tab-btn.active::before { opacity: 1; transform: scale(1); }
+  .tab-btn.active svg     { transform: scale(1.08); }
+  .tab-btn.active         { color: rgba(0,0,0,.88); }
+  .tab-btn:not(.active)   { color: rgba(0,0,0,.38); }
+
+  /* 收拢圆圈 */
+  .tab-circle {
+    position: absolute; right: 16px;
+    width: 50px; height: 50px;
+    border-radius: 50%; border: none;
+    background: rgba(255,255,255,.68);
+    border: 0.5px solid rgba(0,0,0,.08);
+    box-shadow:
+      0 2px 16px rgba(0,0,0,.10),
+      0 0.5px 2px rgba(0,0,0,.06),
+      inset 0 1px 0 rgba(255,255,255,.90);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: rgba(0,0,0,.88);
+    transform-origin: right center;
+    will-change: transform, opacity;
+    transition: opacity .30s ease, transform .30s cubic-bezier(.4,0,.2,1);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab-circle svg { width: 22px; height: 22px; }
+</style>
+</head>
+<body>
+<div id="phone">
+
+<div class="content">
+  <div class="card">
+    <div class="card-label">FIRE Progress</div>
+    <div class="card-value">$847,320</div>
+    <div class="card-sub">68% · FIRE by Mar 2038</div>
+  </div>
+
+  <div class="list">
+    <div class="row">
+      <div class="row-icon" style="background:rgba(167,139,250,.22)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7c5cbf" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      </div>
+      <div class="row-text"><div class="row-title">Mortgage</div><div class="row-sub">Monthly · Due Apr 1</div></div>
+      <div class="row-amount">-$2,400</div>
+    </div>
+    <div class="row">
+      <div class="row-icon" style="background:rgba(252,165,165,.22)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e05252" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      </div>
+      <div class="row-text"><div class="row-title">Credit Card</div><div class="row-sub">Chase Sapphire</div></div>
+      <div class="row-amount">-$840</div>
+    </div>
+    <div class="row">
+      <div class="row-icon" style="background:rgba(52,199,89,.16)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a9c3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      </div>
+      <div class="row-text"><div class="row-title">S&P 500 ETF</div><div class="row-sub">+3.2% this month</div></div>
+      <div class="row-amount green">+$1,240</div>
+    </div>
+    <div class="row">
+      <div class="row-icon" style="background:rgba(255,149,0,.16)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c97800" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      </div>
+      <div class="row-text"><div class="row-title">Savings Auto</div><div class="row-sub">Recurring transfer</div></div>
+      <div class="row-amount">-$1,500</div>
+    </div>
+    <div class="row">
+      <div class="row-icon" style="background:rgba(196,181,253,.22)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7c5cbf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      </div>
+      <div class="row-text"><div class="row-title">Gym · Netflix</div><div class="row-sub">Subscriptions</div></div>
+      <div class="row-amount">-$68</div>
+    </div>
+    <div class="row">
+      <div class="row-icon" style="background:rgba(0,122,255,.14)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z"/></svg>
+      </div>
+      <div class="row-text"><div class="row-title">Groceries</div><div class="row-sub">Whole Foods · Apr 12</div></div>
+      <div class="row-amount">-$183</div>
+    </div>
+    <div class="row">
+      <div class="row-icon" style="background:rgba(255,59,48,.14)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#cc2200" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      </div>
+      <div class="row-text"><div class="row-title">Utilities</div><div class="row-sub">Electric · Gas</div></div>
+      <div class="row-amount">-$214</div>
+    </div>
+    <div class="row">
+      <div class="row-icon" style="background:rgba(52,199,89,.16)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a9c3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      </div>
+      <div class="row-text"><div class="row-title">Salary Deposit</div><div class="row-sub">Apr 15 · Direct deposit</div></div>
+      <div class="row-amount green">+$8,500</div>
+    </div>
+    <div class="row">
+      <div class="row-icon" style="background:rgba(196,181,253,.22)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7c5cbf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      </div>
+      <div class="row-text"><div class="row-title">Roth IRA</div><div class="row-sub">Fidelity · Contribution</div></div>
+      <div class="row-amount">-$583</div>
+    </div>
+    <div class="row">
+      <div class="row-icon" style="background:rgba(255,149,0,.16)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c97800" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <div class="row-text"><div class="row-title">Family Transfer</div><div class="row-sub">Zelle · Parents</div></div>
+      <div class="row-amount">-$300</div>
+    </div>
+    <div style="height: 20px; flex-shrink: 0;"></div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="ctrl-state" id="stateLabel">展开态</div>
+  <input type="range" id="slider" min="0" max="100" value="0">
+</div>
+
+<!-- SVG icon defs -->
+<svg style="display:none">
+  <defs>
+    <symbol id="ic-home" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2.5L2 10.5V21h7v-6h6v6h7V10.5L12 2.5z"/>
+    </symbol>
+    <symbol id="ic-cash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="5" width="20" height="14" rx="3"/>
+      <path d="M2 10h20"/><path d="M6 15h4"/>
+    </symbol>
+    <symbol id="ic-invest" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="3,17 8,11 13,14 21,5"/>
+      <polyline points="17,5 21,5 21,9"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="tabbar-root" id="tabbarRoot">
+  <div class="tab-capsule" id="capsule">
+    <button class="tab-btn active" data-tab="home" onclick="selectTab('home')">
+      <svg><use href="#ic-home"/></svg>
+      <span class="lbl">Home</span>
+    </button>
+    <button class="tab-btn" data-tab="cash" onclick="selectTab('cash')">
+      <svg><use href="#ic-cash"/></svg>
+      <span class="lbl">Cash</span>
+    </button>
+    <button class="tab-btn" data-tab="invest" onclick="selectTab('invest')">
+      <svg><use href="#ic-invest"/></svg>
+      <span class="lbl">Invest</span>
+    </button>
+  </div>
+
+  <div class="tab-circle" id="circle" onclick="collapseToZero()">
+    <svg id="circleIconSvg"><use href="#ic-home"/></svg>
+  </div>
+</div>
+
+<script>
+  const capsule = document.getElementById('capsule');
+  const circle  = document.getElementById('circle');
+  const slider  = document.getElementById('slider');
+  const stateLabel = document.getElementById('stateLabel');
+  const circleIconSvg = document.getElementById('circleIconSvg');
+
+  const tabIconId = { home: '#ic-home', cash: '#ic-cash', invest: '#ic-invest' };
+  let animRaf = null;
+
+  function selectTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.tab === tab)
+    );
+    circleIconSvg.querySelector('use').setAttribute('href', tabIconId[tab]);
+  }
+
+  function applyProgress(p) {
+    p = Math.max(0, Math.min(1, p));
+
+    const sx = Math.max(0.30, 1 - p * 0.55);
+    const sy = Math.max(0.86, 1 - p * 0.12);
+    capsule.style.opacity      = (1 - p).toFixed(3);
+    capsule.style.transform    = `scaleX(${sx.toFixed(3)}) scaleY(${sy.toFixed(3)})`;
+    capsule.style.filter       = `blur(${(p * 5).toFixed(1)}px)`;
+    capsule.style.pointerEvents = p < 0.5 ? 'auto' : 'none';
+
+    const cs = (0.30 + 0.70 * p).toFixed(3);
+    circle.style.opacity       = p.toFixed(3);
+    circle.style.transform     = `scale(${cs})`;
+    circle.style.pointerEvents = p >= 0.5 ? 'auto' : 'none';
+
+    if (p < 0.04)      stateLabel.textContent = '展开态';
+    else if (p > 0.96) stateLabel.textContent = '收拢态 — 点圆圈恢复';
+    else               stateLabel.textContent  = `收拢 ${Math.round(p*100)}%`;
+  }
+
+  slider.addEventListener('input', () => applyProgress(slider.value / 100));
+
+  function collapseToZero() {
+    if (animRaf) cancelAnimationFrame(animRaf);
+    let p = parseFloat(slider.value) / 100;
+    const step = () => {
+      p = Math.max(0, p - 0.06);
+      slider.value = p * 100;
+      applyProgress(p);
+      if (p > 0) animRaf = requestAnimationFrame(step);
+    };
+    animRaf = requestAnimationFrame(step);
+  }
+
+  applyProgress(0);
+</script>
+</div>
+</body>
+</html>

@@ -26,6 +26,7 @@ struct AppTypography {
     static let caption:             CGFloat = 12
     static let label:               CGFloat = 10
     static let cardFigureSecondary: CGFloat = 15   // 卡片副数字
+    static let storyHero:           CGFloat = 64   // Report Story hero number (see DESIGN.md §Report Screens)
 
     enum Tracking {
         static let cardHeader:    CGFloat = 0.8    // 全大写卡片标题
@@ -113,6 +114,8 @@ extension Font {
     static var categoryRowIcon:    Font { appFont(21, .semibold) }             // list icon
     static var quoteBody:          Font { appFont(AppTypography.h3, .bold) }   // quote card body
     static var currencyHero:       Font { appFont(48, .bold) }                 // large currency display
+    /// Report Story hero number (64pt). Pair with .kerning(-2) at call site. See DESIGN.md §Report Screens.
+    static var storyHero:          Font { appFont(AppTypography.storyHero, .bold) }
 
     /// Micro month/bar tick (10pt)
     static func barMonthTick(selected: Bool) -> Font {

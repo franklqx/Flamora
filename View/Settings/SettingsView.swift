@@ -20,6 +20,9 @@ struct SettingsView: View {
     @State private var showPaywall = false
     @State private var showPrivacy = false
     @State private var showTerms   = false
+    @State private var archivedReports: [ReportArchiveItem] = []
+    @State private var selectedReport: ReportSnapshot? = nil
+    @State private var isLoadingArchive = false
 
     @AppStorage(FlamoraStorageKey.budgetSetupCompleted) private var budgetSetupCompleted: Bool = false
     @State private var currentBudget: APIMonthlyBudget = .empty
@@ -41,14 +44,13 @@ struct SettingsView: View {
                         .toolbar {
                             ToolbarItem(placement: .navigationBarTrailing) {
                                 Button("Done") { dismiss() }
-                                    .foregroundStyle(AppColors.textPrimary)
+                                    .foregroundStyle(AppColors.inkPrimary)
                                     .fontWeight(.semibold)
                             }
                         }
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .task {
             if budgetSetupCompleted {
                 let formatter = DateFormatter()
@@ -58,10 +60,16 @@ struct SettingsView: View {
                     currentBudget = b
                 }
             }
+            await loadArchivedReports()
         }
         .sheet(isPresented: $showPaywall) {
             PaywallSheet()
                 .environment(subscriptionManager)
+        }
+        .fullScreenCover(item: $selectedReport, onDismiss: {
+            Task { await loadArchivedReports() }
+        }) { report in
+            reportDestination(for: report)
         }
         .confirmationDialog(
             "Disconnect Bank",
@@ -85,7 +93,12 @@ struct SettingsView: View {
 private extension SettingsView {
     var settingsBody: some View {
         ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(
+                colors: [AppColors.shellBg1, AppColors.shellBg2],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: AppSpacing.sectionGap) {
@@ -93,6 +106,7 @@ private extension SettingsView {
                     subscriptionSection
                     if plaidManager.hasLinkedBank { bankSection }
                     budgetSection
+                    archiveSection
                     signOutSection
                     legalSection
                 }
@@ -150,7 +164,7 @@ private extension SettingsView {
                     .buttonStyle(.plain)
 
                     if subscriptionManager.isPremium {
-                        Divider().background(AppColors.borderLight).padding(.leading, 60)
+                        divider
 
                         Button(action: {
                             if let url = URL(string: "itms-apps://apps.apple.com/account/subscriptions") {
@@ -159,13 +173,13 @@ private extension SettingsView {
                         }) {
                             row(
                                 icon: "gear",
-                            iconColor: AppColors.textTertiary,
+                            iconColor: AppColors.inkFaint,
                             title: "Manage Subscription",
                             trailing: {
                                 AnyView(
                                     Image(systemName: "arrow.up.right")
                                         .font(.caption)
-                                        .foregroundColor(AppColors.textTertiary)
+                                        .foregroundColor(AppColors.inkFaint)
                                     )
                                 }
                             )
@@ -173,7 +187,7 @@ private extension SettingsView {
                         .buttonStyle(.plain)
                     }
 
-                    Divider().background(AppColors.borderLight).padding(.leading, 60)
+                    divider
 
                     Button(action: {
                         Task {
@@ -188,7 +202,7 @@ private extension SettingsView {
                             title: "Restore Purchases",
                             trailing: {
                                 isRestoringPurchases
-                                    ? AnyView(ProgressView().tint(AppColors.textPrimary).scaleEffect(0.8))
+                                    ? AnyView(ProgressView().tint(AppColors.inkPrimary).scaleEffect(0.8))
                                     : AnyView(EmptyView())
                             }
                         )
@@ -218,7 +232,7 @@ private extension SettingsView {
                         }
                     )
 
-                    Divider().background(AppColors.borderLight).padding(.leading, 60)
+                    divider
 
                     row(
                         icon: "lock.fill",
@@ -227,7 +241,7 @@ private extension SettingsView {
                         subtitle: nil
                     )
 
-                    Divider().background(AppColors.borderLight).padding(.leading, 60)
+                    divider
 
                     Button(action: { showDisconnectConfirm = true }) {
                         row(
@@ -236,7 +250,7 @@ private extension SettingsView {
                             title: "Disconnect Bank",
                             trailing: {
                                 isDisconnecting
-                                    ? AnyView(ProgressView().tint(AppColors.textPrimary).scaleEffect(0.8))
+                                    ? AnyView(ProgressView().tint(AppColors.inkPrimary).scaleEffect(0.8))
                                     : AnyView(EmptyView())
                             }
                         )
@@ -266,7 +280,7 @@ private extension SettingsView {
                             subtitle: subtitle
                         )
 
-                        Divider().background(AppColors.borderLight).padding(.leading, 60)
+                        divider
                     }
 
                     Button(action: {
@@ -283,12 +297,55 @@ private extension SettingsView {
                                 AnyView(
                                     Image(systemName: "chevron.right")
                                         .font(.caption)
-                                        .foregroundColor(AppColors.textTertiary)
+                                        .foregroundColor(AppColors.inkFaint)
                                 )
                             }
                         )
                     }
                     .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    var archiveSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sectionLabelGap) {
+            sectionLabel("Report Archive")
+            cardContainer {
+                if isLoadingArchive && archivedReports.isEmpty {
+                    HStack(spacing: AppSpacing.md) {
+                        ProgressView()
+                            .tint(AppColors.inkPrimary)
+                        Text("Loading archived reports...")
+                            .font(.footnoteRegular)
+                            .foregroundStyle(AppColors.inkSoft)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(AppSpacing.cardPadding)
+                } else if archivedReports.isEmpty {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("No archived reports yet")
+                            .font(.inlineLabel)
+                            .foregroundStyle(AppColors.inkPrimary)
+                        Text("Viewed and older weekly, monthly, annual, and Issue Zero stories will live here.")
+                            .font(.footnoteRegular)
+                            .foregroundStyle(AppColors.inkSoft)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(AppSpacing.cardPadding)
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(Array(archivedReports.prefix(8).enumerated()), id: \.element.id) { index, item in
+                            ReportFeedRow(item: item) {
+                                Task { await openArchivedReport(id: item.reportId) }
+                            }
+
+                            if index < min(archivedReports.count, 8) - 1 {
+                                divider
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -304,14 +361,14 @@ private extension SettingsView {
         }) {
             Text("Sign Out")
                 .font(.bodySemibold)
-                .foregroundColor(AppColors.error)
+                .foregroundColor(AppColors.ctaWhite)
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
-                .background(AppColors.surfaceElevated)
+                .background(AppColors.ctaBlack)
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                 .overlay(
                     RoundedRectangle(cornerRadius: AppRadius.md)
-                        .stroke(AppColors.borderLight, lineWidth: 0.75)
+                        .stroke(AppColors.ctaBlack.opacity(0.12), lineWidth: 0.75)
                 )
         }
     }
@@ -323,18 +380,18 @@ private extension SettingsView {
             } label: {
                 Text("Privacy Policy")
                     .font(.caption)
-                    .foregroundColor(AppColors.textMuted)
+                    .foregroundColor(AppColors.inkFaint)
                     .underline()
             }
             Text("•")
                 .font(.caption)
-                .foregroundColor(AppColors.textMuted)
+                .foregroundColor(AppColors.inkFaint)
             Button {
                 showTerms = true
             } label: {
                 Text("Terms of Service")
                     .font(.caption)
-                    .foregroundColor(AppColors.textMuted)
+                    .foregroundColor(AppColors.inkFaint)
                     .underline()
             }
         }
@@ -361,10 +418,10 @@ private extension SettingsView {
 
     func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .font(.smallLabel)
-            .foregroundColor(AppColors.textTertiary)
+            .font(.cardHeader)
+            .foregroundColor(AppColors.inkFaint)
             .textCase(.uppercase)
-            .tracking(0.8)
+            .tracking(AppTypography.Tracking.cardHeader)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -373,12 +430,28 @@ private extension SettingsView {
         VStack(spacing: 0) {
             content()
         }
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .fill(
+                    LinearGradient(
+                        colors: [AppColors.glassCardBg, AppColors.glassCardBg2],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
         )
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
+    }
+
+    var divider: some View {
+        Rectangle()
+            .fill(AppColors.inkDivider)
+            .frame(height: 0.5)
+            .padding(.leading, 60)
     }
 
     func row(
@@ -399,13 +472,13 @@ private extension SettingsView {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(title)
                     .font(.supportingText)
-                    .foregroundStyle(AppColors.textPrimary)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .lineLimit(1)
 
                 if let subtitle {
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(AppColors.inkFaint)
                 }
             }
 
@@ -415,6 +488,43 @@ private extension SettingsView {
         }
         .padding(.horizontal, AppSpacing.md)
         .padding(.vertical, AppSpacing.rowItem)
+    }
+
+    func loadArchivedReports() async {
+        guard !isLoadingArchive else { return }
+        isLoadingArchive = true
+        defer { isLoadingArchive = false }
+
+        do {
+            archivedReports = try await APIService.shared.getArchivedReports()
+        } catch {
+            archivedReports = []
+        }
+    }
+
+    func openArchivedReport(id: String) async {
+        do {
+            selectedReport = try await APIService.shared.getReportDetail(id: id)
+            await loadArchivedReports()
+        } catch {
+            #if DEBUG
+            print("❌ [SettingsView] failed to open archived report: \(error)")
+            #endif
+        }
+    }
+
+    @ViewBuilder
+    func reportDestination(for report: ReportSnapshot) -> some View {
+        switch report.kind {
+        case .weekly:
+            WeeklyReportView(report: report)
+        case .monthly:
+            MonthlyReportView(report: report)
+        case .annual:
+            AnnualReportView(report: report)
+        case .issueZero:
+            IssueZeroView(report: report)
+        }
     }
 }
 

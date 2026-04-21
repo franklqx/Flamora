@@ -358,6 +358,59 @@ class APIService {
     func markSetupStep(_ step: String) async throws {
         let _: EmptySuccessResponse = try await invokeFunction("mark-setup-step", body: MarkSetupStepRequest(step: step))
     }
+
+    // MARK: - Reports
+
+    func getRecentReports(limit: Int = 12) async throws -> [ReportFeedItem] {
+        let request = try await authenticatedRequest(
+            function: "get-report-feed",
+            queryParams: ["limit": "\(limit)"]
+        )
+        return try await perform(request)
+    }
+
+    func getArchivedReports(kind: ReportKind? = nil, year: Int? = nil, cursor: String? = nil, limit: Int = 20) async throws -> [ReportArchiveItem] {
+        var params: [String: String] = ["limit": "\(limit)"]
+        if let kind { params["kind"] = kind.rawValue }
+        if let year { params["year"] = "\(year)" }
+        if let cursor { params["cursor"] = cursor }
+        let request = try await authenticatedRequest(function: "get-report-archive", queryParams: params)
+        return try await perform(request)
+    }
+
+    func getLatestReport(kind: ReportKind) async throws -> ReportSnapshot {
+        let request = try await authenticatedRequest(
+            function: "get-report-detail",
+            queryParams: [
+                "kind": kind.rawValue,
+                "latest": "true"
+            ]
+        )
+        return try await perform(request)
+    }
+
+    func getReportDetail(id: String) async throws -> ReportSnapshot {
+        let request = try await authenticatedRequest(
+            function: "get-report-detail",
+            queryParams: ["id": id]
+        )
+        return try await perform(request)
+    }
+
+    func markReportViewed(id: String) async throws {
+        struct MarkReportViewedRequest: Encodable {
+            let reportId: String
+
+            enum CodingKeys: String, CodingKey {
+                case reportId = "report_id"
+            }
+        }
+
+        let _: EmptySuccessResponse = try await invokeFunction(
+            "mark-report-viewed",
+            body: MarkReportViewedRequest(reportId: id)
+        )
+    }
 }
 
 // MARK: - API Errors

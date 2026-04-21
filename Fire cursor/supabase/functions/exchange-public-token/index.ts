@@ -3,6 +3,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders, handleCors } from '../_shared/cors.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { ensureIssueZeroReport, stampFirstBankConnectedAt } from '../_shared/report-builder.ts'
 
 interface ExchangeRequest {
   public_token: string
@@ -587,6 +588,13 @@ serve(async (req) => {
       }, { onConflict: 'user_id,date' })
 
     if (nwError) console.error('[exchange] Error upserting net_worth_history:', nwError)
+
+    try {
+      await stampFirstBankConnectedAt(supabase, user.id)
+      await ensureIssueZeroReport(supabase, user.id)
+    } catch (reportError) {
+      console.error('[exchange] Error generating issue zero:', reportError)
+    }
 
     // ============================================================
     // 12. 返回成功结果
