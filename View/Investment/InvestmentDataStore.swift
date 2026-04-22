@@ -35,7 +35,7 @@ final class InvestmentDataStore: ObservableObject {
         }
     }
 
-    func load(plaidManager: PlaidManager) async {
+    func load(plaidManager: PlaidManager, force: Bool = false) async {
         loadError = false
         guard plaidManager.hasLinkedBank else {
             apiNetWorth = nil
@@ -44,6 +44,13 @@ final class InvestmentDataStore: ObservableObject {
             TabContentCache.shared.setInvestmentNetWorth(nil)
             TabContentCache.shared.setInvestmentHoldings(nil)
             TabContentCache.shared.setPortfolioHistory([:])
+            return
+        }
+
+        if !force,
+           apiNetWorth != nil,
+           apiHoldingsPayload != nil,
+           !portfolioHistoryCache.isEmpty {
             return
         }
 

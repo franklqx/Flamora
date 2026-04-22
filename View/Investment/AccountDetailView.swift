@@ -19,6 +19,31 @@ struct AccountDetailView: View {
 
     init(account: Account) {
         self.account = account
+
+        let cache = TabContentCache.shared
+        let cachedTransactions = cache.investmentAccountTransactions(for: account.id) ?? []
+        var cachedHistoryByRange: [AccountHistoryRange: [BalanceSnapshot]] = [:]
+        for range in AccountHistoryRange.allCases {
+            if let snapshots = cache.investmentAccountHistory(for: account.id, range: range) {
+                cachedHistoryByRange[range] = snapshots
+            }
+        }
+
+        let cachedHoldings: [Holding]
+        if let payload = cache.investmentHoldings {
+            cachedHoldings = payload.holdings
+                .filter { $0.plaidAccountId == account.id }
+                .map { InvestmentAllocationBuilder.holding(from: $0) }
+                .sorted { $0.totalValue > $1.totalValue }
+        } else {
+            cachedHoldings = []
+        }
+
+        _transactions = State(initialValue: cachedTransactions)
+        _apiHoldings = State(initialValue: cachedHoldings)
+        _historySnapshots = State(initialValue: cachedHistoryByRange[.oneMonth] ?? [])
+        _historyCache = State(initialValue: cachedHistoryByRange)
+        _isHistoryLoading = State(initialValue: (cachedHistoryByRange[.oneMonth] ?? []).isEmpty)
     }
 
     private var holdings: [Holding] { apiHoldings }
@@ -57,7 +82,7 @@ struct AccountDetailView: View {
         }
         .preferredColorScheme(.dark)
         .task {
-            await loadAccountData()
+            await loadAccountDataIfNeeded()
         }
         .task(id: selectedPeriod) {
             await loadAccountHistory()
@@ -323,9 +348,9 @@ struct AccountDetailView: View {
 
     // MARK: - Helpers
 
-    private func loadAccountData() async {
-        async let holdingsTask = loadHoldingsForAccount()
-        async let txTask = loadTransactionsForAccount()
+    private func loadAccountDataIfNeeded() async {
+        async let holdingsTask = apiHoldings.isEmpty ? loadHoldingsForAccount() : apiHoldings
+        async let txTask = transactions.isEmpty ? loadTransactionsForAccount() : transactions
         let (h, t) = await (holdingsTask, txTask)
         await MainActor.run {
             apiHoldings = h
@@ -344,6 +369,7 @@ struct AccountDetailView: View {
         if let idx = transactions.firstIndex(where: { $0.id == persisted.id }) {
             transactions[idx] = persisted
         }
+        TabContentCache.shared.setInvestmentAccountTransactions(transactions, for: account.id)
     }
 
     private func loadAccountHistory() async {
@@ -386,6 +412,7 @@ struct AccountDetailView: View {
             historySnapshots = snapshots
             isHistoryLoading = false
         }
+        TabContentCache.shared.setInvestmentAccountHistory(snapshots, for: account.id, range: selectedPeriod)
 
         await prefetchOtherRanges(excluding: selectedPeriod)
     }
@@ -410,11 +437,19 @@ struct AccountDetailView: View {
             await MainActor.run {
                 historyCache[range] = snapshots
             }
+            TabContentCache.shared.setInvestmentAccountHistory(snapshots, for: account.id, range: range)
         }
     }
 
     private func loadHoldingsForAccount() async -> [Holding] {
+        if let payload = TabContentCache.shared.investmentHoldings {
+            return payload.holdings
+                .filter { $0.plaidAccountId == account.id }
+                .map { InvestmentAllocationBuilder.holding(from: $0) }
+                .sorted { $0.totalValue > $1.totalValue }
+        }
         guard let payload = try? await APIService.shared.getInvestmentHoldings() else { return [] }
+        TabContentCache.shared.setInvestmentHoldings(payload)
         return payload.holdings
             .filter { $0.plaidAccountId == account.id }
             .map { InvestmentAllocationBuilder.holding(from: $0) }
@@ -422,12 +457,17 @@ struct AccountDetailView: View {
     }
 
     private func loadTransactionsForAccount() async -> [Transaction] {
+        if let cached = TabContentCache.shared.investmentAccountTransactions(for: account.id) {
+            return cached
+        }
         guard let response = try? await APIService.shared.getTransactions(
             page: 1,
             limit: 100,
             accountId: account.id
         ) else { return [] }
-        return response.transactions.map { Transaction(from: $0) }
+        let mapped = response.transactions.map { Transaction(from: $0) }
+        TabContentCache.shared.setInvestmentAccountTransactions(mapped, for: account.id)
+        return mapped
     }
 
     private var accentColor: Color {

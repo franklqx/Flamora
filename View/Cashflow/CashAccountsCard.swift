@@ -16,13 +16,21 @@ struct CashAccountsCard: View {
 
     @State private var selectedAccount: APIAccount? = nil
 
+    private var cardBackground: LinearGradient {
+        LinearGradient(
+            colors: [AppColors.glassCardBg, AppColors.glassCardBg2],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // ── Header
             HStack {
                 Text("ACCOUNTS")
                     .font(.cardHeader)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundStyle(AppColors.inkFaint)
                     .tracking(AppTypography.Tracking.cardHeader)
                 Spacer()
             }
@@ -32,9 +40,8 @@ struct CashAccountsCard: View {
 
             divider
 
-            // ── Cash Accounts section
             if !cashAccounts.isEmpty {
-                sectionHeader("CASH ACCOUNTS", icon: "dollarsign.circle")
+                sectionHeader("Cash")
                 ForEach(cashAccounts) { account in
                     Button { selectedAccount = account } label: {
                         CashAccountRow(account: account, lastSyncedAt: lastSyncedAt)
@@ -45,9 +52,8 @@ struct CashAccountsCard: View {
                 divider
             }
 
-            // ── Credit Cards section
             if !creditAccounts.isEmpty {
-                sectionHeader("CREDIT CARDS", icon: "creditcard")
+                sectionHeader("Debt")
                 ForEach(creditAccounts) { account in
                     Button { selectedAccount = account } label: {
                         CashAccountRow(account: account, lastSyncedAt: lastSyncedAt)
@@ -63,21 +69,21 @@ struct CashAccountsCard: View {
                 HStack(spacing: AppSpacing.sm) {
                     Image(systemName: "plus.circle.fill")
                         .font(.bodyRegular)
-                        .foregroundStyle(AppColors.textPrimary)
+                        .foregroundStyle(AppColors.inkPrimary)
                     Text("Add Account")
                         .font(.bodySemibold)
-                        .foregroundStyle(AppColors.textPrimary)
+                        .foregroundStyle(AppColors.inkPrimary)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, AppSpacing.md)
             }
             .buttonStyle(.plain)
         }
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
         .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.xl)
-                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
         )
         .fullScreenCover(item: $selectedAccount) { account in
             CashAccountDetailView(account: account)
@@ -86,22 +92,18 @@ struct CashAccountsCard: View {
 
     private var divider: some View {
         Rectangle()
-            .fill(AppColors.surfaceBorder)
+            .fill(AppColors.inkDivider)
             .frame(height: 0.5)
             .padding(.horizontal, AppSpacing.cardPadding)
     }
 
-    private func sectionHeader(_ title: String, icon: String) -> some View {
-        HStack(spacing: AppSpacing.xs) {
-            Image(systemName: icon)
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary.opacity(0.6))
+    private func sectionHeader(_ title: String) -> some View {
+        HStack {
             Text(title)
-                .font(.label)
-                .foregroundColor(AppColors.textTertiary.opacity(0.6))
-                .tracking(0.6)
+                .font(.caption)
+                .foregroundStyle(AppColors.inkFaint)
+            Spacer()
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.sm)
     }
@@ -115,67 +117,56 @@ private struct CashAccountRow: View {
 
     var body: some View {
         HStack(spacing: AppSpacing.md) {
-            // Icon
             ZStack {
                 Circle()
                     .fill(iconColor.opacity(0.15))
                     .frame(width: 38, height: 38)
                 Image(systemName: iconName)
-                    .font(.figureSecondarySemibold)
-                    .foregroundColor(iconColor)
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(iconColor)
             }
 
-            // Name + meta
-            VStack(alignment: .leading, spacing: 2) {
-                Text(account.name)
-                    .font(.figureSecondarySemibold)
-                    .foregroundStyle(AppColors.textPrimary)
-                    .lineLimit(1)
-                Text(metaLine)
-                    .font(.caption)
-                    .foregroundColor(AppColors.textTertiary)
-                    .lineLimit(1)
-            }
+            Text(account.name)
+                .font(.footnoteSemibold)
+                .foregroundStyle(AppColors.inkPrimary)
+                .lineLimit(1)
 
             Spacer()
 
-            // Balance
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(formatCurrency(account.balance ?? 0))
-                    .font(.cardFigureSecondary)
-                    .foregroundStyle(AppColors.textPrimary)
-                if account.type == "credit" {
-                    Text("balance owed")
-                        .font(.label)
-                        .foregroundColor(AppColors.textTertiary)
-                }
-            }
+            Text(formatCurrency(account.balance ?? 0))
+                .font(.footnoteBold)
+                .foregroundStyle(AppColors.inkPrimary)
+                .monospacedDigit()
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.md)
     }
 
-    private var metaLine: String {
-        var parts: [String] = []
-        if let inst = account.institution, !inst.isEmpty { parts.append(inst) }
-        if let sub = account.subtype, !sub.isEmpty { parts.append(sub.capitalized) }
-        if let mask = account.mask, !mask.isEmpty { parts.append("••\(mask)") }
-        return parts.joined(separator: " · ")
-    }
-
     private var iconName: String {
         switch account.type {
-        case "credit": return "creditcard"
+        case "credit":
+            return "creditcard"
+        case "loan":
+            return "banknote"
         default:
             switch account.subtype?.lowercased() {
-            case "savings": return "banknote"
-            default: return "building.columns"
+            case "savings":
+                return "banknote"
+            default:
+                return "building.columns"
             }
         }
     }
 
     private var iconColor: Color {
-        account.type == "credit" ? AppColors.accentPink : AppColors.accentGreen
+        switch account.type {
+        case "credit":
+            return AppColors.warning
+        case "loan":
+            return AppColors.error
+        default:
+            return AppColors.budgetNeedsBlue
+        }
     }
 
     private func formatCurrency(_ v: Double) -> String {

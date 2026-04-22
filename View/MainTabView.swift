@@ -202,11 +202,11 @@ struct MainTabView: View {
                 .zIndex(20)
             }
 
-            if homeState == .simulator {
-                simulatorOverlay
-                    .zIndex(40)
-                    .transition(.opacity)
-            }
+            // 保持 overlay 常驻（仅切换可见性），避免每次下拉进入时因重建视图而重复加载数据。
+            simulatorOverlay
+                .opacity(homeState == .simulator ? 1 : 0)
+                .allowsHitTesting(homeState == .simulator)
+                .zIndex(40)
         }
         .background(
             GeometryReader { geo in

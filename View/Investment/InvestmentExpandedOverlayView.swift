@@ -41,10 +41,10 @@ struct InvestmentExpandedOverlayView: View {
             await store.load(plaidManager: plaidManager)
         }
         .onChange(of: plaidManager.hasLinkedBank) { _, _ in
-            Task { await store.load(plaidManager: plaidManager) }
+            Task { await store.load(plaidManager: plaidManager, force: true) }
         }
         .onChange(of: plaidManager.lastConnectionTime) { _, _ in
-            Task { await store.load(plaidManager: plaidManager) }
+            Task { await store.load(plaidManager: plaidManager, force: true) }
         }
         .sheet(isPresented: $showTrustBridge, onDismiss: {
             if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {

@@ -35,11 +35,12 @@ struct CashflowView: View {
     @State private var needsTotal: Double = 0
     @State private var wantsTotal: Double = 0
     @State private var totalSpend: Double = 0
-    @State private var allTransactions: [Transaction] = []
+    @State private var allTransactions: [Transaction] = TabContentCache.shared.cashflowRecentTransactions ?? []
     /// 与 `transaction.accountId` 匹配，供交易详情 Sheet 展示账户行。
     @State private var linkedAccounts: [Account] = []
     /// Cash 页账户列表：depository + credit，来自 get-net-worth-summary.accounts。
-    @State private var cashAccountsList: [APIAccount] = []
+    @State private var cashAccountsList: [APIAccount] = TabContentCache.shared.cashflowAccounts?
+        .filter { $0.type == "depository" || $0.type == "credit" } ?? []
     @State private var selectedTransaction: Transaction? = nil
     @State private var showAllTransactions = false
     @State private var showTrustBridge = false
@@ -150,6 +151,8 @@ struct CashflowView: View {
                             }
                         )
                         .padding(.horizontal, AppSpacing.screenPadding)
+
+                        cashAccountsSection
                     }
                     .frame(minHeight: proxy.size.height, alignment: .top)
                     .padding(.top, AppSpacing.md)
@@ -173,19 +176,22 @@ struct CashflowView: View {
             await loadCashflowData()
         }
         .onChange(of: plaidManager.lastConnectionTime) { _, _ in
-            Task { await loadCashflowData() }
+            Task { await loadCashflowData(force: true) }
         }
         .onChange(of: plaidManager.hasLinkedBank) { _, _ in
-            Task { await loadCashflowData() }
+            Task { await loadCashflowData(force: true) }
         }
         .onChange(of: budgetSetupCompleted) { _, _ in
-            Task { await loadCashflowData() }
+            Task { await loadCashflowData(force: true) }
         }
         .onReceive(NotificationCenter.default.publisher(for: .savingsCheckInDidPersist)) { _ in
-            Task { await loadCashflowData() }
+            Task { await loadCashflowData(force: true) }
         }
         .onReceive(NotificationCenter.default.publisher(for: .transactionClassificationDidPersist)) { _ in
-            Task { await loadCashflowData() }
+            Task { await loadCashflowData(force: true) }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .budgetSetupFlowDidDismiss)) { _ in
+            Task { await loadCashflowData(force: true) }
         }
         .fullScreenCover(isPresented: $showSavingsSummary) {
             SavingsTargetDetailView2(
@@ -438,25 +444,44 @@ private extension CashflowView {
         if let wants = cache.cashflowWantsDetail, cashflowWantsDetail == nil {
             cashflowWantsDetail = wants
         }
+        if let summaries = cache.cashflowMonthlySummaries {
+            applyMonthlySummaries(summaries)
+        }
+        if let accounts = cache.cashflowAccounts {
+            linkedAccounts = accounts.map { Account.fromNetWorthAccount($0) }
+            cashAccountsList = accounts.filter { $0.type == "depository" || $0.type == "credit" }
+        }
+        if let recent = cache.cashflowRecentTransactions, allTransactions.isEmpty {
+            allTransactions = recent
+        }
     }
 
-    func loadCashflowData() async {
+    func loadCashflowData(force: Bool = false) async {
         loadError = false
+        restoreFromCache()
+        if !force, hasCachedCashflowData {
+            return
+        }
         let monthStr = apiMonthString(from: Date())
 
         // 账户列表独立于 budget setup，只要连接了银行就加载
         if plaidManager.hasLinkedBank {
-            do {
-                let nw = try await APIService.shared.getNetWorthSummary()
-                linkedAccounts = nw.accounts.map { Account.fromNetWorthAccount($0) }
-                cashAccountsList = nw.accounts.filter {
-                    $0.type == "depository" || $0.type == "credit"
+            if force || TabContentCache.shared.cashflowAccounts == nil {
+                do {
+                    let nw = try await APIService.shared.getNetWorthSummary()
+                    linkedAccounts = nw.accounts.map { Account.fromNetWorthAccount($0) }
+                    cashAccountsList = nw.accounts.filter {
+                        $0.type == "depository" || $0.type == "credit"
+                    }
+                    TabContentCache.shared.setCashflowAccounts(nw.accounts)
+                } catch {
+                    print("❌ [CashflowView] getNetWorthSummary failed: \(error)")
+                    loadError = true
+                    if linkedAccounts.isEmpty {
+                        linkedAccounts = []
+                        cashAccountsList = []
+                    }
                 }
-            } catch {
-                print("❌ [CashflowView] getNetWorthSummary failed: \(error)")
-                loadError = true
-                linkedAccounts = []
-                cashAccountsList = []
             }
         } else {
             linkedAccounts = []
@@ -482,26 +507,55 @@ private extension CashflowView {
             return
         }
 
-        if let b = await fetchBudget(month: monthStr) {
-            apiBudget = b
-            FlamoraStorageKey.migrateBudgetSetupIfNeeded(budget: b, hasLinkedBank: true)
-            currentSavings = b.savingsActual ?? 0
-            needsTotal = b.needsSpent ?? 0
-            wantsTotal = b.wantsSpent ?? 0
-            totalSpend = (b.needsSpent ?? 0) + (b.wantsSpent ?? 0)
-            TabContentCache.shared.setCashflowBudget(b)
+        if force || apiBudget.budgetId.isEmpty {
+            if let b = await fetchBudget(month: monthStr) {
+                apiBudget = b
+                FlamoraStorageKey.migrateBudgetSetupIfNeeded(budget: b, hasLinkedBank: true)
+                currentSavings = b.savingsActual ?? 0
+                needsTotal = b.needsSpent ?? 0
+                wantsTotal = b.wantsSpent ?? 0
+                totalSpend = (b.needsSpent ?? 0) + (b.wantsSpent ?? 0)
+                TabContentCache.shared.setCashflowBudget(b)
+            }
         }
 
         let cal = Calendar.current
         let year = cal.component(.year, from: Date())
         let through = cal.component(.month, from: Date())
-        let summaries = await CashflowAPICharts.fetchMonthlySummaries(year: year, throughMonth: through)
-        if summaries.isEmpty {
-            print("⚠️ [CashflowView] No detail summaries loaded for \(year)-01...\(year)-\(String(format: "%02d", through))")
-        } else if summaries[through - 1] == nil {
-            let available = summaries.keys.sorted().map { String(format: "%02d", $0 + 1) }.joined(separator: ",")
-            print("⚠️ [CashflowView] Current month summary missing for month \(through). Available months: \(available)")
+
+        if !force, let cachedSummaries = TabContentCache.shared.cashflowMonthlySummaries, !cachedSummaries.isEmpty {
+            applyMonthlySummaries(cachedSummaries)
+        } else {
+            let summaries = await CashflowAPICharts.fetchMonthlySummaries(year: year, throughMonth: through)
+            if summaries.isEmpty {
+                print("⚠️ [CashflowView] No detail summaries loaded for \(year)-01...\(year)-\(String(format: "%02d", through))")
+            } else if summaries[through - 1] == nil {
+                let available = summaries.keys.sorted().map { String(format: "%02d", $0 + 1) }.joined(separator: ",")
+                print("⚠️ [CashflowView] Current month summary missing for month \(through). Available months: \(available)")
+            }
+
+            applyMonthlySummaries(summaries)
         }
+
+        if force || allTransactions.isEmpty {
+            if let tx = try? await APIService.shared.getTransactions(page: 1, limit: 20) {
+                allTransactions = tx.transactions.map { Transaction(from: $0) }
+                TabContentCache.shared.setCashflowRecentTransactions(allTransactions)
+            }
+        }
+    }
+
+    private var hasCachedCashflowData: Bool {
+        let hasPrimaryData = apiBudget.budgetId.isEmpty == false
+            || TabContentCache.shared.cashflowMonthlySummaries != nil
+        let hasAccounts = !plaidManager.hasLinkedBank || TabContentCache.shared.cashflowAccounts != nil
+        return hasPrimaryData && hasAccounts
+    }
+
+    private func applyMonthlySummaries(_ summaries: [Int: APISpendingSummary]) {
+        let cal = Calendar.current
+        let year = cal.component(.year, from: Date())
+        let through = cal.component(.month, from: Date())
 
         if let cur = summaries[through - 1] {
             needsTotal = cur.needs.total
@@ -532,6 +586,7 @@ private extension CashflowView {
             currentSavings = currentSavingsForCurrentMonth(from: savings) ?? currentSavings
             TabContentCache.shared.setCashflowSavingsByYear(savings)
             TabContentCache.shared.setCashflowSpendingDetails(total: total, needs: needs, wants: wants)
+            TabContentCache.shared.setCashflowMonthlySummaries(summaries)
         } else {
             cashflowSpendingTotalDetail = nil
             cashflowNeedsDetail = nil
@@ -540,10 +595,7 @@ private extension CashflowView {
             cashflowActiveIncomeDetail = nil
             cashflowPassiveIncomeDetail = nil
             cashflowSavingsByYear = nil
-        }
-
-        if let tx = try? await APIService.shared.getTransactions(page: 1, limit: 20) {
-            allTransactions = tx.transactions.map { Transaction(from: $0) }
+            TabContentCache.shared.setCashflowMonthlySummaries(nil)
         }
     }
 
@@ -731,7 +783,7 @@ private extension CashflowView {
             subcategory: updated.subcategory
         )
         updateTransaction(Transaction(from: response))
-        Task { await loadCashflowData() }
+        Task { await loadCashflowData(force: true) }
     }
 
     func updateTransaction(_ updated: Transaction) {
@@ -757,6 +809,7 @@ private extension CashflowView {
         } else {
             allTransactions.insert(updated, at: 0)
         }
+        TabContentCache.shared.setCashflowRecentTransactions(allTransactions)
 
         // Do not hide the row after classification — user expects the transaction to stay visible in place.
     }

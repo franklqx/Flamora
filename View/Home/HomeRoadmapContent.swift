@@ -22,8 +22,8 @@ struct HomeRoadmapContent: View {
 
     @Environment(PlaidManager.self) private var plaidManager
 
-    @State private var netWorthSummary: APINetWorthSummary? = nil
-    @State private var budget: APIMonthlyBudget? = nil
+    @State private var netWorthSummary: APINetWorthSummary? = TabContentCache.shared.homeNetWorthSummary
+    @State private var budget: APIMonthlyBudget? = TabContentCache.shared.cashflowBudget
     @State private var savingsByYear: [Int: [Double?]] = TabContentCache.shared.cashflowSavingsByYear
         ?? CashflowDetailEmptyStates.savingsMonthlyAmountsEmptyCurrentYear()
     @State private var isLoading: Bool = false
@@ -32,13 +32,14 @@ struct HomeRoadmapContent: View {
     @State private var editingSavingsAmount: Double = 0
     @State private var showSavingsDetail: Bool = false
     @State private var showNetWorthDetail: Bool = false
-    @State private var latestMonthlyReport: ReportSnapshot? = nil
-    @State private var latestIssueZeroReport: ReportSnapshot? = nil
-    @State private var latestAnnualReport: ReportSnapshot? = nil
+    @State private var latestMonthlyReport: ReportSnapshot? = TabContentCache.shared.homeMonthlyReport
+    @State private var latestIssueZeroReport: ReportSnapshot? = TabContentCache.shared.homeIssueZeroReport
+    @State private var latestAnnualReport: ReportSnapshot? = TabContentCache.shared.homeAnnualReport
     @State private var selectedReport: ReportSnapshot? = nil
 
     // 趋势图数据 — 后端 `getNetWorthHistory` endpoint 上线前用 mock。
-    @State private var netWorthHistory: [NetWorthRange: [NetWorthPoint]] = HomeNetWorthCard.mockHistory()
+    @State private var netWorthHistory: [NetWorthRange: [NetWorthPoint]] = TabContentCache.shared.homeNetWorthHistory
+        ?? HomeNetWorthCard.mockHistory()
 
     private var isConnected: Bool { plaidManager.hasLinkedBank }
     private var hasBudgetSetup: Bool { (budget?.savingsRatio ?? 0) > 0 }
@@ -107,14 +108,17 @@ struct HomeRoadmapContent: View {
             await loadInitialData()
         }
         .onChange(of: plaidManager.hasLinkedBank) { _, _ in
-            Task { await loadInitialData() }
+            Task { await loadInitialData(force: true) }
         }
         .onChange(of: plaidManager.lastConnectionTime) { _, _ in
-            Task { await loadInitialData() }
+            Task { await loadInitialData(force: true) }
         }
         .onReceive(NotificationCenter.default.publisher(for: .savingsCheckInDidPersist)) { _ in
             syncSavingsFromCache()
-            Task { await loadInitialData() }
+            Task { await loadInitialData(force: true) }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .budgetSetupFlowDidDismiss)) { _ in
+            Task { await loadInitialData(force: true) }
         }
         .sheet(item: $editingSavingsTarget, onDismiss: handleSavingsSheetDismiss) { target in
             SavingsInputSheet(amount: $editingSavingsAmount) { value in
@@ -141,7 +145,7 @@ struct HomeRoadmapContent: View {
             )
         }
         .fullScreenCover(item: $selectedReport, onDismiss: {
-            Task { await loadInitialData() }
+            Task { await loadInitialData(force: true) }
         }) { report in
             reportDestination(for: report)
         }
@@ -243,12 +247,15 @@ struct HomeRoadmapContent: View {
 
     // MARK: - Data loading
 
-    private func loadInitialData() async {
+    private func loadInitialData(force: Bool = false) async {
         guard !isLoading else { return }
         isLoading = true
         defer { isLoading = false }
 
-        syncSavingsFromCache()
+        restoreFromCache()
+        if !force, hasCachedHomePrimaryData {
+            return
+        }
 
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM"
@@ -263,9 +270,13 @@ struct HomeRoadmapContent: View {
 
         let (s, b, monthly, issueZero, annual, series) = await (summary, monthBudget, monthlyReport, issueZeroReport, annualReport, savingsSeries)
         await MainActor.run {
-            if let s { self.netWorthSummary = s }
+            if let s {
+                self.netWorthSummary = s
+                TabContentCache.shared.setHomeNetWorth(summary: s, history: self.netWorthHistory)
+            }
             if let b {
                 self.budget = b
+                TabContentCache.shared.setCashflowBudget(b)
                 if let currentMonthValue = b.savingsActual {
                     self.setSavingsAmount(currentMonthValue, year: currentYear, monthIndex: currentMonthIndex)
                 }
@@ -277,6 +288,11 @@ struct HomeRoadmapContent: View {
             self.latestMonthlyReport = monthly
             self.latestIssueZeroReport = issueZero
             self.latestAnnualReport = annual
+            TabContentCache.shared.setHomeReports(
+                monthly: monthly ?? self.latestMonthlyReport,
+                issueZero: issueZero ?? self.latestIssueZeroReport,
+                annual: annual ?? self.latestAnnualReport
+            )
         }
     }
 
@@ -326,6 +342,34 @@ struct HomeRoadmapContent: View {
         }
     }
 
+    private func restoreFromCache() {
+        syncSavingsFromCache()
+        if netWorthSummary == nil {
+            netWorthSummary = TabContentCache.shared.homeNetWorthSummary
+        }
+        if let cachedHistory = TabContentCache.shared.homeNetWorthHistory {
+            netWorthHistory = cachedHistory
+        }
+        if budget == nil {
+            budget = TabContentCache.shared.cashflowBudget
+        }
+        if latestMonthlyReport == nil {
+            latestMonthlyReport = TabContentCache.shared.homeMonthlyReport
+        }
+        if latestIssueZeroReport == nil {
+            latestIssueZeroReport = TabContentCache.shared.homeIssueZeroReport
+        }
+        if latestAnnualReport == nil {
+            latestAnnualReport = TabContentCache.shared.homeAnnualReport
+        }
+    }
+
+    private var hasCachedHomePrimaryData: Bool {
+        netWorthSummary != nil
+            || budget != nil
+            || TabContentCache.shared.cashflowSavingsByYear != nil
+    }
+
     private var currentMonthIndex: Int {
         Calendar.current.component(.month, from: Date()) - 1
     }
@@ -357,6 +401,7 @@ struct HomeRoadmapContent: View {
             NotificationCenter.default.post(name: .savingsCheckInDidPersist, object: nil)
             if year == currentYear, let b = try? await APIService.shared.getMonthlyBudget(month: month) {
                 self.budget = b
+                TabContentCache.shared.setCashflowBudget(b)
             }
         } catch {
             print("❌ [HomeRoadmapContent] Failed to persist savings: \(error)")

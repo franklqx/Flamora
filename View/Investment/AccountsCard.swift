@@ -12,13 +12,20 @@ struct AccountsCard: View {
     var lastSyncedAt: String? = nil
     @State private var selectedAccount: Account?
 
+    private var cardBackground: LinearGradient {
+        LinearGradient(
+            colors: [AppColors.glassCardBg, AppColors.glassCardBg2],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            // Header
             HStack {
                 Text("ACCOUNTS")
                     .font(.cardHeader)
-                    .foregroundColor(AppColors.inkMeta)
+                    .foregroundStyle(AppColors.inkFaint)
                     .tracking(AppTypography.Tracking.cardHeader)
                 Spacer()
             }
@@ -27,32 +34,33 @@ struct AccountsCard: View {
             .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
 
             Rectangle()
-                .fill(Color.white.opacity(0.45))
+                .fill(AppColors.inkDivider)
                 .frame(height: 0.5)
                 .padding(.horizontal, AppSpacing.cardPadding)
 
             if isConnected {
-                // Account rows
-                ForEach(accounts.indices, id: \.self) { index in
-                    Button(action: { selectedAccount = accounts[index] }) {
-                        AccountRow(account: accounts[index], lastSyncedAt: lastSyncedAt)
+                ForEach(Array(groupedAccounts.enumerated()), id: \.offset) { sectionIndex, section in
+                    if sectionIndex > 0 {
+                        divider
                     }
-                    .buttonStyle(.plain)
 
-                    if index < accounts.count - 1 {
-                        Rectangle()
-                            .fill(Color.white.opacity(0.45))
-                            .frame(height: 0.5)
-                            .padding(.horizontal, AppSpacing.cardPadding)
+                    VStack(spacing: 0) {
+                        sectionHeader(section.title)
+
+                        ForEach(Array(section.accounts.enumerated()), id: \.element.id) { index, account in
+                            Button(action: { selectedAccount = account }) {
+                                AccountRow(account: account, lastSyncedAt: lastSyncedAt)
+                            }
+                            .buttonStyle(.plain)
+
+                            if index < section.accounts.count - 1 {
+                                divider
+                            }
+                        }
                     }
                 }
 
-                // Add Account button
-                Rectangle()
-                    .fill(Color.white.opacity(0.45))
-                    .frame(height: 0.5)
-                    .padding(.horizontal, AppSpacing.cardPadding)
-
+                divider
                 Button(action: { onAddAccount?() }) {
                     HStack(spacing: AppSpacing.sm) {
                         Image(systemName: "plus.circle.fill")
@@ -70,21 +78,51 @@ struct AccountsCard: View {
                 disconnectedContent
             }
         }
-        .background(
-            LinearGradient(
-                colors: [Color.white.opacity(0.86), Color(hex: "#F8F9FF").opacity(0.78)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
         .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.xl)
-                .stroke(Color.white.opacity(0.62), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
         )
         .fullScreenCover(item: $selectedAccount) { account in
             AccountDetailView(account: account)
         }
+    }
+
+    private var groupedAccounts: [(title: String, accounts: [Account])] {
+        let groups = Dictionary(grouping: accounts) { account -> String in
+            switch account.accountType {
+            case .brokerage:
+                return "Investments"
+            case .bank:
+                return "Cash"
+            case .crypto:
+                return "Crypto"
+            }
+        }
+
+        return ["Investments", "Cash", "Crypto"].compactMap { title in
+            guard let values = groups[title], !values.isEmpty else { return nil }
+            return (title, values.sorted { abs($0.balance) > abs($1.balance) })
+        }
+    }
+
+    private var divider: some View {
+        Rectangle()
+            .fill(AppColors.inkDivider)
+            .frame(height: 0.5)
+            .padding(.horizontal, AppSpacing.cardPadding)
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        HStack {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(AppColors.inkFaint)
+            Spacer()
+        }
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.vertical, AppSpacing.sm)
     }
 
     private var disconnectedContent: some View {
@@ -92,13 +130,13 @@ struct AccountsCard: View {
             VStack(spacing: AppSpacing.xs) {
                 Image(systemName: "building.columns")
                     .font(.h3)
-                    .foregroundStyle(AppColors.inkMeta)
+                    .foregroundStyle(AppColors.inkFaint)
                 Text("No accounts connected")
                     .font(.figureSecondarySemibold)
-                    .foregroundStyle(AppColors.inkSoft)
+                    .foregroundStyle(AppColors.inkPrimary)
                 Text("Connect your bank and investment accounts to see them here.")
                     .font(.caption)
-                    .foregroundStyle(AppColors.inkMeta)
+                    .foregroundStyle(AppColors.inkSoft)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -131,50 +169,20 @@ private struct AccountRow: View {
     var lastSyncedAt: String? = nil
 
     var body: some View {
-        HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
-            accountLogo
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text(account.name ?? account.institution)
-                    .font(.figureSecondarySemibold)
-                    .foregroundStyle(AppColors.inkPrimary)
-                Text(accountSubtypeLabel)
-                    .font(.caption)
-                    .foregroundColor(AppColors.inkMeta)
-            }
+        HStack(spacing: AppSpacing.md) {
+            fallbackIcon
+            Text(account.name ?? account.institution)
+                .font(.footnoteSemibold)
+                .foregroundStyle(AppColors.inkPrimary)
+                .lineLimit(1)
             Spacer()
             Text(formatCurrency(account.balance))
-                .font(.cardFigureSecondary)
+                .font(.footnoteBold)
                 .foregroundStyle(AppColors.inkPrimary)
+                .monospacedDigit()
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.md)
-    }
-
-    /// e.g. "Brokerage • 7892" or just "Brokerage"
-    private var accountSubtypeLabel: String {
-        var parts: [String] = [account.accountType.displayLabel]
-        if let mask = account.mask, !mask.isEmpty {
-            parts.append("•\u{00A0}\(mask)")
-        }
-        return parts.joined(separator: " ")
-    }
-
-    @ViewBuilder
-    private var accountLogo: some View {
-        if let urlString = account.logoUrl, let url = URL(string: urlString) {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                        .frame(width: 38, height: 38)
-                        .clipShape(Circle())
-                default:
-                    fallbackIcon
-                }
-            }
-        } else {
-            fallbackIcon
-        }
     }
 
     private var fallbackIcon: some View {
@@ -183,24 +191,30 @@ private struct AccountRow: View {
                 .fill(iconColor.opacity(0.15))
                 .frame(width: 38, height: 38)
             Image(systemName: iconName)
-                .font(.figureSecondarySemibold)
-                .foregroundColor(iconColor)
+                .font(.footnoteSemibold)
+                .foregroundStyle(iconColor)
         }
     }
 
     private var iconName: String {
         switch account.accountType {
-        case .brokerage: return "building.columns"
-        case .crypto:    return "bitcoinsign.circle"
-        case .bank:      return "creditcard"
+        case .brokerage:
+            return "chart.line.uptrend.xyaxis"
+        case .crypto:
+            return "bitcoinsign.circle"
+        case .bank:
+            return "building.columns"
         }
     }
 
     private var iconColor: Color {
         switch account.accountType {
-        case .brokerage: return AppColors.accentBlue
-        case .crypto:    return AppColors.accentPink
-        case .bank:      return AppColors.accentGreen
+        case .brokerage:
+            return AppColors.accentPurple
+        case .crypto:
+            return AppColors.accentPurple
+        case .bank:
+            return AppColors.budgetNeedsBlue
         }
     }
 

@@ -107,13 +107,6 @@ struct HomeNetWorthCard: View {
 
             Spacer()
 
-            if isConnected, let syncedAt = summary?.lastSyncedAt, !syncedAt.isEmpty {
-                Text(syncLabel)
-                    .font(.cardHeader)
-                    .foregroundColor(AppColors.inkFaint)
-                    .tracking(AppTypography.Tracking.cardHeader)
-            }
-
             if isConnected {
                 Image(systemName: "chevron.right")
                     .font(.miniLabel)
@@ -126,10 +119,6 @@ struct HomeNetWorthCard: View {
         .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
     }
 
-    private var syncLabel: String {
-        "SYNCED"
-    }
-
     // MARK: - Connected state
 
     private var connectedState: some View {
@@ -139,7 +128,7 @@ struct HomeNetWorthCard: View {
             rangeSelector
         }
         .padding(.horizontal, AppSpacing.cardPadding)
-        .padding(.vertical, AppSpacing.md)
+        .padding(.vertical, AppSpacing.lg)
     }
 
     private var amountBlock: some View {
@@ -206,12 +195,12 @@ struct HomeNetWorthCard: View {
                 }
                 .chartYAxis(.hidden)
                 .chartXAxis(.hidden)
-                .frame(height: 96)
+                .frame(height: 128)
             } else {
                 // 数据不足时占位
                 RoundedRectangle(cornerRadius: AppRadius.sm)
                     .fill(AppColors.inkTrack.opacity(0.5))
-                    .frame(height: 96)
+                    .frame(height: 128)
                     .overlay(
                         Text("Not enough history yet")
                             .font(.footnoteRegular)
@@ -263,7 +252,7 @@ struct HomeNetWorthCard: View {
 
             RoundedRectangle(cornerRadius: AppRadius.sm)
                 .fill(AppColors.inkTrack)
-                .frame(height: 60)
+                .frame(height: 84)
                 .overlay(
                     Image(systemName: "lock.fill")
                         .font(.footnoteSemibold)
@@ -271,7 +260,7 @@ struct HomeNetWorthCard: View {
                 )
         }
         .padding(.horizontal, AppSpacing.cardPadding)
-        .padding(.vertical, AppSpacing.md)
+        .padding(.vertical, AppSpacing.lg)
     }
 
     // MARK: - Helpers

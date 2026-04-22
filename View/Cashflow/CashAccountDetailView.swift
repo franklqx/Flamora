@@ -21,6 +21,26 @@ struct CashAccountDetailView: View {
     @State private var selectedTransaction: Transaction?
     @State private var dragOffset: CGFloat = 0
 
+    init(account: APIAccount) {
+        self.account = account
+
+        let cache = TabContentCache.shared
+        let cachedTransactions = cache.cashAccountTransactions(for: account.id) ?? []
+        var cachedHistoryByRange: [AccountHistoryRange: [BalanceSnapshot]] = [:]
+        for range in AccountHistoryRange.allCases {
+            if let snapshots = cache.cashAccountHistory(for: account.id, range: range) {
+                cachedHistoryByRange[range] = snapshots
+            }
+        }
+        let initialSnapshots = cachedHistoryByRange[.oneMonth] ?? []
+
+        _transactions = State(initialValue: cachedTransactions)
+        _historySnapshots = State(initialValue: initialSnapshots)
+        _historyCache = State(initialValue: cachedHistoryByRange)
+        _isLoading = State(initialValue: cachedTransactions.isEmpty)
+        _isHistoryLoading = State(initialValue: initialSnapshots.isEmpty)
+    }
+
     var body: some View {
         ZStack {
             AppColors.backgroundPrimary.ignoresSafeArea()
@@ -39,7 +59,7 @@ struct CashAccountDetailView: View {
             }
         }
         .preferredColorScheme(.dark)
-        .task { await loadTransactions() }
+        .task { await loadTransactionsIfNeeded() }
         .task(id: selectedPeriod) { await loadHistory() }
         .offset(y: dragOffset)
         .simultaneousGesture(
@@ -237,10 +257,16 @@ struct CashAccountDetailView: View {
 
     // MARK: - Data
 
-    private func loadTransactions() async {
+    private func loadTransactionsIfNeeded() async {
+        if !transactions.isEmpty {
+            isLoading = false
+            return
+        }
+
         isLoading = true
         if let resp = try? await APIService.shared.getTransactions(page: 1, limit: 100, accountId: account.id) {
             transactions = resp.transactions.map { Transaction(from: $0) }
+            TabContentCache.shared.setCashAccountTransactions(transactions, for: account.id)
         }
         isLoading = false
     }
@@ -256,6 +282,7 @@ struct CashAccountDetailView: View {
         if let idx = transactions.firstIndex(where: { $0.id == persisted.id }) {
             transactions[idx] = persisted
         }
+        TabContentCache.shared.setCashAccountTransactions(transactions, for: account.id)
     }
 
     private func loadHistory() async {
@@ -298,6 +325,7 @@ struct CashAccountDetailView: View {
             historySnapshots = snapshots
             isHistoryLoading = false
         }
+        TabContentCache.shared.setCashAccountHistory(snapshots, for: account.id, range: selectedPeriod)
 
         await prefetchOtherRanges(excluding: selectedPeriod)
     }
@@ -322,6 +350,7 @@ struct CashAccountDetailView: View {
             await MainActor.run {
                 historyCache[range] = snapshots
             }
+            TabContentCache.shared.setCashAccountHistory(snapshots, for: account.id, range: range)
         }
     }
 

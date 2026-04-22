@@ -93,7 +93,6 @@ struct SavingsTargetDetailView2: View {
                 VStack(alignment: .leading, spacing: AppSpacing.cardGap) {
                     header
                     yearOverviewCard
-                    selectedMonthCard
                     trendCard
                     summaryCard
                 }
@@ -205,84 +204,6 @@ struct SavingsTargetDetailView2: View {
         )
     }
 
-    private var selectedMonthCard: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("SELECTED MONTH")
-                .font(.cardHeader)
-                .foregroundStyle(AppColors.inkFaint)
-                .tracking(AppTypography.Tracking.cardHeader)
-
-            HStack(alignment: .firstTextBaseline) {
-                Text(selectedNode.label)
-                    .font(.detailTitle)
-                    .foregroundStyle(AppColors.inkPrimary)
-                Spacer()
-                statusChip(for: selectedNode)
-            }
-
-            HStack(spacing: AppSpacing.md) {
-                monthMetric(label: "Saved", value: selectedNode.amount.map(formatMoney) ?? "—")
-                monthMetric(label: "Target", value: targetAmount > 0 ? formatMoney(targetAmount) : "—")
-                monthMetric(label: "Rate", value: monthRateText(for: selectedNode))
-            }
-
-            Text(monthHelperText(for: selectedNode))
-                .font(.footnoteRegular)
-                .foregroundStyle(AppColors.inkSoft)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(AppSpacing.cardPadding)
-        .background(cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.glassCardBorder, lineWidth: 1)
-        )
-    }
-
-    private func monthMetric(label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(AppColors.inkFaint)
-            Text(value)
-                .font(.footnoteBold)
-                .foregroundStyle(AppColors.inkPrimary)
-                .monospacedDigit()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func statusChip(for node: SavingsMonthNode) -> some View {
-        let tone: Color
-        let text: String
-        switch node.state {
-        case .future:
-            tone = AppColors.inkSoft
-            text = "Future month"
-        case .pending:
-            tone = AppColors.inkPrimary
-            text = "Ready to check in"
-        case .missed:
-            tone = AppColors.inkSoft
-            text = "No savings recorded"
-        case .belowTarget:
-            tone = AppColors.warning
-            text = "Below target"
-        case .onTarget:
-            tone = AppColors.success
-            text = "On target"
-        }
-
-        return Text(text)
-            .font(.segmentLabel(selected: true))
-            .foregroundStyle(tone)
-            .padding(.horizontal, AppSpacing.sm)
-            .padding(.vertical, 4)
-            .background(tone.opacity(0.12))
-            .clipShape(Capsule())
-    }
-
     private var trendCard: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             HStack {
@@ -302,7 +223,7 @@ struct SavingsTargetDetailView2: View {
 
                 ForEach(snapshot.fullYearNodes) { node in
                     BarMark(
-                        x: .value("Month", node.shortLabel),
+                        x: .value("Month", axisLabel(for: node)),
                         y: .value("Saved", node.amount ?? 0)
                     )
                     .foregroundStyle(barStyle(for: node))
@@ -355,6 +276,10 @@ struct SavingsTargetDetailView2: View {
                 )
             )
         }
+    }
+
+    private func axisLabel(for node: SavingsMonthNode) -> String {
+        String(node.shortLabel.prefix(1))
     }
 
     private var summaryCard: some View {
@@ -422,27 +347,6 @@ struct SavingsTargetDetailView2: View {
         withAnimation(.easeInOut(duration: 0.2)) {
             selectedYear = availableYears[newIdx]
             selectedMonthIndex = min(selectedMonthIndex, 11)
-        }
-    }
-
-    private func monthRateText(for node: SavingsMonthNode) -> String {
-        guard let amount = node.amount, let inferredMonthlyIncome, inferredMonthlyIncome > 0 else { return "—" }
-        let rate = (amount / inferredMonthlyIncome) * 100
-        return "\(Int(rate.rounded()))%"
-    }
-
-    private func monthHelperText(for node: SavingsMonthNode) -> String {
-        switch node.state {
-        case .future:
-            return "This month is still ahead. Once you reach it, the circle will be ready for a check-in."
-        case .pending:
-            return "You're in the current month and haven't checked in yet. Tap the month circle to record your amount."
-        case .missed:
-            return "No savings were recorded for this month. You can still tap it to fill in the final amount."
-        case .belowTarget:
-            return "You checked in for this month, but it landed below your target. That's still valuable signal for the year."
-        case .onTarget:
-            return "This month hit your savings target. Keep stacking months like this and the yearly average stays strong."
         }
     }
 

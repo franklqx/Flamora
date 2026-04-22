@@ -16,7 +16,7 @@ struct InvestmentSheetContent: View {
                 if store.loadError, plaidManager.hasLinkedBank {
                     ErrorBanner(
                         message: "Couldn't load investment data.",
-                        onRetry: { Task { await store.load(plaidManager: plaidManager) } }
+                        onRetry: { Task { await store.load(plaidManager: plaidManager, force: true) } }
                     )
                     .padding(.horizontal, AppSpacing.screenPadding)
                 }
@@ -48,10 +48,10 @@ struct InvestmentSheetContent: View {
             await store.load(plaidManager: plaidManager)
         }
         .onChange(of: plaidManager.hasLinkedBank) { _, _ in
-            Task { await store.load(plaidManager: plaidManager) }
+            Task { await store.load(plaidManager: plaidManager, force: true) }
         }
         .onChange(of: plaidManager.lastConnectionTime) { _, _ in
-            Task { await store.load(plaidManager: plaidManager) }
+            Task { await store.load(plaidManager: plaidManager, force: true) }
         }
         .sheet(isPresented: $showTrustBridge, onDismiss: {
             if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {

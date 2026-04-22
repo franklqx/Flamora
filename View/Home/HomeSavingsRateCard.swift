@@ -86,13 +86,6 @@ struct HomeSavingsRateCard: View {
 
             Spacer()
 
-            if let snapshot, isConnected, hasBudgetSetup {
-                Text(snapshot.currentWindowTitle)
-                    .font(.cardHeader)
-                    .foregroundColor(AppColors.inkFaint)
-                    .tracking(AppTypography.Tracking.cardHeader)
-            }
-
             if isConnected && hasBudgetSetup {
                 Image(systemName: "chevron.right")
                     .font(.miniLabel)
@@ -107,6 +100,20 @@ struct HomeSavingsRateCard: View {
 
     private func connectedState(_ snapshot: SavingsTrackingSnapshot) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack(alignment: .top, spacing: AppSpacing.lg) {
+                summaryBlock(
+                    label: "Savings Amount",
+                    value: savingsAmountText(snapshot)
+                )
+
+                Spacer(minLength: AppSpacing.md)
+
+                summaryBlock(
+                    label: "Savings Rate",
+                    value: "\(Int(snapshot.targetRatePercent.rounded()))%"
+                )
+            }
+
             HStack(alignment: .top, spacing: AppSpacing.sm + AppSpacing.xs) {
                 ForEach(snapshot.currentWindowNodes) { node in
                     Button {
@@ -122,39 +129,32 @@ struct HomeSavingsRateCard: View {
                 }
             }
             .frame(maxWidth: .infinity)
-
-            HStack(spacing: AppSpacing.sm) {
-                metricBlock(label: "YTD AVG", value: snapshot.ytdAverageText)
-                metricDivider
-                metricBlock(label: "ON TARGET", value: "\(snapshot.monthsOnTarget)")
-                metricDivider
-                metricBlock(label: "TARGET", value: "\(Int(snapshot.targetRatePercent.rounded()))%")
-            }
-
-            Text(snapshot.compactHomeText)
-                .font(.caption)
-                .foregroundStyle(AppColors.inkSoft)
-                .lineLimit(1)
-                .minimumScaleFactor(0.84)
         }
     }
 
-    private func metricBlock(label: String, value: String) -> some View {
+    private func summaryBlock(label: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(AppColors.inkFaint)
             Text(value)
-                .font(.footnoteBold)
+                .font(.detailTitle)
                 .foregroundStyle(AppColors.inkPrimary)
                 .monospacedDigit()
         }
     }
 
-    private var metricDivider: some View {
-        Rectangle()
-            .fill(AppColors.inkBorder)
-            .frame(width: 1, height: 28)
+    private func savingsAmountText(_ snapshot: SavingsTrackingSnapshot) -> String {
+        "\(formatCurrency(snapshot.targetAmount))/month"
+    }
+
+    private func formatCurrency(_ value: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = "USD"
+        formatter.maximumFractionDigits = 0
+        formatter.minimumFractionDigits = 0
+        return formatter.string(from: NSNumber(value: value)) ?? "$0"
     }
 
     private func placeholderState(title: String, subtitle: String) -> some View {

@@ -54,24 +54,29 @@ struct HomeBottomSheet: View {
                 }
             }
 
-            Group {
-                switch selectedTab {
-                case .home:
-                    HomeRoadmapContent()
-                case .cashflow:
+            ZStack {
+                HomeRoadmapContent()
+                    .opacity(selectedTab == .home ? 1 : 0)
+                    .allowsHitTesting(selectedTab == .home)
+
+                Group {
                     if plaidManager.hasLinkedBank {
                         CashflowView()
                     } else {
                         CashUnconnectedContent()
                     }
-                case .investment:
-                    InvestmentSheetContent()
-                case .settings:
-                    SettingsView(isEmbeddedInSheet: true)
                 }
+                .opacity(selectedTab == .cashflow ? 1 : 0)
+                .allowsHitTesting(selectedTab == .cashflow)
+
+                InvestmentSheetContent()
+                    .opacity(selectedTab == .investment ? 1 : 0)
+                    .allowsHitTesting(selectedTab == .investment)
+
+                SettingsView(isEmbeddedInSheet: true)
+                    .opacity(selectedTab == .settings ? 1 : 0)
+                    .allowsHitTesting(selectedTab == .settings)
             }
-            .id(selectedTab)
-            .transition(.opacity)
             .animation(.easeInOut(duration: 0.2), value: selectedTab)
             .frame(maxWidth: .infinity)
             .frame(maxHeight: .infinity, alignment: .top)

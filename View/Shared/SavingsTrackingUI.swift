@@ -256,21 +256,21 @@ struct SavingsMonthOrb: View {
     private var centerSymbol: some View {
         switch node.state {
         case .future:
-            Circle()
-                .fill(AppColors.inkBorder)
-                .frame(width: 8, height: 8)
+            EmptyView()
         case .pending:
             Image(systemName: "plus")
                 .font(.footnoteSemibold)
                 .foregroundStyle(AppColors.inkSoft)
         case .missed:
+            if node.isEditable {
+                Image(systemName: "plus")
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(AppColors.inkSoft)
+            }
+        case .belowTarget:
             Image(systemName: "xmark")
                 .font(.caption.weight(.bold))
-                .foregroundStyle(AppColors.inkFaint)
-        case .belowTarget:
-            Circle()
-                .fill(AppColors.inkPrimary.opacity(0.22))
-                .frame(width: 12, height: 12)
+                .foregroundStyle(AppColors.inkSoft)
         case .onTarget:
             FlameIcon(size: 18, color: AppColors.ctaWhite)
                 .shadow(color: AppColors.accentAmber.opacity(0.22), radius: 8, y: 4)

@@ -62,8 +62,7 @@ struct NetWorthDetailView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppSpacing.cardGap) {
                     header
-                    heroCard
-                    trendCard
+                    heroTrendCard
                     compositionCard
                     if let summary, !summary.accounts.isEmpty {
                         accountsCard(summary.accounts)
@@ -101,7 +100,7 @@ struct NetWorthDetailView: View {
         }
     }
 
-    private var heroCard: some View {
+    private var heroTrendCard: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             Text("CURRENT TOTAL")
                 .font(.cardHeader)
@@ -128,6 +127,31 @@ struct NetWorthDetailView: View {
                 summaryDivider
                 summaryMetric(label: "Debt", value: formatCurrency(totalLiabilities))
             }
+            trendChart
+
+            HStack(spacing: 0) {
+                ForEach(NetWorthRange.allCases) { range in
+                    Button {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            selectedRange = range
+                        }
+                    } label: {
+                        Text(range.label)
+                            .font(.segmentLabel(selected: selectedRange == range))
+                            .foregroundStyle(selectedRange == range ? AppColors.inkPrimary : AppColors.inkSoft)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 30)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(selectedRange == range ? AppColors.ctaWhite.opacity(0.9) : .clear)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(4)
+            .background(AppColors.inkTrack.opacity(0.8))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
         }
         .padding(AppSpacing.cardPadding)
         .background(cardBackground)
@@ -179,56 +203,66 @@ struct NetWorthDetailView: View {
             .frame(width: 1, height: 30)
     }
 
-    private var trendCard: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            HStack {
-                Text("TREND")
-                    .font(.cardHeader)
-                    .foregroundStyle(AppColors.inkFaint)
-                    .tracking(AppTypography.Tracking.cardHeader)
-
-                Spacer()
-            }
-
+    private var trendChart: some View {
+        Group {
             if currentPoints.count >= 2 {
-                Chart {
-                    ForEach(currentPoints) { point in
-                        AreaMark(
-                            x: .value("Date", point.date),
-                            y: .value("Net Worth", point.value)
-                        )
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [
-                                    AppColors.inkPrimary.opacity(0.16),
-                                    AppColors.inkPrimary.opacity(0.02)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
+                ZStack(alignment: .leading) {
+                    Chart {
+                        ForEach(currentPoints) { point in
+                            AreaMark(
+                                x: .value("Date", point.date),
+                                y: .value("Net Worth", point.value)
                             )
-                        )
-                        .interpolationMethod(.monotone)
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [
+                                        AppColors.inkPrimary.opacity(0.16),
+                                        AppColors.inkPrimary.opacity(0.02)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .interpolationMethod(.monotone)
 
-                        LineMark(
-                            x: .value("Date", point.date),
-                            y: .value("Net Worth", point.value)
-                        )
-                        .foregroundStyle(AppColors.inkPrimary)
-                        .lineStyle(StrokeStyle(lineWidth: 2))
-                        .interpolationMethod(.monotone)
+                            LineMark(
+                                x: .value("Date", point.date),
+                                y: .value("Net Worth", point.value)
+                            )
+                            .foregroundStyle(AppColors.inkPrimary)
+                            .lineStyle(StrokeStyle(lineWidth: 2))
+                            .interpolationMethod(.monotone)
+                        }
                     }
-                }
-                .chartYAxis {
-                    AxisMarks(position: .leading) { _ in
-                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [2, 3]))
-                            .foregroundStyle(AppColors.inkDivider)
-                        AxisValueLabel()
-                            .font(.caption)
-                            .foregroundStyle(AppColors.inkFaint)
+                    .chartYAxis(.hidden)
+                    .chartXAxis(.hidden)
+                    .chartXScale(range: .plotDimension(startPadding: 0, endPadding: 4))
+                    .chartYScale(domain: chartDomain)
+                    .frame(height: 220)
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(chartTicks.enumerated()), id: \.offset) { index, tick in
+                            HStack {
+                                Text(formatCompactCurrency(tick))
+                                    .font(.caption)
+                                    .foregroundStyle(AppColors.inkFaint)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(AppColors.shellBg1.opacity(0.72))
+                                    .clipShape(Capsule())
+                                Spacer()
+                            }
+
+                            if index != chartTicks.count - 1 {
+                                Spacer()
+                            }
+                        }
                     }
+                    .padding(.leading, 4)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .allowsHitTesting(false)
                 }
-                .chartXAxis(.hidden)
-                .frame(height: 220)
             } else {
                 RoundedRectangle(cornerRadius: AppRadius.md)
                     .fill(AppColors.inkTrack)
@@ -239,38 +273,7 @@ struct NetWorthDetailView: View {
                             .foregroundStyle(AppColors.inkSoft)
                     )
             }
-
-            HStack(spacing: 0) {
-                ForEach(NetWorthRange.allCases) { range in
-                    Button {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            selectedRange = range
-                        }
-                    } label: {
-                        Text(range.label)
-                            .font(.segmentLabel(selected: selectedRange == range))
-                            .foregroundStyle(selectedRange == range ? AppColors.inkPrimary : AppColors.inkSoft)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 30)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(selectedRange == range ? AppColors.ctaWhite.opacity(0.9) : .clear)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(4)
-            .background(AppColors.inkTrack.opacity(0.8))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
         }
-        .padding(AppSpacing.cardPadding)
-        .background(cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.glassCardBorder, lineWidth: 1)
-        )
     }
 
     private var compositionCard: some View {
@@ -281,8 +284,18 @@ struct NetWorthDetailView: View {
                 .tracking(AppTypography.Tracking.cardHeader)
 
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                balanceBar(label: "Assets", value: totalAssets, total: max(totalAssets + totalLiabilities, 1), tint: AppColors.inkPrimary)
-                balanceBar(label: "Debt", value: totalLiabilities, total: max(totalAssets + totalLiabilities, 1), tint: AppColors.error.opacity(0.85))
+                balanceBar(
+                    label: "Assets",
+                    value: totalAssets,
+                    total: max(totalAssets + totalLiabilities, 1),
+                    segments: assetCompositionSegments
+                )
+                balanceBar(
+                    label: "Debt",
+                    value: totalLiabilities,
+                    total: max(totalAssets + totalLiabilities, 1),
+                    segments: debtCompositionSegments
+                )
             }
 
             LazyVGrid(
@@ -303,7 +316,21 @@ struct NetWorthDetailView: View {
         )
     }
 
-    private func balanceBar(label: String, value: Double, total: Double, tint: Color) -> some View {
+    private var assetCompositionSegments: [(value: Double, tint: Color)] {
+        [
+            (value: max(investments, 0), tint: AppColors.accentPurple),
+            (value: max(cash, 0), tint: AppColors.budgetNeedsBlue)
+        ].filter { $0.value > 0 }
+    }
+
+    private var debtCompositionSegments: [(value: Double, tint: Color)] {
+        [
+            (value: credit, tint: AppColors.warning),
+            (value: loans, tint: AppColors.error)
+        ].filter { $0.value > 0 }
+    }
+
+    private func balanceBar(label: String, value: Double, total: Double, segments: [(value: Double, tint: Color)]) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             HStack {
                 Text(label)
@@ -320,9 +347,14 @@ struct NetWorthDetailView: View {
                 Capsule()
                     .fill(AppColors.inkTrack)
                     .overlay(alignment: .leading) {
-                        Capsule()
-                            .fill(tint)
-                            .frame(width: geo.size.width * CGFloat(value / total))
+                        HStack(spacing: 0) {
+                            ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
+                                Rectangle()
+                                    .fill(segment.tint)
+                                    .frame(width: geo.size.width * CGFloat(segment.value / total))
+                            }
+                        }
+                        .clipShape(Capsule())
                     }
             }
             .frame(height: 8)
@@ -423,16 +455,9 @@ struct NetWorthDetailView: View {
                     .foregroundStyle(iconTint(for: account))
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(account.name)
-                    .font(.footnoteSemibold)
-                    .foregroundStyle(AppColors.inkPrimary)
-                Text(metaLine(for: account))
-                    .font(.caption)
-                    .foregroundStyle(AppColors.inkSoft)
-                    .lineLimit(1)
-            }
-
+            Text(account.name)
+                .font(.footnoteSemibold)
+                .foregroundStyle(AppColors.inkPrimary)
             Spacer()
 
             Text(formatCurrency(account.balance ?? 0))
@@ -447,49 +472,45 @@ struct NetWorthDetailView: View {
     private func groupedAccounts(_ accounts: [APIAccount]) -> [(title: String, accounts: [APIAccount])] {
         let groups = Dictionary(grouping: accounts) { account -> String in
             switch account.type {
-            case "investment": return "Investments"
-            case "credit": return "Credit"
-            case "loan": return "Loans"
-            default: return "Cash"
+            case "investment":
+                return "Investments"
+            case "credit", "loan":
+                return "Debt"
+            default:
+                return "Cash"
             }
         }
-        return ["Investments", "Cash", "Credit", "Loans"]
-            .compactMap { key in
-                guard let values = groups[key], !values.isEmpty else { return nil }
-                return (key, values.sorted { ($0.balance ?? 0) > ($1.balance ?? 0) })
-            }
+
+        return ["Investments", "Cash", "Debt"].compactMap { title in
+            guard let values = groups[title], !values.isEmpty else { return nil }
+            return (title, values.sorted { abs($0.balance ?? 0) > abs($1.balance ?? 0) })
+        }
     }
 
     private func iconName(for account: APIAccount) -> String {
         switch account.type {
-        case "investment": return "chart.line.uptrend.xyaxis"
-        case "credit": return "creditcard"
-        case "loan": return "banknote"
-        default: return "building.columns"
+        case "investment":
+            return "chart.line.uptrend.xyaxis"
+        case "credit":
+            return "creditcard"
+        case "loan":
+            return "banknote"
+        default:
+            return account.subtype?.lowercased() == "savings" ? "banknote" : "building.columns"
         }
     }
 
     private func iconTint(for account: APIAccount) -> Color {
         switch account.type {
-        case "investment": return AppColors.accentPurple
-        case "credit": return AppColors.warning
-        case "loan": return AppColors.error
-        default: return AppColors.budgetNeedsBlue
+        case "investment":
+            return AppColors.accentPurple
+        case "credit":
+            return AppColors.warning
+        case "loan":
+            return AppColors.error
+        default:
+            return AppColors.budgetNeedsBlue
         }
-    }
-
-    private func metaLine(for account: APIAccount) -> String {
-        var parts: [String] = []
-        if let institution = account.institution, !institution.isEmpty {
-            parts.append(institution)
-        }
-        if let subtype = account.subtype, !subtype.isEmpty {
-            parts.append(subtype.capitalized)
-        }
-        if let mask = account.mask, !mask.isEmpty {
-            parts.append("••\(mask)")
-        }
-        return parts.joined(separator: " · ")
     }
 
     private func formatCurrency(_ value: Double) -> String {
@@ -506,6 +527,42 @@ struct NetWorthDetailView: View {
     private func formatPercent(_ value: Double) -> String {
         let sign = value >= 0 ? "+" : ""
         return "\(sign)\(String(format: "%.1f", value))%"
+    }
+
+    private var chartTicks: [Double] {
+        guard let minValue = currentPoints.map(\.value).min(),
+              let maxValue = currentPoints.map(\.value).max() else { return [] }
+
+        if abs(maxValue - minValue) < 1 {
+            return [maxValue, maxValue * 0.995, maxValue * 0.99]
+        }
+
+        let roundedMin = floor(minValue / 10_000) * 10_000
+        let roundedMax = ceil(maxValue / 10_000) * 10_000
+
+        if roundedMin == roundedMax {
+            return [roundedMax, roundedMax - 10_000, roundedMax - 20_000]
+        }
+
+        let step = max((roundedMax - roundedMin) / 2, 10_000)
+        return stride(from: roundedMax, through: roundedMin, by: -step).map { $0 }
+    }
+
+    private var chartDomain: ClosedRange<Double> {
+        let ticks = chartTicks
+        if let lower = ticks.last, let upper = ticks.first, lower < upper {
+            return lower...upper
+        }
+        let values = currentPoints.map(\.value)
+        let minValue = values.min() ?? 0
+        let maxValue = values.max() ?? max(minValue, 1)
+        return minValue...maxValue
+    }
+
+    private func formatCompactCurrency(_ value: Double) -> String {
+        let sign = value < 0 ? "-" : ""
+        let compactValue = Int((abs(value) / 1_000).rounded())
+        return "\(sign)$\(compactValue)k"
     }
 
     private func formattedSyncDate(_ isoString: String) -> String {

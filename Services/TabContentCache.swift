@@ -19,6 +19,17 @@ extension Notification.Name {
 final class TabContentCache {
     static let shared = TabContentCache()
 
+    /// Home Tab 上次成功的净资产摘要。
+    private(set) var homeNetWorthSummary: APINetWorthSummary?
+
+    /// Home Tab 上次成功的净资产趋势。
+    private(set) var homeNetWorthHistory: [NetWorthRange: [NetWorthPoint]]?
+
+    /// Home Tab 上次成功的报告入口数据。
+    private(set) var homeMonthlyReport: ReportSnapshot?
+    private(set) var homeIssueZeroReport: ReportSnapshot?
+    private(set) var homeAnnualReport: ReportSnapshot?
+
     /// Investment Tab 上次成功的 `get-net-worth-summary`；断连或未加载时为 nil。
     private(set) var investmentNetWorth: APINetWorthSummary?
 
@@ -46,7 +57,32 @@ final class TabContentCache {
     /// Cash Flow 展开层上次成功的当年逐月支出 summary；用于避免 overlay 重新打开时的空白闪烁。
     private(set) var cashflowMonthlySummaries: [Int: APISpendingSummary]?
 
+    /// Cash Flow 上次成功拉到的账户列表（来自 net worth summary 全量 accounts）。
+    private(set) var cashflowAccounts: [APIAccount]?
+
+    /// Cash Flow 首页最近活动缓存。
+    private(set) var cashflowRecentTransactions: [Transaction]?
+
+    /// Cash / Debt 账户详情缓存。
+    private(set) var cashAccountTransactions: [String: [Transaction]] = [:]
+    private(set) var cashAccountHistory: [String: [BalanceSnapshot]] = [:]
+
+    /// Investment 账户详情缓存。
+    private(set) var investmentAccountTransactions: [String: [Transaction]] = [:]
+    private(set) var investmentAccountHistory: [String: [BalanceSnapshot]] = [:]
+
     private init() {}
+
+    func setHomeNetWorth(summary: APINetWorthSummary?, history: [NetWorthRange: [NetWorthPoint]]?) {
+        homeNetWorthSummary = summary
+        homeNetWorthHistory = history
+    }
+
+    func setHomeReports(monthly: ReportSnapshot?, issueZero: ReportSnapshot?, annual: ReportSnapshot?) {
+        homeMonthlyReport = monthly
+        homeIssueZeroReport = issueZero
+        homeAnnualReport = annual
+    }
 
     func setInvestmentNetWorth(_ value: APINetWorthSummary?) {
         investmentNetWorth = value
@@ -72,6 +108,14 @@ final class TabContentCache {
         cashflowMonthlySummaries = value
     }
 
+    func setCashflowAccounts(_ value: [APIAccount]?) {
+        cashflowAccounts = value
+    }
+
+    func setCashflowRecentTransactions(_ value: [Transaction]?) {
+        cashflowRecentTransactions = value
+    }
+
     func setCashflowSpendingDetails(
         total: TotalSpendingDetailData?,
         needs: SpendingDetailData?,
@@ -82,7 +126,44 @@ final class TabContentCache {
         cashflowWantsDetail = wants
     }
 
+    func cashAccountTransactions(for accountId: String) -> [Transaction]? {
+        cashAccountTransactions[accountId]
+    }
+
+    func setCashAccountTransactions(_ value: [Transaction], for accountId: String) {
+        cashAccountTransactions[accountId] = value
+    }
+
+    func cashAccountHistory(for accountId: String, range: AccountHistoryRange) -> [BalanceSnapshot]? {
+        cashAccountHistory["\(accountId)::\(range.rawValue)"]
+    }
+
+    func setCashAccountHistory(_ value: [BalanceSnapshot], for accountId: String, range: AccountHistoryRange) {
+        cashAccountHistory["\(accountId)::\(range.rawValue)"] = value
+    }
+
+    func investmentAccountTransactions(for accountId: String) -> [Transaction]? {
+        investmentAccountTransactions[accountId]
+    }
+
+    func setInvestmentAccountTransactions(_ value: [Transaction], for accountId: String) {
+        investmentAccountTransactions[accountId] = value
+    }
+
+    func investmentAccountHistory(for accountId: String, range: AccountHistoryRange) -> [BalanceSnapshot]? {
+        investmentAccountHistory["\(accountId)::\(range.rawValue)"]
+    }
+
+    func setInvestmentAccountHistory(_ value: [BalanceSnapshot], for accountId: String, range: AccountHistoryRange) {
+        investmentAccountHistory["\(accountId)::\(range.rawValue)"] = value
+    }
+
     func clearAfterBankDisconnect() {
+        homeNetWorthSummary = nil
+        homeNetWorthHistory = nil
+        homeMonthlyReport = nil
+        homeIssueZeroReport = nil
+        homeAnnualReport = nil
         investmentNetWorth = nil
         portfolioHistory = [:]
         investmentHoldings = nil
@@ -92,5 +173,11 @@ final class TabContentCache {
         cashflowNeedsDetail = nil
         cashflowWantsDetail = nil
         cashflowMonthlySummaries = nil
+        cashflowAccounts = nil
+        cashflowRecentTransactions = nil
+        cashAccountTransactions = [:]
+        cashAccountHistory = [:]
+        investmentAccountTransactions = [:]
+        investmentAccountHistory = [:]
     }
 }

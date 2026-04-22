@@ -93,7 +93,7 @@ struct InvestmentView: View {
             await loadInvestmentData()
         }
         .onChange(of: plaidManager.hasLinkedBank) { _, _ in
-            Task { await loadInvestmentData() }
+            Task { await loadInvestmentData(force: true) }
         }
         .sheet(isPresented: $showTrustBridge, onDismiss: {
             if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {
@@ -133,7 +133,7 @@ private extension InvestmentView {
         computedAccounts.filter { $0.accountType == .bank }
     }
 
-    func loadInvestmentData() async {
+    func loadInvestmentData(force: Bool = false) async {
         loadError = false
         guard plaidManager.hasLinkedBank else {
             apiNetWorth = nil
@@ -144,6 +144,12 @@ private extension InvestmentView {
             heroData.gainAmount = 0
             heroData.gainPercentage = 0
             heroData.historyCache = [:]
+            return
+        }
+        if !force,
+           apiNetWorth != nil,
+           apiHoldingsPayload != nil,
+           !portfolioHistoryCache.isEmpty {
             return
         }
         let nw = await fetchNetWorth()
