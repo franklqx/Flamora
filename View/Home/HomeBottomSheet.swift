@@ -48,7 +48,7 @@ struct HomeBottomSheet: View {
                 if labelOpacity > 0 {
                     Text(backLabelText)
                         .font(.footnoteRegular)
-                        .foregroundStyle(AppColors.textSecondary)
+                        .foregroundStyle(AppColors.inkSoft)
                         .opacity(labelOpacity)
                         .allowsHitTesting(false)
                 }

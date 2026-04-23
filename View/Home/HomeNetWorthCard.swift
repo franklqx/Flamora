@@ -102,7 +102,7 @@ struct HomeNetWorthCard: View {
         HStack {
             Text("NET WORTH")
                 .font(.cardHeader)
-                .foregroundColor(AppColors.inkFaint)
+                .foregroundColor(AppColors.inkPrimary)
                 .tracking(AppTypography.Tracking.cardHeader)
 
             Spacer()

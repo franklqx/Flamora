@@ -81,7 +81,7 @@ struct HomeSavingsRateCard: View {
         HStack {
             Text("SAVINGS RATE")
                 .font(.cardHeader)
-                .foregroundColor(AppColors.inkFaint)
+                .foregroundColor(AppColors.inkPrimary)
                 .tracking(AppTypography.Tracking.cardHeader)
 
             Spacer()

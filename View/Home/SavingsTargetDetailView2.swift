@@ -22,7 +22,6 @@ struct SavingsTargetDetailView2: View {
     @State private var editingAmountValue: Double = 0
     @State private var isShowingEditSheet: Bool = false
     @State private var isPersistingEdit: Bool = false
-    @State private var dragOffset: CGFloat = 0
 
     init(
         savingsRatioPercent: Double,
@@ -69,14 +68,6 @@ struct SavingsTargetDetailView2: View {
         snapshot.ytdAverageText
     }
 
-    private var shellBackground: LinearGradient {
-        LinearGradient(
-            colors: [AppColors.shellBg1, AppColors.shellBg2],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-    }
-
     private var cardBackground: LinearGradient {
         LinearGradient(
             colors: [AppColors.glassCardBg, AppColors.glassCardBg2],
@@ -86,39 +77,16 @@ struct SavingsTargetDetailView2: View {
     }
 
     var body: some View {
-        ZStack {
-            shellBackground.ignoresSafeArea()
-
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: AppSpacing.cardGap) {
-                    header
-                    yearOverviewCard
-                    trendCard
-                    summaryCard
-                }
-                .padding(.horizontal, AppSpacing.screenPadding)
-                .padding(.top, AppSpacing.screenPadding)
-                .padding(.bottom, AppSpacing.tabBarReserve + AppSpacing.md)
-            }
+        DetailSheetScaffold(
+            title: "Savings",
+            contentBottomPadding: AppSpacing.tabBarReserve + AppSpacing.md
+        ) {
+            dismiss()
+        } content: {
+            yearOverviewCard
+            trendCard
+            summaryCard
         }
-        .offset(y: dragOffset)
-        .simultaneousGesture(
-            DragGesture()
-                .onChanged { value in
-                    if value.translation.height > 0 {
-                        dragOffset = value.translation.height
-                    }
-                }
-                .onEnded { value in
-                    if value.translation.height > 150 {
-                        dismiss()
-                    } else {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            dragOffset = 0
-                        }
-                    }
-                }
-        )
         .sheet(isPresented: $isShowingEditSheet, onDismiss: applyEditedAmount) {
             SavingsInputSheet(amount: $editingAmountValue)
                 .presentationDragIndicator(.visible)
@@ -130,37 +98,12 @@ struct SavingsTargetDetailView2: View {
         }
     }
 
-    private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text("Savings")
-                .font(.h1)
-                .foregroundStyle(AppColors.inkPrimary)
-                .tracking(-0.5)
-
-            Spacer()
-
-            Button {
-                dismiss()
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(AppColors.inkTrack)
-                        .frame(width: 34, height: 34)
-                    Image(systemName: "xmark")
-                        .font(.footnoteSemibold)
-                        .foregroundStyle(AppColors.inkPrimary)
-                }
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
     private var yearOverviewCard: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             HStack {
                 Text("MONTHLY CHECK-INS")
                     .font(.cardHeader)
-                    .foregroundStyle(AppColors.inkFaint)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .tracking(AppTypography.Tracking.cardHeader)
 
                 Spacer()
@@ -209,7 +152,7 @@ struct SavingsTargetDetailView2: View {
             HStack {
                 Text("ANNUAL TREND")
                     .font(.cardHeader)
-                    .foregroundStyle(AppColors.inkFaint)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .tracking(AppTypography.Tracking.cardHeader)
                 Spacer()
             }

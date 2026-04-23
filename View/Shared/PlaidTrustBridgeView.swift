@@ -15,7 +15,12 @@ struct PlaidTrustBridgeView: View {
 
     var body: some View {
         ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+            LinearGradient(
+                colors: [AppColors.shellBg1, AppColors.shellBg2],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // Close button row
@@ -25,10 +30,10 @@ struct PlaidTrustBridgeView: View {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.bodyRegular)
-                            .foregroundColor(AppColors.textTertiary)
-                            .frame(width: 32, height: 32)
-                            .background(AppColors.surfaceElevated)
+                            .font(.footnoteSemibold)
+                            .foregroundColor(AppColors.inkPrimary)
+                            .frame(width: 34, height: 34)
+                            .background(AppColors.inkTrack)
                             .clipShape(Circle())
                     }
                 }
@@ -63,12 +68,12 @@ struct PlaidTrustBridgeView: View {
                 VStack(spacing: AppSpacing.sm) {
                     Text(AppLinks.TrustBridge.title)
                         .font(.h1)
-                        .foregroundStyle(AppColors.textPrimary)
+                        .foregroundStyle(AppColors.inkPrimary)
                         .multilineTextAlignment(.center)
 
                     Text(AppLinks.TrustBridge.body)
                         .font(.supportingText)
-                        .foregroundColor(AppColors.textSecondary)
+                        .foregroundColor(AppColors.inkSoft)
                         .multilineTextAlignment(.center)
                         .lineSpacing(4)
                         .padding(.horizontal, AppSpacing.lg)
@@ -86,7 +91,7 @@ struct PlaidTrustBridgeView: View {
                                 .frame(width: 28)
                             Text(badge.label)
                                 .font(.inlineLabel)
-                                .foregroundStyle(AppColors.textPrimary)
+                                .foregroundStyle(AppColors.inkPrimary)
                             Spacer()
                             Image(systemName: "checkmark")
                                 .font(.footnoteSemibold)
@@ -94,11 +99,17 @@ struct PlaidTrustBridgeView: View {
                         }
                         .padding(.horizontal, AppSpacing.cardPadding)
                         .padding(.vertical, AppSpacing.md)
-                        .background(AppColors.surface)
+                        .background(
+                            LinearGradient(
+                                colors: [AppColors.glassCardBg, AppColors.glassCardBg2],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                         .overlay(
                             RoundedRectangle(cornerRadius: AppRadius.md)
-                                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
+                                .stroke(AppColors.glassCardBorder, lineWidth: 1)
                         )
                     }
                 }
@@ -113,18 +124,18 @@ struct PlaidTrustBridgeView: View {
                     } label: {
                         Text("Privacy Policy")
                             .font(.caption)
-                            .foregroundColor(AppColors.textMuted)
+                            .foregroundColor(AppColors.inkMeta)
                             .underline()
                     }
                     Text("·")
                         .font(.caption)
-                        .foregroundColor(AppColors.textMuted)
+                        .foregroundColor(AppColors.inkMeta)
                     Button {
                         showTerms = true
                     } label: {
                         Text("Terms of Service")
                             .font(.caption)
-                            .foregroundColor(AppColors.textMuted)
+                            .foregroundColor(AppColors.inkMeta)
                             .underline()
                     }
                 }
@@ -151,7 +162,6 @@ struct PlaidTrustBridgeView: View {
                 .padding(.bottom, AppSpacing.xl)
             }
         }
-        .preferredColorScheme(.dark)
         .sheet(isPresented: $showPrivacy) {
             SafariView(url: AppLinks.privacyPolicyURL)
                 .ignoresSafeArea()

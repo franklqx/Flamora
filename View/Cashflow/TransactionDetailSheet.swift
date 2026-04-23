@@ -2,8 +2,8 @@
 //  TransactionDetailSheet.swift
 //  Flamora app
 //
-//  Transaction detail sheet — shows info, allows subcategory editing and notes.
-//  Subcategory drives Needs/Wants classification.
+//  Transaction detail sheet — light-shell styling.
+//  Shows info, allows subcategory editing; subcategory drives Needs/Wants classification.
 //
 
 import SwiftUI
@@ -21,9 +21,6 @@ struct TransactionDetailSheet: View {
 
     private var needsCategories: [TransactionCategory] { TransactionCategoryCatalog.needsCategories }
     private var wantsCategories: [TransactionCategory] { TransactionCategoryCatalog.wantsCategories }
-    private var initialSubcategoryKey: String? {
-        TransactionCategoryCatalog.canonicalSubcategory(fromStored: transaction.subcategory)
-    }
 
     init(transaction: Transaction, linkedAccounts: [Account] = [], onSave: @escaping @MainActor (Transaction) async throws -> Void) {
         self.transaction = transaction
@@ -34,140 +31,36 @@ struct TransactionDetailSheet: View {
         )
     }
 
+    private var cardBackground: LinearGradient {
+        LinearGradient(
+            colors: [AppColors.glassCardBg, AppColors.glassCardBg2],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 0) {
+        ZStack {
+            LinearGradient(
+                colors: [AppColors.shellBg1, AppColors.shellBg2],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
-                // MARK: Header
-                HStack(spacing: AppSpacing.md) {
-                    ZStack {
-                        Circle()
-                            .fill(AppColors.surfaceElevated)
-                            .frame(width: 48, height: 48)
-                            .overlay(Circle().stroke(AppColors.surfaceBorder, lineWidth: 0.75))
-                        Image(systemName: currentIcon)
-                            .font(.h4)
-                            .foregroundColor(AppColors.textSecondary)
-                    }
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(transaction.merchant)
-                            .font(.h3)
-                            .foregroundStyle(AppColors.textPrimary)
-                        Text(dateTimeLabel)
-                            .font(.inlineLabel)
-                            .foregroundColor(AppColors.textTertiary)
-                    }
-
-                    Spacer()
-
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "xmark")
-                            .font(.bodySmall)
-                            .foregroundColor(AppColors.textSecondary)
-                            .frame(width: 32, height: 32)
-                            .background(AppColors.surfaceElevated)
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(AppColors.surfaceBorder, lineWidth: 0.75))
-                    }
-                    .buttonStyle(.plain)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: AppSpacing.cardGap) {
+                    headerCard
+                    currentCategoryCard
+                    categoryPickerCard
+                    doneButton
                 }
-                .padding(.top, AppSpacing.lg)
-                .padding(.horizontal, AppSpacing.cardPadding)
-
-                // MARK: Amount
-                Text(formattedAmount(transaction.amount))
-                    .font(.h1)
-                    .foregroundStyle(AppColors.textPrimary)
-                    .padding(.top, AppSpacing.sm)
-                    .padding(.horizontal, AppSpacing.cardPadding)
-
-                // MARK: Account
-                if let acct = transactionAccount {
-                    HStack(spacing: AppSpacing.sm) {
-                        Group {
-                            if let urlString = acct.logoUrl, let url = URL(string: urlString) {
-                                AsyncImage(url: url) { phase in
-                                    switch phase {
-                                    case .success(let image):
-                                        image.resizable().scaledToFill()
-                                            .frame(width: 20, height: 20)
-                                            .clipShape(Circle())
-                                    default:
-                                        Circle().fill(AppColors.surfaceElevated)
-                                            .frame(width: 20, height: 20)
-                                    }
-                                }
-                            } else {
-                                Circle().fill(AppColors.surfaceElevated)
-                                    .frame(width: 20, height: 20)
-                            }
-                        }
-                        Text(acct.institution)
-                            .font(.inlineLabel)
-                            .foregroundColor(AppColors.textSecondary)
-                        Text("·  \(acct.accountType.displayLabel)")
-                            .font(.inlineLabel)
-                            .foregroundColor(AppColors.textTertiary)
-                    }
-                    .padding(.top, AppSpacing.sm)
-                    .padding(.horizontal, AppSpacing.cardPadding)
-                }
-
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text("CURRENT CATEGORY")
-                        .font(.cardHeader)
-                        .foregroundColor(AppColors.textTertiary)
-                        .tracking(0.8)
-
-                    currentCategoryBadge
-                }
-                .padding(.top, AppSpacing.lg)
-                .padding(.horizontal, AppSpacing.cardPadding)
-
-                // MARK: Category section
-                VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    Text("CATEGORY")
-                        .font(.cardHeader)
-                        .foregroundColor(AppColors.textTertiary)
-                        .tracking(0.8)
-
-                    // Needs group
-                    categoryGroup(label: "NEEDS", color: AppColors.chartBlue, categories: needsCategories)
-
-                    // Wants group
-                    categoryGroup(label: "WANTS", color: AppColors.chartAmber, categories: wantsCategories)
-                }
-                .padding(.top, AppSpacing.lg)
-                .padding(.horizontal, AppSpacing.cardPadding)
-
-                // MARK: Done button
-                Button(action: {
-                    Task { await save() }
-                }) {
-                    HStack(spacing: AppSpacing.sm) {
-                        if isSaving {
-                            ProgressView()
-                                .tint(AppColors.textInverse)
-                        }
-                        Text(primaryButtonTitle)
-                            .font(.sheetPrimaryButton)
-                            .foregroundStyle(AppColors.textInverse)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(AppColors.textPrimary)
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
-                }
-                .disabled(isSaving)
-                .buttonStyle(.plain)
-                .padding(.top, AppSpacing.xl)
-                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.horizontal, AppSpacing.screenPadding)
+                .padding(.top, AppSpacing.screenPadding)
                 .padding(.bottom, AppSpacing.xl)
             }
         }
-        .background(AppColors.backgroundPrimary)
-        .alert("Couldn’t save changes", isPresented: Binding(
+        .alert("Couldn't save changes", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
         )) {
@@ -177,14 +70,153 @@ struct TransactionDetailSheet: View {
         }
     }
 
-    // MARK: - Category Group
+    // MARK: - Header card (merchant + amount + account)
+
+    private var headerCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack(spacing: AppSpacing.md) {
+                ZStack {
+                    Circle()
+                        .fill(effectiveTint.opacity(0.14))
+                        .frame(width: 48, height: 48)
+                    Image(systemName: currentIcon)
+                        .font(.h4)
+                        .foregroundStyle(effectiveTint)
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(transaction.merchant)
+                        .font(.h3)
+                        .foregroundStyle(AppColors.inkPrimary)
+                        .lineLimit(2)
+                    Text(dateTimeLabel)
+                        .font(.caption)
+                        .foregroundStyle(AppColors.inkSoft)
+                }
+
+                Spacer()
+
+                Button {
+                    dismiss()
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(AppColors.inkTrack)
+                            .frame(width: 32, height: 32)
+                        Image(systemName: "xmark")
+                            .font(.footnoteSemibold)
+                            .foregroundStyle(AppColors.inkPrimary)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+
+            Text(formattedAmount(transaction.amount))
+                .font(.currencyHero)
+                .foregroundStyle(AppColors.inkPrimary)
+                .monospacedDigit()
+
+            if let acct = transactionAccount {
+                HStack(spacing: AppSpacing.sm) {
+                    Group {
+                        if let urlString = acct.logoUrl, let url = URL(string: urlString) {
+                            AsyncImage(url: url) { phase in
+                                switch phase {
+                                case .success(let image):
+                                    image.resizable().scaledToFill()
+                                        .frame(width: 20, height: 20)
+                                        .clipShape(Circle())
+                                default:
+                                    Circle().fill(AppColors.inkTrack)
+                                        .frame(width: 20, height: 20)
+                                }
+                            }
+                        } else {
+                            Circle().fill(AppColors.inkTrack)
+                                .frame(width: 20, height: 20)
+                        }
+                    }
+                    Text(acct.institution)
+                        .font(.caption)
+                        .foregroundStyle(AppColors.inkSoft)
+                    Text("·  \(acct.accountType.displayLabel)")
+                        .font(.caption)
+                        .foregroundStyle(AppColors.inkFaint)
+                }
+            }
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
+    }
+
+    // MARK: - Current category card
+
+    private var currentCategoryCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text("CURRENT CATEGORY")
+                .font(.cardHeader)
+                .foregroundStyle(AppColors.inkPrimary)
+                .tracking(AppTypography.Tracking.cardHeader)
+
+            currentCategoryBadge
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(AppSpacing.cardPadding)
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
+    }
+
+    @ViewBuilder
+    private var currentCategoryBadge: some View {
+        let label = TransactionCategoryCatalog.displayName(forStoredSubcategory: effectiveStoredSubcategory) ?? "Uncategorized"
+        let color = effectiveTint
+
+        Text(label)
+            .font(.footnoteSemibold)
+            .foregroundStyle(color)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 12)
+            .background(color.opacity(0.14))
+            .clipShape(Capsule())
+    }
+
+    // MARK: - Category picker card
+
+    private var categoryPickerCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.lg) {
+            Text("CATEGORY")
+                .font(.cardHeader)
+                .foregroundStyle(AppColors.inkPrimary)
+                .tracking(AppTypography.Tracking.cardHeader)
+
+            categoryGroup(label: "NEEDS", color: AppColors.budgetNeedsBlue, categories: needsCategories)
+            categoryGroup(label: "WANTS", color: AppColors.accentPurple, categories: wantsCategories)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(AppSpacing.cardPadding)
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
+    }
 
     @ViewBuilder
     private func categoryGroup(label: String, color: Color, categories: [TransactionCategory]) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text(label)
                 .font(.cardRowMeta)
-                .foregroundColor(color.opacity(0.8))
+                .foregroundStyle(color)
                 .tracking(0.6)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.sm) {
@@ -198,47 +230,55 @@ struct TransactionDetailSheet: View {
     @ViewBuilder
     private func categoryChip(_ cat: TransactionCategory, color: Color) -> some View {
         let isSelected = selectedSubcategoryKey == cat.id
-        Button(action: {
+        Button {
             selectedSubcategoryKey = cat.id
-        }) {
+        } label: {
             HStack(spacing: 6) {
                 Image(systemName: cat.icon)
                     .font(.caption)
-                    .foregroundColor(isSelected ? AppColors.textPrimary : AppColors.textSecondary)
+                    .foregroundStyle(isSelected ? color : AppColors.inkSoft)
                 Text(cat.name)
-                    .font(.bodySmall)
-                    .foregroundColor(isSelected ? AppColors.textPrimary : AppColors.textSecondary)
+                    .font(.footnoteRegular)
+                    .foregroundStyle(isSelected ? AppColors.inkPrimary : AppColors.inkSoft)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, AppSpacing.sm)
             .padding(.horizontal, AppSpacing.md)
-            .background(isSelected ? color.opacity(0.35) : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+            .background(
+                RoundedRectangle(cornerRadius: AppRadius.md)
+                    .fill(isSelected ? color.opacity(0.16) : AppColors.ctaWhite.opacity(0.55))
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.md)
-                    .stroke(isSelected ? color : AppColors.surfaceBorder, lineWidth: 0.75)
+                    .stroke(isSelected ? color : AppColors.inkBorder, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
     }
 
-    @ViewBuilder
-    private var currentCategoryBadge: some View {
-        let label = TransactionCategoryCatalog.displayName(forStoredSubcategory: effectiveStoredSubcategory) ?? "Uncategorized"
-        let color = effectiveCategory == "needs" ? AppColors.chartBlue : (effectiveCategory == "wants" ? AppColors.chartGold : AppColors.textTertiary)
+    // MARK: - Done button
 
-        Text(label)
-            .font(.miniLabel)
-            .foregroundColor(color)
-            .padding(.vertical, 6)
-            .padding(.horizontal, 10)
-            .background(color.opacity(0.16))
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .stroke(color.opacity(0.35), lineWidth: 0.75)
-            )
+    private var doneButton: some View {
+        Button {
+            Task { await save() }
+        } label: {
+            HStack(spacing: AppSpacing.sm) {
+                if isSaving {
+                    ProgressView().tint(AppColors.ctaWhite)
+                }
+                Text("Done")
+                    .font(.sheetPrimaryButton)
+                    .foregroundStyle(AppColors.ctaWhite)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(AppColors.inkPrimary)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+        }
+        .disabled(isSaving)
+        .buttonStyle(.plain)
+        .padding(.top, AppSpacing.sm)
     }
 
     // MARK: - Helpers
@@ -259,6 +299,14 @@ struct TransactionDetailSheet: View {
         return merchantIcon(for: transaction.merchant)
     }
 
+    private var effectiveTint: Color {
+        switch effectiveCategory {
+        case "needs": return AppColors.budgetNeedsBlue
+        case "wants": return AppColors.accentPurple
+        default: return AppColors.inkSoft
+        }
+    }
+
     private var dateTimeLabel: String {
         let datePart = formattedDate(transaction.date)
         if let t = transaction.time, !t.isEmpty {
@@ -276,10 +324,6 @@ struct TransactionDetailSheet: View {
             return TransactionCategoryCatalog.parent(forStoredSubcategory: selectedSubcategoryKey)
         }
         return transaction.category
-    }
-
-    private var primaryButtonTitle: String {
-        "Done"
     }
 
     private var hasChanges: Bool {

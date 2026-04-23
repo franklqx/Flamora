@@ -222,7 +222,7 @@ private struct StorySlideView: View {
             if let label = story.label, !label.isEmpty {
                 Text(label)
                     .font(.cardHeader)
-                    .foregroundStyle(AppColors.textSecondary)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .tracking(AppTypography.Tracking.cardHeader)
                     .textCase(.uppercase)
                     .padding(.bottom, AppSpacing.lg)

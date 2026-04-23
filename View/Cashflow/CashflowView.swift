@@ -41,12 +41,7 @@ struct CashflowView: View {
     /// Cash 页账户列表：depository + credit，来自 get-net-worth-summary.accounts。
     @State private var cashAccountsList: [APIAccount] = TabContentCache.shared.cashflowAccounts?
         .filter { $0.type == "depository" || $0.type == "credit" } ?? []
-    @State private var selectedTransaction: Transaction? = nil
-    @State private var showAllTransactions = false
     @State private var showTrustBridge = false
-    @State private var showSavingsInput = false
-    @State private var showSavingsSummary = false
-    @State private var showTotalIncomeDetail = false
     @State private var showTotalSpendingDetail = false
     @State private var showNeedsSpendingDetail = false
     @State private var showWantsSpendingDetail = false
@@ -56,8 +51,6 @@ struct CashflowView: View {
     @State private var cashflowNeedsDetail: SpendingDetailData?
     @State private var cashflowWantsDetail: SpendingDetailData?
     @State private var cashflowTotalIncomeDetail: TotalIncomeDetailData?
-    @State private var cashflowActiveIncomeDetail: IncomeDetailData?
-    @State private var cashflowPassiveIncomeDetail: IncomeDetailData?
     /// 已连接且拉到 summary 时为当年各月储蓄序列；否则 nil → 储蓄全屏用当年全 nil 序列。
     @State private var cashflowSavingsByYear: [Int: [Double?]]?
 
@@ -94,28 +87,6 @@ struct CashflowView: View {
 
     private var currentMonthWantsCategories: [BudgetCategoryBudget] {
         budgetCategories(from: cashflowWantsDetail, parent: .wants)
-    }
-
-    private var monthlySavingsCheckins: [SavingsCheckinMonth] {
-        let calendar = Calendar.current
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM"
-        let currentYear = calendar.component(.year, from: Date())
-        let currentMonth = calendar.component(.month, from: Date())
-        let yearSeries = cashflowSavingsByYear?[currentYear]
-
-        return (0..<4).compactMap { offset in
-            let monthNumber = currentMonth - 3 + offset
-            guard monthNumber >= 1, monthNumber <= 12 else { return nil }
-            let idx = monthNumber - 1
-            let amount = (yearSeries != nil && idx < (yearSeries?.count ?? 0)) ? yearSeries?[idx] : nil
-            let date = calendar.date(from: DateComponents(year: currentYear, month: monthNumber, day: 1)) ?? Date()
-            return SavingsCheckinMonth(
-                id: "\(currentYear)-\(monthNumber)",
-                label: formatter.string(from: date).uppercased(),
-                amount: amount ?? nil
-            )
-        }
     }
 
     private var incomePlaceholderMessage: String {
@@ -193,24 +164,6 @@ struct CashflowView: View {
         .onReceive(NotificationCenter.default.publisher(for: .budgetSetupFlowDidDismiss)) { _ in
             Task { await loadCashflowData(force: true) }
         }
-        .fullScreenCover(isPresented: $showSavingsSummary) {
-            SavingsTargetDetailView2(
-                savingsRatioPercent: apiBudget.savingsRatio,
-                savingsBudgetTarget: apiBudget.savingsBudget,
-                monthlyAmountsByYear: cashflowSavingsByYear ?? CashflowDetailEmptyStates.savingsMonthlyAmountsEmptyCurrentYear(),
-                onMonthlyAmountsChange: { updated in
-                    applySavingsCheckIn(updated)
-                }
-            )
-        }
-        .fullScreenCover(isPresented: $showTotalIncomeDetail) {
-            TotalIncomeDetailView(
-                data: cashflowTotalIncomeDetail ?? .empty,
-                initialSelectedMonth: currentMonthIndex,
-                activeData: cashflowActiveIncomeDetail,
-                passiveData: cashflowPassiveIncomeDetail
-            )
-        }
         .fullScreenCover(isPresented: $showTotalSpendingDetail) {
             TotalSpendingAnalysisDetailView(
                 data: cashflowSpendingTotalDetail ?? .empty,
@@ -238,30 +191,6 @@ struct CashflowView: View {
                 linkedAccounts: linkedAccounts,
                 onTransactionPersist: { tx in try await persistTransactionClassification(tx) }
             )
-        }
-        .sheet(isPresented: $showSavingsInput, onDismiss: syncMainCardSavingsToSeries) {
-            SavingsInputSheet(amount: $currentSavings, onSubmit: { amount in
-                Task { await persistCurrentMonthSavings(amount: amount) }
-            })
-                .ignoresSafeArea(.container, edges: .bottom)
-                .presentationDragIndicator(.visible)
-                .presentationCornerRadius(28)
-                .presentationBackground(AppColors.backgroundPrimary)
-        }
-        .sheet(item: $selectedTransaction) { transaction in
-            TransactionDetailSheet(transaction: transaction, linkedAccounts: linkedAccounts) { updated in
-                try await persistTransactionClassification(updated)
-            }
-            .ignoresSafeArea(.container, edges: .bottom)
-            .presentationDragIndicator(.visible)
-            .presentationDetents([.fraction(0.75)])
-            .presentationCornerRadius(28)
-            .presentationBackground(AppColors.backgroundPrimary)
-        }
-        .fullScreenCover(isPresented: $showAllTransactions) {
-            AllTransactionsView(transactions: $allTransactions, linkedAccounts: linkedAccounts) { updated in
-                try await persistTransactionClassification(updated)
-            }
         }
         .sheet(isPresented: $showTrustBridge, onDismiss: {
             if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {
@@ -500,8 +429,6 @@ private extension CashflowView {
             cashflowNeedsDetail = nil
             cashflowWantsDetail = nil
             cashflowTotalIncomeDetail = nil
-            cashflowActiveIncomeDetail = nil
-            cashflowPassiveIncomeDetail = nil
             cashflowSavingsByYear = nil
             allTransactions = []
             return
@@ -580,8 +507,6 @@ private extension CashflowView {
             cashflowNeedsDetail = needs
             cashflowWantsDetail = wants
             cashflowTotalIncomeDetail = CashflowAPICharts.totalIncomeDetail(summaries: summaries, year: year)
-            cashflowActiveIncomeDetail = CashflowAPICharts.activeIncomeDetail(summaries: summaries, year: year)
-            cashflowPassiveIncomeDetail = CashflowAPICharts.passiveIncomeDetail(summaries: summaries, year: year)
             cashflowSavingsByYear = savings
             currentSavings = currentSavingsForCurrentMonth(from: savings) ?? currentSavings
             TabContentCache.shared.setCashflowSavingsByYear(savings)
@@ -592,8 +517,6 @@ private extension CashflowView {
             cashflowNeedsDetail = nil
             cashflowWantsDetail = nil
             cashflowTotalIncomeDetail = nil
-            cashflowActiveIncomeDetail = nil
-            cashflowPassiveIncomeDetail = nil
             cashflowSavingsByYear = nil
             TabContentCache.shared.setCashflowMonthlySummaries(nil)
         }
@@ -682,99 +605,6 @@ private extension CashflowView {
 // MARK: - Transactions
 
 private extension CashflowView {
-    var transactionsSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.cardGap) {
-            HStack {
-                Text("RECENT ACTIVITY")
-                    .font(.footnoteBold)
-                    .foregroundStyle(AppColors.textPrimary)
-                    .tracking(0.6)
-
-                Spacer()
-
-                if isCashflowUnlocked {
-                    Button(action: { showAllTransactions = true }) {
-                        Text("SEE ALL")
-                            .font(.smallLabel)
-                            .foregroundColor(AppColors.textSecondary)
-                            .tracking(0.4)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, AppSpacing.screenPadding)
-
-            if isCashflowUnlocked {
-                if recentActivityTransactions.isEmpty {
-                    Text("No recent activity yet")
-                        .font(.footnoteRegular)
-                        .foregroundStyle(AppColors.textTertiary)
-                        .padding(.horizontal, AppSpacing.screenPadding)
-                        .padding(.vertical, AppSpacing.md)
-                } else {
-                    ForEach(recentActivityTransactions) { transaction in
-                        TransactionRow(
-                            transaction: transaction,
-                            titleOverride: recentActivityTitle(for: transaction)
-                        ) {
-                            selectedTransaction = transaction
-                        }
-                        .padding(.horizontal, AppSpacing.screenPadding)
-                    }
-                }
-            } else {
-                HStack(spacing: AppSpacing.sm) {
-                    Image(systemName: plaidManager.hasLinkedBank ? "sparkles" : "lock.fill")
-                        .font(.footnoteRegular)
-                        .foregroundStyle(AppColors.textTertiary.opacity(0.45))
-                    Text(plaidManager.hasLinkedBank
-                         ? "Complete Build Your Plan to unlock activity"
-                         : "Connect accounts to see recent activity")
-                        .font(.footnoteRegular)
-                        .foregroundStyle(AppColors.textTertiary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, AppSpacing.screenPadding)
-                .padding(.vertical, AppSpacing.md)
-            }
-        }
-        .padding(.top, 4)
-    }
-
-    var recentActivityTransactions: [Transaction] {
-        let sorted = allTransactions.sorted {
-            if $0.date != $1.date { return $0.date > $1.date }
-            return ($0.time ?? "") > ($1.time ?? "")
-        }
-
-        let filtered = sorted.filter { !isLowSignalActivity($0) }
-        if filtered.isEmpty {
-            return Array(sorted.prefix(5))
-        }
-        return Array(filtered.prefix(5))
-    }
-
-    func isLowSignalActivity(_ transaction: Transaction) -> Bool {
-        let sub = transaction.subcategory?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
-        let merchant = transaction.merchant.lowercased()
-
-        if [
-            "transfer_out",
-            "transfer_in",
-            "credit card payment",
-            "credit_card_payment",
-            "payment",
-        ].contains(sub) {
-            return true
-        }
-
-        if merchant.contains("payment thank you") {
-            return true
-        }
-
-        return false
-    }
-
     @MainActor
     func persistTransactionClassification(_ updated: Transaction) async throws {
         let response = try await APIService.shared.updateTransactionClassification(
@@ -1022,24 +852,6 @@ private extension CashflowView {
         )
     }
 
-    func recentActivityTitle(for transaction: Transaction) -> String {
-        var name = transaction.merchant
-            .replacingOccurrences(of: #"(?i)^(ach withdrawal|ach deposit|pos debit|debit card purchase|card purchase|online payment|online transfer|withdrawal|purchase authorization)\s*[-:]\s*"#, with: "", options: .regularExpression)
-            .replacingOccurrences(of: #"(?i)\bcheck\s+\d+\b"#, with: "", options: .regularExpression)
-            .replacingOccurrences(of: #"\b\d{6,}\b"#, with: "", options: .regularExpression)
-            .replacingOccurrences(of: #"\s{2,}"#, with: " ", options: .regularExpression)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
-        if name.isEmpty {
-            name = transaction.merchant
-        }
-
-        if name.count > 34 {
-            name = String(name.prefix(31)).trimmingCharacters(in: .whitespacesAndNewlines) + "..."
-        }
-
-        return name
-    }
 }
 
 // TransactionRow is defined in TransactionRow.swift

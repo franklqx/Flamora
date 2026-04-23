@@ -206,7 +206,7 @@ struct BudgetCard: View {
         HStack {
             Text("BUDGET")
                 .font(.cardHeader)
-                .foregroundColor(AppColors.inkFaint)
+                .foregroundColor(AppColors.inkPrimary)
                 .tracking(AppTypography.Tracking.cardHeader)
 
             Spacer()
@@ -214,7 +214,7 @@ struct BudgetCard: View {
             HStack(spacing: AppSpacing.xs) {
                 Text(currentMonthLabel)
                     .font(.cardHeader)
-                    .foregroundColor(AppColors.inkFaint)
+                    .foregroundColor(AppColors.inkPrimary)
                     .tracking(AppTypography.Tracking.cardHeader)
                 if isConnected && hasBudget && !isEditingBudget {
                     Image(systemName: "chevron.right")
@@ -374,7 +374,7 @@ struct BudgetCard: View {
         VStack(spacing: 2) {
             Text(label)
                 .font(.cardHeader)
-                .foregroundColor(AppColors.inkFaint)
+                .foregroundColor(AppColors.inkPrimary)
             Text(formatCurrency(max(value, 0)))
                 .font(.footnoteBold)
                 .foregroundColor(tint)
@@ -391,7 +391,7 @@ struct BudgetCard: View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text(title.uppercased())
                 .font(.cardHeader)
-                .foregroundColor(AppColors.inkFaint)
+                .foregroundColor(AppColors.inkPrimary)
 
             if categories.wrappedValue.isEmpty {
                 Text("No categories yet")
@@ -592,7 +592,7 @@ struct BudgetCard: View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text(title.uppercased())
                 .font(.cardHeader)
-                .foregroundColor(AppColors.inkFaint)
+                .foregroundColor(AppColors.inkPrimary)
                 .tracking(AppTypography.Tracking.cardHeader)
 
             if categories.isEmpty {

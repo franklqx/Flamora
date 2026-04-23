@@ -243,7 +243,7 @@ struct BS_ChoosePathView: View {
                     Text("MONTHLY BUDGET")
                         .font(.cardHeader)
                         .tracking(1.5)
-                        .foregroundStyle(AppColors.inkFaint)
+                        .foregroundStyle(AppColors.inkPrimary)
                     Text("$\(formattedInt(plan.monthlyBudget))")
                         .font(.display)
                         .foregroundStyle(AppColors.inkPrimary)

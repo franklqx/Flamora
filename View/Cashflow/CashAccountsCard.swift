@@ -30,7 +30,7 @@ struct CashAccountsCard: View {
             HStack {
                 Text("ACCOUNTS")
                     .font(.cardHeader)
-                    .foregroundStyle(AppColors.inkFaint)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .tracking(AppTypography.Tracking.cardHeader)
                 Spacer()
             }
@@ -126,10 +126,16 @@ private struct CashAccountRow: View {
                     .foregroundStyle(iconColor)
             }
 
-            Text(account.name)
-                .font(.footnoteSemibold)
-                .foregroundStyle(AppColors.inkPrimary)
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(account.name)
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .lineLimit(1)
+                Text(accountMaskText)
+                    .font(.caption)
+                    .foregroundStyle(AppColors.inkFaint)
+                    .lineLimit(1)
+            }
 
             Spacer()
 
@@ -142,6 +148,11 @@ private struct CashAccountRow: View {
         .padding(.vertical, AppSpacing.md)
     }
 
+
+    private var accountMaskText: String {
+        let last4 = (account.mask ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return last4.isEmpty ? "••••" : "•••• \(last4)"
+    }
     private var iconName: String {
         switch account.type {
         case "credit":

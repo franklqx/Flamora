@@ -157,7 +157,7 @@ struct HomeRoadmapContent: View {
         VStack(alignment: .leading, spacing: 0) {
             Text("What happens next")
                 .font(.cardHeader)
-                .foregroundStyle(AppColors.inkFaint)
+                .foregroundStyle(AppColors.inkPrimary)
                 .tracking(AppTypography.Tracking.cardHeader)
                 .textCase(.uppercase)
                 .padding(.bottom, AppSpacing.sm)

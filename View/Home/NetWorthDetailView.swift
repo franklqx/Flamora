@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Charts
+import UIKit
 
 struct NetWorthDetailView: View {
     private struct BreakdownItem: Identifiable {
@@ -23,6 +24,7 @@ struct NetWorthDetailView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var selectedRange: NetWorthRange = .year
+    @State private var scrubbedPoint: NetWorthPoint?
 
     private var cardBackground: LinearGradient {
         LinearGradient(
@@ -41,6 +43,44 @@ struct NetWorthDetailView: View {
     private var totalLiabilities: Double { credit + loans }
     private var currentPoints: [NetWorthPoint] { history[selectedRange] ?? [] }
 
+    private var rangeStartValue: Double {
+        currentPoints.first?.value ?? 0
+    }
+
+    private var latestValue: Double {
+        currentPoints.last?.value ?? totalNetWorth
+    }
+
+    private var displayedValue: Double {
+        scrubbedPoint?.value ?? latestValue
+    }
+
+    private var deltaAmount: Double {
+        displayedValue - rangeStartValue
+    }
+
+    private var deltaPercent: Double {
+        guard rangeStartValue != 0 else { return 0 }
+        return (deltaAmount / abs(rangeStartValue)) * 100
+    }
+
+    private var rangePeriodLabel: String {
+        switch selectedRange {
+        case .week: return "past 1 week"
+        case .month: return "past 1 month"
+        case .threeMonths: return "past 3 months"
+        case .year: return "past 1 year"
+        case .all: return "all-time"
+        }
+    }
+
+    private var deltaTrailingLabel: String {
+        if let scrubbed = scrubbedPoint {
+            return formattedScrubDateFull(scrubbed.date)
+        }
+        return rangePeriodLabel
+    }
+
     private var breakdownItems: [BreakdownItem] {
         [
             BreakdownItem(id: "investments", label: "Investments", value: max(investments, 0), tint: AppColors.accentPurple, isLiability: false, note: "Brokerage and investing accounts"),
@@ -51,107 +91,35 @@ struct NetWorthDetailView: View {
     }
 
     var body: some View {
-        ZStack {
-            LinearGradient(
-                colors: [AppColors.shellBg1, AppColors.shellBg2],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: AppSpacing.cardGap) {
-                    header
-                    heroTrendCard
-                    compositionCard
-                    if let summary, !summary.accounts.isEmpty {
-                        accountsCard(summary.accounts)
-                    }
-                }
-                .padding(.horizontal, AppSpacing.screenPadding)
-                .padding(.top, AppSpacing.screenPadding)
-                .padding(.bottom, AppSpacing.xl + AppSpacing.lg)
+        DetailSheetScaffold(title: "Net Worth") {
+            dismiss()
+        } content: {
+            heroTrendCard
+            compositionCard
+            if let summary, !summary.accounts.isEmpty {
+                accountsCard(summary.accounts)
             }
-        }
-    }
-
-    private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text("Net Worth")
-                .font(.h1)
-                .foregroundStyle(AppColors.inkPrimary)
-                .tracking(-0.5)
-
-            Spacer()
-
-            Button {
-                dismiss()
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(AppColors.inkTrack)
-                        .frame(width: 34, height: 34)
-                    Image(systemName: "xmark")
-                        .font(.footnoteSemibold)
-                        .foregroundStyle(AppColors.inkPrimary)
-                }
-            }
-            .buttonStyle(.plain)
         }
     }
 
     private var heroTrendCard: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("CURRENT TOTAL")
-                .font(.cardHeader)
-                .foregroundStyle(AppColors.inkFaint)
-                .tracking(AppTypography.Tracking.cardHeader)
+        VStack(spacing: AppSpacing.lg) {
+            VStack(spacing: AppSpacing.xs) {
+                Text(formatCurrency(displayedValue))
+                    .font(.portfolioHero)
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .animation(.easeOut(duration: 0.15), value: displayedValue)
 
-            Text(formatCurrency(totalNetWorth))
-                .font(.currencyHero)
-                .foregroundStyle(AppColors.inkPrimary)
-                .monospacedDigit()
-
-            HStack(spacing: AppSpacing.sm) {
-                deltaChip
-
-                if let synced = summary?.lastSyncedAt, !synced.isEmpty {
-                    Text("Last synced \(formattedSyncDate(synced))")
-                        .font(.footnoteRegular)
-                        .foregroundStyle(AppColors.inkSoft)
-                }
+                deltaRow
             }
+            .frame(maxWidth: .infinity)
+            .padding(.top, AppSpacing.sm)
 
-            HStack(spacing: AppSpacing.sm) {
-                summaryMetric(label: "Assets", value: formatCurrency(totalAssets))
-                summaryDivider
-                summaryMetric(label: "Debt", value: formatCurrency(totalLiabilities))
-            }
             trendChart
 
-            HStack(spacing: 0) {
-                ForEach(NetWorthRange.allCases) { range in
-                    Button {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            selectedRange = range
-                        }
-                    } label: {
-                        Text(range.label)
-                            .font(.segmentLabel(selected: selectedRange == range))
-                            .foregroundStyle(selectedRange == range ? AppColors.inkPrimary : AppColors.inkSoft)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 30)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(selectedRange == range ? AppColors.ctaWhite.opacity(0.9) : .clear)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(4)
-            .background(AppColors.inkTrack.opacity(0.8))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            rangeSelector
         }
         .padding(AppSpacing.cardPadding)
         .background(cardBackground)
@@ -162,22 +130,56 @@ struct NetWorthDetailView: View {
         )
     }
 
+    private var rangeSelector: some View {
+        HStack(spacing: 0) {
+            ForEach(NetWorthRange.allCases) { range in
+                Button {
+                    UISelectionFeedbackGenerator().selectionChanged()
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        selectedRange = range
+                        scrubbedPoint = nil
+                    }
+                } label: {
+                    Text(range.label)
+                        .font(.segmentLabel(selected: selectedRange == range))
+                        .foregroundStyle(selectedRange == range ? AppColors.inkPrimary : AppColors.inkSoft)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 30)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(selectedRange == range ? AppColors.ctaWhite.opacity(0.95) : .clear)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(4)
+        .background(AppColors.inkTrack.opacity(0.8))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
     @ViewBuilder
-    private var deltaChip: some View {
-        if let growthAmount = summary?.growthAmount, let growthPercentage = summary?.growthPercentage {
-            let isPositive = growthAmount >= 0
+    private var deltaRow: some View {
+        if currentPoints.count >= 2 {
+            let isPositive = deltaAmount >= 0
+            let accent = isPositive ? AppColors.success : AppColors.error
             HStack(spacing: AppSpacing.xs) {
                 Image(systemName: isPositive ? "arrow.up.right" : "arrow.down.right")
-                    .font(.caption.weight(.bold))
-                Text("\(formatCurrency(abs(growthAmount))) (\(formatPercent(growthPercentage))) this month")
+                    .font(.footnoteBold)
+                    .foregroundStyle(accent)
+                Text(formatCurrency(abs(deltaAmount)))
                     .font(.footnoteSemibold)
+                    .foregroundStyle(accent)
                     .monospacedDigit()
+                Text("(\(formatPercent(deltaPercent)))")
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(accent)
+                    .monospacedDigit()
+                Text(deltaTrailingLabel)
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.inkSoft)
             }
-            .foregroundStyle(isPositive ? AppColors.success : AppColors.error)
-            .padding(.horizontal, AppSpacing.sm)
-            .padding(.vertical, 6)
-            .background((isPositive ? AppColors.success : AppColors.error).opacity(0.12))
-            .clipShape(Capsule())
+            .animation(.easeOut(duration: 0.15), value: deltaAmount)
         } else {
             Text("More history will sharpen your net-worth trend.")
                 .font(.footnoteRegular)
@@ -185,93 +187,123 @@ struct NetWorthDetailView: View {
         }
     }
 
-    private func summaryMetric(label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(AppColors.inkFaint)
-            Text(value)
-                .font(.footnoteBold)
-                .foregroundStyle(AppColors.inkPrimary)
-                .monospacedDigit()
+    @ViewBuilder
+    private var trendChart: some View {
+        if currentPoints.count >= 2 {
+            interactiveChart
+        } else {
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .fill(AppColors.inkTrack)
+                .frame(height: 220)
+                .overlay(
+                    Text("Not enough history yet")
+                        .font(.bodyRegular)
+                        .foregroundStyle(AppColors.inkSoft)
+                )
         }
     }
 
-    private var summaryDivider: some View {
-        Rectangle()
-            .fill(AppColors.inkBorder)
-            .frame(width: 1, height: 30)
-    }
-
-    private var trendChart: some View {
-        Group {
-            if currentPoints.count >= 2 {
-                ZStack(alignment: .leading) {
-                    Chart {
-                        ForEach(currentPoints) { point in
-                            AreaMark(
-                                x: .value("Date", point.date),
-                                y: .value("Net Worth", point.value)
-                            )
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [
-                                        AppColors.inkPrimary.opacity(0.16),
-                                        AppColors.inkPrimary.opacity(0.02)
-                                    ],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
-                            .interpolationMethod(.monotone)
-
-                            LineMark(
-                                x: .value("Date", point.date),
-                                y: .value("Net Worth", point.value)
-                            )
-                            .foregroundStyle(AppColors.inkPrimary)
-                            .lineStyle(StrokeStyle(lineWidth: 2))
-                            .interpolationMethod(.monotone)
-                        }
-                    }
-                    .chartYAxis(.hidden)
-                    .chartXAxis(.hidden)
-                    .chartXScale(range: .plotDimension(startPadding: 0, endPadding: 4))
-                    .chartYScale(domain: chartDomain)
-                    .frame(height: 220)
-
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(chartTicks.enumerated()), id: \.offset) { index, tick in
-                            HStack {
-                                Text(formatCompactCurrency(tick))
-                                    .font(.caption)
-                                    .foregroundStyle(AppColors.inkFaint)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(AppColors.shellBg1.opacity(0.72))
-                                    .clipShape(Capsule())
-                                Spacer()
-                            }
-
-                            if index != chartTicks.count - 1 {
-                                Spacer()
-                            }
-                        }
-                    }
-                    .padding(.leading, 4)
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .allowsHitTesting(false)
-                }
-            } else {
-                RoundedRectangle(cornerRadius: AppRadius.md)
-                    .fill(AppColors.inkTrack)
-                    .frame(height: 220)
-                    .overlay(
-                        Text("Not enough history yet")
-                            .font(.bodyRegular)
-                            .foregroundStyle(AppColors.inkSoft)
+    private var interactiveChart: some View {
+        Chart {
+            ForEach(currentPoints) { point in
+                AreaMark(
+                    x: .value("Date", point.date),
+                    y: .value("Net Worth", point.value)
+                )
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [
+                            AppColors.chartBlue.opacity(0.16),
+                            AppColors.chartBlue.opacity(0.0)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
                     )
+                )
+                .interpolationMethod(.monotone)
+
+                LineMark(
+                    x: .value("Date", point.date),
+                    y: .value("Net Worth", point.value)
+                )
+                .foregroundStyle(AppColors.chartBlue)
+                .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                .interpolationMethod(.monotone)
+            }
+        }
+        .chartYAxis(.hidden)
+        .chartXAxis(.hidden)
+        .chartXScale(range: .plotDimension(startPadding: 8, endPadding: 8))
+        .chartYScale(domain: chartDomain)
+        .frame(height: 220)
+        .clipped()
+        .chartOverlay { proxy in
+            GeometryReader { geo in
+                let plotFrame = geo[proxy.plotAreaFrame]
+
+                ZStack(alignment: .topLeading) {
+                    if let scrubbed = scrubbedPoint,
+                       let xPos = proxy.position(forX: scrubbed.date),
+                       let yPos = proxy.position(forY: scrubbed.value) {
+                        let absX = xPos + plotFrame.minX
+                        let absY = yPos + plotFrame.minY
+
+                        Rectangle()
+                            .fill(AppColors.inkDivider)
+                            .frame(width: 1, height: plotFrame.height)
+                            .position(x: absX, y: plotFrame.midY)
+                            .allowsHitTesting(false)
+
+                        Text(formattedScrubDateShort(scrubbed.date))
+                            .font(.smallLabel)
+                            .foregroundStyle(AppColors.inkPrimary)
+                            .monospacedDigit()
+                            .padding(.horizontal, AppSpacing.sm)
+                            .padding(.vertical, 4)
+                            .background(AppColors.ctaWhite.opacity(0.95))
+                            .clipShape(Capsule())
+                            .overlay(
+                                Capsule()
+                                    .stroke(AppColors.glassCardBorder, lineWidth: 1)
+                            )
+                            .position(x: absX, y: plotFrame.minY + 10)
+                            .allowsHitTesting(false)
+
+                        Circle()
+                            .fill(AppColors.chartBlue)
+                            .frame(width: 10, height: 10)
+                            .overlay(
+                                Circle()
+                                    .stroke(AppColors.ctaWhite, lineWidth: 2)
+                            )
+                            .position(x: absX, y: absY)
+                            .allowsHitTesting(false)
+                    }
+
+                    Rectangle()
+                        .fill(Color.clear)
+                        .contentShape(Rectangle())
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { value in
+                                    let localX = value.location.x - plotFrame.minX
+                                    guard localX >= 0, localX <= plotFrame.width else { return }
+                                    guard let date: Date = proxy.value(atX: localX, as: Date.self) else { return }
+                                    guard let nearest = currentPoints.min(by: {
+                                        abs($0.date.timeIntervalSince(date)) < abs($1.date.timeIntervalSince(date))
+                                    }) else { return }
+                                    if scrubbedPoint?.id != nearest.id {
+                                        UISelectionFeedbackGenerator().selectionChanged()
+                                        scrubbedPoint = nearest
+                                    }
+                                }
+                                .onEnded { _ in
+                                    if scrubbedPoint != nil {
+                                        scrubbedPoint = nil
+                                    }
+                                }
+                        )
+                }
             }
         }
     }
@@ -280,7 +312,7 @@ struct NetWorthDetailView: View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             Text("COMPOSITION")
                 .font(.cardHeader)
-                .foregroundStyle(AppColors.inkFaint)
+                .foregroundStyle(AppColors.inkPrimary)
                 .tracking(AppTypography.Tracking.cardHeader)
 
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -397,7 +429,7 @@ struct NetWorthDetailView: View {
             HStack {
                 Text("ACCOUNTS")
                     .font(.cardHeader)
-                    .foregroundStyle(AppColors.inkFaint)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .tracking(AppTypography.Tracking.cardHeader)
                 Spacer()
             }
@@ -455,9 +487,16 @@ struct NetWorthDetailView: View {
                     .foregroundStyle(iconTint(for: account))
             }
 
-            Text(account.name)
-                .font(.footnoteSemibold)
-                .foregroundStyle(AppColors.inkPrimary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(account.name)
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .lineLimit(1)
+                Text(accountMaskText(account))
+                    .font(.caption)
+                    .foregroundStyle(AppColors.inkFaint)
+                    .lineLimit(1)
+            }
             Spacer()
 
             Text(formatCurrency(account.balance ?? 0))
@@ -469,6 +508,11 @@ struct NetWorthDetailView: View {
         .padding(.vertical, AppSpacing.md)
     }
 
+
+    private func accountMaskText(_ account: APIAccount) -> String {
+        let last4 = (account.mask ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return last4.isEmpty ? "••••" : "•••• \(last4)"
+    }
     private func groupedAccounts(_ accounts: [APIAccount]) -> [(title: String, accounts: [APIAccount])] {
         let groups = Dictionary(grouping: accounts) { account -> String in
             switch account.type {
@@ -529,34 +573,16 @@ struct NetWorthDetailView: View {
         return "\(sign)\(String(format: "%.1f", value))%"
     }
 
-    private var chartTicks: [Double] {
-        guard let minValue = currentPoints.map(\.value).min(),
-              let maxValue = currentPoints.map(\.value).max() else { return [] }
-
-        if abs(maxValue - minValue) < 1 {
-            return [maxValue, maxValue * 0.995, maxValue * 0.99]
-        }
-
-        let roundedMin = floor(minValue / 10_000) * 10_000
-        let roundedMax = ceil(maxValue / 10_000) * 10_000
-
-        if roundedMin == roundedMax {
-            return [roundedMax, roundedMax - 10_000, roundedMax - 20_000]
-        }
-
-        let step = max((roundedMax - roundedMin) / 2, 10_000)
-        return stride(from: roundedMax, through: roundedMin, by: -step).map { $0 }
-    }
-
+    // Robinhood-style：紧贴真实 min/max，上下各留 ~12% 呼吸空间。
+    // 单调上升的 net worth 不会再把起点钉在左下角，而是落在中下偏上。
     private var chartDomain: ClosedRange<Double> {
-        let ticks = chartTicks
-        if let lower = ticks.last, let upper = ticks.first, lower < upper {
-            return lower...upper
-        }
         let values = currentPoints.map(\.value)
-        let minValue = values.min() ?? 0
-        let maxValue = values.max() ?? max(minValue, 1)
-        return minValue...maxValue
+        guard let minValue = values.min(), let maxValue = values.max() else {
+            return 0...1
+        }
+        let span = max(maxValue - minValue, max(abs(maxValue) * 0.01, 1))
+        let padding = span * 0.12
+        return (minValue - padding)...(maxValue + padding)
     }
 
     private func formatCompactCurrency(_ value: Double) -> String {
@@ -570,6 +596,18 @@ struct NetWorthDetailView: View {
         guard let date = input.date(from: isoString) else { return "recently" }
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d"
+        return formatter.string(from: date)
+    }
+
+    private func formattedScrubDateShort(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+        return formatter.string(from: date)
+    }
+
+    private func formattedScrubDateFull(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
         return formatter.string(from: date)
     }
 }

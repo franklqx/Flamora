@@ -12,22 +12,15 @@ import SwiftUI
 
 struct TotalIncomeDetailView: View {
     let data: TotalIncomeDetailData
-    private let activeData: IncomeDetailData?
-    private let passiveData: IncomeDetailData?
 
     @Environment(\.dismiss) private var dismiss
     @State private var dragOffset: CGFloat = 0
     @State private var selectedBarIndex: Int
     @State private var selectedYear: Int
-    @State private var showActiveDetail = false
-    @State private var showPassiveDetail = false
     @State private var selectedCategoryForSheet: SpendingDetailCategory?
 
-    init(data: TotalIncomeDetailData, initialSelectedMonth: Int = 0,
-         activeData: IncomeDetailData? = nil, passiveData: IncomeDetailData? = nil) {
+    init(data: TotalIncomeDetailData, initialSelectedMonth: Int = 0) {
         self.data = data
-        self.activeData = activeData
-        self.passiveData = passiveData
         let latest = data.availableYears.last ?? 2026
         let trend = data.trendsByYear[latest] ?? []
         _selectedYear = State(initialValue: latest)
@@ -113,12 +106,6 @@ struct TotalIncomeDetailView: View {
                     }
                 }
         )
-        .fullScreenCover(isPresented: $showActiveDetail) {
-            IncomeDetailView(data: activeData ?? .emptyActiveIncome, initialSelectedMonth: selectedBarIndex)
-        }
-        .fullScreenCover(isPresented: $showPassiveDetail) {
-            IncomeDetailView(data: passiveData ?? .emptyPassiveIncome, initialSelectedMonth: selectedBarIndex)
-        }
         .sheet(item: $selectedCategoryForSheet) { cat in
             IncomeSourceDetailSheet(
                 category: cat,
@@ -312,50 +299,20 @@ private extension TotalIncomeDetailView {
 private extension TotalIncomeDetailView {
     var sourcesSection: some View {
         Group {
-            if let monthData = selectedMonthData {
-                if !monthData.sourceCategories.isEmpty {
-                    VStack(alignment: .leading, spacing: AppSpacing.md) {
-                        Text("Categories")
-                            .font(.detailTitle)
-                            .foregroundStyle(AppColors.textPrimary)
+            if let monthData = selectedMonthData, !monthData.sourceCategories.isEmpty {
+                VStack(alignment: .leading, spacing: AppSpacing.md) {
+                    Text("Categories")
+                        .font(.detailTitle)
+                        .foregroundStyle(AppColors.textPrimary)
 
-                        VStack(spacing: AppSpacing.md) {
-                            ForEach(Array(monthData.sourceCategories.enumerated()), id: \.element.id) { index, cat in
-                                Button {
-                                    selectedCategoryForSheet = cat
-                                } label: {
-                                    incomeCategoryCard(cat, colorIndex: index)
-                                }
-                                .buttonStyle(.plain)
+                    VStack(spacing: AppSpacing.md) {
+                        ForEach(Array(monthData.sourceCategories.enumerated()), id: \.element.id) { index, cat in
+                            Button {
+                                selectedCategoryForSheet = cat
+                            } label: {
+                                incomeCategoryCard(cat, colorIndex: index)
                             }
-                        }
-                    }
-                } else {
-                    let palette = AppColors.incomeSegmentPalette
-                    let visibleSources: [(name: String, amount: Double, percentage: Double, color: Color, action: () -> Void)] = [
-                        ("Active Income", monthData.activeAmount, monthData.activePercentage, palette[0], { showActiveDetail = true }),
-                        ("Passive Income", monthData.passiveAmount, monthData.passivePercentage, palette[min(1, palette.count - 1)], { showPassiveDetail = true }),
-                    ].filter { $0.amount > 0 }
-
-                    if !visibleSources.isEmpty {
-                        VStack(alignment: .leading, spacing: AppSpacing.md) {
-                            Text("Sources")
-                                .font(.detailTitle)
-                                .foregroundStyle(AppColors.textPrimary)
-
-                            VStack(spacing: AppSpacing.md) {
-                                ForEach(Array(visibleSources.enumerated()), id: \.offset) { _, source in
-                                    Button(action: source.action) {
-                                        sourceCard(
-                                            name: source.name,
-                                            amount: source.amount,
-                                            percentage: source.percentage,
-                                            color: source.color
-                                        )
-                                    }
-                                }
-                                .buttonStyle(.plain)
-                            }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -413,55 +370,6 @@ private extension TotalIncomeDetailView {
         .frame(height: 92)
     }
 
-    func sourceCard(name: String, amount: Double, percentage: Double, color: Color) -> some View {
-        GeometryReader { geometry in
-            let width = geometry.size.width.isFinite ? max(geometry.size.width, 0) : 0
-            let ratioValue = percentage.isFinite ? min(max(percentage / 100, 0), 1) : 0
-            let ratio = CGFloat(ratioValue)
-            let fillWidth = ratio == 0 ? 0 : min(width, max(56, width * ratio))
-
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: AppRadius.lg)
-                    .fill(AppColors.cardTopHighlight)
-
-                RoundedRectangle(cornerRadius: AppRadius.lg)
-                    .fill(color.opacity(0.88))
-                    .frame(width: fillWidth)
-
-                HStack(spacing: AppSpacing.rowItem) {
-                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        Text(name)
-                            .font(.bodySemibold)
-                            .foregroundStyle(AppColors.textPrimary)
-
-                        Text("\(selectedMonthLabel) \(selectedYear)")
-                            .font(.footnoteRegular)
-                            .foregroundColor(AppColors.textTertiary)
-                    }
-
-                    Spacer()
-
-                    VStack(alignment: .trailing, spacing: AppSpacing.xs) {
-                        Text(formatCurrency(amount))
-                            .font(.bodySemibold)
-                            .foregroundStyle(AppColors.textPrimary)
-
-                        HStack(spacing: AppSpacing.xs) {
-                            Text("\(Int(percentage.rounded()))%")
-                                .font(.footnoteRegular)
-                                .foregroundColor(AppColors.textSecondary)
-
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundColor(AppColors.textTertiary)
-                        }
-                    }
-                }
-                .padding(.horizontal, AppSpacing.cardPadding)
-            }
-        }
-        .frame(height: 92)
-    }
 }
 
 // MARK: - Income Source Detail (light sheet)

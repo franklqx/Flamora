@@ -2,11 +2,13 @@
 //  CashAccountDetailView.swift
 //  Flamora app
 //
-//  Cashflow-semantic account detail：balance + transactions。
-//  只用于 depository / credit 账户，不显示 holdings。
+//  Light-shell master template for secondary detail pages.
+//  Structure: shellBg gradient → glass hero card (balance + chart + range)
+//  → glass transactions card (grouped, inkDivider separators).
 //
 
 import SwiftUI
+import Charts
 
 struct CashAccountDetailView: View {
     let account: APIAccount
@@ -19,7 +21,6 @@ struct CashAccountDetailView: View {
     @State private var isLoading = true
     @State private var isHistoryLoading = true
     @State private var selectedTransaction: Transaction?
-    @State private var dragOffset: CGFloat = 0
 
     init(account: APIAccount) {
         self.account = account
@@ -41,47 +42,28 @@ struct CashAccountDetailView: View {
         _isHistoryLoading = State(initialValue: initialSnapshots.isEmpty)
     }
 
-    var body: some View {
-        ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
+    private var cardBackground: LinearGradient {
+        LinearGradient(
+            colors: [AppColors.glassCardBg, AppColors.glassCardBg2],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
 
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
-                    headerSection
-                    balanceSection
-                    chartSection
-                    Divider()
-                        .background(AppColors.surfaceBorder)
-                        .padding(.horizontal, AppSpacing.cardPadding)
-                    transactionsSection
-                    Spacer(minLength: AppSpacing.xl)
-                }
-            }
+    var body: some View {
+        DetailSheetScaffold(title: account.name) {
+            dismiss()
+        } content: {
+            heroCard
+            transactionsCard
         }
-        .preferredColorScheme(.dark)
         .task { await loadTransactionsIfNeeded() }
         .task(id: selectedPeriod) { await loadHistory() }
-        .offset(y: dragOffset)
-        .simultaneousGesture(
-            DragGesture()
-                .onChanged { v in
-                    if v.translation.height > 0 { dragOffset = v.translation.height }
-                }
-                .onEnded { v in
-                    if v.translation.height > 150 {
-                        dismiss()
-                    } else {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            dragOffset = 0
-                        }
-                    }
-                }
-        )
         .sheet(item: $selectedTransaction) { txn in
             let acct = Account(
                 id: account.id,
                 institution: account.institution ?? "",
-                accountType: account.type == "credit" ? .bank : .bank,
+                accountType: .bank,
                 balance: account.balance ?? 0,
                 connected: true,
                 logoUrl: nil
@@ -93,129 +75,210 @@ struct CashAccountDetailView: View {
             .presentationDragIndicator(.visible)
             .presentationDetents([.fraction(0.75)])
             .presentationCornerRadius(28)
-            .presentationBackground(AppColors.backgroundPrimary)
+            .presentationBackground(AppColors.shellBg1)
         }
     }
 
-    // MARK: - Header
+    // MARK: - Hero card (identity + balance + chart + range)
 
-    private var headerSection: some View {
-        HStack(spacing: AppSpacing.md) {
-            // Icon
-            ZStack {
-                Circle()
-                    .fill(accentColor.opacity(0.15))
-                    .frame(width: 44, height: 44)
-                Image(systemName: iconName)
-                    .font(.h4)
-                    .foregroundColor(accentColor)
+    private var heroCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack(spacing: AppSpacing.md) {
+                ZStack {
+                    Circle()
+                        .fill(accentColor.opacity(0.14))
+                        .frame(width: 38, height: 38)
+                    Image(systemName: iconName)
+                        .font(.footnoteSemibold)
+                        .foregroundStyle(accentColor)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(balanceLabel)
+                        .font(.cardHeader)
+                        .foregroundStyle(AppColors.inkPrimary)
+                        .tracking(AppTypography.Tracking.cardHeader)
+                    Text(subtitleLine)
+                        .font(.caption)
+                        .foregroundStyle(AppColors.inkSoft)
+                        .lineLimit(1)
+                }
+                Spacer()
             }
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text(account.name)
-                    .font(.h3)
-                    .foregroundStyle(AppColors.textPrimary)
-                Text(subtitleLine)
-                    .font(.inlineLabel)
-                    .foregroundColor(AppColors.textTertiary)
-            }
-
-            Spacer()
-
-            Button(action: { dismiss() }) {
-                Image(systemName: "xmark")
-                    .font(.bodySmallSemibold)
-                    .foregroundStyle(AppColors.textPrimary)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, AppSpacing.cardPadding)
-        .padding(.top, AppSpacing.lg)
-        .padding(.bottom, AppSpacing.md)
-    }
-
-    // MARK: - Balance
-
-    private var balanceSection: some View {
-        VStack(alignment: .leading, spacing: 3) {
             Text(formatCurrency(account.balance ?? 0))
-                .font(.h1)
-                .foregroundStyle(AppColors.textPrimary)
-            Text(account.type == "credit" ? "Balance owed" : "Current balance")
-                .font(.footnoteRegular)
-                .foregroundColor(AppColors.textTertiary)
+                .font(.currencyHero)
+                .foregroundStyle(AppColors.inkPrimary)
+                .monospacedDigit()
+
+            balanceChart
+
+            rangeSelector
         }
-        .padding(.horizontal, AppSpacing.cardPadding)
-        .padding(.bottom, AppSpacing.lg)
-    }
-
-    private var chartSection: some View {
-        AccountHistoryCard(
-            snapshots: historySnapshots,
-            selectedRange: selectedPeriod,
-            isLoading: isHistoryLoading,
-            emptyTitle: account.type == "credit" ? "Balance owed history is starting" : "Balance history is starting",
-            emptySubtitle: "We'll show daily account balance after your next few syncs.",
-            onSelectRange: { selectedPeriod = $0 }
+        .padding(AppSpacing.cardPadding)
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
         )
-        .padding(.horizontal, AppSpacing.cardPadding)
-        .padding(.bottom, AppSpacing.lg)
     }
 
-    // MARK: - Transactions
+    @ViewBuilder
+    private var balanceChart: some View {
+        if isHistoryLoading && historySnapshots.isEmpty {
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .fill(AppColors.inkTrack)
+                .frame(height: 180)
+                .overlay(
+                    ProgressView().tint(AppColors.inkSoft)
+                )
+        } else if historySnapshots.count >= 2 {
+            Chart {
+                ForEach(historySnapshots) { point in
+                    AreaMark(
+                        x: .value("Date", point.date),
+                        y: .value("Balance", point.balance)
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [
+                                AppColors.inkPrimary.opacity(0.16),
+                                AppColors.inkPrimary.opacity(0.02)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .interpolationMethod(.monotone)
 
-    private var transactionsSection: some View {
+                    LineMark(
+                        x: .value("Date", point.date),
+                        y: .value("Balance", point.balance)
+                    )
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .lineStyle(StrokeStyle(lineWidth: 2))
+                    .interpolationMethod(.monotone)
+                }
+            }
+            .chartYAxis(.hidden)
+            .chartXAxis(.hidden)
+            .chartXScale(range: .plotDimension(startPadding: 0, endPadding: 4))
+            .frame(height: 180)
+        } else {
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .fill(AppColors.inkTrack)
+                .frame(height: 180)
+                .overlay(
+                    Text(emptyChartText)
+                        .font(.bodyRegular)
+                        .foregroundStyle(AppColors.inkSoft)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, AppSpacing.md)
+                )
+        }
+    }
+
+    private var rangeSelector: some View {
+        HStack(spacing: 0) {
+            ForEach(AccountHistoryRange.allCases, id: \.self) { range in
+                Button {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        selectedPeriod = range
+                    }
+                } label: {
+                    Text(range.rawValue)
+                        .font(.segmentLabel(selected: selectedPeriod == range))
+                        .foregroundStyle(selectedPeriod == range ? AppColors.inkPrimary : AppColors.inkSoft)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 30)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(selectedPeriod == range ? AppColors.ctaWhite.opacity(0.9) : .clear)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(4)
+        .background(AppColors.inkTrack.opacity(0.8))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    // MARK: - Transactions card
+
+    private var transactionsCard: some View {
         VStack(spacing: 0) {
             HStack {
                 Text("TRANSACTIONS")
                     .font(.cardHeader)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .tracking(AppTypography.Tracking.cardHeader)
                 Spacer()
             }
             .padding(.horizontal, AppSpacing.cardPadding)
-            .padding(.vertical, AppSpacing.md)
+            .padding(.top, AppSpacing.cardPadding)
+            .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
 
             if isLoading {
-                HStack {
-                    ProgressView()
-                        .tint(AppColors.textTertiary)
+                HStack(spacing: AppSpacing.sm) {
+                    ProgressView().tint(AppColors.inkSoft)
                     Text("Loading transactions…")
                         .font(.footnoteRegular)
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundStyle(AppColors.inkSoft)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, AppSpacing.cardPadding)
-                .padding(.vertical, AppSpacing.lg)
+                .padding(.bottom, AppSpacing.cardPadding)
             } else if transactions.isEmpty {
                 Text("No transactions recorded for this account")
                     .font(.bodyRegular)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundStyle(AppColors.inkSoft)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, AppSpacing.cardPadding)
-                    .padding(.vertical, AppSpacing.lg)
+                    .padding(.bottom, AppSpacing.cardPadding)
             } else {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    ForEach(groupedTransactions, id: \.0) { label, group in
-                        Text(label)
-                            .font(.cardHeader)
-                            .foregroundColor(AppColors.textTertiary)
-                            .tracking(0.8)
-                            .padding(.top, AppSpacing.lg)
-                            .padding(.bottom, AppSpacing.sm)
-                            .padding(.horizontal, AppSpacing.cardPadding)
+                    ForEach(Array(groupedTransactions.enumerated()), id: \.element.0) { sectionIndex, group in
+                        if sectionIndex > 0 {
+                            divider
+                        }
+                        HStack {
+                            Text(group.0)
+                                .font(.caption)
+                                .foregroundStyle(AppColors.inkFaint)
+                            Spacer()
+                        }
+                        .padding(.horizontal, AppSpacing.cardPadding)
+                        .padding(.vertical, AppSpacing.sm)
 
-                        ForEach(group) { txn in
-                            TransactionRow(transaction: txn, onTap: { selectedTransaction = txn })
-                                .padding(.horizontal, AppSpacing.cardPadding)
-                                .padding(.bottom, AppSpacing.cardGap)
+                        ForEach(Array(group.1.enumerated()), id: \.element.id) { idx, txn in
+                            TransactionRow(transaction: txn) { selectedTransaction = txn }
+                            if idx != group.1.count - 1 {
+                                divider
+                            }
                         }
                     }
                 }
+                .padding(.bottom, AppSpacing.sm)
             }
         }
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
     }
 
-    // MARK: - Grouped Transactions
+    private var divider: some View {
+        Rectangle()
+            .fill(AppColors.inkDivider)
+            .frame(height: 0.5)
+            .padding(.horizontal, AppSpacing.cardPadding)
+    }
+
+    // MARK: - Grouped transactions
 
     private var groupedTransactions: [(String, [Transaction])] {
         let calendar = Calendar.current
@@ -255,7 +318,7 @@ struct CashAccountDetailView: View {
         return groups
     }
 
-    // MARK: - Data
+    // MARK: - Data (unchanged)
 
     private func loadTransactionsIfNeeded() async {
         if !transactions.isEmpty {
@@ -357,7 +420,7 @@ struct CashAccountDetailView: View {
     // MARK: - Helpers
 
     private var accentColor: Color {
-        account.type == "credit" ? AppColors.accentPink : AppColors.accentGreen
+        account.type == "credit" ? AppColors.warning : AppColors.budgetNeedsBlue
     }
 
     private var iconName: String {
@@ -366,6 +429,16 @@ struct CashAccountDetailView: View {
         default:
             return account.subtype?.lowercased() == "savings" ? "banknote" : "building.columns"
         }
+    }
+
+    private var balanceLabel: String {
+        account.type == "credit" ? "BALANCE OWED" : "CURRENT BALANCE"
+    }
+
+    private var emptyChartText: String {
+        account.type == "credit"
+            ? "Balance history will appear after your next few syncs"
+            : "Balance history will appear after your next few syncs"
     }
 
     private var subtitleLine: String {

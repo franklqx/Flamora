@@ -25,7 +25,7 @@ struct AccountsCard: View {
             HStack {
                 Text("ACCOUNTS")
                     .font(.cardHeader)
-                    .foregroundStyle(AppColors.inkFaint)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .tracking(AppTypography.Tracking.cardHeader)
                 Spacer()
             }
@@ -171,10 +171,16 @@ private struct AccountRow: View {
     var body: some View {
         HStack(spacing: AppSpacing.md) {
             fallbackIcon
-            Text(account.name ?? account.institution)
-                .font(.footnoteSemibold)
-                .foregroundStyle(AppColors.inkPrimary)
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(account.name ?? account.institution)
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .lineLimit(1)
+                Text(accountMaskText)
+                    .font(.caption)
+                    .foregroundStyle(AppColors.inkFaint)
+                    .lineLimit(1)
+            }
             Spacer()
             Text(formatCurrency(account.balance))
                 .font(.footnoteBold)
@@ -185,6 +191,11 @@ private struct AccountRow: View {
         .padding(.vertical, AppSpacing.md)
     }
 
+
+    private var accountMaskText: String {
+        let last4 = (account.mask ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return last4.isEmpty ? "••••" : "•••• \(last4)"
+    }
     private var fallbackIcon: some View {
         ZStack {
             Circle()

@@ -49,6 +49,7 @@
 		12748FE92F7276F100410D60 /* BS_ChoosePathView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748FE82F7276F100410D60 /* BS_ChoosePathView.swift */; };
 		12748FEF2F7277AB00410D60 /* BS_TargetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748FEE2F7277AB00410D60 /* BS_TargetView.swift */; };
 		1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */; };
+		CDSP00062FE0000000000006 /* DetailSheetScaffold.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDSP00052FE0000000000005 /* DetailSheetScaffold.swift */; };
 		1508AF372F5D1A2600D59781 /* OB_BarChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1508AF362F5D1A2600D59781 /* OB_BarChartView.swift */; };
 		152BE0842F67A66C00CACBBC /* GlassPillSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152BE0832F67A66C00CACBBC /* GlassPillSelector.swift */; };
 		152BE0862F67A67000CACBBC /* ChartInteractionLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152BE0852F67A67000CACBBC /* ChartInteractionLayer.swift */; };
@@ -66,7 +67,6 @@
 		15E21AB72F3257C600A9BB60 /* InvestmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB62F3257C600A9BB60 /* InvestmentView.swift */; };
 		15E21AB92F3257D700A9BB60 /* GlassmorphicTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */; };
 		15E21AD92F3394B100A9BB60 /* FlameIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AD82F3394B100A9BB60 /* FlameIcon.swift */; };
-		15E21AE12F33BB9300A9BB60 /* SavingsTargetCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AE02F33BB9200A9BB60 /* SavingsTargetCard.swift */; };
 		15E21AE32F33BBB600A9BB60 /* SavingsInputSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AE22F33BBB600A9BB60 /* SavingsInputSheet.swift */; };
 		15E21AED2F33C11A00A9BB60 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */; };
 		15E21AF12F33C40000A9BB60 /* BudgetCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF02F33C40000A9BB60 /* BudgetCard.swift */; };
@@ -90,6 +90,8 @@
 		CD11E0022F90000000000001 /* TransactionCategoryCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11E0012F90000000000001 /* TransactionCategoryCatalog.swift */; };
 		CD11E0042F90000000000001 /* Account+API.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11E0032F90000000000001 /* Account+API.swift */; };
 		CD11E0062F90000000000001 /* CashflowDetailEmptyStates.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11E0052F90000000000001 /* CashflowDetailEmptyStates.swift */; };
+		CDSP00022FD0000000000002 /* SpendingAnalysisDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDSP00012FD0000000000001 /* SpendingAnalysisDetailView.swift */; };
+		CDSP00042FD0000000000004 /* TotalSpendingAnalysisDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDSP00032FD0000000000003 /* TotalSpendingAnalysisDetailView.swift */; };
 		CD11E0082F90000000000001 /* FIREAssumptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11E0072F90000000000001 /* FIREAssumptions.swift */; };
 		CD2604070000000000000002 /* HomeSetupState.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD2604070000000000000001 /* HomeSetupState.swift */; };
 		CD2604070000000000000004 /* HomeHeroModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD2604070000000000000003 /* HomeHeroModel.swift */; };
@@ -183,6 +185,7 @@
 		12748FE82F7276F100410D60 /* BS_ChoosePathView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_ChoosePathView.swift; sourceTree = "<group>"; };
 		12748FEE2F7277AB00410D60 /* BS_TargetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_TargetView.swift; sourceTree = "<group>"; };
 		1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBackgroundView.swift; sourceTree = "<group>"; };
+		CDSP00052FE0000000000005 /* DetailSheetScaffold.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheetScaffold.swift; sourceTree = "<group>"; };
 		150899942F30F60F003DDFBF /* Flamora app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Flamora app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899A32F30F611003DDFBF /* Flamora appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899AD2F30F611003DDFBF /* Flamora appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -251,6 +254,8 @@
 		CD11E0012F90000000000001 /* TransactionCategoryCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionCategoryCatalog.swift; sourceTree = "<group>"; };
 		CD11E0032F90000000000001 /* Account+API.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Account+API.swift"; sourceTree = "<group>"; };
 		CD11E0052F90000000000001 /* CashflowDetailEmptyStates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowDetailEmptyStates.swift; sourceTree = "<group>"; };
+		CDSP00012FD0000000000001 /* SpendingAnalysisDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendingAnalysisDetailView.swift; sourceTree = "<group>"; };
+		CDSP00032FD0000000000003 /* TotalSpendingAnalysisDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotalSpendingAnalysisDetailView.swift; sourceTree = "<group>"; };
 		CD11E0072F90000000000001 /* FIREAssumptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIREAssumptions.swift; sourceTree = "<group>"; };
 		CD2604070000000000000001 /* HomeSetupState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeSetupState.swift; sourceTree = "<group>"; };
 		CD2604070000000000000003 /* HomeHeroModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHeroModel.swift; sourceTree = "<group>"; };
@@ -495,6 +500,7 @@
 				SAV000042FC100000000004 /* NetWorthDetailView.swift */,
 				F10000C52FB3000000000005 /* HomeSavingsRateCard.swift */,
 				F10000C72FB3000000000007 /* HomeReportsEntryCard.swift */,
+				153CA32B2F3562AC001ED98E /* SavingsTargetDetailView2.swift */,
 				CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */,
 				CF30A0002F80000100A9BB60 /* HomeBottomSheet.swift */,
 				PH0D000B2F4000000000000B /* HomeJourneyProgressStrip.swift */,
@@ -523,20 +529,17 @@
 		15E21AE72F33BC5E00A9BB60 /* Cashflow */ = {
 			isa = PBXGroup;
 			children = (
-				153CA32B2F3562AC001ED98E /* SavingsTargetDetailView2.swift */,
-				15ABCD002F36A00000AABB01 /* IncomeDetailView.swift */,
-				15ABCD022F36B00000AABB02 /* TotalIncomeDetailView.swift */,
 				15E21AB22F3257B000A9BB60 /* CashflowView.swift */,
 				CF10A0002F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift */,
 				CF10A0102F50000100A9BB60 /* CashflowExpandedOverlayView.swift */,
 				15E21AF02F33C40000A9BB60 /* BudgetCard.swift */,
 				15E21AE22F33BBB600A9BB60 /* SavingsInputSheet.swift */,
-				15E21AE02F33BB9200A9BB60 /* SavingsTargetCard.swift */,
 				15E21AF72F34010000A9BB70 /* TransactionDetailSheet.swift */,
 				15E21AF92F34020000A9BB73 /* TransactionRow.swift */,
-				15E21AFB2F34030000A9BB75 /* AllTransactionsView.swift */,
 				CDBB00012FA1000000000001 /* CashAccountsCard.swift */,
 				CDBB00032FA1000000000001 /* CashAccountDetailView.swift */,
+				CDSP00012FD0000000000001 /* SpendingAnalysisDetailView.swift */,
+				CDSP00032FD0000000000003 /* TotalSpendingAnalysisDetailView.swift */,
 			);
 			path = Cashflow;
 			sourceTree = "<group>";
@@ -584,8 +587,12 @@
 				15E99F652F906CD6008E9FBA /* SavingsRateCard.swift */,
 				15E99F662F906CD6008E9FBA /* SmoothPath.swift */,
 				15E99F672F906CD6008E9FBA /* TabBarVisibilityPreferenceKey.swift */,
+				15E21AE02F33BB9200A9BB60 /* SavingsTargetCard.swift */,
 				F10000C92FB3000000000009 /* SavingsInputSheet.swift */,
 				F10000CA2FB300000000000A /* SavingsTargetDetailView2.swift */,
+				15ABCD002F36A00000AABB01 /* IncomeDetailView.swift */,
+				15E21AFB2F34030000A9BB75 /* AllTransactionsView.swift */,
+				15ABCD022F36B00000AABB02 /* TotalIncomeDetailView.swift */,
 			);
 			path = OLDDESIGN;
 			sourceTree = "<group>";
@@ -613,6 +620,7 @@
 				A76DFA412FAB4ECEB53AA9BB /* LiquidGlassTabBar.swift */,
 				15FF6ED92F31043F0005F482 /* GradientButton.swift */,
 				EB0000022F9A00000000EB01 /* ErrorBanner.swift */,
+				CDSP00052FE0000000000005 /* DetailSheetScaffold.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -801,10 +809,10 @@
 				RPT000012FC000000000001 /* ReportModels.swift in Sources */,
 				152BE0842F67A66C00CACBBC /* GlassPillSelector.swift in Sources */,
 				EB0000012F9A00000000EB01 /* ErrorBanner.swift in Sources */,
+				CDSP00062FE0000000000006 /* DetailSheetScaffold.swift in Sources */,
 				152BE0862F67A67000CACBBC /* ChartInteractionLayer.swift in Sources */,
 				15E21AED2F33C11A00A9BB60 /* MainTabView.swift in Sources */,
 				15FF6EDA2F31096B0005F482 /* GradientButton.swift in Sources */,
-				15E21AE12F33BB9300A9BB60 /* SavingsTargetCard.swift in Sources */,
 				1571A1D82F3C2A2C0024A729 /* APIService.swift in Sources */,
 				CDAA00072FA0000000000001 /* CashflowDetailBuilders.swift in Sources */,
 				CDAA00092FA0000000000001 /* TabContentCache.swift in Sources */,
@@ -844,6 +852,8 @@
 				CD11E0022F90000000000001 /* TransactionCategoryCatalog.swift in Sources */,
 				CD11E0042F90000000000001 /* Account+API.swift in Sources */,
 				CD11E0062F90000000000001 /* CashflowDetailEmptyStates.swift in Sources */,
+				CDSP00022FD0000000000002 /* SpendingAnalysisDetailView.swift in Sources */,
+				CDSP00042FD0000000000004 /* TotalSpendingAnalysisDetailView.swift in Sources */,
 				CD11E0082F90000000000001 /* FIREAssumptions.swift in Sources */,
 				15E21AF52F33F2BE00A9BB60 /* AssetAllocationCard.swift in Sources */,
 				15E21B142F33F33000A9BB80 /* AssetAllocationDetailView.swift in Sources */,

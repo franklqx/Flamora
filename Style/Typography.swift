@@ -90,8 +90,8 @@ extension Font {
     static var fieldBodyMedium: Font { appFont(17, .medium) }
 
     // ── Card chrome ───────────────────────────────────────────
-    /// All-caps card section title — pair with Tracking.cardHeader + textTertiary
-    static var cardHeader:   Font { appFont(11, .bold) }
+    /// All-caps card section title — pair with Tracking.cardHeader + inkPrimary
+    static var cardHeader:   Font { appFont(11, .medium) }
     /// Row meta / secondary annotation
     static var cardRowMeta:  Font { appFont(11, .medium) }
     /// Primary large number on cards (28pt)
@@ -104,7 +104,6 @@ extension Font {
 
     // ── Section & sheet titles ────────────────────────────────
     static var detailTitle: Font { appFont(22, .bold) }    // sheet sub-header
-    static var detailSheetTitle: Font { appFont(AppTypography.h1, .bold) }  // large sheet header (= h1)
 
     // ── Special UI controls ───────────────────────────────────
     static var sheetPrimaryButton: Font { appFont(AppTypography.h4, .bold) }   // 18 / bold
@@ -112,7 +111,6 @@ extension Font {
     static var chromeIconMedium:   Font { appFont(22, .medium) }              // tab bar icon (22pt matches system)
     static var navChevron:         Font { appFont(26, .semibold) }             // full-screen back
     static var categoryRowIcon:    Font { appFont(21, .semibold) }             // list icon
-    static var quoteBody:          Font { appFont(AppTypography.h3, .bold) }   // quote card body
     static var currencyHero:       Font { appFont(48, .bold) }                 // large currency display
     /// Report Story hero number (64pt). Pair with .kerning(-2) at call site. See DESIGN.md §Report Screens.
     static var storyHero:          Font { appFont(AppTypography.storyHero, .bold) }

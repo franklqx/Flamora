@@ -2,7 +2,8 @@
 //  TransactionRow.swift
 //  Flamora app
 //
-//  Reusable transaction row — used in CashflowView and AllTransactionsView.
+//  Light-shell transaction row — slots into glass cards with inkDivider separators.
+//  No own background; container provides card chrome.
 //
 
 import SwiftUI
@@ -15,101 +16,86 @@ struct TransactionRow: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 14) {
-
-                // MARK: Icon
+            HStack(spacing: AppSpacing.md) {
                 ZStack {
                     Circle()
-                        .fill(AppColors.surfaceElevated)
-                        .frame(width: 40, height: 40)
-                        .overlay(Circle().stroke(AppColors.surfaceBorder, lineWidth: 0.75))
+                        .fill(iconTint.opacity(0.14))
+                        .frame(width: 38, height: 38)
                     Image(systemName: categoryIcon)
-                        .font(.inlineLabel)
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(.footnoteSemibold)
+                        .foregroundStyle(iconTint)
                 }
 
-                // MARK: Merchant + date/time
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(titleOverride ?? transaction.merchant)
-                        .font(.figureSecondarySemibold)
-                        .foregroundStyle(AppColors.textPrimary)
-                        .lineLimit(2)
-                    if let contextLine, !contextLine.isEmpty {
-                        Text(contextLine)
-                            .font(.inlineLabel)
-                            .foregroundColor(AppColors.textSecondary)
-                            .lineLimit(1)
-                    }
-                    Text(dateTimeLabel)
+                        .font(.footnoteSemibold)
+                        .foregroundStyle(AppColors.inkPrimary)
+                        .lineLimit(1)
+                    Text(metaLine)
                         .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundStyle(AppColors.inkFaint)
+                        .lineLimit(1)
                 }
 
                 Spacer()
 
-                // MARK: Amount + badge
-                VStack(alignment: .trailing, spacing: 6) {
-                    Text(formattedAmount(transaction.amount))
-                        .font(.cardFigureSecondary)
-                        .foregroundStyle(AppColors.textPrimary)
-                    categoryBadge
-                }
+                Text(formattedAmount(transaction.amount))
+                    .font(.footnoteBold)
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .monospacedDigit()
             }
             .padding(.horizontal, AppSpacing.cardPadding)
-            .padding(.vertical, 14)
-            .background(AppColors.surface)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.lg)
-                    .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
-            )
+            .padding(.vertical, AppSpacing.md)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
 
-    // MARK: - Badge
+    // MARK: - Meta line (category · date · time)
 
-    @ViewBuilder
-    private var categoryBadge: some View {
-        let (label, bg, fg, showBorder) = badgeStyle
-        Text(label)
-            .font(.miniLabel)
-            .foregroundColor(fg)
-            .padding(.vertical, 4)
-            .padding(.horizontal, 8)
-            .background(bg)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule().stroke(
-                    showBorder ? AppColors.surfaceBorder : Color.clear,
-                    lineWidth: 0.75
-                )
-            )
+    private var metaLine: String {
+        var parts: [String] = [categoryLabel]
+        if let contextLine, !contextLine.isEmpty {
+            parts.append(contextLine)
+        } else {
+            parts.append(dateTimeLabel)
+        }
+        return parts.joined(separator: "  ·  ")
     }
 
-    private var badgeStyle: (String, Color, Color, Bool) {
-        if let sub = transaction.subcategory {
-            let resolvedParent = TransactionCategoryCatalog.parent(forStoredSubcategory: sub) ?? transaction.category
-            let color = resolvedParent == "needs" ? AppColors.chartBlue : AppColors.chartGold
-            let label = TransactionCategoryCatalog.displayName(forStoredSubcategory: sub) ?? sub
-            return (label, color.opacity(0.2), color, false)
+    private var categoryLabel: String {
+        if let sub = transaction.subcategory,
+           let name = TransactionCategoryCatalog.displayName(forStoredSubcategory: sub) {
+            return name
         }
         if let cat = transaction.category {
-            let color = cat == "needs" ? AppColors.chartBlue : AppColors.chartGold
-            let label = cat == "needs" ? "Needs" : "Wants"
-            return (label, color.opacity(0.2), color, false)
+            return cat == "needs" ? "Needs" : "Wants"
         }
-        return ("Classify", Color.clear, AppColors.textTertiary, true)
+        return "Uncategorized"
     }
-
-    // MARK: - Helpers
 
     private var dateTimeLabel: String {
         let datePart = formattedDate(transaction.date)
         if let t = transaction.time, !t.isEmpty {
-            return "\(datePart)  ·  \(t)"
+            return "\(datePart) · \(t)"
         }
         return datePart
+    }
+
+    // MARK: - Icon + tint
+
+    private var iconTint: Color {
+        let parent: String? = {
+            if let sub = transaction.subcategory {
+                return TransactionCategoryCatalog.parent(forStoredSubcategory: sub) ?? transaction.category
+            }
+            return transaction.category
+        }()
+        switch parent {
+        case "needs": return AppColors.budgetNeedsBlue
+        case "wants": return AppColors.accentPurple
+        default: return AppColors.inkSoft
+        }
     }
 
     private var categoryIcon: String {

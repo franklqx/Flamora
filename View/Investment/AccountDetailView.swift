@@ -2,8 +2,13 @@
 //  AccountDetailView.swift
 //  Flamora app
 //
+//  Light-shell detail page for a brokerage / crypto / bank account.
+//  Shell pattern mirrors CashAccountDetailView: shellBg gradient →
+//  glass hero card (balance + chart + range) → glass holdings/transactions card.
+//
 
 import SwiftUI
+import Charts
 
 struct AccountDetailView: View {
     let account: Account
@@ -15,7 +20,6 @@ struct AccountDetailView: View {
     @State private var historySnapshots: [BalanceSnapshot] = []
     @State private var historyCache: [AccountHistoryRange: [BalanceSnapshot]] = [:]
     @State private var isHistoryLoading = true
-    @State private var dragOffset: CGFloat = 0
 
     init(account: Account) {
         self.account = account
@@ -56,55 +60,29 @@ struct AccountDetailView: View {
         return ((last - first) / first) * 100
     }
 
+    private var cardBackground: LinearGradient {
+        LinearGradient(
+            colors: [AppColors.glassCardBg, AppColors.glassCardBg2],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
     // MARK: - Body
 
     var body: some View {
-        ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
-
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
-                    headerSection
-                    balanceSection
-                    chartSection
-                    Divider()
-                        .background(AppColors.surfaceBorder)
-                        .padding(.horizontal, AppSpacing.cardPadding)
-                    if account.accountType.isInvestment {
-                        holdingsSection
-                    } else {
-                        transactionsSection
-                    }
-                    Spacer(minLength: AppSpacing.xl)
-                }
+        DetailSheetScaffold(title: account.name ?? account.institution) {
+            dismiss()
+        } content: {
+            heroCard
+            if account.accountType.isInvestment {
+                holdingsCard
+            } else {
+                transactionsCard
             }
-            .background(AppColors.backgroundPrimary)
         }
-        .preferredColorScheme(.dark)
-        .task {
-            await loadAccountDataIfNeeded()
-        }
-        .task(id: selectedPeriod) {
-            await loadAccountHistory()
-        }
-        .offset(y: dragOffset)
-        .simultaneousGesture(
-            DragGesture()
-                .onChanged { value in
-                    if value.translation.height > 0 {
-                        dragOffset = value.translation.height
-                    }
-                }
-                .onEnded { value in
-                    if value.translation.height > 150 {
-                        dismiss()
-                    } else {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            dragOffset = 0
-                        }
-                    }
-                }
-        )
+        .task { await loadAccountDataIfNeeded() }
+        .task(id: selectedPeriod) { await loadAccountHistory() }
         .sheet(item: $selectedTransaction) { txn in
             TransactionDetailSheet(transaction: txn, linkedAccounts: [account]) { updated in
                 try await persistTransactionClassification(updated)
@@ -113,36 +91,148 @@ struct AccountDetailView: View {
             .presentationDragIndicator(.visible)
             .presentationDetents([.fraction(0.75)])
             .presentationCornerRadius(28)
-            .presentationBackground(AppColors.backgroundPrimary)
+            .presentationBackground(AppColors.shellBg1)
         }
     }
 
-    // MARK: - Header
+    // MARK: - Hero card
 
-    private var headerSection: some View {
-        HStack(spacing: AppSpacing.md) {
-            accountLogoView
-                .frame(width: 44, height: 44)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(account.name ?? account.institution)
-                    .font(.h3)
-                    .foregroundStyle(AppColors.textPrimary)
-                Text(headerSubtitle)
-                    .font(.inlineLabel)
-                    .foregroundColor(AppColors.textTertiary)
+    private var heroCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack(spacing: AppSpacing.md) {
+                accountLogoView
+                    .frame(width: 38, height: 38)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("TOTAL BALANCE")
+                        .font(.cardHeader)
+                        .foregroundStyle(AppColors.inkPrimary)
+                        .tracking(AppTypography.Tracking.cardHeader)
+                    Text(headerSubtitle)
+                        .font(.caption)
+                        .foregroundStyle(AppColors.inkSoft)
+                        .lineLimit(1)
+                }
+                Spacer()
             }
-            Spacer()
-            Button(action: { dismiss() }) {
-                Image(systemName: "xmark")
-                    .font(.bodySmallSemibold)
-                    .foregroundStyle(AppColors.textPrimary)
-                    .padding(.top, 2)
+
+            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                Text(formatCurrency(account.balance))
+                    .font(.currencyHero)
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .monospacedDigit()
+                Spacer()
+                if let pct = performancePercent {
+                    perfChip(pct)
+                }
             }
-            .buttonStyle(.plain)
+
+            balanceChart
+
+            rangeSelector
         }
-        .padding(.horizontal, AppSpacing.cardPadding)
-        .padding(.top, AppSpacing.lg)
-        .padding(.bottom, AppSpacing.md)
+        .padding(AppSpacing.cardPadding)
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
+    }
+
+    private func perfChip(_ pct: Double) -> some View {
+        let isPositive = pct >= 0
+        return HStack(spacing: AppSpacing.xs) {
+            Image(systemName: isPositive ? "arrow.up.right" : "arrow.down.right")
+                .font(.caption.weight(.bold))
+            Text(formatPercent(pct))
+                .font(.footnoteSemibold)
+                .monospacedDigit()
+        }
+        .foregroundStyle(isPositive ? AppColors.success : AppColors.error)
+        .padding(.horizontal, AppSpacing.sm)
+        .padding(.vertical, 6)
+        .background((isPositive ? AppColors.success : AppColors.error).opacity(0.12))
+        .clipShape(Capsule())
+    }
+
+    @ViewBuilder
+    private var balanceChart: some View {
+        if isHistoryLoading && historySnapshots.isEmpty {
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .fill(AppColors.inkTrack)
+                .frame(height: 180)
+                .overlay(ProgressView().tint(AppColors.inkSoft))
+        } else if historySnapshots.count >= 2 {
+            Chart {
+                ForEach(historySnapshots) { point in
+                    AreaMark(
+                        x: .value("Date", point.date),
+                        y: .value("Balance", point.balance)
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [
+                                AppColors.inkPrimary.opacity(0.16),
+                                AppColors.inkPrimary.opacity(0.02)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .interpolationMethod(.monotone)
+
+                    LineMark(
+                        x: .value("Date", point.date),
+                        y: .value("Balance", point.balance)
+                    )
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .lineStyle(StrokeStyle(lineWidth: 2))
+                    .interpolationMethod(.monotone)
+                }
+            }
+            .chartYAxis(.hidden)
+            .chartXAxis(.hidden)
+            .chartXScale(range: .plotDimension(startPadding: 0, endPadding: 4))
+            .frame(height: 180)
+        } else {
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .fill(AppColors.inkTrack)
+                .frame(height: 180)
+                .overlay(
+                    Text("Balance history will appear after your next few syncs")
+                        .font(.bodyRegular)
+                        .foregroundStyle(AppColors.inkSoft)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, AppSpacing.md)
+                )
+        }
+    }
+
+    private var rangeSelector: some View {
+        HStack(spacing: 0) {
+            ForEach(AccountHistoryRange.allCases, id: \.self) { range in
+                Button {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        selectedPeriod = range
+                    }
+                } label: {
+                    Text(range.rawValue)
+                        .font(.segmentLabel(selected: selectedPeriod == range))
+                        .foregroundStyle(selectedPeriod == range ? AppColors.inkPrimary : AppColors.inkSoft)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 30)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(selectedPeriod == range ? AppColors.ctaWhite.opacity(0.9) : .clear)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(4)
+        .background(AppColors.inkTrack.opacity(0.8))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     /// e.g. "Brokerage • 7892" or just "Brokerage"
@@ -154,113 +244,110 @@ struct AccountDetailView: View {
         return parts.joined(separator: " ")
     }
 
-    // MARK: - Balance
+    // MARK: - Holdings card
 
-    private var balanceSection: some View {
-        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(formatCurrency(account.balance))
-                    .font(.h1)
-                    .foregroundStyle(AppColors.textPrimary)
-                Text("Total balance")
-                    .font(.footnoteRegular)
-                    .foregroundColor(AppColors.textTertiary)
-            }
-            Spacer()
-            if let pct = performancePercent {
-                Text(formatPercent(pct))
-                    .font(.bodySemibold)
-                    .foregroundColor(pct >= 0 ? AppColors.accentGreen : AppColors.accentRed)
-            }
-        }
-        .padding(.horizontal, AppSpacing.cardPadding)
-        .padding(.bottom, AppSpacing.lg)
-    }
-
-    // MARK: - Chart
-
-    private var chartSection: some View {
-        AccountHistoryCard(
-            snapshots: filteredSnapshots,
-            selectedRange: selectedPeriod,
-            isLoading: isHistoryLoading,
-            emptyTitle: "Balance history is starting",
-            emptySubtitle: "We'll show account value after your next few syncs.",
-            onSelectRange: { selectedPeriod = $0 }
-        )
-        .padding(.horizontal, AppSpacing.cardPadding)
-        .padding(.bottom, AppSpacing.lg)
-    }
-
-    // MARK: - Holdings
-
-    private var holdingsSection: some View {
+    private var holdingsCard: some View {
         VStack(spacing: 0) {
             HStack {
                 Text("HOLDINGS")
                     .font(.cardHeader)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .tracking(AppTypography.Tracking.cardHeader)
                 Spacer()
             }
             .padding(.horizontal, AppSpacing.cardPadding)
-            .padding(.vertical, AppSpacing.md)
+            .padding(.top, AppSpacing.cardPadding)
+            .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
 
-            ForEach(holdings.indices, id: \.self) { i in
-                HoldingRow(holding: holdings[i])
-                if i < holdings.count - 1 {
-                    Rectangle()
-                        .fill(AppColors.surfaceBorder)
-                        .frame(height: 0.5)
-                        .padding(.horizontal, AppSpacing.cardPadding)
+            if holdings.isEmpty {
+                Text("No holdings available for this account")
+                    .font(.bodyRegular)
+                    .foregroundStyle(AppColors.inkSoft)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, AppSpacing.cardPadding)
+                    .padding(.bottom, AppSpacing.cardPadding)
+            } else {
+                ForEach(Array(holdings.enumerated()), id: \.element.id) { idx, holding in
+                    HoldingRow(holding: holding)
+                    if idx < holdings.count - 1 {
+                        divider
+                    }
                 }
+                Spacer().frame(height: AppSpacing.sm)
             }
         }
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
     }
 
-    // MARK: - Transactions
+    // MARK: - Transactions card
 
-    private var transactionsSection: some View {
+    private var transactionsCard: some View {
         VStack(spacing: 0) {
             HStack {
                 Text("TRANSACTIONS")
                     .font(.cardHeader)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .tracking(AppTypography.Tracking.cardHeader)
                 Spacer()
             }
             .padding(.horizontal, AppSpacing.cardPadding)
-            .padding(.vertical, AppSpacing.md)
+            .padding(.top, AppSpacing.cardPadding)
+            .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
 
             if groupedTransactions.isEmpty {
                 Text("No transactions for this account")
                     .font(.bodyRegular)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundStyle(AppColors.inkSoft)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, AppSpacing.cardPadding)
-                    .padding(.vertical, AppSpacing.lg)
+                    .padding(.bottom, AppSpacing.cardPadding)
             } else {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    ForEach(groupedTransactions, id: \.0) { dateLabel, group in
-                        Text(dateLabel)
-                            .font(.cardHeader)
-                            .foregroundColor(AppColors.textTertiary)
-                            .tracking(0.8)
-                            .padding(.top, AppSpacing.lg)
-                            .padding(.bottom, AppSpacing.sm)
-                            .padding(.horizontal, AppSpacing.cardPadding)
+                    ForEach(Array(groupedTransactions.enumerated()), id: \.element.0) { sectionIndex, group in
+                        if sectionIndex > 0 {
+                            divider
+                        }
+                        HStack {
+                            Text(group.0)
+                                .font(.caption)
+                                .foregroundStyle(AppColors.inkFaint)
+                            Spacer()
+                        }
+                        .padding(.horizontal, AppSpacing.cardPadding)
+                        .padding(.vertical, AppSpacing.sm)
 
-                        ForEach(group) { txn in
-                            TransactionRow(transaction: txn, onTap: { selectedTransaction = txn })
-                                .padding(.horizontal, AppSpacing.cardPadding)
-                                .padding(.bottom, AppSpacing.cardGap)
+                        ForEach(Array(group.1.enumerated()), id: \.element.id) { idx, txn in
+                            TransactionRow(transaction: txn) { selectedTransaction = txn }
+                            if idx != group.1.count - 1 {
+                                divider
+                            }
                         }
                     }
                 }
+                .padding(.bottom, AppSpacing.sm)
             }
         }
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
     }
 
-    // MARK: - Grouped Transactions
+    private var divider: some View {
+        Rectangle()
+            .fill(AppColors.inkDivider)
+            .frame(height: 0.5)
+            .padding(.horizontal, AppSpacing.cardPadding)
+    }
+
+    // MARK: - Grouped transactions
 
     private var groupedTransactions: [(String, [Transaction])] {
         let calendar = Calendar.current
@@ -324,7 +411,7 @@ struct AccountDetailView: View {
                 switch phase {
                 case .success(let image):
                     image.resizable().scaledToFill()
-                        .frame(width: 44, height: 44)
+                        .frame(width: 38, height: 38)
                         .clipShape(Circle())
                 default:
                     fallbackLogo
@@ -338,15 +425,15 @@ struct AccountDetailView: View {
     private var fallbackLogo: some View {
         ZStack {
             Circle()
-                .fill(accentColor.opacity(0.15))
-                .frame(width: 44, height: 44)
+                .fill(accentColor.opacity(0.14))
+                .frame(width: 38, height: 38)
             Image(systemName: iconName)
-                .font(.h4)
-                .foregroundColor(accentColor)
+                .font(.footnoteSemibold)
+                .foregroundStyle(accentColor)
         }
     }
 
-    // MARK: - Helpers
+    // MARK: - Data
 
     private func loadAccountDataIfNeeded() async {
         async let holdingsTask = apiHoldings.isEmpty ? loadHoldingsForAccount() : apiHoldings
@@ -470,19 +557,21 @@ struct AccountDetailView: View {
         return mapped
     }
 
+    // MARK: - Helpers
+
     private var accentColor: Color {
         switch account.accountType {
-        case .brokerage: return AppColors.accentBlue
-        case .crypto:    return AppColors.accentPink
-        case .bank:      return AppColors.accentGreen
+        case .brokerage: return AppColors.accentPurple
+        case .crypto:    return AppColors.warning
+        case .bank:      return AppColors.budgetNeedsBlue
         }
     }
 
     private var iconName: String {
         switch account.accountType {
-        case .brokerage: return "building.columns"
+        case .brokerage: return "chart.line.uptrend.xyaxis"
         case .crypto:    return "bitcoinsign.circle"
-        case .bank:      return "creditcard"
+        case .bank:      return "building.columns"
         }
     }
 
@@ -509,7 +598,7 @@ struct AccountDetailView: View {
     }()
 }
 
-// MARK: - Holding Row
+// MARK: - Holding Row (light-shell)
 
 private struct HoldingRow: View {
     let holding: Holding
@@ -518,31 +607,32 @@ private struct HoldingRow: View {
         HStack(spacing: AppSpacing.md) {
             ZStack {
                 RoundedRectangle(cornerRadius: AppRadius.md)
-                    .fill(AppColors.surfaceElevated)
-                    .frame(width: 44, height: 44)
+                    .fill(AppColors.inkTrack)
+                    .frame(width: 40, height: 40)
                 Text(holding.symbol)
                     .font(.footnoteBold)
-                    .foregroundStyle(AppColors.textPrimary)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .minimumScaleFactor(0.6)
                     .lineLimit(1)
                     .padding(.horizontal, AppSpacing.xs)
             }
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(holding.name)
-                    .font(.figureSecondarySemibold)
-                    .foregroundStyle(AppColors.textPrimary)
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .lineLimit(1)
                 Text(sharesLabel)
                     .font(.caption)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundStyle(AppColors.inkFaint)
             }
 
             Spacer()
 
             Text(formatCurrency(holding.totalValue))
-                .font(.cardFigureSecondary)
-                .foregroundStyle(AppColors.textPrimary)
+                .font(.footnoteBold)
+                .foregroundStyle(AppColors.inkPrimary)
+                .monospacedDigit()
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.md)
@@ -566,6 +656,8 @@ private struct HoldingRow: View {
     }
 }
 
+// MARK: - Range enum (shared with CashAccountDetailView)
+
 enum AccountHistoryRange: String, CaseIterable {
     case oneWeek = "1W"
     case oneMonth = "1M"
@@ -578,164 +670,6 @@ enum AccountHistoryRange: String, CaseIterable {
         case .oneMonth: return "1m"
         case .threeMonths: return "3m"
         case .oneYear: return "1y"
-        }
-    }
-}
-
-struct AccountHistoryCard: View {
-    let snapshots: [BalanceSnapshot]
-    let selectedRange: AccountHistoryRange
-    let isLoading: Bool
-    let emptyTitle: String
-    let emptySubtitle: String
-    let onSelectRange: (AccountHistoryRange) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            rangeSelector
-
-            ZStack {
-                if snapshots.count >= 2 {
-                    AccountHistoryLineChart(snapshots: snapshots)
-                        .transition(.opacity)
-                } else if isLoading {
-                    loadingState
-                        .transition(.opacity)
-                } else {
-                    emptyState
-                        .transition(.opacity)
-                }
-            }
-            .frame(height: 164)
-            .animation(.easeInOut(duration: 0.2), value: snapshots.map(\.id).joined())
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.bottom, AppSpacing.sm)
-    }
-
-    private var loadingState: some View {
-        AccountHistoryLineChart(snapshots: placeholderSnapshots)
-            .opacity(0.55)
-            .overlay(
-                LinearGradient(
-                    colors: [Color.clear, AppColors.overlayWhiteWash, Color.clear],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-                .blur(radius: 6)
-            )
-    }
-
-    private var emptyState: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Rectangle()
-                .fill(AppColors.progressTrack.opacity(0.35))
-                .frame(height: 1)
-            Text(emptyTitle)
-                .font(.footnoteRegular)
-                .foregroundColor(AppColors.textTertiary)
-            Text(emptySubtitle)
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary.opacity(0.55))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-    }
-
-    private var rangeSelector: some View {
-        HStack(spacing: AppSpacing.sm) {
-            ForEach(AccountHistoryRange.allCases, id: \.self) { range in
-                Button(action: { onSelectRange(range) }) {
-                    Text(range.rawValue)
-                        .font(.cardHeader)
-                        .foregroundStyle(selectedRange == range ? AppColors.textInverse : AppColors.textTertiary)
-                        .padding(.horizontal, AppSpacing.md)
-                        .padding(.vertical, AppSpacing.xs)
-                        .background(
-                            Capsule()
-                                .fill(selectedRange == range ? AppColors.textPrimary : AppColors.surface)
-                        )
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-
-    private var placeholderSnapshots: [BalanceSnapshot] {
-        let today = Date()
-        return [
-            BalanceSnapshot(id: "loading-1", accountId: "loading", date: today.addingTimeInterval(-86400 * 3), balance: 100),
-            BalanceSnapshot(id: "loading-2", accountId: "loading", date: today.addingTimeInterval(-86400 * 2), balance: 101),
-            BalanceSnapshot(id: "loading-3", accountId: "loading", date: today.addingTimeInterval(-86400), balance: 100.7),
-            BalanceSnapshot(id: "loading-4", accountId: "loading", date: today, balance: 101.2),
-        ]
-    }
-}
-
-private struct AccountHistoryLineChart: View {
-    let snapshots: [BalanceSnapshot]
-
-    var body: some View {
-        GeometryReader { geo in
-            let values = snapshots.map { $0.balance }
-            let minVal = (values.min() ?? 0) * 0.98
-            let maxVal = (values.max() ?? 1) * 1.02
-            let range = max(maxVal - minVal, 1)
-            let width = max(geo.size.width, 1)
-            let height = max(geo.size.height, 1)
-            let lineColor = AppColors.accentBlue
-            let glowColor = AppColors.accentBlueBright
-
-            let points = snapshots.enumerated().map { index, snapshot in
-                CGPoint(
-                    x: width * CGFloat(index) / CGFloat(max(snapshots.count - 1, 1)),
-                    y: height * CGFloat(1 - (snapshot.balance - minVal) / range)
-                )
-            }
-
-            ZStack {
-                Path { path in
-                    guard let first = points.first, let last = points.last else { return }
-                    path.move(to: CGPoint(x: first.x, y: height))
-                    points.forEach { path.addLine(to: $0) }
-                    path.addLine(to: CGPoint(x: last.x, y: height))
-                    path.closeSubpath()
-                }
-                .fill(
-                    LinearGradient(
-                        colors: [glowColor.opacity(0.16), glowColor.opacity(0.06), Color.clear],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .blur(radius: 2)
-
-                Path { path in
-                    guard let first = points.first else { return }
-                    path.move(to: first)
-                    points.dropFirst().forEach { path.addLine(to: $0) }
-                }
-                .stroke(glowColor.opacity(0.22), style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
-                .blur(radius: 5)
-
-                Path { path in
-                    guard let first = points.first else { return }
-                    path.move(to: first)
-                    points.dropFirst().forEach { path.addLine(to: $0) }
-                }
-                .stroke(lineColor, style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
-
-                if let last = points.last {
-                    Circle()
-                        .fill(AppColors.textPrimary)
-                        .frame(width: 8, height: 8)
-                        .overlay(
-                            Circle()
-                                .stroke(lineColor.opacity(0.85), lineWidth: 1.5)
-                        )
-                        .position(last)
-                }
-            }
         }
     }
 }

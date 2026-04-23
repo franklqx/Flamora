@@ -14,7 +14,7 @@ struct CashflowSpendingOverviewPrototypeCard: View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             Text("Spending overview")
                 .font(.cardHeader)
-                .foregroundStyle(AppColors.inkMeta)
+                .foregroundStyle(AppColors.inkPrimary)
                 .tracking(AppTypography.Tracking.cardHeader)
 
             HStack(alignment: .top, spacing: AppSpacing.md) {

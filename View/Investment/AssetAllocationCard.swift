@@ -45,7 +45,7 @@ struct AssetAllocationCard: View {
             HStack(spacing: 6) {
                 Text("ASSET ALLOCATION")
                     .font(.cardHeader)
-                    .foregroundColor(AppColors.inkMeta)
+                    .foregroundColor(AppColors.inkPrimary)
                     .tracking(AppTypography.Tracking.cardHeader)
                 if isConnected {
                     Image(systemName: "chevron.right")

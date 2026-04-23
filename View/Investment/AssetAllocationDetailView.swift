@@ -2,6 +2,9 @@
 //  AssetAllocationDetailView.swift
 //  Flamora app
 //
+//  Light-shell asset allocation detail: donut on a glass hero card, then
+//  glass breakdown card with expandable category rows (holdings / cash accounts).
+//
 
 import SwiftUI
 
@@ -22,7 +25,6 @@ struct AssetAllocationDetailView: View {
     var holdingsPayload: APIInvestmentHoldingsPayload? = nil
     var cashBankAccounts: [Account] = []
     @Environment(\.dismiss) private var dismiss
-    @State private var dragOffset: CGFloat = 0
     @State private var expandedIds: Set<String> = []
 
     private var totalAmount: Double {
@@ -32,98 +34,116 @@ struct AssetAllocationDetailView: View {
 
     private var sortedItems: [AllocDetailItem] {
         var items = [
-            AllocDetailItem(id: "stocks",       title: "U.S. Stocks", percent: allocation.stocks.percent, amount: allocation.stocks.amount, color: AppColors.chartSteelBlue),
-            AllocDetailItem(id: "crypto",       title: "Crypto",      percent: allocation.bonds.percent,  amount: allocation.bonds.amount,  color: AppColors.chartYellow),
-            AllocDetailItem(id: "cash",         title: "Cash",        percent: allocation.cash.percent,   amount: allocation.cash.amount,   color: AppColors.chartSageGreen),
+            AllocDetailItem(id: "stocks", title: "U.S. Stocks", percent: allocation.stocks.percent, amount: allocation.stocks.amount, color: AppColors.accentPurple),
+            AllocDetailItem(id: "crypto", title: "Crypto",      percent: allocation.bonds.percent,  amount: allocation.bonds.amount,  color: AppColors.warning),
+            AllocDetailItem(id: "cash",   title: "Cash",        percent: allocation.cash.percent,   amount: allocation.cash.amount,   color: AppColors.budgetNeedsBlue),
         ]
         if let other = allocation.other, other.percent > 0 {
-            items.append(AllocDetailItem(id: "other", title: "Other", percent: other.percent, amount: other.amount, color: AppColors.chartCoral))
+            items.append(AllocDetailItem(id: "other", title: "Other", percent: other.percent, amount: other.amount, color: AppColors.error))
         }
         return items.sorted { $0.percent > $1.percent }
     }
 
-    var body: some View {
-        ZStack {
-            AppColors.backgroundPrimary.ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Text("Asset Allocation")
-                        .font(.h2)
-                        .foregroundStyle(AppColors.textPrimary)
-
-                    Spacer()
-
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "xmark")
-                            .font(.bodySmallSemibold)
-                            .foregroundColor(AppColors.textSecondary)
-                            .padding(.top, 2)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, AppSpacing.screenPadding)
-                .padding(.top, AppSpacing.lg)
-                .padding(.bottom, AppSpacing.md)
-
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: AppSpacing.lg) {
-                        donutSection
-
-                        VStack(spacing: AppSpacing.cardGap) {
-                            ForEach(sortedItems) { item in
-                                AllocDetailRow(
-                                    item: item,
-                                    holdings: InvestmentAllocationBuilder.holdings(for: item.id, payload: holdingsPayload),
-                                    cashAccounts: item.id == "cash" ? cashBankAccounts : [],
-                                    isExpanded: expandedIds.contains(item.id)
-                                ) {
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                        if expandedIds.contains(item.id) {
-                                            expandedIds.remove(item.id)
-                                        } else {
-                                            expandedIds.insert(item.id)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        .padding(.horizontal, AppSpacing.screenPadding)
-                        .padding(.bottom, AppSpacing.xl)
-                    }
-                }
-            }
-            .offset(y: dragOffset)
-        }
-        .simultaneousGesture(
-            DragGesture()
-                .onChanged { if $0.translation.height > 0 { dragOffset = $0.translation.height } }
-                .onEnded {
-                    if $0.translation.height > 150 { dismiss() }
-                    else { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { dragOffset = 0 } }
-                }
+    private var cardBackground: LinearGradient {
+        LinearGradient(
+            colors: [AppColors.glassCardBg, AppColors.glassCardBg2],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
         )
-        .preferredColorScheme(.dark)
     }
 
-    // MARK: - Donut
-
-    private var donutSection: some View {
-        ZStack {
-            AllocDonutChart(items: sortedItems)
-                .frame(width: 200, height: 200)
-
-            VStack(spacing: AppSpacing.xs) {
-                Text(formatCompact(totalAmount))
-                    .font(.h1)
-                    .foregroundStyle(AppColors.textPrimary)
-                Text("Portfolio")
-                    .font(.footnoteRegular)
-                    .foregroundColor(AppColors.textTertiary)
-            }
+    var body: some View {
+        DetailSheetScaffold(title: "Asset Allocation") {
+            dismiss()
+        } content: {
+            donutCard
+            breakdownCard
         }
-        .padding(.top, AppSpacing.lg)
+    }
+
+    // MARK: - Donut card
+
+    private var donutCard: some View {
+        VStack(spacing: AppSpacing.md) {
+            Text("PORTFOLIO")
+                .font(.cardHeader)
+                .foregroundStyle(AppColors.inkPrimary)
+                .tracking(AppTypography.Tracking.cardHeader)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            ZStack {
+                AllocDonutChart(items: sortedItems)
+                    .frame(width: 200, height: 200)
+
+                VStack(spacing: 2) {
+                    Text(formatCompact(totalAmount))
+                        .font(.h1)
+                        .foregroundStyle(AppColors.inkPrimary)
+                        .monospacedDigit()
+                    Text("Total portfolio")
+                        .font(.caption)
+                        .foregroundStyle(AppColors.inkSoft)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, AppSpacing.sm)
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
+    }
+
+    // MARK: - Breakdown card (expandable rows)
+
+    private var breakdownCard: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("BREAKDOWN")
+                    .font(.cardHeader)
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .tracking(AppTypography.Tracking.cardHeader)
+                Spacer()
+            }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.top, AppSpacing.cardPadding)
+            .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
+
+            ForEach(Array(sortedItems.enumerated()), id: \.element.id) { idx, item in
+                AllocDetailRow(
+                    item: item,
+                    holdings: InvestmentAllocationBuilder.holdings(for: item.id, payload: holdingsPayload),
+                    cashAccounts: item.id == "cash" ? cashBankAccounts : [],
+                    isExpanded: expandedIds.contains(item.id)
+                ) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        if expandedIds.contains(item.id) {
+                            expandedIds.remove(item.id)
+                        } else {
+                            expandedIds.insert(item.id)
+                        }
+                    }
+                }
+
+                if idx < sortedItems.count - 1 {
+                    Rectangle()
+                        .fill(AppColors.inkDivider)
+                        .frame(height: 0.5)
+                        .padding(.horizontal, AppSpacing.cardPadding)
+                }
+            }
+
+            Spacer().frame(height: AppSpacing.sm)
+        }
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
     }
 
     private func formatCompact(_ value: Double) -> String {
@@ -140,14 +160,14 @@ private struct AllocDonutChart: View {
 
     var body: some View {
         ZStack {
-            Circle().stroke(AppColors.surfaceInput, lineWidth: 18)
+            Circle().stroke(AppColors.inkTrack, lineWidth: 18)
             ForEach(Array(items.enumerated()), id: \.offset) { i, item in
                 if item.percent > 0 {
                     AllocDonutSegment(
                         startAngle: startAngle(for: i),
                         endAngle: endAngle(for: i)
                     )
-                    .stroke(item.color, lineWidth: 18)
+                    .stroke(item.color, style: StrokeStyle(lineWidth: 18, lineCap: .butt))
                 }
             }
         }
@@ -173,7 +193,7 @@ private struct AllocDonutSegment: Shape {
     }
 }
 
-// MARK: - Allocation Row
+// MARK: - Allocation Row (light-shell, slotted into glass card)
 
 private struct AllocDetailRow: View {
     let item: AllocDetailItem
@@ -191,44 +211,40 @@ private struct AllocDetailRow: View {
                         .frame(width: 10, height: 10)
 
                     Text(item.title)
-                        .font(.bodySemibold)
-                        .foregroundStyle(AppColors.textPrimary)
+                        .font(.footnoteSemibold)
+                        .foregroundStyle(AppColors.inkPrimary)
 
-                    Text("• \(item.percent)%")
-                        .font(.bodyRegular)
-                        .foregroundColor(AppColors.textTertiary)
+                    Text("· \(item.percent)%")
+                        .font(.caption)
+                        .foregroundStyle(AppColors.inkFaint)
 
                     Spacer()
 
                     Text(formatCurrency(item.amount))
-                        .font(.cardFigureSecondary)
-                        .foregroundStyle(AppColors.textPrimary)
+                        .font(.footnoteBold)
+                        .foregroundStyle(AppColors.inkPrimary)
+                        .monospacedDigit()
 
                     Image(systemName: "chevron.down")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(AppColors.inkFaint)
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.vertical, AppSpacing.md)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
             if isExpanded {
                 Rectangle()
-                    .fill(AppColors.surfaceBorder)
+                    .fill(AppColors.inkDivider)
                     .frame(height: 0.5)
                     .padding(.horizontal, AppSpacing.cardPadding)
 
                 expandedContent
             }
         }
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(AppColors.surfaceBorder, lineWidth: 0.75)
-        )
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isExpanded)
     }
 
@@ -247,39 +263,40 @@ private struct AllocDetailRow: View {
                                             .frame(width: 36, height: 36)
                                             .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                                     default:
-                                        fallbackSymbolIcon(holdings[i].symbol)
+                                        fallbackSymbolIcon(holdings[i].symbol, tint: item.color)
                                     }
                                 }
                             } else {
-                                fallbackSymbolIcon(holdings[i].symbol)
+                                fallbackSymbolIcon(holdings[i].symbol, tint: item.color)
                             }
                         }
                         VStack(alignment: .leading, spacing: 2) {
                             Text(holdings[i].name)
-                                .font(.bodySmall)
-                                .foregroundStyle(AppColors.textPrimary)
+                                .font(.footnoteSemibold)
+                                .foregroundStyle(AppColors.inkPrimary)
                                 .lineLimit(1)
                             Text(holdingSubtitle(holdings[i]))
                                 .font(.caption)
-                                .foregroundColor(AppColors.textTertiary)
+                                .foregroundStyle(AppColors.inkFaint)
                         }
                         Spacer()
                         Text(formatCurrency(holdings[i].totalValue))
-                            .font(.inlineFigureBold)
-                            .foregroundStyle(AppColors.textPrimary)
+                            .font(.footnoteBold)
+                            .foregroundStyle(AppColors.inkPrimary)
+                            .monospacedDigit()
                     }
                     .padding(.horizontal, AppSpacing.cardPadding)
-                    .padding(.vertical, AppSpacing.sm)
+                    .padding(.vertical, AppSpacing.sm + 2)
 
                     if i < holdings.count - 1 {
                         Rectangle()
-                            .fill(AppColors.surfaceBorder)
+                            .fill(AppColors.inkDivider)
                             .frame(height: 0.5)
                             .padding(.horizontal, AppSpacing.cardPadding)
                     }
                 }
-                .padding(.bottom, AppSpacing.sm)
             }
+            .padding(.bottom, AppSpacing.sm)
         } else if !cashAccounts.isEmpty {
             VStack(spacing: 0) {
                 ForEach(cashAccounts.indices, id: \.self) { i in
@@ -301,53 +318,57 @@ private struct AllocDetailRow: View {
                             }
                         }
                         Text(cashAccounts[i].institution)
-                            .font(.bodySmall)
-                            .foregroundStyle(AppColors.textPrimary)
+                            .font(.footnoteSemibold)
+                            .foregroundStyle(AppColors.inkPrimary)
                         Spacer()
                         Text(formatCurrency(cashAccounts[i].balance))
-                            .font(.inlineFigureBold)
-                            .foregroundStyle(AppColors.textPrimary)
+                            .font(.footnoteBold)
+                            .foregroundStyle(AppColors.inkPrimary)
+                            .monospacedDigit()
                     }
                     .padding(.horizontal, AppSpacing.cardPadding)
-                    .padding(.vertical, AppSpacing.sm)
+                    .padding(.vertical, AppSpacing.sm + 2)
 
                     if i < cashAccounts.count - 1 {
                         Rectangle()
-                            .fill(AppColors.surfaceBorder)
+                            .fill(AppColors.inkDivider)
                             .frame(height: 0.5)
                             .padding(.horizontal, AppSpacing.cardPadding)
                     }
                 }
-                .padding(.bottom, AppSpacing.sm)
             }
+            .padding(.bottom, AppSpacing.sm)
         } else {
             Text("Detailed breakdown coming soon")
                 .font(.footnoteRegular)
-                .foregroundColor(AppColors.textTertiary)
-                .padding(AppSpacing.cardPadding)
+                .foregroundStyle(AppColors.inkSoft)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.vertical, AppSpacing.md)
         }
     }
 
-    private func fallbackSymbolIcon(_ symbol: String) -> some View {
+    private func fallbackSymbolIcon(_ symbol: String, tint: Color) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: AppRadius.md)
-                .fill(AppColors.chartAmber)
+                .fill(tint.opacity(0.16))
                 .frame(width: 36, height: 36)
             Text(symbol)
                 .font(.footnoteBold)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(AppColors.inkPrimary)
                 .minimumScaleFactor(0.6)
+                .padding(.horizontal, 4)
         }
     }
 
     private var fallbackBankIcon: some View {
         ZStack {
             Circle()
-                .fill(AppColors.surfaceElevated)
+                .fill(AppColors.inkTrack)
                 .frame(width: 36, height: 36)
             Image(systemName: "building.columns")
                 .font(.caption)
-                .foregroundColor(AppColors.textTertiary)
+                .foregroundStyle(AppColors.inkSoft)
         }
     }
 
@@ -355,8 +376,6 @@ private struct AllocDetailRow: View {
         shares == shares.rounded() ? "\(Int(shares)) shares" : String(format: "%.4f shares", shares)
     }
 
-    /// Combines shares count with account attribution when available.
-    /// e.g. "12 shares · Chase • 7892" or just "12 shares"
     private func holdingSubtitle(_ holding: Holding) -> String {
         var parts: [String] = [sharesLabel(holding.shares)]
         if let acctName = holding.accountName, !acctName.isEmpty {

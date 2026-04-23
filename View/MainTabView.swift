@@ -9,12 +9,10 @@ import Foundation
 import SwiftUI
 internal import Auth
 
-/// Single source of truth for Home shell: sheet vs drag vs full simulator.
+/// Single source of truth for Home shell: sheet vs full simulator.
 private enum HomeState: Equatable {
-    /// Sheet visible at rest (default or tall height); `sheetHeight` holds layout.
+    /// Sheet visible (default, or being dragged — `sheetHeight` holds layout).
     case sheet
-    /// User is dragging the sheet; `progress` is 0 at default height, 1 when collapsed toward simulator.
-    case expanding(progress: CGFloat)
     /// Simulator overlay is visible (sheet removed from hierarchy after transition).
     case simulator
 }
@@ -184,18 +182,20 @@ struct MainTabView: View {
 
             if homeState != .simulator {
                 let sheetBottomExtension = max(0, AppSpacing.homeSheetTopOverlap - AppSpacing.md - 2)
+                // 固定 sheet 帧高为 default，靠 `.offset` 下移来模拟「收起」。
+                // 好处：拖动时不触发布局重算、阴影不必随帧重绘 → 1:1 跟手，不会再慢半拍。
+                let sheetDragDown = max(0, layoutMetrics.sheetDefault - sheetHeight)
 
-                // Spacer 贴底：填满主列高度，避免 ZStack(alignment: .top) 下 Spacer 塌成 0、sheet 顶在屏顶。
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
                     HomeBottomSheet(
-                        contentHeight: sheetHeight + HomeLayoutConstants.sheetTopCoverLift,
+                        contentHeight: layoutMetrics.sheetDefault + HomeLayoutConstants.sheetTopCoverLift,
                         bottomInset: viewportSafeAreaBottom + 2 + sheetBottomExtension,
                         selectedTab: selectedTab,
                         sheetDragGesture: sheetDragGesture,
                         dragProgress: sheetDragNormalizedProgress()
                     )
-                    .offset(y: sheetRestoreRiseOffset)
+                    .offset(y: sheetDragDown + sheetRestoreRiseOffset)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea(edges: .bottom)
@@ -322,6 +322,7 @@ private extension MainTabView {
 
     var sheetDragGesture: AnyGesture<DragGesture.Value> {
         AnyGesture(
+            // minimumDistance: 0 → 手指落下即跟随，1:1 跟手。纯 tap 因为 translation = 0 不会改高度，也不会闪动。
             DragGesture(minimumDistance: 0)
                 .onChanged { value in
                     if !isSheetDragging {
@@ -329,41 +330,25 @@ private extension MainTabView {
                         sheetDragStartHeight = sheetHeight
                         sheetRestoreRiseOffset = 0
                     }
-                    // Upward pulls no longer expand the sheet beyond its default height.
                     let translation = max(0, value.translation.height)
-                    let nextHeight = sheetDragStartHeight - translation
-                    sheetHeight = clampSheetHeight(nextHeight)
-                    homeState = .expanding(progress: sheetDragNormalizedProgress())
+                    // 只写 sheetHeight；homeState 不在每帧更新（避免 enum associated value 每帧触发全树 diff）。
+                    sheetHeight = clampSheetHeight(sheetDragStartHeight - translation)
                 }
                 .onEnded { value in
                     isSheetDragging = false
 
-                    let draggedDownDistance = value.translation.height
-                    let predictedDownDistance = value.predictedEndTranslation.height
-                    let shouldSnapToSimulatorByDistance = draggedDownDistance > HomeLayoutConstants.sheetSnapDistanceToSimulator
-                    let shouldSnapToSimulatorByMomentum = predictedDownDistance > HomeLayoutConstants.sheetPredictedSnapDistanceToSimulator
-
-                    if sheetHeight < layoutMetrics.sheetDefault * HomeLayoutConstants.sheetToSimulatorThreshold
-                        || shouldSnapToSimulatorByDistance
-                        || shouldSnapToSimulatorByMomentum {
+                    // 任何下拉（>4pt 忽略手指落下瞬间的抖动）即 commit 到 simulator，不设位置阈值。
+                    if value.translation.height > 4 {
                         enterSimulator()
-                        return
-                    }
-                    // Sheet 低于默认：收起态不自动回满高，仅吸附到稳定区间。
-                    if sheetHeight < layoutMetrics.sheetDefault * 0.98 {
-                        let lo = layoutMetrics.sheetDefault * HomeLayoutConstants.sheetCollapsedMinFraction
-                        let hi = layoutMetrics.sheetDefault * HomeLayoutConstants.sheetCollapsedMaxFraction
-                        let target = min(max(sheetHeight, lo), hi)
-                        withAnimation(HomeLayoutConstants.springAnimation) {
-                            sheetHeight = target
-                        }
+                    } else {
+                        // 上拉或原地松手 → 橡皮筋弹回默认。
                         homeState = .sheet
-                        return
+                        withAnimation(HomeLayoutConstants.springAnimation) {
+                            sheetHeight = layoutMetrics.sheetDefault
+                            sheetDragStartHeight = layoutMetrics.sheetDefault
+                            sheetRestoreRiseOffset = 0
+                        }
                     }
-                    withAnimation(HomeLayoutConstants.springAnimation) {
-                        sheetHeight = layoutMetrics.sheetDefault
-                    }
-                    homeState = .sheet
                 }
         )
     }
@@ -430,16 +415,16 @@ private extension MainTabView {
         simulatorTransitionTask?.cancel()
         homeState = .sheet
         sheetRestoreRiseOffset = 0
-        withAnimation(HomeLayoutConstants.springAnimation) {
+        withAnimation(HomeLayoutConstants.sheetCollapseAnimation) {
             sheetHeight = 0
         }
 
         simulatorTransitionTask = Task {
-            try? await Task.sleep(for: .milliseconds(180))
+            try? await Task.sleep(for: .milliseconds(80))
             guard !Task.isCancelled else { return }
             await MainActor.run {
                 simulatorDisplayState = .results
-                withAnimation(.easeInOut(duration: 0.16)) {
+                withAnimation(.easeInOut(duration: 0.14)) {
                     homeState = .simulator
                 }
             }
@@ -471,19 +456,15 @@ private extension MainTabView {
 
 private enum HomeLayoutConstants {
     static let heroCompactHeight: CGFloat = 34
-    static let sheetToSimulatorThreshold: CGFloat = 0.72
-    static let sheetSnapDistanceToSimulator: CGFloat = 96
-    static let sheetPredictedSnapDistanceToSimulator: CGFloat = 150
     static let springAnimation = Animation.spring(response: 0.42, dampingFraction: 0.82)
+    /// Sheet 下滑进 simulator 的动画：更快、更干脆，避免「卡」感。
+    static let sheetCollapseAnimation = Animation.spring(response: 0.28, dampingFraction: 0.88)
     /// 点击收拢圆钮恢复 sheet：略慢、略阻尼，观感上像从下往上托起 + Tab 自右向左展开（与下拉收拢相反）。
     static let springRestoreExpand = Animation.spring(response: 0.52, dampingFraction: 0.86)
     /// 点收拢圆钮恢复时 sheet 先下移的 pt，再弹回 0，与高度动画叠加成自下而上托起。
     static let sheetRestoreRiseDistance: CGFloat = 120
     /// 白底 sheet 向上多盖一截，避免壳底在 sheet 顶缘露出一条线。
     static let sheetTopCoverLift: CGFloat = 18
-    /// 收起态松手时 sheet 高度吸附区间（相对 `sheetDefault`）
-    static let sheetCollapsedMinFraction: CGFloat = 0.32
-    static let sheetCollapsedMaxFraction: CGFloat = 0.96
 }
 
 private struct HomeHeroCardSurface: View {
@@ -884,7 +865,7 @@ private struct NotificationsView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sectionLabelGap) {
             Text("NEW REPORTS")
                 .font(.cardHeader)
-                .foregroundStyle(AppColors.inkFaint)
+                .foregroundStyle(AppColors.inkPrimary)
                 .tracking(AppTypography.Tracking.cardHeader)
 
             cardContainer {
@@ -920,7 +901,7 @@ private struct NotificationsView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sectionLabelGap) {
             Text("RECENT")
                 .font(.cardHeader)
-                .foregroundStyle(AppColors.inkFaint)
+                .foregroundStyle(AppColors.inkPrimary)
                 .tracking(AppTypography.Tracking.cardHeader)
 
             cardContainer {

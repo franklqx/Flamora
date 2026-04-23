@@ -81,14 +81,14 @@ struct HomeReportsEntryCard: View {
         HStack {
             Text("REPORTS")
                 .font(.cardHeader)
-                .foregroundColor(AppColors.inkFaint)
+                .foregroundColor(AppColors.inkPrimary)
                 .tracking(AppTypography.Tracking.cardHeader)
 
             Spacer()
 
             Text("STORIES")
                 .font(.cardHeader)
-                .foregroundColor(AppColors.inkFaint)
+                .foregroundColor(AppColors.inkPrimary)
                 .tracking(AppTypography.Tracking.cardHeader)
         }
         .padding(.horizontal, AppSpacing.cardPadding)

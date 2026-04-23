@@ -419,7 +419,7 @@ private extension SettingsView {
     func sectionLabel(_ text: String) -> some View {
         Text(text)
             .font(.cardHeader)
-            .foregroundColor(AppColors.inkFaint)
+            .foregroundColor(AppColors.inkPrimary)
             .textCase(.uppercase)
             .tracking(AppTypography.Tracking.cardHeader)
             .frame(maxWidth: .infinity, alignment: .leading)

@@ -79,7 +79,7 @@ struct SavingsInputSheet: View {
         VStack(spacing: AppSpacing.xs) {
             Text("SAVINGS CHECK-IN")
                 .font(.cardHeader)
-                .foregroundColor(AppColors.inkFaint)
+                .foregroundColor(AppColors.inkPrimary)
                 .tracking(AppTypography.Tracking.cardHeader)
 
             Text("How much did you save this month?")
