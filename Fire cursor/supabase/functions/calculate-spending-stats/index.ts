@@ -127,13 +127,24 @@ serve(async (req) => {
     try { body = await req.json() } catch { /* empty body OK */ }
 
     const months = Math.max(1, body.months || 6)
-    // Window covers the *previous N complete months* up to the current month.
-    // E.g. months=6 on 2026-04 → window 2025-11..2026-04 (6 months inclusive).
+    // Fetch a wider lookback first, then shrink to the most recent N complete
+    // analysis months. This avoids the "5 of 6 complete" problem when the
+    // latest 6-calendar-month window contains a sparse month but the user has
+    // older complete history we can still use.
+    //
+    // Example:
+    //   Today: 2026-04-23
+    //   Broad lookback: up to ~18 months ending 2026-03
+    //   Final analysis set: most recent 6 months marked `complete`
     const now = new Date()
-    const endMonth = monthKey(now)
-    const startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (months - 1), 1))
+    const currentMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+    const endDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1))
+    const lookbackMonths = Math.max(months * 3, 18)
+    const startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - lookbackMonths, 1))
     const startMonth = monthKey(startDate)
+    const endMonth = monthKey(endDate)
     const startDateStr = `${startMonth}-01`
+    const currentMonthStartStr = `${monthKey(currentMonthStart)}-01`
 
     // ---------- Account scope (depository + credit only) ----------
     let effectiveAccountIds: string[] | null =
@@ -171,6 +182,7 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .eq('pending', false)
       .gte('date', startDateStr)
+      .lt('date', currentMonthStartStr)
       .in('plaid_account_id', effectiveAccountIds)
       .order('date', { ascending: true })
 
@@ -196,10 +208,33 @@ serve(async (req) => {
     }))
 
     // ---------- Pure compute ----------
-    const result = computeSpendingStats(inputTxns, {
+    const broadResult = computeSpendingStats(inputTxns, {
       windowStartMonth: startMonth,
       windowEndMonth: endMonth,
     })
+
+    const completeMonthKeys = broadResult.monthlyBreakdown
+      .filter((row) => row.status === 'complete')
+      .map((row) => row.month)
+
+    const selectedMonthKeys = completeMonthKeys.slice(-months)
+    const selectedMonthSet = new Set(selectedMonthKeys)
+
+    let result: SpendingStatsResult = broadResult
+    if (selectedMonthKeys.length > 0) {
+      const narrowedTransactions = inputTxns.filter((txn) => selectedMonthSet.has(txn.date.substring(0, 7)))
+      const narrowed = computeSpendingStats(narrowedTransactions, {
+        windowStartMonth: selectedMonthKeys[0],
+        windowEndMonth: selectedMonthKeys[selectedMonthKeys.length - 1],
+      })
+
+      result = {
+        ...narrowed,
+        monthlyBreakdown: narrowed.monthlyBreakdown.filter((row) => selectedMonthSet.has(row.month)),
+        monthsAnalyzed: selectedMonthKeys.length,
+        monthsInWindow: selectedMonthKeys.length,
+      }
+    }
 
     // ---------- Shape response (legacy + v3) ----------
     const legacy = buildLegacyShape(result)
@@ -257,6 +292,9 @@ serve(async (req) => {
             savings: round2(row.savings),
           })),
           months_in_window: result.monthsInWindow,
+          analysis_months: selectedMonthKeys,
+          requested_complete_months: months,
+          complete_month_count: selectedMonthKeys.length,
         },
         meta: { timestamp: new Date().toISOString(), user_id: user.id, version: 'v3' },
       }),

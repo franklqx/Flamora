@@ -6,9 +6,29 @@
 //
 
 import SwiftUI
+import Charts
 
 struct BS_DiagnosisView: View {
     @Bindable var viewModel: BudgetSetupViewModel
+    @State private var selectedTrend: TrendMetric = .spend
+    @State private var showTrendInfoSheet = false
+    @State private var showHeader = false
+    @State private var showTrend = false
+    @State private var showCategories = false
+    @State private var showInsights = false
+    @State private var showCTA = false
+
+    private var trendAccentGradient: LinearGradient {
+        LinearGradient(
+            colors: AppColors.gradientShellAccent,
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    private var trendAccentColor: Color {
+        AppColors.accentBlueBright
+    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -20,136 +40,121 @@ struct BS_DiagnosisView: View {
 
                     headerSection
                         .padding(.horizontal, AppSpacing.lg)
-
-                    metricsRow
-                        .padding(.horizontal, AppSpacing.lg)
+                        .opacity(showHeader ? 1 : 0)
+                        .offset(y: showHeader ? 0 : 12)
 
                     trendCard
                         .padding(.horizontal, AppSpacing.lg)
+                        .opacity(showTrend ? 1 : 0)
+                        .offset(y: showTrend ? 0 : 16)
 
-                    if let note = oneTimeNote {
-                        infoCard(title: "Typical month", body: note)
-                            .padding(.horizontal, AppSpacing.lg)
-                    }
-
-                    if let note = completenessNote {
-                        infoCard(title: "Data quality", body: note)
-                            .padding(.horizontal, AppSpacing.lg)
-                    }
-
-                    spendMixCard
+                    spendingStructureCard
                         .padding(.horizontal, AppSpacing.lg)
+                        .opacity(showCategories ? 1 : 0)
+                        .offset(y: showCategories ? 0 : 18)
+
+                    insightsSection
+                        .padding(.horizontal, AppSpacing.lg)
+                        .opacity(showInsights ? 1 : 0)
+                        .offset(y: showInsights ? 0 : 20)
 
                     Spacer().frame(height: AppSpacing.tabBarReserve + AppSpacing.md + AppSpacing.md + AppSpacing.sm)
                 }
             }
 
             stickyBottomCTA
+                .opacity(showCTA ? 1 : 0)
+                .offset(y: showCTA ? 0 : 18)
         }
+        .sheet(isPresented: $showTrendInfoSheet) { trendInfoSheet }
+        .onAppear(perform: startEntranceAnimation)
     }
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Your Reality")
+            Text("Your Cash Flow Snapshot")
                 .font(.cardFigurePrimary)
                 .foregroundStyle(AppColors.inkPrimary)
 
-            if let stats = viewModel.spendingStats {
-                if stats.hasDeficit == true, let deficit = stats.deficitAmount {
-                    Text("You're spending about $\(formatted(deficit)) more than you earn in a typical month.")
-                        .font(.bodySmall)
-                        .foregroundStyle(AppColors.error)
-                        .lineSpacing(3)
-                } else {
-                    Text("This is what a typical month looks like based on the data we have right now.")
-                        .font(.bodySmall)
-                        .foregroundStyle(AppColors.inkSoft)
-                        .lineSpacing(3)
-                }
-            }
+            Text(viewModel.isManualMode
+                 ? "Here’s the snapshot built from the numbers you entered."
+                 : "Here’s your income and spending over the last \(displayedMonthWord) complete \(displayedMonthNoun).")
+                .font(.bodySmall)
+                .foregroundStyle(AppColors.inkSoft)
+                .lineSpacing(3)
         }
     }
 
-    private var metricsRow: some View {
-        HStack(spacing: AppSpacing.sm + AppSpacing.xs) {
-            metricCard(title: "INCOME", value: viewModel.currentSnapshotIncome, tint: AppColors.budgetTeal)
-            metricCard(title: "SPEND", value: viewModel.currentSnapshotSpend, tint: AppColors.budgetOrange)
-            metricCard(title: "SAVE", value: savingsValue, tint: savingsValue >= 0 ? AppColors.accentAmber : AppColors.error)
-        }
-    }
-
-    private func metricCard(title: String, value: Double, tint: Color) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text(title)
-                .font(.miniLabel)
-                .tracking(0.8)
-                .foregroundStyle(AppColors.inkFaint)
-            Text("\(value < 0 ? "-" : "")$\(formatted(abs(value)))")
-                .font(.sheetPrimaryButton)
-                .foregroundStyle(tint)
-                .monospacedDigit()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(AppSpacing.sm + AppSpacing.xs)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
-    }
-
-    /// Three stacked mini sparklines — Income / Spend / Save — each tinted
-    /// to match its metric card above. Replaces the old segmented-picker
-    /// bar chart per spec ("Step 3 Reality: 3 metric blocks + sparkline").
-    /// Per-row layout keeps trends comparable at a glance without forcing
-    /// the user to flip between segments.
     private var trendCard: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("RECENT TREND")
-                .font(.label)
-                .tracking(1)
-                .foregroundStyle(AppColors.inkFaint)
-
-            if rawBreakdownRows.isEmpty {
-                Text("No chart data yet")
-                    .font(.footnoteRegular)
-                    .foregroundStyle(AppColors.inkSoft)
-                    .frame(maxWidth: .infinity, minHeight: 60)
-            } else {
-                VStack(spacing: AppSpacing.sm + AppSpacing.xs) {
-                    sparklineRow(
-                        label: "Income",
-                        values: incomeSeries,
-                        tint: AppColors.budgetTeal
-                    )
-                    sparklineRow(
-                        label: "Spend",
-                        values: spendSeries,
-                        tint: AppColors.budgetOrange
-                    )
-                    sparklineRow(
-                        label: "Save",
-                        values: saveSeries,
-                        tint: savingsTint
-                    )
+            HStack {
+                Text("\(displayedMonthWord.uppercased())-MONTH TREND")
+                    .font(.label)
+                    .tracking(1)
+                    .foregroundStyle(AppColors.inkFaint)
+                Button {
+                    showTrendInfoSheet = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.caption)
+                        .foregroundStyle(AppColors.inkSoft)
                 }
+                .buttonStyle(.plain)
+                Spacer()
+            }
 
-                // Shared month axis aligned to the sparkline plot area (the
-                // label column takes up `sparklineLabelWidth`, so indent
-                // ticks by that amount to line them up under the lines).
-                HStack(spacing: 0) {
-                    Spacer().frame(width: Self.sparklineLabelWidth)
-                    HStack {
-                        ForEach(Array(chartLabels.enumerated()), id: \.offset) { _, label in
-                            Text(label)
-                                .font(.cardRowMeta)
-                                .foregroundStyle(AppColors.inkSoft)
-                                .frame(maxWidth: .infinity)
+            trendMetricTabs
+
+            if trendRows.isEmpty {
+                emptyTrendState
+            } else {
+                Chart {
+                    ForEach(trendRows) { row in
+                        BarMark(
+                            x: .value("Month", row.label),
+                            y: .value(selectedTrend.chartTitle, value(for: row, metric: selectedTrend))
+                        )
+                        .foregroundStyle(trendAccentGradient)
+                        .cornerRadius(6)
+                    }
+
+                    RuleMark(y: .value("Typical", typicalTrendValue))
+                        .foregroundStyle(AppColors.inkBorder.opacity(0.9))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 4]))
+                }
+                .chartLegend(.hidden)
+                .chartYAxis(.hidden)
+                .chartXAxis {
+                    AxisMarks(values: trendRows.map(\.label)) { value in
+                        AxisValueLabel {
+                            if let month = value.as(String.self) {
+                                Text(month)
+                                    .font(.caption)
+                                    .foregroundStyle(AppColors.inkSoft)
+                            }
                         }
                     }
                 }
-                .padding(.top, AppSpacing.xs)
+                .chartOverlay { proxy in
+                    GeometryReader { geo in
+                        if let plotFrame = proxy.plotFrame,
+                           let yPosition = proxy.position(forY: typicalTrendValue) {
+                            let frame = geo[plotFrame]
+                            Text("Typical \(selectedTrend.segmentTitle.lowercased()) $\(formatted(typicalTrendValue))")
+                                .font(.caption)
+                                .foregroundStyle(AppColors.inkSoft)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(AppColors.shellBg1.opacity(0.94))
+                                .clipShape(Capsule())
+                                .position(
+                                    x: max(frame.minX + 88, frame.maxX - 92),
+                                    y: max(frame.minY + 14, frame.minY + yPosition - 12)
+                                )
+                        }
+                    }
+                }
+                .frame(height: 220)
             }
         }
         .padding(AppSpacing.md)
@@ -161,76 +166,45 @@ struct BS_DiagnosisView: View {
         )
     }
 
-    // MARK: - Sparkline primitive
-
-    private static let sparklineLabelWidth: CGFloat = 64
-    private static let sparklineHeight: CGFloat = 32
-
-    /// One trend row: label on the left, mini line-sparkline filling the
-    /// rest of the width. Line uses `tint`; a faint baseline is drawn for
-    /// zero reference when the series spans positive + negative values
-    /// (e.g. negative savings months).
-    private func sparklineRow(label: String, values: [Double], tint: Color) -> some View {
-        HStack(spacing: AppSpacing.sm) {
-            Text(label)
-                .font(.bodySmallSemibold)
-                .foregroundStyle(AppColors.inkPrimary)
-                .frame(width: Self.sparklineLabelWidth, alignment: .leading)
-
-            SparklineShape(values: values)
-                .stroke(tint, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
-                .frame(height: Self.sparklineHeight)
-                .background(
-                    SparklineBaseline(values: values)
-                        .stroke(
-                            AppColors.inkBorder.opacity(0.5),
-                            style: StrokeStyle(lineWidth: 0.5, dash: [2, 3])
-                        )
+    private var emptyTrendState: some View {
+        VStack(spacing: AppSpacing.sm) {
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .fill(AppColors.inkTrack.opacity(0.45))
+                .frame(height: 180)
+                .overlay(
+                    Text("We’ll show your trend as soon as we have complete months to compare.")
+                        .font(.footnoteRegular)
+                        .foregroundStyle(AppColors.inkSoft)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, AppSpacing.lg)
                 )
-                .overlay(alignment: .trailing) {
-                    // Endpoint dot, painted over the line tail so it stays
-                    // visible against the baseline.
-                    if let last = values.last, values.count >= 2 {
-                        Circle()
-                            .fill(tint)
-                            .frame(width: 5, height: 5)
-                            .offset(x: 0, y: sparklineEndpointY(for: last, in: values))
-                    }
-                }
         }
     }
 
-    /// Y-offset (from vertical center of the 32pt row) for the endpoint
-    /// dot — keeps it on the line tail rather than the row midline.
-    private func sparklineEndpointY(for last: Double, in values: [Double]) -> CGFloat {
-        guard let minV = values.min(), let maxV = values.max(), maxV > minV else { return 0 }
-        let h = Self.sparklineHeight
-        let yNorm = (last - minV) / (maxV - minV)
-        return h / 2 - CGFloat(yNorm) * h
-    }
-
-    /// Savings can go negative (deficit months). Tint the whole row red
-    /// when the latest month is in deficit; otherwise use the amber
-    /// accent matching the metric card above.
-    private var savingsTint: Color {
-        let last = saveSeries.last ?? 0
-        return last < 0 ? AppColors.error : AppColors.accentAmber
-    }
-
-    private var spendMixCard: some View {
+    private var spendingStructureCard: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("WHERE YOUR MONEY GOES NOW")
-                .font(.label)
-                .tracking(1)
-                .foregroundStyle(AppColors.inkFaint)
+            HStack {
+                Text("WHERE YOUR MONEY GOES")
+                    .font(.label)
+                    .tracking(1)
+                    .foregroundStyle(AppColors.inkFaint)
+                Spacer()
+                Text("Top categories")
+                    .font(.caption)
+                    .foregroundStyle(AppColors.inkSoft)
+            }
 
-            let needs = viewModel.currentSnapshotEssentialFloor
-            let wants = max(0, viewModel.currentSnapshotSpend - needs)
-            let total = max(0.01, viewModel.currentSnapshotSpend)
-
-            mixRow(label: "Needs", amount: needs, ratio: needs / total, tint: AppColors.budgetTeal)
-            mixRow(label: "Wants", amount: wants, ratio: wants / total, tint: AppColors.accentAmber)
-            mixRow(label: "Savings", amount: max(0, savingsValue), ratio: max(0, savingsValue) / max(0.01, viewModel.currentSnapshotIncome), tint: AppColors.budgetOrange)
+            if topCategories.isEmpty {
+                Text("We need a little more categorized spending before this view fills in.")
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.inkSoft)
+            } else {
+                VStack(spacing: AppSpacing.md) {
+                    ForEach(topCategories) { category in
+                        categoryRow(category)
+                    }
+                }
+            }
         }
         .padding(AppSpacing.md)
         .background(AppColors.glassCardBg)
@@ -241,44 +215,89 @@ struct BS_DiagnosisView: View {
         )
     }
 
-    private func mixRow(label: String, amount: Double, ratio: Double, tint: Color) -> some View {
+    private func categoryRow(_ category: CategorySnapshot) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            HStack {
-                Text(label)
-                    .font(.bodySmall)
-                    .foregroundStyle(AppColors.inkPrimary)
+            HStack(spacing: AppSpacing.sm) {
+                ZStack {
+                    Circle()
+                        .fill(category.tint.opacity(0.12))
+                        .frame(width: 28, height: 28)
+                    Image(systemName: category.icon)
+                        .font(.caption)
+                        .foregroundStyle(category.tint)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(category.name)
+                        .font(.bodySmallSemibold)
+                        .foregroundStyle(AppColors.inkPrimary)
+                    Text(category.parentLabel)
+                        .font(.caption)
+                        .foregroundStyle(AppColors.inkSoft)
+                }
+
                 Spacer()
-                Text("$\(formatted(amount))")
-                    .font(.bodySmallSemibold)
-                    .foregroundStyle(AppColors.inkPrimary)
-                Text("· \(Int((ratio * 100).rounded()))%")
-                    .font(.bodySmall)
-                    .foregroundStyle(AppColors.inkSoft)
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("$\(formatted(category.amount))")
+                        .font(.bodySmallSemibold)
+                        .foregroundStyle(AppColors.inkPrimary)
+                    Text("\(Int((category.share * 100).rounded()))% of spend")
+                        .font(.caption)
+                        .foregroundStyle(AppColors.inkSoft)
+                }
             }
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: AppRadius.sm)
-                        .fill(AppColors.inkBorder.opacity(0.35))
+                        .fill(AppColors.inkBorder.opacity(0.3))
                     RoundedRectangle(cornerRadius: AppRadius.sm)
-                        .fill(tint)
-                        .frame(width: max(8, geo.size.width * min(1, max(0, ratio))))
+                        .fill(category.tint)
+                        .frame(width: max(10, geo.size.width * max(0, min(1, category.share))))
                 }
             }
             .frame(height: 8)
         }
     }
 
-    private func infoCard(title: String, body: String) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text(title.uppercased())
+    private var insightsSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text("QUICK READS")
                 .font(.label)
                 .tracking(1)
                 .foregroundStyle(AppColors.inkFaint)
-            Text(body)
-                .font(.footnoteRegular)
-                .foregroundStyle(AppColors.inkSoft)
-                .lineSpacing(3)
+
+            VStack(spacing: AppSpacing.sm) {
+                ForEach(insights) { insight in
+                    insightCard(insight)
+                }
+            }
+        }
+    }
+
+    private func insightCard(_ insight: RealityInsight) -> some View {
+        HStack(alignment: .top, spacing: AppSpacing.sm) {
+            ZStack {
+                RoundedRectangle(cornerRadius: AppRadius.sm)
+                    .fill(insight.tint.opacity(0.14))
+                    .frame(width: 32, height: 32)
+                Image(systemName: insight.icon)
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(insight.tint)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(insight.title)
+                    .font(.bodySmallSemibold)
+                    .foregroundStyle(AppColors.inkPrimary)
+                Text(insight.body)
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.inkSoft)
+                    .lineSpacing(2)
+            }
+
+            Spacer(minLength: 0)
         }
         .padding(AppSpacing.md)
         .background(AppColors.glassCardBg)
@@ -312,34 +331,291 @@ struct BS_DiagnosisView: View {
         }
     }
 
-    private var savingsValue: Double {
-        viewModel.currentSnapshotIncome - viewModel.currentSnapshotSpend
+    private func startEntranceAnimation() {
+        showHeader = false
+        showTrend = false
+        showCategories = false
+        showInsights = false
+        showCTA = false
+
+        withAnimation(.easeOut(duration: 0.28)) {
+            showHeader = true
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+            withAnimation(.easeOut(duration: 0.32)) {
+                showTrend = true
+            }
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) {
+            withAnimation(.easeOut(duration: 0.34)) {
+                showCategories = true
+            }
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.24) {
+            withAnimation(.easeOut(duration: 0.34)) {
+                showInsights = true
+            }
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
+            withAnimation(.easeOut(duration: 0.34)) {
+                showCTA = true
+            }
+        }
     }
 
-    private var rawBreakdownRows: [MonthlyBreakdownItem] {
-        viewModel.spendingStats?.monthlyBreakdown ?? []
+    private var trendRows: [TrendMonthSnapshot] {
+        if let rows = viewModel.spendingStats?.monthlyBreakdownV3, !rows.isEmpty {
+            let completeRows = rows.filter { $0.status == "complete" }
+            let sourceRows = completeRows.isEmpty ? rows : completeRows
+            return sourceRows.map {
+                TrendMonthSnapshot(
+                    month: $0.month,
+                    label: monthAbbreviation(from: $0.month),
+                    income: $0.income,
+                    spend: $0.totalSpend,
+                    save: $0.savings
+                )
+            }
+        }
+
+        let legacyRows = viewModel.spendingStats?.monthlyBreakdown ?? []
+        return legacyRows.map {
+            TrendMonthSnapshot(
+                month: $0.month,
+                label: monthAbbreviation(from: $0.month),
+                income: $0.income,
+                spend: $0.fixed + $0.flexible,
+                save: $0.savings
+            )
+        }
     }
 
-    private var incomeSeries: [Double] { rawBreakdownRows.map(\.income) }
-    private var spendSeries: [Double] { rawBreakdownRows.map { $0.fixed + $0.flexible } }
-    private var saveSeries: [Double] { rawBreakdownRows.map(\.savings) }
+    private var summaryIncome: Double { TrendMetric.income.typicalValue(in: trendRows) }
+    private var summarySpend: Double { TrendMetric.spend.typicalValue(in: trendRows) }
+    private var summarySave: Double { TrendMetric.save.typicalValue(in: trendRows) }
 
-    private var chartLabels: [String] {
-        rawBreakdownRows.map { monthAbbreviation(from: $0.month) }
+    private var topCategories: [CategorySnapshot] {
+        let items = viewModel.spendingStats?.canonicalBreakdown ?? []
+        let positiveItems = items.filter { $0.avgMonthly > 0 }
+        let total = max(0.01, positiveItems.reduce(0) { $0 + $1.avgMonthly })
+
+        return positiveItems
+            .sorted { $0.avgMonthly > $1.avgMonthly }
+            .prefix(6)
+            .map { item in
+                let category = TransactionCategoryCatalog.category(forStoredSubcategory: item.canonicalId)
+                let tint = categoryTint(parent: item.parent, canonicalId: item.canonicalId)
+                return CategorySnapshot(
+                    canonicalId: item.canonicalId,
+                    name: category?.name ?? fallbackCategoryName(for: item.canonicalId),
+                    icon: category?.icon ?? "questionmark.circle.fill",
+                    amount: item.avgMonthly,
+                    share: item.avgMonthly / total,
+                    parent: item.parent,
+                    tint: tint
+                )
+            }
     }
 
-    private var oneTimeNote: String? {
-        guard let count = viewModel.spendingStats?.oneTimeTransactions?.count, count > 0 else { return nil }
-        return count == 1
-            ? "We excluded 1 one-time purchase so your typical monthly spend stays realistic."
-            : "We excluded \(count) one-time purchases so your typical monthly spend stays realistic."
+    private var insights: [RealityInsight] {
+        var built: [RealityInsight] = []
+
+        if let topCategory = topCategories.first {
+            built.append(
+                RealityInsight(
+                    title: "Biggest category",
+                    body: "\(topCategory.name) is your biggest average monthly cost at $\(formatted(topCategory.amount)).",
+                    icon: topCategory.icon,
+                    tint: topCategory.tint
+                )
+            )
+        }
+
+        if let strongestMonth = highestSpendMonth {
+            built.append(
+                RealityInsight(
+                    title: "Highest spend month",
+                    body: "\(strongestMonth.label) was your highest spending month at $\(formatted(strongestMonth.spend)).",
+                    icon: "calendar",
+                    tint: AppColors.budgetOrange
+                )
+            )
+        }
+
+        return built
     }
 
-    private var completenessNote: String? {
-        guard let stats = viewModel.spendingStats else { return nil }
-        let incompleteCount = stats.monthlyBreakdownV3?.filter { $0.status == "incomplete" }.count ?? 0
-        guard incompleteCount > 0 else { return nil }
-        return "\(incompleteCount) month(s) in this window have partial data, so we only used complete months for your averages."
+    private var oneTimeTransactionsCount: Int {
+        viewModel.spendingStats?.oneTimeTransactions?.count ?? 0
+    }
+
+    private var highestSpendMonth: TrendMonthSnapshot? {
+        trendRows.max { $0.spend < $1.spend }
+    }
+
+    private var displayedMonthCount: Int {
+        let count = trendRows.count
+        return max(1, count)
+    }
+
+    private var displayedMonthWord: String {
+        switch displayedMonthCount {
+        case 1: return "one"
+        case 2: return "two"
+        case 3: return "three"
+        case 4: return "four"
+        case 5: return "five"
+        case 6: return "six"
+        default: return "\(displayedMonthCount)"
+        }
+    }
+
+    private var displayedMonthNoun: String {
+        displayedMonthCount == 1 ? "month" : "months"
+    }
+
+    private var trendInfoSheet: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("How this works")
+                        .font(.h3)
+                        .foregroundStyle(AppColors.inkPrimary)
+                    Text("This trend only uses the accounts you selected in Build Plan.")
+                        .font(.bodySmall)
+                        .foregroundStyle(AppColors.inkSoft)
+                        .lineSpacing(3)
+                }
+
+                VStack(alignment: .leading, spacing: AppSpacing.md) {
+                    infoRow(
+                        icon: "checklist.checked",
+                        title: "Selected accounts",
+                        body: viewModel.isManualMode
+                            ? "This snapshot uses the manual numbers you entered instead of bank-linked accounts."
+                            : "We only include the checking, savings, and credit accounts you selected."
+                    )
+                    infoRow(
+                        icon: "calendar",
+                        title: "Complete months only",
+                        body: "We look at your last \(displayedMonthWord) complete calendar \(displayedMonthNoun) and skip the current in-progress month."
+                    )
+                    infoRow(
+                        icon: "chart.line.horizontal.3",
+                        title: "Typical line",
+                        body: "The dashed line shows your typical month using the median, not a simple average."
+                    )
+                    infoRow(
+                        icon: "wand.and.stars",
+                        title: "One-time purchases",
+                        body: oneTimeTransactionsCount > 0
+                            ? "We excluded \(oneTimeTransactionsCount) large one-time purchase\(oneTimeTransactionsCount == 1 ? "" : "s") so this chart reflects your regular cash flow."
+                            : "We didn’t find any large one-time purchases to exclude in this window."
+                    )
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(AppSpacing.lg)
+            .background(LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { showTrendInfoSheet = false }
+                        .fontWeight(.semibold)
+                        .foregroundStyle(AppColors.inkPrimary)
+                }
+            }
+        }
+        .presentationDetents([.height(420)])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func infoRow(icon: String, title: String, body: String) -> some View {
+        HStack(alignment: .top, spacing: AppSpacing.sm) {
+            ZStack {
+                RoundedRectangle(cornerRadius: AppRadius.sm)
+                    .fill(AppColors.inkTrack.opacity(0.55))
+                    .frame(width: 30, height: 30)
+                Image(systemName: icon)
+                    .font(.caption)
+                    .foregroundStyle(AppColors.inkPrimary)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.bodySmallSemibold)
+                    .foregroundStyle(AppColors.inkPrimary)
+                Text(body)
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.inkSoft)
+                    .lineSpacing(2)
+            }
+        }
+    }
+
+    private func categoryTint(parent: String, canonicalId: String) -> Color {
+        if canonicalId == "uncategorized" { return AppColors.inkSoft }
+        return parent == "needs" ? AppColors.budgetTeal : AppColors.accentAmber
+    }
+
+    private func fallbackCategoryName(for canonicalId: String) -> String {
+        if canonicalId == "uncategorized" {
+            return "Uncategorized"
+        }
+        return CategoryDisplay.displayName(canonicalId)
+    }
+
+    private func value(for row: TrendMonthSnapshot, metric: TrendMetric) -> Double {
+        switch metric {
+        case .income: return row.income
+        case .spend: return row.spend
+        case .save: return row.save
+        }
+    }
+
+    private var typicalTrendValue: Double {
+        selectedTrend.typicalValue(in: trendRows)
+    }
+
+    private var trendMetricTabs: some View {
+        HStack(spacing: AppSpacing.xs) {
+            metricTab(title: "INCOME", value: summaryIncome, metric: .income)
+            metricTab(title: "SPEND", value: summarySpend, metric: .spend)
+            metricTab(title: "SAVE", value: summarySave, metric: .save)
+        }
+    }
+
+    private func metricTab(title: String, value: Double, metric: TrendMetric) -> some View {
+        Button {
+            selectedTrend = metric
+        } label: {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text(title)
+                    .font(.miniLabel)
+                    .tracking(0.8)
+                    .foregroundStyle(selectedTrend == metric ? AppColors.inkPrimary : AppColors.inkFaint)
+
+                Text("\(value < 0 ? "-" : "")$\(formatted(abs(value)))")
+                    .font(.bodySmallSemibold)
+                    .foregroundStyle(selectedTrend == metric ? AnyShapeStyle(trendAccentGradient) : AnyShapeStyle(AppColors.inkPrimary))
+                    .monospacedDigit()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(AppSpacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: AppRadius.md)
+                    .fill(selectedTrend == metric ? AppColors.shellBg2.opacity(0.92) : AppColors.shellBg1.opacity(0.55))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.md)
+                    .stroke(selectedTrend == metric ? trendAccentColor.opacity(0.28) : AppColors.inkBorder, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private func formatted(_ value: Double) -> String {
@@ -362,70 +638,86 @@ struct BS_DiagnosisView: View {
     BS_DiagnosisView(viewModel: BudgetSetupViewModel())
 }
 
-// MARK: - Sparkline shapes
-//
-// Minimal line-sparkline built on SwiftUI `Shape`. Normalizes `values`
-// against the series' own min/max so short amplitudes (e.g. narrow-band
-// income) still read as a visible line instead of a flat stripe. For
-// series that straddle zero (e.g. savings deficit months), the baseline
-// helper exposes a reference y=0 rule so the user can see when a month
-// went underwater.
+private enum TrendMetric: String, CaseIterable, Identifiable {
+    case income
+    case spend
+    case save
 
-private struct SparklineShape: Shape {
-    let values: [Double]
+    var id: String { rawValue }
 
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        guard values.count >= 2 else {
-            if values.count == 1 {
-                // Degenerate single-point series — draw a flat midline so
-                // the row still communicates "we have data, just no
-                // variation yet".
-                path.move(to: CGPoint(x: rect.minX, y: rect.midY))
-                path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
-            }
-            return path
+    var segmentTitle: String {
+        switch self {
+        case .income: return "Income"
+        case .spend: return "Spend"
+        case .save: return "Save"
         }
+    }
 
-        let minV = values.min() ?? 0
-        let maxV = values.max() ?? 0
-        let range = maxV - minV
-        let step = rect.width / CGFloat(values.count - 1)
+    var chartTitle: String {
+        switch self {
+        case .income: return "Income"
+        case .spend: return "Spending"
+        case .save: return "Savings"
+        }
+    }
 
-        for (index, value) in values.enumerated() {
-            let x = rect.minX + step * CGFloat(index)
-            let y: CGFloat
-            if range > 0 {
-                let norm = CGFloat((value - minV) / range)
-                y = rect.maxY - norm * rect.height
-            } else {
-                y = rect.midY
-            }
-            if index == 0 {
-                path.move(to: CGPoint(x: x, y: y))
-            } else {
-                path.addLine(to: CGPoint(x: x, y: y))
+    func typicalValue(in rows: [TrendMonthSnapshot]) -> Double {
+        let values = rows.map { row in
+            switch self {
+            case .income: return row.income
+            case .spend: return row.spend
+            case .save: return row.save
             }
         }
-        return path
+        return median(values)
+    }
+
+    private func median(_ values: [Double]) -> Double {
+        guard !values.isEmpty else { return 0 }
+        let sorted = values.sorted()
+        let mid = sorted.count / 2
+        if sorted.count.isMultiple(of: 2) {
+            return (sorted[mid - 1] + sorted[mid]) / 2
+        }
+        return sorted[mid]
     }
 }
 
-private struct SparklineBaseline: Shape {
-    let values: [Double]
+private struct TrendMonthSnapshot: Identifiable {
+    let month: String
+    let label: String
+    let income: Double
+    let spend: Double
+    let save: Double
 
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        guard let minV = values.min(), let maxV = values.max(), minV < 0, maxV > 0 else {
-            return path
+    var id: String { month }
+}
+
+private struct CategorySnapshot: Identifiable {
+    let canonicalId: String
+    let name: String
+    let icon: String
+    let amount: Double
+    let share: Double
+    let parent: String
+    let tint: Color
+
+    var id: String { canonicalId }
+
+    var parentLabel: String {
+        switch parent {
+        case "needs": return "Core spending"
+        case "wants": return "Lifestyle spending"
+        default: return "Other spending"
         }
-        // Series crosses zero — draw a dashed zero-reference baseline so
-        // the eye can anchor on the positive/negative split.
-        let range = maxV - minV
-        let zeroNorm = CGFloat((0 - minV) / range)
-        let y = rect.maxY - zeroNorm * rect.height
-        path.move(to: CGPoint(x: rect.minX, y: y))
-        path.addLine(to: CGPoint(x: rect.maxX, y: y))
-        return path
     }
+}
+
+private struct RealityInsight: Identifiable {
+    let title: String
+    let body: String
+    let icon: String
+    let tint: Color
+
+    var id: String { title }
 }

@@ -10,6 +10,7 @@
 import SwiftUI
 
 struct BudgetSetupView: View {
+    let entryMode: PlaidManager.BudgetSetupEntryMode
     @State private var viewModel = BudgetSetupViewModel()
     @Environment(\.dismiss) private var dismiss
     @State private var showDiscardConfirmation = false
@@ -57,7 +58,12 @@ struct BudgetSetupView: View {
             .padding(.top, AppSpacing.md)
         }
         .task {
-            await viewModel.resumeFromSetupState()
+            switch entryMode {
+            case .fresh:
+                await viewModel.beginFreshSetup()
+            case .resume:
+                await viewModel.resumeFromSetupState()
+            }
         }
         .alert("Discard this setup?", isPresented: $showDiscardConfirmation) {
             Button("Keep Editing", role: .cancel) {}
@@ -106,7 +112,7 @@ private struct BudgetSetupNavigationBar: View {
 }
 
 #Preview {
-    BudgetSetupView()
+    BudgetSetupView(entryMode: .fresh)
 }
 
 private struct BudgetSetupBootstrapView: View {

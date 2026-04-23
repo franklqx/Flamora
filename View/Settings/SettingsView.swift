@@ -286,7 +286,7 @@ private extension SettingsView {
                     Button(action: {
                         dismiss()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                            plaidManager.showBudgetSetup = true
+                            plaidManager.openBudgetSetup(mode: .fresh)
                         }
                     }) {
                         row(

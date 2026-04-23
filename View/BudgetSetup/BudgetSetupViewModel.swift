@@ -448,6 +448,48 @@ class BudgetSetupViewModel {
         }
     }
 
+    /// Called from the Target step when the user inline-edits their current
+    /// age. Updates local state, pushes to the backend, clamps the target age
+    /// slider, and invalidates any cached plans so a subsequent Plan-step
+    /// visit re-runs `generate-plans` with the corrected age.
+    /// Best-effort on the backend write — the local value is the source of
+    /// truth for request bodies built later in the flow.
+    func updateCurrentAge(_ newAge: Int) async {
+        guard newAge > 0, newAge <= 120 else { return }
+        let clamped = min(max(newAge, 1), 120)
+
+        await MainActor.run {
+            currentAge = clamped
+            if isManualMode { manualAge = clamped }
+            // Keep the target-age slider above currentAge.
+            if targetRetirementAge <= clamped {
+                targetRetirementAge = max(clamped + 1, min(80, clamped + 15))
+            }
+            // Invalidate cached plans so the next Plan-step visit refetches
+            // with the corrected age. Also clear committedDefaults — those
+            // were computed from the old age and would otherwise leak into
+            // the Confirm step.
+            plans = []
+            selectedPlanIndex = 0
+            committedPlanLabel = nil
+            committedMonthlySave = nil
+            committedSpendCeiling = nil
+        }
+
+        do {
+            _ = try await APIService.shared.updateUserProfile(
+                age: clamped,
+                monthlyIncome: nil,
+                currentNetWorth: nil,
+                currentMonthlyExpenses: nil,
+                currencyCode: nil
+            )
+            print("✅ [BudgetSetup] updateCurrentAge → \(clamped) synced to backend")
+        } catch {
+            print("⚠️ [BudgetSetup] updateCurrentAge backend sync failed (local still updated): \(error)")
+        }
+    }
+
     private func loadSpendingStats() async {
         do {
             var requestBody: [String: Any] = ["months": 6]
@@ -827,6 +869,14 @@ class BudgetSetupViewModel {
 
     // MARK: - Setup Resume
 
+    /// Fresh entry from Home / Cash Flow / Settings should always start at
+    /// account confirmation. This keeps the analysis scope visible instead of
+    /// silently resuming into Loading and skipping the account-selection gate.
+    func beginFreshSetup() async {
+        currentStep = .connect
+        isResumingState = false
+    }
+
     /// Reads the server-side setup state and advances currentStep to the correct resume point.
     /// V3 (Phase E): goal is collected in Step 4 Target (after Reality), so we no longer
     /// gate routing on `targetRetirementAge` — users always flow through Reality first.
@@ -854,10 +904,12 @@ class BudgetSetupViewModel {
                 prepareLoading(nextStep: .reality)
                 currentStep = .loading
             case .planPending, .active:
-                // Stats + (maybe) plan exist. If we have a target age, go to Plan.
-                // Otherwise the user never finished Step 4 → land on Target.
-                let nextAfterLoading: Step = (targetRetirementAge > 0) ? .plan : .target
-                prepareLoading(nextStep: nextAfterLoading)
+                // V3 contract: users always flow through Reality first (see doc
+                // at function top). Even when a plan already exists, re-entry
+                // lands on Reality so the user re-orients against current data
+                // before touching Target/Plan — their numbers may have shifted
+                // since the last committed plan.
+                prepareLoading(nextStep: .reality)
                 currentStep = .loading
             }
             print("✅ [BudgetSetup] resumeFromSetupState → \(state.resumeStage) → \(currentStep)")
@@ -1061,6 +1113,14 @@ class BudgetSetupViewModel {
     }
     
     func goBack() {
+        if currentStep == .reality {
+            isNavigatingForward = false
+            withAnimation(.easeOut(duration: 0.3)) {
+                currentStep = .connect
+            }
+            return
+        }
+
         let targetRaw = currentStep.rawValue - 1
         guard let previous = Step(rawValue: targetRaw),
               previous.rawValue >= Step.connect.rawValue else { return }

@@ -10,18 +10,55 @@ import SwiftUI
 struct BS_TargetView: View {
     @Bindable var viewModel: BudgetSetupViewModel
 
+    @State private var showCurrentAgeSheet = false
+    @State private var showTargetAgeSheet = false
+    @State private var showFireInfoSheet = false
     @State private var showSpendingSheet = false
-    @State private var draftSpending: Double = 0
+    @State private var draftCurrentAge: Int = 0
+    @State private var draftTargetAge: Int = 0
+    @State private var draftSpendingMonthly: Double = 0
+    @State private var draftSpendingText: String = ""
+    @FocusState private var isSpendingFieldFocused: Bool
+
+    private let spendingMin: Double = 500
+    private let spendingSliderMax: Double = 20000
+    private let spendingHardCap: Double = 50000
 
     private var minTargetAge: Int { max(viewModel.currentAge + 1, 1) }
     private var maxTargetAge: Int { 80 }
     private var todaySpend: Double { max(0, viewModel.currentSnapshotSpend) }
-    private var currentFireNumber: Double { todaySpend * 12 / 0.04 }
     private var desiredFireNumber: Double { max(0, viewModel.retirementSpendingMonthly) * 12 / 0.04 }
+
+    private enum SpendingComparisonState {
+        case above(Int)
+        case below(Int)
+        case matches
+    }
+
+    private var spendingComparisonState: SpendingComparisonState? {
+        spendingComparisonState(for: viewModel.retirementSpendingMonthly)
+    }
+
+    private func spendingComparisonState(for monthlySpending: Double) -> SpendingComparisonState? {
+        guard todaySpend > 0 else { return nil }
+        let delta = monthlySpending - todaySpend
+        let pct = abs(delta) / todaySpend * 100
+        if pct < 3 { return .matches }
+        let roundedPct = Int(pct.rounded())
+        return delta >= 0 ? .above(roundedPct) : .below(roundedPct)
+    }
+
+    private var draftSpendingSliderBinding: Binding<Double> {
+        Binding(
+            get: { min(max(draftSpendingMonthly, spendingMin), spendingSliderMax) },
+            set: { updateDraftSpending($0) }
+        )
+    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
@@ -30,29 +67,29 @@ struct BS_TargetView: View {
                     headerSection
                         .padding(.horizontal, AppSpacing.lg)
 
-                    ageCard
+                    ageRow
                         .padding(.horizontal, AppSpacing.lg)
 
-                    spendingCard
-                        .padding(.horizontal, AppSpacing.lg)
-
-                    fireNumberCard
+                    spendingFireCard
                         .padding(.horizontal, AppSpacing.lg)
 
                     Spacer().frame(height: AppSpacing.tabBarReserve + AppSpacing.md + AppSpacing.md + AppSpacing.sm)
                 }
             }
+            .scrollDismissesKeyboard(.interactively)
 
             stickyBottomCTA
         }
         .onAppear {
             viewModel.seedDefaultsForTargetStep()
-            draftSpending = max(viewModel.retirementSpendingMonthly, todaySpend)
         }
-        .sheet(isPresented: $showSpendingSheet) {
-            spendingSheet
-        }
+        .sheet(isPresented: $showCurrentAgeSheet) { currentAgeSheet }
+        .sheet(isPresented: $showTargetAgeSheet) { targetAgeSheet }
+        .sheet(isPresented: $showFireInfoSheet) { fireInfoSheet }
+        .sheet(isPresented: $showSpendingSheet) { spendingSheet }
     }
+
+    // MARK: - Header
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -67,144 +104,180 @@ struct BS_TargetView: View {
         }
     }
 
-    private var ageCard: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("TARGET AGE")
-                .font(.label)
-                .tracking(1)
-                .foregroundStyle(AppColors.inkFaint)
+    // MARK: - Age Row (Variant A: side-by-side)
 
-            HStack(alignment: .firstTextBaseline) {
-                Text("\(viewModel.targetRetirementAge)")
-                    .font(.display)
-                    .foregroundStyle(AppColors.inkPrimary)
-                    .monospacedDigit()
-                Spacer()
-                Text("Current age \(viewModel.currentAge)")
-                    .font(.bodySmall)
-                    .foregroundStyle(AppColors.inkSoft)
+    private var ageRow: some View {
+        HStack(spacing: AppSpacing.md) {
+            compactAgeCard(title: "CURRENT AGE", value: viewModel.currentAge) {
+                draftCurrentAge = viewModel.currentAge > 0 ? viewModel.currentAge : 28
+                showCurrentAgeSheet = true
             }
-
-            Slider(
-                value: Binding(
-                    get: { Double(viewModel.targetRetirementAge) },
-                    set: { viewModel.targetRetirementAge = Int($0.rounded()) }
-                ),
-                in: Double(minTargetAge)...Double(maxTargetAge),
-                step: 1
-            )
-            .tint(AppColors.accentAmber)
-
-            HStack {
-                Text("\(minTargetAge)")
-                Spacer()
-                Text("\(maxTargetAge)")
+            compactAgeCard(title: "TARGET AGE", value: viewModel.targetRetirementAge) {
+                draftTargetAge = max(viewModel.targetRetirementAge, minTargetAge)
+                showTargetAgeSheet = true
             }
-            .font(.caption)
-            .foregroundStyle(AppColors.inkFaint)
         }
-        .padding(AppSpacing.md)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
     }
 
-    private var spendingCard: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            HStack {
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("DESIRED MONTHLY SPENDING")
-                        .font(.label)
-                        .tracking(1)
-                        .foregroundStyle(AppColors.inkFaint)
-                    Text("$\(formatted(viewModel.retirementSpendingMonthly))/mo")
-                        .font(.h2)
+    private func compactAgeCard(title: String, value: Int, onTap: @escaping () -> Void) -> some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text(title)
+                    .font(.label)
+                    .tracking(1)
+                    .foregroundStyle(AppColors.inkFaint)
+
+                HStack(alignment: .firstTextBaseline) {
+                    Text("\(value)")
+                        .font(.h1)
                         .foregroundStyle(AppColors.inkPrimary)
                         .monospacedDigit()
+                    Spacer()
+                    Image(systemName: "pencil")
+                        .font(.footnoteRegular)
+                        .foregroundStyle(AppColors.accentAmber)
                 }
-                Spacer()
-                Button("Change") {
-                    draftSpending = max(viewModel.retirementSpendingMonthly, todaySpend)
-                    showSpendingSheet = true
-                }
-                .font(.bodySmallSemibold)
-                .foregroundStyle(AppColors.accentAmber)
             }
-
-            HStack(spacing: AppSpacing.sm) {
-                quickChip("Match today", value: todaySpend)
-                quickChip("-$500", value: max(0, todaySpend - 500))
-                quickChip("+$500", value: todaySpend + 500)
-            }
-        }
-        .padding(AppSpacing.md)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
-    }
-
-    private var fireNumberCard: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("FIRE NUMBER")
-                .font(.label)
-                .tracking(1)
-                .foregroundStyle(AppColors.inkFaint)
-
-            HStack {
-                comparisonColumn(title: "TODAY", value: currentFireNumber)
-                Rectangle()
-                    .fill(AppColors.inkBorder)
-                    .frame(width: 1, height: 48)
-                comparisonColumn(title: "TARGET", value: desiredFireNumber)
-            }
-        }
-        .padding(AppSpacing.md)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
-    }
-
-    private func quickChip(_ label: String, value: Double) -> some View {
-        Button {
-            viewModel.retirementSpendingMonthly = roundChipValue(value)
-        } label: {
-            Text(label)
-                .font(.footnoteRegular)
-                .foregroundStyle(AppColors.inkPrimary)
-                .padding(.horizontal, AppSpacing.sm)
-                .padding(.vertical, AppSpacing.xs)
-                .background(AppColors.glassCardBg)
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule()
-                        .stroke(AppColors.inkBorder, lineWidth: 1)
-                )
+            .padding(AppSpacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppColors.glassCardBg)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.lg)
+                    .stroke(AppColors.inkBorder, lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(title) \(value). Tap to edit.")
     }
 
-    private func comparisonColumn(title: String, value: Double) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text(title)
-                .font(.label)
-                .tracking(0.8)
-                .foregroundStyle(AppColors.inkFaint)
-            Text("$\(formatted(value))")
-                .font(.bodySemibold)
-                .foregroundStyle(AppColors.inkPrimary)
-                .monospacedDigit()
+    // MARK: - Combined Spending + FIRE Card
+
+    private var spendingFireCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text("DESIRED MONTHLY SPENDING")
+                    .font(.label)
+                    .tracking(1)
+                    .foregroundStyle(AppColors.inkFaint)
+
+                spendingAmountRow
+
+                if let spendingComparisonState {
+                    spendingComparisonFootnote(for: spendingComparisonState)
+                }
+            }
+
+            Rectangle()
+                .fill(AppColors.inkBorder)
+                .frame(height: 1)
+
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text("YOUR FIRE NUMBER")
+                    .font(.label)
+                    .tracking(1)
+                    .foregroundStyle(AppColors.inkFaint)
+
+                Text("$\(formatted(desiredFireNumber))")
+                    .font(.h2)
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+
+                Button {
+                    showFireInfoSheet = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("Based on the 4% rule")
+                            .font(.caption)
+                            .foregroundStyle(AppColors.inkSoft)
+                        Image(systemName: "info.circle")
+                            .font(.caption)
+                            .foregroundStyle(AppColors.inkSoft)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Learn about the 4% rule")
+                .padding(.top, AppSpacing.xxs)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(AppSpacing.md)
+        .background(AppColors.glassCardBg)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
+        )
     }
+
+    private var spendingAmountRow: some View {
+        Button {
+            primeSpendingEditor()
+            showSpendingSheet = true
+        } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("$\(formatted(viewModel.retirementSpendingMonthly))")
+                    .font(.h1)
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .monospacedDigit()
+                Text("/mo")
+                    .font(.bodyRegular)
+                    .foregroundStyle(AppColors.inkSoft)
+                Image(systemName: "pencil")
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.accentAmber)
+                Spacer()
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Desired monthly spending \(formatted(viewModel.retirementSpendingMonthly)) dollars")
+    }
+
+    @ViewBuilder
+    private func spendingComparisonFootnote(for state: SpendingComparisonState) -> some View {
+        switch state {
+        case .above(let pct):
+            HStack(spacing: 6) {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.up")
+                    Text("\(pct)%")
+                }
+                .foregroundStyle(AppColors.accentAmber)
+                Text("more than you spend today")
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.inkFaint)
+            }
+            .font(.footnoteSemibold)
+            .contentTransition(.numericText())
+            .padding(.leading, AppSpacing.sm + AppSpacing.xs)
+        case .below(let pct):
+            HStack(spacing: 6) {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.down")
+                    Text("\(pct)%")
+                }
+                .foregroundStyle(AppColors.accentAmber)
+                Text("less than you spend today")
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.inkFaint)
+            }
+            .font(.footnoteSemibold)
+            .contentTransition(.numericText())
+            .padding(.leading, AppSpacing.sm + AppSpacing.xs)
+        case .matches:
+            HStack(spacing: 6) {
+                Image(systemName: "equal")
+                    .foregroundStyle(AppColors.accentAmber)
+                Text("About what you spend today")
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.inkFaint)
+            }
+            .font(.footnoteSemibold)
+            .padding(.leading, AppSpacing.sm + AppSpacing.xs)
+        }
+    }
+
+    // MARK: - Sticky CTA
 
     private var stickyBottomCTA: some View {
         VStack(spacing: 0) {
@@ -213,6 +286,7 @@ struct BS_TargetView: View {
 
             VStack(spacing: AppSpacing.xs) {
                 Button {
+                    if isSpendingFieldFocused { isSpendingFieldFocused = false }
                     Task {
                         let saved = await viewModel.saveFireGoal()
                         if saved {
@@ -230,9 +304,7 @@ struct BS_TargetView: View {
                     .foregroundStyle(AppColors.ctaWhite)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
-                    .background(
-                        canContinue ? AppColors.inkPrimary : AppColors.inkFaint
-                    )
+                    .background(canContinue ? AppColors.inkPrimary : AppColors.inkFaint)
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
                 }
                 .disabled(!canContinue || viewModel.isSavingGoal)
@@ -253,6 +325,8 @@ struct BS_TargetView: View {
         viewModel.retirementSpendingMonthly > 0 && viewModel.targetRetirementAge >= minTargetAge
     }
 
+    // MARK: - Spending Sheet
+
     private var spendingSheet: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
@@ -260,90 +334,314 @@ struct BS_TargetView: View {
                     Text("Desired Monthly Spending")
                         .font(.h3)
                         .foregroundStyle(AppColors.inkPrimary)
-                    Text("This number becomes the spending level your plan is trying to support after you retire.")
+                    Text("Set the monthly lifestyle you want your future plan to support. You can type an exact number or use the slider to explore.")
                         .font(.bodySmall)
                         .foregroundStyle(AppColors.inkSoft)
+                        .lineSpacing(2)
                 }
 
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text("$\(formatted(draftSpending))/mo")
-                        .font(.display)
-                        .foregroundStyle(AppColors.inkPrimary)
-                        .monospacedDigit()
+                    spendingSheetAmountRow
 
-                    Slider(value: $draftSpending, in: 500...max(20000, todaySpend + 5000), step: 50)
+                    if let comparison = spendingComparisonState(for: draftSpendingMonthly) {
+                        spendingComparisonFootnote(for: comparison)
+                    }
+                }
+
+                VStack(spacing: AppSpacing.xs) {
+                    Slider(value: draftSpendingSliderBinding, in: spendingMin...spendingSliderMax, step: 50)
                         .tint(AppColors.accentAmber)
+
+                    HStack {
+                        Text("$\(formatted(spendingMin))")
+                            .font(.caption)
+                            .foregroundStyle(AppColors.inkFaint)
+                        Spacer()
+                        Text("$\(formatted(spendingSliderMax))")
+                            .font(.caption)
+                            .foregroundStyle(AppColors.inkFaint)
+                    }
                 }
 
-                HStack(spacing: AppSpacing.sm) {
-                    quickSheetChip("Match today", value: todaySpend)
-                    quickSheetChip("-$500", value: max(0, todaySpend - 500))
-                    quickSheetChip("+$500", value: todaySpend + 500)
+                if todaySpend > 0 {
+                    Button {
+                        updateDraftSpending(todaySpend)
+                    } label: {
+                        Text("Match today")
+                            .font(.footnoteSemibold)
+                            .foregroundStyle(AppColors.inkPrimary)
+                            .padding(.horizontal, AppSpacing.sm)
+                            .padding(.vertical, AppSpacing.xs)
+                            .background(AppColors.glassCardBg)
+                            .clipShape(Capsule())
+                            .overlay(
+                                Capsule()
+                                    .stroke(AppColors.inkBorder, lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(.plain)
                 }
 
-                fireNumberCardInSheet
-
-                Spacer()
+                Spacer(minLength: 0)
             }
             .padding(AppSpacing.lg)
             .background(LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { showSpendingSheet = false }
+                    Button("Cancel") {
+                        isSpendingFieldFocused = false
+                        showSpendingSheet = false
+                    }
+                    .foregroundStyle(AppColors.inkSoft)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Apply") {
-                        viewModel.retirementSpendingMonthly = roundChipValue(draftSpending)
+                        commitDraftSpending()
+                        isSpendingFieldFocused = false
                         showSpendingSheet = false
                     }
                     .fontWeight(.semibold)
+                    .foregroundStyle(AppColors.inkPrimary)
+                }
+            }
+            .onAppear {
+                primeSpendingEditor()
+            }
+            .onChange(of: draftSpendingText) { _, _ in
+                guard isSpendingFieldFocused else { return }
+                let digits = draftSpendingText.filter { $0.isNumber }
+                let value = Double(digits) ?? 0
+                draftSpendingMonthly = min(spendingHardCap, max(0, value))
+            }
+            .onChange(of: draftSpendingMonthly) { _, newValue in
+                guard !isSpendingFieldFocused else { return }
+                draftSpendingText = String(Int(newValue.rounded()))
+            }
+        }
+        .presentationDetents([.height(430)])
+        .presentationDragIndicator(.visible)
+    }
+
+    private var spendingSheetAmountRow: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 2) {
+            Text("$")
+                .font(.h1)
+                .foregroundStyle(AppColors.inkPrimary)
+            TextField("", text: $draftSpendingText)
+                .keyboardType(.numberPad)
+                .font(.h1.monospacedDigit())
+                .foregroundStyle(AppColors.inkPrimary)
+                .focused($isSpendingFieldFocused)
+                .fixedSize()
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") {
+                            isSpendingFieldFocused = false
+                            commitDraftSpending()
+                        }
+                        .fontWeight(.semibold)
+                        .foregroundStyle(AppColors.inkPrimary)
+                    }
+                }
+            Text("/mo")
+                .font(.bodyRegular)
+                .foregroundStyle(AppColors.inkSoft)
+                .padding(.leading, 4)
+            Spacer()
+        }
+    }
+
+    // MARK: - Current Age Sheet
+
+    private var currentAgeSheet: some View {
+        ageSheet(
+            title: "Your Current Age",
+            subtitle: "Used to project when you'll hit your FIRE number. Saving this updates your plan.",
+            draft: $draftCurrentAge,
+            range: 18...80,
+            onCancel: { showCurrentAgeSheet = false },
+            onApply: {
+                let newAge = draftCurrentAge
+                showCurrentAgeSheet = false
+                Task { await viewModel.updateCurrentAge(newAge) }
+            }
+        )
+        .presentationDetents([.height(360)])
+        .presentationDragIndicator(.visible)
+    }
+
+    // MARK: - Target Age Sheet
+
+    private var targetAgeSheet: some View {
+        ageSheet(
+            title: "Target Retirement Age",
+            subtitle: "The age you'd like your plan to fund. Can't be earlier than your current age.",
+            draft: $draftTargetAge,
+            range: minTargetAge...maxTargetAge,
+            onCancel: { showTargetAgeSheet = false },
+            onApply: {
+                viewModel.targetRetirementAge = draftTargetAge
+                showTargetAgeSheet = false
+            }
+        )
+        .presentationDetents([.height(360)])
+        .presentationDragIndicator(.visible)
+    }
+
+    // MARK: - Age Sheet Template
+
+    private func ageSheet(
+        title: String,
+        subtitle: String,
+        draft: Binding<Int>,
+        range: ClosedRange<Int>,
+        onCancel: @escaping () -> Void,
+        onApply: @escaping () -> Void
+    ) -> some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text(title)
+                        .font(.h3)
+                        .foregroundStyle(AppColors.inkPrimary)
+                    Text(subtitle)
+                        .font(.bodySmall)
+                        .foregroundStyle(AppColors.inkSoft)
+                        .lineSpacing(2)
+                }
+
+                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
+                    Spacer()
+                    Text("\(draft.wrappedValue)")
+                        .font(.currencyHero.monospacedDigit())
+                        .foregroundStyle(AppColors.inkPrimary)
+                        .contentTransition(.numericText())
+                    Text("yrs")
+                        .font(.bodySemibold)
+                        .foregroundStyle(AppColors.inkSoft)
+                    Spacer()
+                }
+
+                VStack(spacing: AppSpacing.xs) {
+                    Slider(
+                        value: Binding(
+                            get: { Double(draft.wrappedValue) },
+                            set: { draft.wrappedValue = Int($0.rounded()) }
+                        ),
+                        in: Double(range.lowerBound)...Double(range.upperBound),
+                        step: 1
+                    )
+                    .tint(AppColors.accentAmber)
+
+                    HStack {
+                        Text("\(range.lowerBound)")
+                            .font(.caption)
+                            .foregroundStyle(AppColors.inkFaint)
+                        Spacer()
+                        Text("\(range.upperBound)")
+                            .font(.caption)
+                            .foregroundStyle(AppColors.inkFaint)
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(AppSpacing.lg)
+            .background(LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel", action: onCancel)
+                        .foregroundStyle(AppColors.inkSoft)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Apply", action: onApply)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(AppColors.inkPrimary)
                 }
             }
         }
-        .presentationDetents([.medium])
     }
 
-    private var fireNumberCardInSheet: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("Before / After")
-                .font(.label)
-                .tracking(1)
-                .foregroundStyle(AppColors.inkFaint)
-            HStack {
-                comparisonColumn(title: "CURRENT", value: currentFireNumber)
-                Rectangle()
-                    .fill(AppColors.inkBorder)
-                    .frame(width: 1, height: 48)
-                comparisonColumn(title: "NEW", value: draftSpending * 12 / 0.04)
+    // MARK: - FIRE Info Sheet (4% rule)
+
+    private var fireInfoSheet: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("The 4% Rule")
+                        .font(.h3)
+                        .foregroundStyle(AppColors.inkPrimary)
+                    Text("A popular FIRE guideline: if you save 25× your annual spending, you can withdraw about 4% per year and your money should last 30+ years.")
+                        .font(.bodySmall)
+                        .foregroundStyle(AppColors.inkSoft)
+                        .lineSpacing(3)
+                }
+
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("YOUR CALCULATION")
+                        .font(.label)
+                        .tracking(1)
+                        .foregroundStyle(AppColors.inkFaint)
+
+                    Text("$\(formatted(viewModel.retirementSpendingMonthly)) × 12 ÷ 0.04")
+                        .font(.bodyRegular)
+                        .foregroundStyle(AppColors.inkSoft)
+                        .monospacedDigit()
+
+                    Text("= $\(formatted(desiredFireNumber))")
+                        .font(.h2)
+                        .foregroundStyle(AppColors.inkPrimary)
+                        .monospacedDigit()
+                }
+                .padding(AppSpacing.md)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(AppColors.glassCardBg)
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.lg)
+                        .stroke(AppColors.inkBorder, lineWidth: 1)
+                )
+
+                Spacer(minLength: 0)
+            }
+            .padding(AppSpacing.lg)
+            .background(LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { showFireInfoSheet = false }
+                        .fontWeight(.semibold)
+                        .foregroundStyle(AppColors.inkPrimary)
+                }
             }
         }
-        .padding(AppSpacing.md)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
+        .presentationDetents([.height(420)])
+        .presentationDragIndicator(.visible)
     }
 
-    private func quickSheetChip(_ label: String, value: Double) -> some View {
-        Button(label) {
-            draftSpending = roundChipValue(value)
+    // MARK: - Helpers
+
+    private func primeSpendingEditor() {
+        let initialValue = min(spendingHardCap, max(0, viewModel.retirementSpendingMonthly))
+        draftSpendingMonthly = initialValue
+        draftSpendingText = String(Int(initialValue.rounded()))
+    }
+
+    private func updateDraftSpending(_ value: Double) {
+        let clamped = min(spendingHardCap, max(0, value))
+        draftSpendingMonthly = clamped
+        if !isSpendingFieldFocused {
+            draftSpendingText = String(Int(clamped.rounded()))
         }
-        .font(.footnoteRegular)
-        .foregroundStyle(AppColors.inkPrimary)
-        .padding(.horizontal, AppSpacing.sm)
-        .padding(.vertical, AppSpacing.xs)
-        .background(AppColors.glassCardBg)
-        .clipShape(Capsule())
-        .overlay(
-            Capsule()
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
     }
 
-    private func roundChipValue(_ value: Double) -> Double {
-        (value / 50).rounded() * 50
+    private func commitDraftSpending() {
+        let digits = draftSpendingText.filter { $0.isNumber }
+        let typedValue = Double(digits) ?? draftSpendingMonthly
+        let clamped = min(spendingHardCap, max(0, typedValue))
+        draftSpendingMonthly = clamped
+        draftSpendingText = String(Int(clamped.rounded()))
+        viewModel.retirementSpendingMonthly = clamped
     }
 
     private func formatted(_ value: Double) -> String {

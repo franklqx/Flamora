@@ -12,18 +12,29 @@ internal import Functions
 @MainActor
 @Observable
 class PlaidManager {
+    enum BudgetSetupEntryMode {
+        case fresh
+        case resume
+    }
+
     static let shared = PlaidManager()
 
     var hasLinkedBank: Bool = false
     var isConnecting: Bool = false
     var connectedInstitutionName: String? = nil
     var showBudgetSetup: Bool = false
+    var budgetSetupEntryMode: BudgetSetupEntryMode = .fresh
     var lastConnectionTime: Date? = nil
     /// Non-nil when the last link or exchange attempt failed. Views observe this to show an error alert.
     var linkError: String? = nil
     private var client: SupabaseClient { SupabaseManager.shared.client }
 
     private init() {}
+
+    func openBudgetSetup(mode: BudgetSetupEntryMode = .fresh) {
+        budgetSetupEntryMode = mode
+        showBudgetSetup = true
+    }
 
     // MARK: - 从 user-profile 加载银行连接状态
     func loadStatus() async {

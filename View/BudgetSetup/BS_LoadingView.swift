@@ -3,7 +3,7 @@
 //  Flamora app
 //
 //  Budget Setup — Step 1: Loading
-//  V3: Dual-ring spinner + 3 sequential checklist items for Budget Setup
+//  V3: Onboarding-style loading animation + 3 sequential status lines
 //
 
 import SwiftUI
@@ -12,14 +12,19 @@ struct BS_LoadingView: View {
     @Bindable var viewModel: BudgetSetupViewModel
     var onComplete: () -> Void
 
-    // Each checklist item has 3 states: pending → active → done
-    @State private var step1State: ChecklistState = .pending
-    @State private var step2State: ChecklistState = .pending
-    @State private var step3State: ChecklistState = .pending
+    private enum ChecklistState { case waiting, loading, done }
+    private let loadingSteps = [
+        "Reviewing your recent cash flow...",
+        "Filtering out one-time purchases...",
+        "Building your cash flow snapshot...",
+    ]
 
-    // Spinner rotation
-    @State private var outerRotation: Double = 0
-    @State private var innerRotation: Double = 0
+    @State private var step1State: ChecklistState = .waiting
+    @State private var step2State: ChecklistState = .waiting
+    @State private var step3State: ChecklistState = .waiting
+    @State private var showIcon = false
+    @State private var rotation: Double = 0
+    @State private var barProgress: CGFloat = 0
 
     // Timeout / error state
     @State private var showError = false
@@ -28,10 +33,6 @@ struct BS_LoadingView: View {
     /// capture the attempt value at scheduling time and bail out if it no longer matches,
     /// preventing stale timers from triggering showError during a newer load cycle.
     @State private var loadAttempt: Int = 0
-
-    private enum ChecklistState {
-        case pending, active, done
-    }
 
     var body: some View {
         Group {
@@ -48,14 +49,16 @@ struct BS_LoadingView: View {
     // MARK: - Normal loading view
 
     private var loadingView: some View {
-        VStack(spacing: AppSpacing.xxl) {
+        VStack(spacing: 0) {
             Spacer()
-            spinnerSection
+            heroSection
+            Spacer().frame(height: AppSpacing.xxl)
             checklistSection
             Spacer()
+            progressBarSection
         }
         .onAppear {
-            startSpinnerAnimation()
+            startHeroAnimation()
             startChecklistAnimation()
             Task { await viewModel.loadInitialData() }
             scheduleTimeout()
@@ -100,31 +103,34 @@ struct BS_LoadingView: View {
         }
     }
 
-    // MARK: - Dual-Ring Spinner
+    // MARK: - Hero
 
-    private var spinnerSection: some View {
+    private var heroSection: some View {
         ZStack {
-            // Outer ring (gold arc)
             Circle()
-                .stroke(AppColors.budgetGold.opacity(0.1), lineWidth: 3)
-                .frame(width: 72, height: 72)
+                .fill(
+                    RadialGradient(
+                        colors: [AppColors.accentBlueBright.opacity(0.15), Color.clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 80
+                    )
+                )
+                .frame(width: 140, height: 140)
+                .opacity(showIcon ? 1 : 0)
 
-            Circle()
-                .trim(from: 0, to: 0.35)
-                .stroke(AppColors.budgetGold, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                .frame(width: 72, height: 72)
-                .rotationEffect(.degrees(outerRotation))
-
-            // Inner ring (pink accent, counter-rotating)
-            Circle()
-                .stroke(AppColors.budgetPink.opacity(0.1), lineWidth: 2)
-                .frame(width: 52, height: 52)
-
-            Circle()
-                .trim(from: 0, to: 0.25)
-                .stroke(AppColors.budgetPink, style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                .frame(width: 52, height: 52)
-                .rotationEffect(.degrees(innerRotation))
+            Image(systemName: "sparkle")
+                .font(.h1)
+                .fontWeight(.light)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: AppColors.gradientShellAccent,
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .rotationEffect(.degrees(rotation))
+                .opacity(showIcon ? 1 : 0)
         }
     }
 
@@ -132,90 +138,103 @@ struct BS_LoadingView: View {
 
     private var checklistSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
-            checklistRow(number: 1, label: "Reading your recent money flow", state: step1State)
-            checklistRow(number: 2, label: "Separating essentials from one-offs", state: step2State)
-            checklistRow(number: 3, label: "Preparing your starting reality", state: step3State)
+            checklistRow(label: loadingSteps[0], state: step1State)
+            checklistRow(label: loadingSteps[1], state: step2State)
+            checklistRow(label: loadingSteps[2], state: step3State)
         }
-        .padding(.horizontal, AppSpacing.xl + AppSpacing.lg)
+        .padding(.horizontal, AppSpacing.lg)
     }
 
     @ViewBuilder
-    private func checklistRow(number: Int, label: String, state: ChecklistState) -> some View {
+    private func checklistRow(label: String, state: ChecklistState) -> some View {
         HStack(spacing: AppSpacing.md) {
             // Step indicator
             ZStack {
                 switch state {
-                case .pending:
-                    Circle()
-                        .stroke(AppColors.inkFaint, lineWidth: 1.5)
-                        .frame(width: AppRadius.button, height: AppRadius.button)
-                    Text("\(number)")
-                        .font(.smallLabel)
-                        .foregroundStyle(AppColors.inkFaint)
-
-                case .active:
-                    Circle()
-                        .stroke(AppColors.budgetGold.opacity(0.6), lineWidth: 1.5)
-                        .frame(width: AppRadius.button, height: AppRadius.button)
-                    // Pulsing gold dot
-                    Circle()
-                        .fill(AppColors.budgetGold)
-                        .frame(width: AppSpacing.sm, height: AppSpacing.sm)
-                        .modifier(PulseModifier())
-
+                case .waiting:
+                    Color.clear
+                        .frame(width: 20, height: 20)
+                case .loading:
+                    ProgressView()
+                        .scaleEffect(0.8)
+                        .tint(AppColors.inkSoft)
+                        .frame(width: 20, height: 20)
                 case .done:
-                    Circle()
-                        .fill(AppColors.budgetTeal)
-                        .frame(width: AppRadius.button, height: AppRadius.button)
                     Image(systemName: "checkmark")
-                        .font(.smallLabel)
-                        .foregroundStyle(AppColors.ctaWhite)
+                        .font(.inlineLabel)
+                        .foregroundStyle(AppColors.inkFaint)
+                        .frame(width: 20, height: 20)
                 }
             }
-            .animation(.easeOut(duration: 0.3), value: state == .done)
 
             Text(label)
-                .font(state == .active ? .bodySmallSemibold : .bodySmall)
-                .foregroundStyle(
-                    state == .pending ? AppColors.inkFaint :
-                    state == .active ? AppColors.inkPrimary :
-                    AppColors.inkSoft
-                )
-                .animation(.easeOut(duration: 0.3), value: state == .active)
+                .font(.bodySmall)
+                .foregroundStyle(state == .waiting ? .clear : AppColors.inkSoft)
         }
+        .animation(.easeOut(duration: 0.3), value: state == .waiting)
+    }
+
+    // MARK: - Progress Bar
+
+    private var progressBarSection: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(AppColors.progressTrack)
+                    .frame(height: 3)
+
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: AppColors.gradientShellAccent,
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: geo.size.width * barProgress, height: 3)
+            }
+        }
+        .frame(height: 3)
+        .padding(.horizontal, AppSpacing.lg)
     }
 
     // MARK: - Animations
 
-    private func startSpinnerAnimation() {
-        withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
-            outerRotation = 360
-        }
-        withAnimation(.linear(duration: 1.2).repeatForever(autoreverses: false)) {
-            innerRotation = -360
-        }
+    private func startHeroAnimation() {
+        withAnimation(.easeIn(duration: 0.3)) { showIcon = true }
+        withAnimation(.linear(duration: 3.0)) { rotation = 360 }
+        withAnimation(.linear(duration: 3.0)) { barProgress = 1.0 }
     }
 
     private func startChecklistAnimation() {
         let attempt = loadAttempt
-        // Step 1: 0–1.4s
-        withAnimation(.easeOut(duration: 0.3)) { step1State = .active }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+        // Mirror onboarding timing so the UX feels consistent across flows.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             guard loadAttempt == attempt else { return }
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { step1State = .done }
-            // Step 2: 1.4–2.8s
-            withAnimation(.easeOut(duration: 0.3)) { step2State = .active }
+            step1State = .loading
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            guard loadAttempt == attempt else { return }
+            step1State = .done
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            guard loadAttempt == attempt else { return }
+            step2State = .loading
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.9) {
+            guard loadAttempt == attempt else { return }
+            step2State = .done
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.1) {
+            guard loadAttempt == attempt else { return }
+            step3State = .loading
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.8) {
             guard loadAttempt == attempt else { return }
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { step2State = .done }
-            // Step 3: 2.8–4.2s
-            withAnimation(.easeOut(duration: 0.3)) { step3State = .active }
+            step3State = .done
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 4.2) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.2) {
             guard loadAttempt == attempt else { return }
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { step3State = .done }
-            // Auto-navigate after all complete
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 guard loadAttempt == attempt else { return }
                 if viewModel.allLoadingComplete {
@@ -267,26 +286,13 @@ struct BS_LoadingView: View {
         viewModel.isLoadingProfile = true
         viewModel.isLoadingStats = true
         viewModel.isLoadingDiagnosis = true
-        step1State = .pending
-        step2State = .pending
-        step3State = .pending
-        outerRotation = 0
-        innerRotation = 0
+        step1State = .waiting
+        step2State = .waiting
+        step3State = .waiting
+        showIcon = false
+        rotation = 0
+        barProgress = 0
         showError = false  // Triggers re-render → loadingView.onAppear fires with new loadAttempt
-    }
-}
-
-// MARK: - Pulse Animation Modifier
-
-private struct PulseModifier: ViewModifier {
-    @State private var isPulsing = false
-
-    func body(content: Content) -> some View {
-        content
-            .scaleEffect(isPulsing ? 1.3 : 1.0)
-            .opacity(isPulsing ? 0.6 : 1.0)
-            .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isPulsing)
-            .onAppear { isPulsing = true }
     }
 }
 

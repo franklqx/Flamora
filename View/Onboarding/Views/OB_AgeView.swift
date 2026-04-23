@@ -89,6 +89,18 @@ struct OB_AgeView: View {
                 data.currencySymbol = match.symbol
                 data.country = match.country
             }
+            // Returning-user prefill: if the signed-in user already has a
+            // profile row with a real age, seed the slider with it so re-
+            // running onboarding doesn't silently overwrite their age back
+            // to the default. New users (no profile yet — profile is created
+            // at the Paywall step) silently fall through to `data.age = 28`.
+            Task {
+                guard let profile = try? await APIService.shared.getUserProfileForBudget(),
+                      profile.age > 0 else { return }
+                await MainActor.run {
+                    data.age = Double(profile.age)
+                }
+            }
         }
         .sheet(isPresented: $showCurrencyPicker) {
             OB_CurrencyPickerSheet(data: data, isPresented: $showCurrencyPicker)

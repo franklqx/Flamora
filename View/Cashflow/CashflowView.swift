@@ -111,7 +111,7 @@ struct CashflowView: View {
                             apiBudget: apiBudget,
                             isConnected: plaidManager.hasLinkedBank,
                             hasBudget: hasBudget,
-                            onSetupBudget: { plaidManager.showBudgetSetup = true },
+                            onSetupBudget: { plaidManager.openBudgetSetup(mode: .fresh) },
                             onCardTapped: { showTotalSpendingDetail = true },
                             onNeedsTapped: { showNeedsSpendingDetail = true },
                             onWantsTapped: { showWantsSpendingDetail = true },

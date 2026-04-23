@@ -90,6 +90,12 @@ struct BS_AccountSelectionView: View {
         }) {
             PlaidTrustBridgeView()
         }
+        .sheet(isPresented: Binding(
+            get: { subscriptionManager.showPaywall },
+            set: { subscriptionManager.showPaywall = $0 }
+        )) {
+            PaywallSheet()
+        }
     }
 
     // MARK: - Header
@@ -106,14 +112,9 @@ struct BS_AccountSelectionView: View {
                     .foregroundStyle(AppColors.inkSoft)
                     .lineSpacing(3)
             } else if plaidManager.hasLinkedBank {
-                Text("Choose which accounts to include in your budget analysis. We recommend selecting your everyday spending accounts.")
+                Text("For the clearest picture, include all your checking, savings, and credit accounts.")
                     .font(.inlineLabel)
                     .foregroundStyle(AppColors.inkSoft)
-                    .lineSpacing(3)
-
-                Text("Investment accounts stay in the Investment module and won’t be used to build this budget.")
-                    .font(.caption)
-                    .foregroundStyle(AppColors.inkFaint)
                     .lineSpacing(3)
             } else {
                 Text("Link your bank to build a personalized budget based on real spending data.")
@@ -251,92 +252,102 @@ struct BS_AccountSelectionView: View {
         let isSelected = viewModel.selectedAccountIds.contains(account.id)
         let isTransactionAccount = ["depository", "credit"].contains(account.type)
 
-        return Button {
-            viewModel.toggleAccount(account.id)
-        } label: {
-            HStack(spacing: AppSpacing.rowItem) {
-                // Checkbox
-                ZStack {
-                    RoundedRectangle(cornerRadius: AppRadius.sm)
-                        .fill(isSelected ? AppColors.accentAmber : Color.clear)
-                        .frame(width: 24, height: 24)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: AppRadius.sm)
-                                .stroke(isSelected ? Color.clear : AppColors.inkBorder, lineWidth: 1.5)
-                        )
+        let rowContent = HStack(spacing: AppSpacing.rowItem) {
+            accountCheckbox(isSelected: isSelected, isEnabled: isTransactionAccount)
 
-                    if isSelected {
-                        Image(systemName: "checkmark")
-                            .font(.footnoteBold)
-                            .foregroundStyle(AppColors.ctaWhite)
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                HStack(spacing: AppSpacing.sm) {
+                    Text(account.name)
+                        .font(.figureSecondarySemibold)
+                        .foregroundStyle(AppColors.inkPrimary)
+
+                    if let mask = account.mask {
+                        Text("••\(mask)")
+                            .font(.footnoteRegular)
+                            .foregroundStyle(AppColors.inkFaint)
                     }
                 }
 
-                // Account info
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    HStack(spacing: AppSpacing.sm) {
-                        Text(account.name)
-                            .font(.figureSecondarySemibold)
-                            .foregroundStyle(AppColors.inkPrimary)
+                HStack(spacing: AppSpacing.sm) {
+                    Text(account.type)
+                        .font(.caption)
+                        .foregroundStyle(isTransactionAccount ? AppColors.accentGreen : AppColors.inkSoft)
 
-                        if let mask = account.mask {
-                            Text("••\(mask)")
-                                .font(.footnoteRegular)
-                                .foregroundStyle(AppColors.inkFaint)
-                        }
-                    }
-
-                    HStack(spacing: AppSpacing.sm) {
-                        Text(account.type)
+                    if let institution = account.institutionName {
+                        Text("·")
                             .font(.caption)
-                            .foregroundStyle(isTransactionAccount ? AppColors.accentGreen : AppColors.inkSoft)
-
-                        if let institution = account.institutionName {
-                            Text("·")
-                                .font(.caption)
-                                .foregroundStyle(AppColors.inkFaint)
-                            Text(institution)
-                                .font(.caption)
-                                .foregroundStyle(AppColors.inkSoft)
-                        }
+                            .foregroundStyle(AppColors.inkFaint)
+                        Text(institution)
+                            .font(.caption)
+                            .foregroundStyle(AppColors.inkSoft)
                     }
-                }
-
-                Spacer()
-
-                // Balance
-                if let balance = account.balanceCurrent {
-                    Text("$\(formattedBalance(balance))")
-                        .font(.inlineLabel)
-                        .foregroundStyle(AppColors.inkFaint)
-                        .monospacedDigit()
                 }
             }
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.rowItem)
+
+            Spacer()
+
+            if let balance = account.balanceCurrent {
+                Text("$\(formattedBalance(balance))")
+                    .font(.inlineLabel)
+                    .foregroundStyle(AppColors.inkFaint)
+                    .monospacedDigit()
+            }
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.rowItem)
+
+        if isTransactionAccount {
+            return AnyView(
+                Button {
+                    viewModel.toggleAccount(account.id)
+                } label: {
+                    rowContent
+                }
+                .buttonStyle(.plain)
+            )
+        } else {
+            return AnyView(rowContent)
+        }
+    }
+
+    private func accountCheckbox(isSelected: Bool, isEnabled: Bool) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: AppRadius.sm)
+                .fill(isSelected ? AppColors.accentAmber : Color.clear)
+                .frame(width: 24, height: 24)
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.sm)
+                        .stroke(
+                            isEnabled
+                                ? (isSelected ? Color.clear : AppColors.inkBorder)
+                                : AppColors.inkBorder.opacity(0.55),
+                            lineWidth: 1.5
+                        )
+                )
+
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .font(.footnoteBold)
+                    .foregroundStyle(AppColors.ctaWhite)
+            } else if !isEnabled {
+                Image(systemName: "minus")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(AppColors.inkFaint)
+            }
+        }
     }
 
     // MARK: - Add Account Button
 
     private var addAccountButton: some View {
         Button {
-            guard subscriptionManager.isPremium else {
-                subscriptionManager.showPaywall = true
-                return
-            }
-            if plaidManager.shouldShowTrustBridge() {
-                showTrustBridge = true
-            } else {
-                Task { await plaidManager.startLinkFlow() }
-            }
+            startPlaidLinkFlow()
         } label: {
             HStack(spacing: AppSpacing.sm) {
                 Image(systemName: "plus.circle.fill")
                     .font(.h4)
                     .foregroundStyle(AppColors.accentAmber)
-                Text("Add Another Account")
+                Text("Connect Another Account")
                     .font(.figureSecondarySemibold)
                     .foregroundStyle(AppColors.accentAmber)
             }
@@ -600,6 +611,18 @@ struct BS_AccountSelectionView: View {
     }
 
     // MARK: - Helpers
+
+    private func startPlaidLinkFlow() {
+        guard subscriptionManager.isPremium else {
+            subscriptionManager.showPaywall = true
+            return
+        }
+        if plaidManager.shouldShowTrustBridge() {
+            showTrustBridge = true
+        } else {
+            Task { await plaidManager.startLinkFlow() }
+        }
+    }
 
     private func formattedBalance(_ value: Double) -> String {
         let formatter = NumberFormatter()

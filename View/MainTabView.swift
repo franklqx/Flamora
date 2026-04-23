@@ -121,10 +121,11 @@ struct MainTabView: View {
             get: { plaidManager.showBudgetSetup },
             set: { plaidManager.showBudgetSetup = $0 }
         ), onDismiss: {
+            plaidManager.budgetSetupEntryMode = .fresh
             plaidManager.lastConnectionTime = Date()
             NotificationCenter.default.post(name: .budgetSetupFlowDidDismiss, object: nil)
         }) {
-            BudgetSetupView()
+            BudgetSetupView(entryMode: plaidManager.budgetSetupEntryMode)
         }
         .sheet(isPresented: $showNotifications) {
             NotificationsView()
