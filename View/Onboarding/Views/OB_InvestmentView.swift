@@ -18,7 +18,7 @@ struct OB_InvestmentView: View {
     @State private var showInsight = false
     @State private var insightWorkItem: DispatchWorkItem?
     @State private var lastSliderHapticTime = Date.distantPast
-    private let investmentRange: ClosedRange<Double> = 0...2_000_000
+    private let investmentRange: ClosedRange<Double> = 0...10_000_000
 
     private var monthlyPassiveIncome: Int {
         Int((investmentValue * 0.04) / 12)
@@ -153,7 +153,7 @@ struct OB_InvestmentView: View {
                         .font(.caption)
                         .foregroundColor(AppColors.inkFaint)
                     Spacer()
-                    Text("\(data.currencySymbol)2M+")
+                    Text("\(data.currencySymbol)10M+")
                         .font(.caption)
                         .foregroundColor(AppColors.inkFaint)
                 }

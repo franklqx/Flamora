@@ -111,7 +111,13 @@ struct OB_ContainerView: View {
                     startPoint: .top,
                     endPoint: .bottom
                 )
-            case .welcomeException, .immersiveDark:
+            case .welcomeException:
+                LinearGradient(
+                    gradient: AppColors.heroWelcomeGradient,
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            case .immersiveDark:
                 AppColors.backgroundPrimary
             }
         }
@@ -121,12 +127,11 @@ struct OB_ContainerView: View {
     var body: some View {
         ZStack {
             containerBackground
+                .id(stepConfig.themeSurface)
+                .transition(.opacity)
 
             currentStepView
-                .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
-                ))
+                .transition(transitionForStep(currentStep))
                 .id(currentStep)
 
             backButtonOverlay
@@ -197,24 +202,50 @@ struct OB_ContainerView: View {
         }
     }
 
+    // MARK: - Transition style
+
+    /// Welcome (1) ↔ Sign-in (2) 用纯 crossfade，其它步骤用常规侧滑。
+    private func transitionForStep(_ step: Int) -> AnyTransition {
+        if step == StepID.welcome.rawValue || step == StepID.signIn.rawValue {
+            return .opacity
+        }
+        return .asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        )
+    }
+
+    private func stepTransitionDuration(from: Int, to: Int) -> Double {
+        let pair = (from, to)
+        if pair == (StepID.welcome.rawValue, StepID.signIn.rawValue) ||
+           pair == (StepID.signIn.rawValue, StepID.welcome.rawValue) {
+            return 0.55
+        }
+        return 0.3
+    }
+
     // MARK: - Navigation
 
     private func next() {
         isTransitioning = true
-        withAnimation(.easeInOut(duration: 0.3)) {
-            currentStep = Self.nextStep(after: currentStep)
+        let newStep = Self.nextStep(after: currentStep)
+        let duration = stepTransitionDuration(from: currentStep, to: newStep)
+        withAnimation(.easeInOut(duration: duration)) {
+            currentStep = newStep
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
             isTransitioning = false
         }
     }
 
     private func back() {
         isTransitioning = true
-        withAnimation(.easeInOut(duration: 0.3)) {
-            currentStep = Self.previousStep(before: currentStep)
+        let newStep = Self.previousStep(before: currentStep)
+        let duration = stepTransitionDuration(from: currentStep, to: newStep)
+        withAnimation(.easeInOut(duration: duration)) {
+            currentStep = newStep
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
             isTransitioning = false
         }
     }

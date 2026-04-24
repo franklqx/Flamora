@@ -37,9 +37,8 @@ struct HomeRoadmapContent: View {
     @State private var latestAnnualReport: ReportSnapshot? = TabContentCache.shared.homeAnnualReport
     @State private var selectedReport: ReportSnapshot? = nil
 
-    // 趋势图数据 — 后端 `getNetWorthHistory` endpoint 上线前用 mock。
     @State private var netWorthHistory: [NetWorthRange: [NetWorthPoint]] = TabContentCache.shared.homeNetWorthHistory
-        ?? HomeNetWorthCard.mockHistory()
+        ?? [:]
 
     private var isConnected: Bool { plaidManager.hasLinkedBank }
     private var hasBudgetSetup: Bool { (budget?.savingsRatio ?? 0) > 0 }

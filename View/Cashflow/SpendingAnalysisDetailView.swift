@@ -67,7 +67,7 @@ struct SpendingAnalysisDetailView: View {
     }
 
     private var accentColor: Color {
-        flamoraCategory == "wants" ? AppColors.accentPurple : AppColors.budgetNeedsBlue
+        flamoraCategory == "wants" ? AppColors.allocAmber : AppColors.allocIndigo
     }
 
     private var cardBackground: LinearGradient {

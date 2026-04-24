@@ -138,7 +138,7 @@ struct HomeSavingsRateCard: View {
                 .font(.caption)
                 .foregroundStyle(AppColors.inkFaint)
             Text(value)
-                .font(.detailTitle)
+                .font(.figureMedium)
                 .foregroundStyle(AppColors.inkPrimary)
                 .monospacedDigit()
         }

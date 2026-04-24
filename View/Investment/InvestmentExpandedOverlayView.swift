@@ -256,9 +256,9 @@ private extension InvestmentExpandedOverlayView {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = "USD"
-        formatter.maximumFractionDigits = 0
-        formatter.minimumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "$0"
+        formatter.maximumFractionDigits = 2
+        formatter.minimumFractionDigits = 2
+        return formatter.string(from: NSNumber(value: value)) ?? "$0.00"
     }
 
     func formatSignedCurrency(_ value: Double?) -> String {
@@ -570,9 +570,9 @@ private struct InvestmentAccountGroupCard: View {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = "USD"
-        formatter.maximumFractionDigits = 0
-        formatter.minimumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "$0"
+        formatter.maximumFractionDigits = 2
+        formatter.minimumFractionDigits = 2
+        return formatter.string(from: NSNumber(value: value)) ?? "$0.00"
     }
 }
 

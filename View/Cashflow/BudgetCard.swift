@@ -546,7 +546,7 @@ struct BudgetCard: View {
     }
 
     private var scopePill: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: AppSpacing.xs) {
             ForEach(BudgetScope.allCases) { scope in
                 Button {
                     withAnimation(.easeOut(duration: 0.2)) {
@@ -560,19 +560,12 @@ struct BudgetCard: View {
                         .frame(height: 28)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
-                                .fill(
-                                    selectedScope == scope
-                                    ? (scope == .needs ? AppColors.budgetNeedsBlueTint : (scope == .wants ? AppColors.budgetWantsPurpleTint : AppColors.inkTrack))
-                                    : .clear
-                                )
+                                .fill(selectedScope == scope ? AppColors.inkTrack : .clear)
                         )
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(4)
-        .background(AppColors.inkTrack.opacity(0.8))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     private var lockedEmptyState: some View {

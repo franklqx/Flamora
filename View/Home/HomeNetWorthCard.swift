@@ -211,7 +211,7 @@ struct HomeNetWorthCard: View {
     }
 
     private var rangeSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: AppSpacing.xs) {
             ForEach(NetWorthRange.allCases) { range in
                 Button {
                     withAnimation(.easeOut(duration: 0.2)) {
@@ -225,15 +225,12 @@ struct HomeNetWorthCard: View {
                         .frame(height: 28)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
-                                .fill(selectedRange == range ? AppColors.ctaWhite.opacity(0.85) : .clear)
+                                .fill(selectedRange == range ? AppColors.inkTrack : .clear)
                         )
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(4)
-        .background(AppColors.inkTrack.opacity(0.8))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     // MARK: - Locked state
@@ -269,10 +266,10 @@ struct HomeNetWorthCard: View {
         let f = NumberFormatter()
         f.numberStyle = .currency
         f.currencyCode = "USD"
-        f.maximumFractionDigits = 0
-        f.minimumFractionDigits = 0
+        f.maximumFractionDigits = 2
+        f.minimumFractionDigits = 2
         let sign = value < 0 ? "-" : ""
-        let formatted = f.string(from: NSNumber(value: abs(value))) ?? "$0"
+        let formatted = f.string(from: NSNumber(value: abs(value))) ?? "$0.00"
         return sign + formatted
     }
 
@@ -304,35 +301,9 @@ struct HomeNetWorthCard: View {
                 accounts: [],
                 lastSyncedAt: "2026-04-20T08:30:00Z"
             ),
-            history: HomeNetWorthCard.mockHistory(),
+            history: [:],
             isConnected: true
         )
         .padding()
-    }
-}
-
-// MARK: - Mock (开发期占位，接 API 后可删)
-
-extension HomeNetWorthCard {
-    static func mockHistory() -> [NetWorthRange: [NetWorthPoint]] {
-        let now = Date()
-        let cal = Calendar.current
-
-        func series(count: Int, step: Calendar.Component, stepValue: Int, base: Double, delta: Double) -> [NetWorthPoint] {
-            (0..<count).compactMap { i in
-                guard let d = cal.date(byAdding: step, value: -stepValue * (count - 1 - i), to: now) else { return nil }
-                let noise = Double.random(in: -0.01...0.01)
-                let progress = Double(i) / Double(max(count - 1, 1))
-                return NetWorthPoint(date: d, value: base + delta * progress * (1 + noise))
-            }
-        }
-
-        return [
-            .week: series(count: 7, step: .day, stepValue: 1, base: 240_000, delta: 8_000),
-            .month: series(count: 30, step: .day, stepValue: 1, base: 232_000, delta: 16_000),
-            .threeMonths: series(count: 12, step: .weekOfYear, stepValue: 1, base: 215_000, delta: 33_000),
-            .year: series(count: 12, step: .month, stepValue: 1, base: 180_000, delta: 68_000),
-            .all: series(count: 24, step: .month, stepValue: 1, base: 120_000, delta: 128_000)
-        ]
     }
 }

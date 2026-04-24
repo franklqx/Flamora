@@ -47,12 +47,8 @@ struct NetWorthDetailView: View {
         currentPoints.first?.value ?? 0
     }
 
-    private var latestValue: Double {
-        currentPoints.last?.value ?? totalNetWorth
-    }
-
     private var displayedValue: Double {
-        scrubbedPoint?.value ?? latestValue
+        scrubbedPoint?.value ?? totalNetWorth
     }
 
     private var deltaAmount: Double {
@@ -83,10 +79,10 @@ struct NetWorthDetailView: View {
 
     private var breakdownItems: [BreakdownItem] {
         [
-            BreakdownItem(id: "investments", label: "Investments", value: max(investments, 0), tint: AppColors.accentPurple, isLiability: false, note: "Brokerage and investing accounts"),
-            BreakdownItem(id: "cash", label: "Cash", value: max(cash, 0), tint: AppColors.budgetNeedsBlue, isLiability: false, note: "Checking and savings balances"),
-            BreakdownItem(id: "credit", label: "Credit card debt", value: credit, tint: AppColors.warning, isLiability: true, note: "Short-term revolving balances"),
-            BreakdownItem(id: "loans", label: "Loans", value: loans, tint: AppColors.error, isLiability: true, note: "Student, auto, and other loans")
+            BreakdownItem(id: "investments", label: "Investments", value: max(investments, 0), tint: AppColors.allocEmerald, isLiability: false, note: "Brokerage and investing accounts"),
+            BreakdownItem(id: "cash", label: "Cash", value: max(cash, 0), tint: AppColors.allocIndigo, isLiability: false, note: "Checking and savings balances"),
+            BreakdownItem(id: "credit", label: "Credit card debt", value: credit, tint: AppColors.allocAmber, isLiability: true, note: "Short-term revolving balances"),
+            BreakdownItem(id: "loans", label: "Loans", value: loans, tint: AppColors.allocCoral, isLiability: true, note: "Student, auto, and other loans")
         ].filter { $0.value > 0 }
     }
 
@@ -131,7 +127,7 @@ struct NetWorthDetailView: View {
     }
 
     private var rangeSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: AppSpacing.xs) {
             ForEach(NetWorthRange.allCases) { range in
                 Button {
                     UISelectionFeedbackGenerator().selectionChanged()
@@ -147,15 +143,12 @@ struct NetWorthDetailView: View {
                         .frame(height: 30)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
-                                .fill(selectedRange == range ? AppColors.ctaWhite.opacity(0.95) : .clear)
+                                .fill(selectedRange == range ? AppColors.inkTrack : .clear)
                         )
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(4)
-        .background(AppColors.inkTrack.opacity(0.8))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     @ViewBuilder
@@ -213,8 +206,8 @@ struct NetWorthDetailView: View {
                 .foregroundStyle(
                     LinearGradient(
                         colors: [
-                            AppColors.chartBlue.opacity(0.16),
-                            AppColors.chartBlue.opacity(0.0)
+                            AppColors.allocIndigo.opacity(0.16),
+                            AppColors.allocIndigo.opacity(0.0)
                         ],
                         startPoint: .top,
                         endPoint: .bottom
@@ -226,7 +219,7 @@ struct NetWorthDetailView: View {
                     x: .value("Date", point.date),
                     y: .value("Net Worth", point.value)
                 )
-                .foregroundStyle(AppColors.chartBlue)
+                .foregroundStyle(AppColors.allocIndigo)
                 .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                 .interpolationMethod(.monotone)
             }
@@ -270,7 +263,7 @@ struct NetWorthDetailView: View {
                             .allowsHitTesting(false)
 
                         Circle()
-                            .fill(AppColors.chartBlue)
+                            .fill(AppColors.allocIndigo)
                             .frame(width: 10, height: 10)
                             .overlay(
                                 Circle()
@@ -350,15 +343,15 @@ struct NetWorthDetailView: View {
 
     private var assetCompositionSegments: [(value: Double, tint: Color)] {
         [
-            (value: max(investments, 0), tint: AppColors.accentPurple),
-            (value: max(cash, 0), tint: AppColors.budgetNeedsBlue)
+            (value: max(investments, 0), tint: AppColors.allocEmerald),
+            (value: max(cash, 0), tint: AppColors.allocIndigo)
         ].filter { $0.value > 0 }
     }
 
     private var debtCompositionSegments: [(value: Double, tint: Color)] {
         [
-            (value: credit, tint: AppColors.warning),
-            (value: loans, tint: AppColors.error)
+            (value: credit, tint: AppColors.allocAmber),
+            (value: loans, tint: AppColors.allocCoral)
         ].filter { $0.value > 0 }
     }
 
@@ -370,7 +363,7 @@ struct NetWorthDetailView: View {
                     .foregroundStyle(AppColors.inkPrimary)
                 Spacer()
                 Text(formatCurrency(value))
-                    .font(.footnoteBold)
+                    .font(.footnoteSemibold)
                     .foregroundStyle(AppColors.inkPrimary)
                     .monospacedDigit()
             }
@@ -405,7 +398,7 @@ struct NetWorthDetailView: View {
             }
 
             Text(formatCurrency(item.isLiability ? -item.value : item.value))
-                .font(.detailTitle)
+                .font(.figureMedium)
                 .foregroundStyle(item.isLiability ? AppColors.inkSoft : AppColors.inkPrimary)
                 .monospacedDigit()
 
@@ -500,7 +493,7 @@ struct NetWorthDetailView: View {
             Spacer()
 
             Text(formatCurrency(account.balance ?? 0))
-                .font(.footnoteBold)
+                .font(.footnoteSemibold)
                 .foregroundStyle(AppColors.inkPrimary)
                 .monospacedDigit()
         }
@@ -547,13 +540,13 @@ struct NetWorthDetailView: View {
     private func iconTint(for account: APIAccount) -> Color {
         switch account.type {
         case "investment":
-            return AppColors.accentPurple
+            return AppColors.allocEmerald
         case "credit":
-            return AppColors.warning
+            return AppColors.allocAmber
         case "loan":
-            return AppColors.error
+            return AppColors.allocCoral
         default:
-            return AppColors.budgetNeedsBlue
+            return AppColors.allocIndigo
         }
     }
 
@@ -561,10 +554,10 @@ struct NetWorthDetailView: View {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = "USD"
-        formatter.maximumFractionDigits = 0
-        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 2
+        formatter.minimumFractionDigits = 2
         let sign = value < 0 ? "-" : ""
-        let formatted = formatter.string(from: NSNumber(value: abs(value))) ?? "$0"
+        let formatted = formatter.string(from: NSNumber(value: abs(value))) ?? "$0.00"
         return sign + formatted
     }
 
@@ -634,6 +627,6 @@ struct NetWorthDetailView: View {
             ],
             lastSyncedAt: "2026-04-20T08:30:00Z"
         ),
-        history: HomeNetWorthCard.mockHistory()
+        history: [:]
     )
 }

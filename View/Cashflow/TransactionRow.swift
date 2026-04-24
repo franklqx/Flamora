@@ -92,8 +92,8 @@ struct TransactionRow: View {
             return transaction.category
         }()
         switch parent {
-        case "needs": return AppColors.budgetNeedsBlue
-        case "wants": return AppColors.accentPurple
+        case "needs": return AppColors.allocIndigo
+        case "wants": return AppColors.allocAmber
         default: return AppColors.inkSoft
         }
     }

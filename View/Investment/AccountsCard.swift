@@ -183,7 +183,7 @@ private struct AccountRow: View {
             }
             Spacer()
             Text(formatCurrency(account.balance))
-                .font(.footnoteBold)
+                .font(.footnoteSemibold)
                 .foregroundStyle(AppColors.inkPrimary)
                 .monospacedDigit()
         }
@@ -221,11 +221,11 @@ private struct AccountRow: View {
     private var iconColor: Color {
         switch account.accountType {
         case .brokerage:
-            return AppColors.accentPurple
+            return AppColors.allocEmerald
         case .crypto:
-            return AppColors.accentPurple
+            return AppColors.allocAmber
         case .bank:
-            return AppColors.budgetNeedsBlue
+            return AppColors.allocIndigo
         }
     }
 
@@ -233,9 +233,9 @@ private struct AccountRow: View {
         let f = NumberFormatter()
         f.numberStyle = .currency
         f.currencyCode = "USD"
-        f.maximumFractionDigits = 0
-        f.minimumFractionDigits = 0
-        return f.string(from: NSNumber(value: value)) ?? "$0"
+        f.maximumFractionDigits = 2
+        f.minimumFractionDigits = 2
+        return f.string(from: NSNumber(value: value)) ?? "$0.00"
     }
 }
 

@@ -94,8 +94,10 @@ extension Font {
     static var cardHeader:   Font { appFont(11, .medium) }
     /// Row meta / secondary annotation
     static var cardRowMeta:  Font { appFont(11, .medium) }
-    /// Primary large number on cards (28pt)
-    static var cardFigurePrimary: Font { appFont(28, .bold) }
+    /// Primary large number on cards (28pt, semibold — lighter weight aligned with portfolioHero)
+    static var cardFigurePrimary: Font { appFont(28, .semibold) }
+    /// Mid-size figure on cards (22pt, semibold — Savings amount, rate %)
+    static var figureMedium:      Font { appFont(22, .semibold) }
 
     /// Segment / tab row — bold when selected
     static func segmentLabel(selected: Bool) -> Font {
@@ -111,7 +113,7 @@ extension Font {
     static var chromeIconMedium:   Font { appFont(22, .medium) }              // tab bar icon (22pt matches system)
     static var navChevron:         Font { appFont(26, .semibold) }             // full-screen back
     static var categoryRowIcon:    Font { appFont(21, .semibold) }             // list icon
-    static var currencyHero:       Font { appFont(48, .bold) }                 // large currency display
+    static var currencyHero:       Font { appFont(48, .semibold) }             // large currency display
     /// Report Story hero number (64pt). Pair with .kerning(-2) at call site. See DESIGN.md §Report Screens.
     static var storyHero:          Font { appFont(AppTypography.storyHero, .bold) }
 

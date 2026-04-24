@@ -26,8 +26,8 @@ struct TotalSpendingAnalysisDetailView: View {
     private let monthLabels = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
     private let monthsFull = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-    private var needsColor: Color { AppColors.budgetNeedsBlue }
-    private var wantsColor: Color { AppColors.accentPurple }
+    private var needsColor: Color { AppColors.allocIndigo }
+    private var wantsColor: Color { AppColors.allocAmber }
 
     init(
         data: TotalSpendingDetailData,

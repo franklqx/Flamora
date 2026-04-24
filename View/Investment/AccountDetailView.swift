@@ -118,7 +118,7 @@ struct AccountDetailView: View {
 
             HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
                 Text(formatCurrency(account.balance))
-                    .font(.currencyHero)
+                    .font(.portfolioHero)
                     .foregroundStyle(AppColors.inkPrimary)
                     .monospacedDigit()
                 Spacer()
@@ -173,8 +173,8 @@ struct AccountDetailView: View {
                     .foregroundStyle(
                         LinearGradient(
                             colors: [
-                                AppColors.inkPrimary.opacity(0.16),
-                                AppColors.inkPrimary.opacity(0.02)
+                                AppColors.allocIndigo.opacity(0.16),
+                                AppColors.allocIndigo.opacity(0.0)
                             ],
                             startPoint: .top,
                             endPoint: .bottom
@@ -186,8 +186,8 @@ struct AccountDetailView: View {
                         x: .value("Date", point.date),
                         y: .value("Balance", point.balance)
                     )
-                    .foregroundStyle(AppColors.inkPrimary)
-                    .lineStyle(StrokeStyle(lineWidth: 2))
+                    .foregroundStyle(AppColors.allocIndigo)
+                    .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                     .interpolationMethod(.monotone)
                 }
             }
@@ -210,7 +210,7 @@ struct AccountDetailView: View {
     }
 
     private var rangeSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: AppSpacing.xs) {
             ForEach(AccountHistoryRange.allCases, id: \.self) { range in
                 Button {
                     withAnimation(.easeOut(duration: 0.2)) {
@@ -224,15 +224,12 @@ struct AccountDetailView: View {
                         .frame(height: 30)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
-                                .fill(selectedPeriod == range ? AppColors.ctaWhite.opacity(0.9) : .clear)
+                                .fill(selectedPeriod == range ? AppColors.inkTrack : .clear)
                         )
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(4)
-        .background(AppColors.inkTrack.opacity(0.8))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     /// e.g. "Brokerage • 7892" or just "Brokerage"
@@ -561,9 +558,9 @@ struct AccountDetailView: View {
 
     private var accentColor: Color {
         switch account.accountType {
-        case .brokerage: return AppColors.accentPurple
-        case .crypto:    return AppColors.warning
-        case .bank:      return AppColors.budgetNeedsBlue
+        case .brokerage: return AppColors.allocEmerald
+        case .crypto:    return AppColors.allocAmber
+        case .bank:      return AppColors.allocIndigo
         }
     }
 
@@ -579,9 +576,9 @@ struct AccountDetailView: View {
         let f = NumberFormatter()
         f.numberStyle = .currency
         f.currencyCode = "USD"
-        f.maximumFractionDigits = 0
-        f.minimumFractionDigits = 0
-        return f.string(from: NSNumber(value: value)) ?? "$0"
+        f.maximumFractionDigits = 2
+        f.minimumFractionDigits = 2
+        return f.string(from: NSNumber(value: value)) ?? "$0.00"
     }
 
     private func formatPercent(_ value: Double) -> String {
@@ -630,7 +627,7 @@ private struct HoldingRow: View {
             Spacer()
 
             Text(formatCurrency(holding.totalValue))
-                .font(.footnoteBold)
+                .font(.footnoteSemibold)
                 .foregroundStyle(AppColors.inkPrimary)
                 .monospacedDigit()
         }
@@ -650,9 +647,9 @@ private struct HoldingRow: View {
         let f = NumberFormatter()
         f.numberStyle = .currency
         f.currencyCode = "USD"
-        f.maximumFractionDigits = 0
-        f.minimumFractionDigits = 0
-        return f.string(from: NSNumber(value: value)) ?? "$0"
+        f.maximumFractionDigits = 2
+        f.minimumFractionDigits = 2
+        return f.string(from: NSNumber(value: value)) ?? "$0.00"
     }
 }
 

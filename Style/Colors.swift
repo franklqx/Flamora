@@ -23,12 +23,22 @@ struct AppColors {
     static let gradientMiddle   = Color(hex: "#FCA5A5")
     static let gradientEnd      = Color(hex: "#FCD34D")
 
-    // MARK: - Functional
-    static let success          = Color(hex: "#10B981")
+    // MARK: - Origin Palette (unified data-viz & semantic palette on light shell)
+    /// Positive / Stocks / Assets / up trend — Origin Emerald
+    static let allocEmerald     = Color(hex: "#10B981")
+    /// Warning / Crypto / Bonds / Credit — Origin Amber
+    static let allocAmber       = Color(hex: "#F59E0B")
+    /// Info / Cash / primary accent — Origin Indigo
+    static let allocIndigo      = Color(hex: "#3B82F6")
+    /// Negative / Loans / down trend / error — Origin Coral (softer than punchy red)
+    static let allocCoral       = Color(hex: "#F97066")
+
+    // MARK: - Functional (aliased to Origin palette — single source of truth)
+    static let success          = allocEmerald
     static let successAlt       = Color(hex: "#34C759")   // system-green variant
-    static let warning          = Color(hex: "#F59E0B")
-    static let error            = Color(hex: "#EF4444")
-    static let info             = Color(hex: "#3B82F6")
+    static let warning          = allocAmber
+    static let error            = allocCoral
+    static let info             = allocIndigo
 
     // MARK: - Text
     static let textPrimary      = Color(hex: "#FFFFFF")
@@ -148,10 +158,10 @@ struct AppColors {
     static let inkTrack            = Color(hex: "#111827").opacity(0.10)
 
     // MARK: Shell Background (below hero)
-    /// Shell gradient top — #f7f8fb
-    static let shellBg1            = Color(hex: "#f7f8fb")
-    /// Shell gradient bottom — #eef1f7
-    static let shellBg2            = Color(hex: "#eef1f7")
+    /// Shell background top — #F5F6F8
+    static let shellBg1            = Color(hex: "#F5F6F8")
+    /// Shell background bottom — #F5F6F8
+    static let shellBg2            = Color(hex: "#F5F6F8")
 
     // MARK: Hero Gradient (dark atmospheric, top of each tab)
     // Base linear layer matches `design-reference/home-rebuild-glass-prototype.html` `--brand-purple-surface` stops (non-uniform, not equal fifths).
@@ -172,6 +182,19 @@ struct AppColors {
             .init(color: Color(hex: "#4f65dc"), location: 0.80),
             .init(color: Color(hex: "#6b7fd8"), location: 0.92),
             .init(color: Color(hex: "#7a90e8"), location: 1),
+        ])
+    }
+
+    /// Welcome-only gradient — deep brand at top, bleeds to `shellBg1` at bottom
+    /// so切到 Sign-in (light-shell) 时底部像素级连续，无撕裂感。
+    static var heroWelcomeGradient: Gradient {
+        Gradient(stops: [
+            .init(color: Color(hex: "#15162a"), location: 0.00),
+            .init(color: Color(hex: "#242b63"), location: 0.22),
+            .init(color: Color(hex: "#4f65dc"), location: 0.48),
+            .init(color: Color(hex: "#8ea4f0"), location: 0.70),
+            .init(color: Color(hex: "#d5defa"), location: 0.86),
+            .init(color: Color(hex: "#f7f8fb"), location: 1.00),
         ])
     }
     /// Radial glow 1 — purple haze, top-left of hero
@@ -388,15 +411,15 @@ struct AppColors {
     /// Accelerate difficulty color
     static let budgetOrange         = Color(hex: "#F59E42")
 
-    // MARK: - Cashflow Budget (light-shell aligned blue/purple)
-    /// Needs 主色：取自 Home hero 渐变中段蓝，提升在浅色卡面的识别度
-    static let budgetNeedsBlue      = Color(hex: "#6AABF7")
+    // MARK: - Cashflow Budget (aligned to Origin palette)
+    /// Needs 主色 — Origin Indigo
+    static let budgetNeedsBlue      = allocIndigo
     /// Needs 浅色底（用于浅色卡中的标签/子块）
     static let budgetNeedsBlueTint  = Color(hex: "#EAF0FF")
-    /// Wants 主色：与 hero 紫光同族，但提高饱和度用于预算环与标签
-    static let budgetWantsPurple    = Color(hex: "#A58AF1")
-    /// Wants 浅色底（用于浅色卡中的标签/子块）
-    static let budgetWantsPurpleTint = Color(hex: "#F3EEFF")
+    /// Wants 主色 — Origin Amber
+    static let budgetWantsPurple    = allocAmber
+    /// Wants 浅色底（用于浅色卡中的标签/子块）— 琥珀浅底
+    static let budgetWantsPurpleTint = Color(hex: "#FEF3C7")
 }
 
 // MARK: - Gradient Wallpaper (Welcome / Onboarding 背景)

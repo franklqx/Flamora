@@ -47,14 +47,6 @@ struct OB_WelcomeView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
 
-            // Subtle bottom vignette for CTA legibility
-            LinearGradient(
-                colors: [Color.clear, AppColors.backgroundPrimary.opacity(0.22)],
-                startPoint: UnitPoint(x: 0.5, y: 0.55),
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-
             // ── Main content column ──────────────────────────────────
             VStack(spacing: 0) {
 
@@ -147,10 +139,12 @@ struct OB_WelcomeView: View {
             OB_PrimaryButton(title: "Get Started", style: .ctaWhite, action: onNext)
         }
         .background(
-            Image("AppBackground")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
+            LinearGradient(
+                gradient: AppColors.heroWelcomeGradient,
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
         )
         .onAppear {
             scheduleAutoAdvance()

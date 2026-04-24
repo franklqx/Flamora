@@ -107,7 +107,7 @@ struct CashAccountDetailView: View {
             }
 
             Text(formatCurrency(account.balance ?? 0))
-                .font(.currencyHero)
+                .font(.portfolioHero)
                 .foregroundStyle(AppColors.inkPrimary)
                 .monospacedDigit()
 
@@ -143,8 +143,8 @@ struct CashAccountDetailView: View {
                     .foregroundStyle(
                         LinearGradient(
                             colors: [
-                                AppColors.inkPrimary.opacity(0.16),
-                                AppColors.inkPrimary.opacity(0.02)
+                                AppColors.allocIndigo.opacity(0.16),
+                                AppColors.allocIndigo.opacity(0.0)
                             ],
                             startPoint: .top,
                             endPoint: .bottom
@@ -156,8 +156,8 @@ struct CashAccountDetailView: View {
                         x: .value("Date", point.date),
                         y: .value("Balance", point.balance)
                     )
-                    .foregroundStyle(AppColors.inkPrimary)
-                    .lineStyle(StrokeStyle(lineWidth: 2))
+                    .foregroundStyle(AppColors.allocIndigo)
+                    .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                     .interpolationMethod(.monotone)
                 }
             }
@@ -180,7 +180,7 @@ struct CashAccountDetailView: View {
     }
 
     private var rangeSelector: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: AppSpacing.xs) {
             ForEach(AccountHistoryRange.allCases, id: \.self) { range in
                 Button {
                     withAnimation(.easeOut(duration: 0.2)) {
@@ -194,15 +194,12 @@ struct CashAccountDetailView: View {
                         .frame(height: 30)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
-                                .fill(selectedPeriod == range ? AppColors.ctaWhite.opacity(0.9) : .clear)
+                                .fill(selectedPeriod == range ? AppColors.inkTrack : .clear)
                         )
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(4)
-        .background(AppColors.inkTrack.opacity(0.8))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     // MARK: - Transactions card
@@ -453,9 +450,9 @@ struct CashAccountDetailView: View {
         let f = NumberFormatter()
         f.numberStyle = .currency
         f.currencyCode = "USD"
-        f.maximumFractionDigits = 0
-        f.minimumFractionDigits = 0
-        return f.string(from: NSNumber(value: v)) ?? "$0"
+        f.maximumFractionDigits = 2
+        f.minimumFractionDigits = 2
+        return f.string(from: NSNumber(value: v)) ?? "$0.00"
     }
 
     private static let accountHistoryDateFormatter: DateFormatter = {

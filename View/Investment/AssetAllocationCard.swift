@@ -25,12 +25,12 @@ struct AssetAllocationCard: View {
 
     private var sortedRows: [AllocRow] {
         var rows = [
-            AllocRow(title: "U.S. Stocks", percent: allocation.stocks.percent, amount: allocation.stocks.amount, color: AppColors.chartSteelBlue),
-            AllocRow(title: "Crypto", percent: allocation.bonds.percent, amount: allocation.bonds.amount, color: AppColors.chartYellow),
-            AllocRow(title: "Cash", percent: allocation.cash.percent, amount: allocation.cash.amount, color: AppColors.chartSageGreen)
+            AllocRow(title: "U.S. Stocks", percent: allocation.stocks.percent, amount: allocation.stocks.amount, color: AppColors.allocEmerald),
+            AllocRow(title: "Crypto", percent: allocation.bonds.percent, amount: allocation.bonds.amount, color: AppColors.allocAmber),
+            AllocRow(title: "Cash", percent: allocation.cash.percent, amount: allocation.cash.amount, color: AppColors.allocIndigo)
         ]
         if let other = allocation.other, other.percent > 0 {
-            rows.append(AllocRow(title: "Other", percent: other.percent, amount: other.amount, color: AppColors.chartCoral))
+            rows.append(AllocRow(title: "Other", percent: other.percent, amount: other.amount, color: AppColors.allocCoral))
         }
         return rows.sorted { $0.percent > $1.percent }
     }
@@ -204,8 +204,9 @@ private struct AllocationRow: View {
         let f = NumberFormatter()
         f.numberStyle = .currency
         f.currencyCode = "USD"
-        f.maximumFractionDigits = 0
-        return f.string(from: NSNumber(value: v)) ?? "$0"
+        f.maximumFractionDigits = 2
+        f.minimumFractionDigits = 2
+        return f.string(from: NSNumber(value: v)) ?? "$0.00"
     }
 }
 

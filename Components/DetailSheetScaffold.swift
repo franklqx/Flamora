@@ -57,29 +57,29 @@ private struct DetailSheetHeader: View {
     let onDismiss: () -> Void
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(title)
-                .font(.h1)
+        ZStack {
+            Text(title.uppercased())
+                .font(.cardHeader)
                 .foregroundStyle(AppColors.inkPrimary)
-                .tracking(-0.5)
+                .tracking(AppTypography.Tracking.cardHeader)
                 .lineLimit(1)
-                .minimumScaleFactor(0.6)
 
-            Spacer(minLength: AppSpacing.sm)
-
-            Button(action: onDismiss) {
-                ZStack {
-                    Circle()
-                        .fill(AppColors.inkTrack)
-                        .frame(width: 34, height: 34)
-                    Image(systemName: "xmark")
-                        .font(.footnoteSemibold)
+            HStack {
+                Button(action: onDismiss) {
+                    Image(systemName: "chevron.left")
+                        .font(.h4)
                         .foregroundStyle(AppColors.inkPrimary)
+                        .frame(width: 32, height: 32)
+                        .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Back")
+
+                Spacer()
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Close")
         }
+        .frame(height: 32)
+        .padding(.top, AppSpacing.sm)
     }
 }
 

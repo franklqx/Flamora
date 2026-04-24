@@ -34,12 +34,12 @@ struct AssetAllocationDetailView: View {
 
     private var sortedItems: [AllocDetailItem] {
         var items = [
-            AllocDetailItem(id: "stocks", title: "U.S. Stocks", percent: allocation.stocks.percent, amount: allocation.stocks.amount, color: AppColors.accentPurple),
-            AllocDetailItem(id: "crypto", title: "Crypto",      percent: allocation.bonds.percent,  amount: allocation.bonds.amount,  color: AppColors.warning),
-            AllocDetailItem(id: "cash",   title: "Cash",        percent: allocation.cash.percent,   amount: allocation.cash.amount,   color: AppColors.budgetNeedsBlue),
+            AllocDetailItem(id: "stocks", title: "U.S. Stocks", percent: allocation.stocks.percent, amount: allocation.stocks.amount, color: AppColors.allocEmerald),
+            AllocDetailItem(id: "crypto", title: "Crypto",      percent: allocation.bonds.percent,  amount: allocation.bonds.amount,  color: AppColors.allocAmber),
+            AllocDetailItem(id: "cash",   title: "Cash",        percent: allocation.cash.percent,   amount: allocation.cash.amount,   color: AppColors.allocIndigo),
         ]
         if let other = allocation.other, other.percent > 0 {
-            items.append(AllocDetailItem(id: "other", title: "Other", percent: other.percent, amount: other.amount, color: AppColors.error))
+            items.append(AllocDetailItem(id: "other", title: "Other", percent: other.percent, amount: other.amount, color: AppColors.allocCoral))
         }
         return items.sorted { $0.percent > $1.percent }
     }
@@ -221,7 +221,7 @@ private struct AllocDetailRow: View {
                     Spacer()
 
                     Text(formatCurrency(item.amount))
-                        .font(.footnoteBold)
+                        .font(.footnoteSemibold)
                         .foregroundStyle(AppColors.inkPrimary)
                         .monospacedDigit()
 
@@ -281,7 +281,7 @@ private struct AllocDetailRow: View {
                         }
                         Spacer()
                         Text(formatCurrency(holdings[i].totalValue))
-                            .font(.footnoteBold)
+                            .font(.footnoteSemibold)
                             .foregroundStyle(AppColors.inkPrimary)
                             .monospacedDigit()
                     }
@@ -322,7 +322,7 @@ private struct AllocDetailRow: View {
                             .foregroundStyle(AppColors.inkPrimary)
                         Spacer()
                         Text(formatCurrency(cashAccounts[i].balance))
-                            .font(.footnoteBold)
+                            .font(.footnoteSemibold)
                             .foregroundStyle(AppColors.inkPrimary)
                             .monospacedDigit()
                     }
@@ -392,8 +392,9 @@ private struct AllocDetailRow: View {
         let f = NumberFormatter()
         f.numberStyle = .currency
         f.currencyCode = "USD"
-        f.maximumFractionDigits = 0
-        return f.string(from: NSNumber(value: value)) ?? "$0"
+        f.maximumFractionDigits = 2
+        f.minimumFractionDigits = 2
+        return f.string(from: NSNumber(value: value)) ?? "$0.00"
     }
 }
 
