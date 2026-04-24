@@ -191,10 +191,129 @@ Deno.test("breakdown invariant: Σ(canonical avgMonthly) == avgMonthlyExpense wi
   assertAlmostEquals(sum, r.avgMonthlyExpense, 1e-9)
 })
 
+// ---- high-earner-near-fire: mirrors a high-income comfortable spender ----
+
+Deno.test("high-earner-near-fire: income/expense/savings exact", async () => {
+  const fx = await loadFixture("high-earner-near-fire")
+  const r = computeSpendingStats(fx.transactions, {
+    windowStartMonth: fx.windowStartMonth,
+    windowEndMonth: fx.windowEndMonth,
+  })
+  assertEquals(r.avgMonthlyIncome, 15000)
+  // 2000 rent + 200 util + 400 transp + 800 groc + 500 dining + 300 shop + 100 subs + 200 ent = 4500
+  assertEquals(r.avgMonthlyExpense, 4500)
+  assertEquals(r.avgMonthlySavings, 10500)
+  assertAlmostEquals(r.currentSavingsRate, 0.7, 1e-9)
+  assertEquals(r.hasDeficit, false)
+})
+
+Deno.test("high-earner-near-fire: essentialFloor + avgWants", async () => {
+  const fx = await loadFixture("high-earner-near-fire")
+  const r = computeSpendingStats(fx.transactions, {
+    windowStartMonth: fx.windowStartMonth,
+    windowEndMonth: fx.windowEndMonth,
+  })
+  // 2000 + 200 + 400 + 0 + 800*0.6 = 3080
+  assertAlmostEquals(r.essentialFloor, 3080, 1e-9)
+  // 500 + 300 + 100 + 0 + 200 = 1100
+  assertAlmostEquals(r.avgWants, 1100, 1e-9)
+})
+
+Deno.test("high-earner-near-fire: canonical breakdown (wants split across 4 subcategories)", async () => {
+  const fx = await loadFixture("high-earner-near-fire")
+  const r = computeSpendingStats(fx.transactions, {
+    windowStartMonth: fx.windowStartMonth,
+    windowEndMonth: fx.windowEndMonth,
+  })
+  assertAlmostEquals(getCanonical(r, "rent").avgMonthly, 2000, 1e-9)
+  assertAlmostEquals(getCanonical(r, "utilities").avgMonthly, 200, 1e-9)
+  assertAlmostEquals(getCanonical(r, "transportation").avgMonthly, 400, 1e-9)
+  assertAlmostEquals(getCanonical(r, "groceries").avgMonthly, 800, 1e-9)
+  assertAlmostEquals(getCanonical(r, "dining_out").avgMonthly, 500, 1e-9)
+  assertAlmostEquals(getCanonical(r, "shopping").avgMonthly, 300, 1e-9)
+  assertAlmostEquals(getCanonical(r, "subscriptions").avgMonthly, 100, 1e-9)
+  assertAlmostEquals(getCanonical(r, "entertainment").avgMonthly, 200, 1e-9)
+  // Not observed in this fixture:
+  assertEquals(getCanonical(r, "medical").avgMonthly, 0)
+  assertEquals(getCanonical(r, "travel").avgMonthly, 0)
+  assertEquals(getCanonical(r, "uncategorized").avgMonthly, 0)
+})
+
+// ---- wants-heavy: verifies avgWants sums across all 5 wants subcategories ----
+
+Deno.test("wants-heavy: avgWants = dining + shopping + subs + travel + entertainment", async () => {
+  const fx = await loadFixture("wants-heavy")
+  const r = computeSpendingStats(fx.transactions, {
+    windowStartMonth: fx.windowStartMonth,
+    windowEndMonth: fx.windowEndMonth,
+  })
+  // 600 + 500 + 120 + 200 + 250 = 1670
+  assertAlmostEquals(r.avgWants, 1670, 1e-9)
+  assertAlmostEquals(getCanonical(r, "dining_out").avgMonthly, 600, 1e-9)
+  assertAlmostEquals(getCanonical(r, "shopping").avgMonthly, 500, 1e-9)
+  assertAlmostEquals(getCanonical(r, "subscriptions").avgMonthly, 120, 1e-9)
+  assertAlmostEquals(getCanonical(r, "travel").avgMonthly, 200, 1e-9)
+  assertAlmostEquals(getCanonical(r, "entertainment").avgMonthly, 250, 1e-9)
+})
+
+Deno.test("wants-heavy: essentialFloor uses only needs categories", async () => {
+  const fx = await loadFixture("wants-heavy")
+  const r = computeSpendingStats(fx.transactions, {
+    windowStartMonth: fx.windowStartMonth,
+    windowEndMonth: fx.windowEndMonth,
+  })
+  // 800 + 100 + 150 + 50 + 400*0.6 = 1340
+  assertAlmostEquals(r.essentialFloor, 1340, 1e-9)
+})
+
+// ---- big-rent-plus-travel: per-category MAD guards recurring large rent ----
+
+Deno.test("big-rent-plus-travel: recurring $3000 rent NOT flagged as one-time", async () => {
+  const fx = await loadFixture("big-rent-plus-travel")
+  const r = computeSpendingStats(fx.transactions, {
+    windowStartMonth: fx.windowStartMonth,
+    windowEndMonth: fx.windowEndMonth,
+  })
+  const rentOutliers = r.oneTimeTransactions.filter(t => t.canonicalId === "rent")
+  assertEquals(rentOutliers.length, 0, "rent must never appear in oneTimeTransactions when fully recurring")
+  // Rent's per-category MAD is 0 → threshold Infinity → rent stays in regular aggregates.
+  assertAlmostEquals(getCanonical(r, "rent").avgMonthly, 3000, 1e-9)
+})
+
+Deno.test("big-rent-plus-travel: single $4000 travel IS flagged via global-threshold fallback", async () => {
+  const fx = await loadFixture("big-rent-plus-travel")
+  const r = computeSpendingStats(fx.transactions, {
+    windowStartMonth: fx.windowStartMonth,
+    windowEndMonth: fx.windowEndMonth,
+  })
+  assertEquals(r.oneTimeTransactions.length, 1)
+  assertEquals(r.oneTimeTransactions[0].amount, 4000)
+  assertEquals(r.oneTimeTransactions[0].canonicalId, "travel")
+  // Travel is excluded from regular aggregates → avgMonthly = 0 despite the large one-off.
+  assertEquals(getCanonical(r, "travel").avgMonthly, 0)
+})
+
+Deno.test("big-rent-plus-travel: regular monthly spend unaffected by the one-off travel", async () => {
+  const fx = await loadFixture("big-rent-plus-travel")
+  const r = computeSpendingStats(fx.transactions, {
+    windowStartMonth: fx.windowStartMonth,
+    windowEndMonth: fx.windowEndMonth,
+  })
+  // Every month: 3000 rent + 150 util + 400 groc = 3550. Median = 3550.
+  assertEquals(r.avgMonthlyExpense, 3550)
+  assertEquals(r.avgMonthlyIncome, 6000)
+  assertEquals(r.avgMonthlySavings, 2450)
+  // essentialFloor = 3000 + 150 + 0 + 0 + 400*0.6 = 3390
+  assertAlmostEquals(r.essentialFloor, 3390, 1e-9)
+})
+
 // ---- guardrail: monthly_breakdown rows sum-of-spend matches segment fields ----
 
 Deno.test("monthly_breakdown invariant: needsSpend + wantsSpend + uncategorizedSpend == totalSpend per row", async () => {
-  for (const name of ["normal-6mo","deficit","one-large-purchase","missing-month","zero-income","all-uncategorized"]) {
+  for (const name of [
+    "normal-6mo","deficit","one-large-purchase","missing-month","zero-income","all-uncategorized",
+    "high-earner-near-fire","wants-heavy","big-rent-plus-travel",
+  ]) {
     const fx = await loadFixture(name)
     const r = computeSpendingStats(fx.transactions, {
       windowStartMonth: fx.windowStartMonth,

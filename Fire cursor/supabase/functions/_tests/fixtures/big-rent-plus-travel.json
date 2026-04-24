@@ -1,0 +1,37 @@
+{
+  "windowStartMonth": "2025-11",
+  "windowEndMonth": "2026-04",
+  "comment": "Rent $3000 × 6 is recurring-large — MUST NOT be flagged as one-time (per-category MAD=0 → threshold=Infinity). Travel $4000 in one month is truly one-off — MUST be flagged by global-threshold fallback since travel has <3 observations.",
+  "transactions": [
+    { "amount": -6000, "date": "2025-11-01", "name": "Payroll", "pfc_primary": "INCOME", "pfc_detailed": null },
+    { "amount": 3000,  "date": "2025-11-02", "name": "Rent",        "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_RENT" },
+    { "amount": 150,   "date": "2025-11-05", "name": "ConEd",       "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY" },
+    { "amount": 400,   "date": "2025-11-07", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK",     "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+
+    { "amount": -6000, "date": "2025-12-01", "name": "Payroll", "pfc_primary": "INCOME", "pfc_detailed": null },
+    { "amount": 3000,  "date": "2025-12-02", "name": "Rent",        "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_RENT" },
+    { "amount": 150,   "date": "2025-12-05", "name": "ConEd",       "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY" },
+    { "amount": 400,   "date": "2025-12-07", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK",     "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+
+    { "amount": -6000, "date": "2026-01-01", "name": "Payroll", "pfc_primary": "INCOME", "pfc_detailed": null },
+    { "amount": 3000,  "date": "2026-01-02", "name": "Rent",        "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_RENT" },
+    { "amount": 150,   "date": "2026-01-05", "name": "ConEd",       "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY" },
+    { "amount": 400,   "date": "2026-01-07", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK",     "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+    { "amount": 4000,  "date": "2026-01-12", "name": "Hawaii Trip", "pfc_primary": "TRAVEL",             "pfc_detailed": null },
+
+    { "amount": -6000, "date": "2026-02-01", "name": "Payroll", "pfc_primary": "INCOME", "pfc_detailed": null },
+    { "amount": 3000,  "date": "2026-02-02", "name": "Rent",        "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_RENT" },
+    { "amount": 150,   "date": "2026-02-05", "name": "ConEd",       "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY" },
+    { "amount": 400,   "date": "2026-02-07", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK",     "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+
+    { "amount": -6000, "date": "2026-03-01", "name": "Payroll", "pfc_primary": "INCOME", "pfc_detailed": null },
+    { "amount": 3000,  "date": "2026-03-02", "name": "Rent",        "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_RENT" },
+    { "amount": 150,   "date": "2026-03-05", "name": "ConEd",       "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY" },
+    { "amount": 400,   "date": "2026-03-07", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK",     "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" },
+
+    { "amount": -6000, "date": "2026-04-01", "name": "Payroll", "pfc_primary": "INCOME", "pfc_detailed": null },
+    { "amount": 3000,  "date": "2026-04-02", "name": "Rent",        "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_RENT" },
+    { "amount": 150,   "date": "2026-04-05", "name": "ConEd",       "pfc_primary": "RENT_AND_UTILITIES", "pfc_detailed": "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY" },
+    { "amount": 400,   "date": "2026-04-07", "name": "Whole Foods", "pfc_primary": "FOOD_AND_DRINK",     "pfc_detailed": "FOOD_AND_DRINK_GROCERIES" }
+  ]
+}

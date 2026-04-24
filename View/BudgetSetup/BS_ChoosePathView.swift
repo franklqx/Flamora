@@ -4,7 +4,7 @@
 //
 //  Budget Setup — Step 5: Choose Your Plan
 //  Phase D wiring: consumes the new dynamic `plans[]` contract from generate-plans.
-//  Visual redesign stays intentionally light until Phase E.
+//  Step 5: select the savings plan before splitting wants in Step 5.5.
 //
 
 import SwiftUI
@@ -13,8 +13,6 @@ struct BS_ChoosePathView: View {
     @Bindable var viewModel: BudgetSetupViewModel
 
     @State private var showContent = false
-    @State private var showCapsSheet = false
-    @State private var customSaveDraft: Double = 0
 
     private let goldColor = AppColors.budgetGold
 
@@ -32,6 +30,12 @@ struct BS_ChoosePathView: View {
                     if viewModel.isLoadingPlans {
                         loadingSection
                     } else if let primary = viewModel.primaryPlan {
+                        todayAnchorCard
+                            .padding(.horizontal, AppSpacing.lg)
+
+                        targetAnchorCard
+                            .padding(.horizontal, AppSpacing.lg)
+
                         stateBanner(for: primary)
                             .padding(.horizontal, AppSpacing.lg)
 
@@ -39,14 +43,6 @@ struct BS_ChoosePathView: View {
                             planCard(plan: plan, index: index, showBestFit: index == 0)
                                 .padding(.horizontal, AppSpacing.lg)
                         }
-
-                        if let sliderBounds {
-                            customSaveCard(bounds: sliderBounds)
-                                .padding(.horizontal, AppSpacing.lg)
-                        }
-
-                        capsCard
-                            .padding(.horizontal, AppSpacing.lg)
 
                         assumptionsNote
                             .padding(.horizontal, AppSpacing.lg)
@@ -59,22 +55,10 @@ struct BS_ChoosePathView: View {
             .offset(y: showContent ? 0 : AppSpacing.md)
             .onAppear {
                 withAnimation(.easeOut(duration: 0.5)) { showContent = true }
-                if viewModel.plans.isEmpty {
-                    Task { await viewModel.loadPlans() }
-                } else {
-                    seedCustomSaveDraft()
-                }
-            }
-            .onChange(of: viewModel.selectedPlanIndex) { _, _ in
-                if !viewModel.isUsingCustomPlan {
-                    seedCustomSaveDraft()
-                }
+                Task { await viewModel.loadPlans() }
             }
 
             stickyBottomCTA
-        }
-        .sheet(isPresented: $showCapsSheet) {
-            BS_CapsSheet(viewModel: viewModel)
         }
         .alert("Couldn't continue", isPresented: Binding(
             get: { viewModel.spendingPlanError != nil },
@@ -92,11 +76,87 @@ struct BS_ChoosePathView: View {
                 .font(.cardFigurePrimary)
                 .foregroundStyle(AppColors.inkPrimary)
 
-            Text("Choose the plan you want to commit to. We’ll carry its monthly save, monthly budget, and FIRE timing straight into confirmation.")
+            Text("Pick a monthly budget and saving target.")
                 .font(.bodySmall)
                 .foregroundStyle(AppColors.inkSoft)
                 .lineSpacing(3)
         }
+    }
+
+    private var targetAnchorCard: some View {
+        Button {
+            viewModel.goToStep(.target)
+        } label: {
+            HStack(alignment: .center, spacing: AppSpacing.md) {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("YOUR TARGET")
+                        .font(.label)
+                        .tracking(1)
+                        .foregroundStyle(AppColors.inkFaint)
+
+                    HStack(spacing: AppSpacing.md) {
+                        anchorMetric(label: "Retire by", value: "Age \(viewModel.targetRetirementAge)")
+                        anchorMetric(label: "Retirement budget", value: "$\(formattedInt(viewModel.retirementSpendingMonthly))/mo")
+                    }
+                }
+
+                Spacer(minLength: AppSpacing.sm)
+
+                Image(systemName: "pencil")
+                    .font(.bodySemibold)
+                    .foregroundStyle(AppColors.accentAmber)
+                    .frame(width: 32, height: 32)
+                    .background(AppColors.glassCardBg)
+                    .clipShape(Circle())
+            }
+            .padding(AppSpacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppColors.glassCardBg)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.md)
+                    .stroke(AppColors.inkBorder, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var todayAnchorCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text("TODAY")
+                .font(.label)
+                .tracking(1)
+                .foregroundStyle(AppColors.inkFaint)
+
+            HStack(spacing: 0) {
+                anchorMetric(label: "Earning", value: "$\(formattedInt(viewModel.currentSnapshotIncome))")
+                anchorMetric(label: "Spending", value: "$\(formattedInt(viewModel.currentSnapshotSpend))")
+                anchorMetric(label: "Saving", value: "$\(formattedInt(viewModel.spendingStats?.avgMonthlySavings ?? (viewModel.currentSnapshotIncome - viewModel.currentSnapshotSpend)))")
+            }
+        }
+        .padding(AppSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.glassCardBg)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
+        )
+    }
+
+    private func anchorMetric(label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text(label)
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.inkSoft)
+            Text(value)
+                .font(.bodySemibold)
+                .foregroundStyle(AppColors.inkPrimary)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
@@ -107,22 +167,40 @@ struct BS_ChoosePathView: View {
                 icon: "checkmark.seal.fill",
                 tint: AppColors.budgetTeal,
                 title: "You're already financially free",
-                subtitle: "This flow now just locks in a sustainable spending level and starts tracking."
+                subtitle: "Choose a monthly budget to start tracking sustainable spending."
             )
         case "closest_far":
             bannerRow(
                 icon: "exclamationmark.triangle.fill",
                 tint: AppColors.budgetOrange,
                 title: "Your target needs adjustment",
-                subtitle: plan.sub
+                subtitle: "The earliest reasonable path reaches FIRE at age \(plan.projectedFireAge)."
             )
         case "closest_near":
             bannerRow(
                 icon: "arrow.trianglehead.clockwise",
                 tint: goldColor,
                 title: "Closest reasonable plan",
-                subtitle: plan.sub
+                subtitle: "Your target is close. This plan gets you to FIRE around age \(plan.projectedFireAge)."
             )
+        case "exact":
+            let currentSave = currentMonthlySavings
+            let needsMore = max(0, plan.monthlySave - currentSave)
+            if needsMore > 1 {
+                bannerRow(
+                    icon: "checkmark.seal.fill",
+                    tint: AppColors.budgetTeal,
+                    title: "Target is within reach",
+                    subtitle: "Save $\(formattedInt(needsMore))/mo more than today to aim for age \(viewModel.targetRetirementAge)."
+                )
+            } else {
+                bannerRow(
+                    icon: "checkmark.seal.fill",
+                    tint: AppColors.budgetTeal,
+                    title: "You have room",
+                    subtitle: "Your current pace can support this target. Choose how much flexibility to keep."
+                )
+            }
         default:
             EmptyView()
         }
@@ -182,7 +260,7 @@ struct BS_ChoosePathView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
                         HStack(spacing: AppSpacing.sm) {
-                            Text(viewModel.displayName(for: plan.label))
+                            Text(planTitle(for: plan))
                                 .font(.h3)
                                 .foregroundStyle(AppColors.inkPrimary)
 
@@ -240,25 +318,25 @@ struct BS_ChoosePathView: View {
                 }
 
                 VStack(spacing: AppSpacing.xs) {
-                    Text("MONTHLY BUDGET")
+                    Text("SAVE")
                         .font(.cardHeader)
                         .tracking(1.5)
                         .foregroundStyle(AppColors.inkPrimary)
-                    Text("$\(formattedInt(plan.monthlyBudget))")
+                    Text("$\(formattedInt(plan.monthlySave))/mo")
                         .font(.display)
                         .foregroundStyle(AppColors.inkPrimary)
                         .monospacedDigit()
-                        .accessibilityLabel("Monthly budget \(formattedInt(plan.monthlyBudget)) dollars")
+                        .accessibilityLabel("Save \(formattedInt(plan.monthlySave)) dollars per month")
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, AppSpacing.sm)
 
                 HStack(spacing: 0) {
-                    statColumnSmall(label: "SAVE/MO", value: "$\(formattedInt(plan.monthlySave))")
+                    statColumnSmall(label: "BUDGET", value: "$\(formattedInt(plan.monthlyBudget))")
                     Rectangle().fill(AppColors.inkBorder).frame(width: 1, height: AppSpacing.lg)
-                    statColumnSmall(label: "RATE", value: formattedPct(plan.savingsRate * 100))
+                    statColumnSmall(label: "SAVING RATE", value: formattedPct(plan.savingsRate * 100))
                     Rectangle().fill(AppColors.inkBorder).frame(width: 1, height: AppSpacing.lg)
-                    statColumnSmall(label: "RETIRE AT", value: "Age \(plan.projectedFireAge)")
+                    statColumnSmall(label: "FIRE AGE", value: "Age \(plan.projectedFireAge)")
                 }
                 .padding(.vertical, AppSpacing.sm)
                 .background(AppColors.glassCardBg)
@@ -284,45 +362,14 @@ struct BS_ChoosePathView: View {
     @ViewBuilder
     private func fireDetailExpand(plan: BudgetPlanOption) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("SPENDING CEILING")
-                        .font(.label)
-                        .tracking(0.8)
-                        .foregroundStyle(AppColors.inkFaint)
-                    Text("$\(formattedInt(plan.committedSpendCeiling))/mo")
-                        .font(.bodySemibold)
-                        .foregroundStyle(AppColors.inkPrimary)
-                        .monospacedDigit()
-                }
-                Spacer()
-            }
-            .padding(AppSpacing.sm)
-            .background(AppColors.glassCardBg)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("TARGET GAP")
-                        .font(.label)
-                        .tracking(0.8)
-                        .foregroundStyle(AppColors.inkFaint)
-                    Text(plan.gapYears > 0 ? "About \(plan.gapYears)y later than target" : "On track for your target")
-                        .font(.bodySemibold)
-                        .foregroundStyle(AppColors.inkPrimary)
-                }
-                Spacer()
-            }
-            .padding(AppSpacing.sm)
-            .background(AppColors.glassCardBg)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+            planInsightRows(plan: plan)
 
             HStack(alignment: .top, spacing: AppSpacing.sm - 2) {
                 Image(systemName: "info.circle")
                     .font(.footnoteRegular)
                     .foregroundStyle(AppColors.inkFaint)
                     .padding(.top, 1)
-                Text(plan.sub)
+                Text(planDetailCopy(for: plan))
                     .font(.footnoteRegular)
                     .foregroundStyle(AppColors.inkSoft)
                     .lineSpacing(3)
@@ -344,121 +391,10 @@ struct BS_ChoosePathView: View {
     }
 
     private var assumptionsNote: some View {
-        Text("FIRE estimates use the 4% withdrawal rule with 4% real annual returns (inflation-adjusted). Projections, not guarantees.")
+        Text("Projection note: Estimates use the starting asset value available to the model, your selected budget and saving target, a 4% withdrawal rule, and a 4% real return assumption after inflation. Projected portfolio boosts are estimates, not guaranteed returns; actual results can change with income, spending, taxes, market performance, balances, and goals.")
             .font(.cardRowMeta)
             .foregroundStyle(AppColors.inkFaint)
             .lineSpacing(3)
-    }
-
-    @ViewBuilder
-    private func customSaveCard(bounds: ClosedRange<Double>) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("CUSTOM MONTHLY SAVE")
-                        .font(.label)
-                        .tracking(1)
-                        .foregroundStyle(AppColors.inkFaint)
-                    Text("$\(formattedInt(viewModel.committedMonthlySave ?? customSaveDraft))/mo")
-                        .font(.h2)
-                        .foregroundStyle(AppColors.inkPrimary)
-                        .monospacedDigit()
-                }
-                Spacer()
-                if viewModel.isUsingCustomPlan {
-                    Button("Reset") {
-                        viewModel.resetCommittedToSelectedPlan()
-                        seedCustomSaveDraft()
-                    }
-                    .font(.bodySmallSemibold)
-                    .foregroundStyle(AppColors.accentAmber)
-                }
-            }
-
-            Slider(
-                value: Binding(
-                    get: { min(max(customSaveDraft, bounds.lowerBound), bounds.upperBound) },
-                    set: { newValue in
-                        customSaveDraft = newValue
-                        viewModel.applyCustomMonthlySave(newValue)
-                    }
-                ),
-                in: bounds,
-                step: 10
-            )
-            .tint(AppColors.accentAmber)
-
-            HStack {
-                Text("$\(formattedInt(bounds.lowerBound))")
-                Spacer()
-                Text("$\(formattedInt(bounds.upperBound))")
-            }
-            .font(.caption)
-            .foregroundStyle(AppColors.inkFaint)
-
-            HStack(spacing: 0) {
-                statColumnSmall(label: "BUDGET", value: "$\(formattedInt(viewModel.committedSpendCeiling ?? 0))")
-                Rectangle().fill(AppColors.inkBorder).frame(width: 1, height: AppSpacing.lg)
-                statColumnSmall(label: "RATE", value: formattedPct((viewModel.committedSavingsRate ?? 0) * 100))
-                Rectangle().fill(AppColors.inkBorder).frame(width: 1, height: AppSpacing.lg)
-                statColumnSmall(label: "RETIRE AT", value: fireAgeValue)
-            }
-            .padding(.vertical, AppSpacing.sm)
-            .background(AppColors.shellBg2.opacity(0.5))
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-        }
-        .padding(AppSpacing.md)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
-    }
-
-    private var capsCard: some View {
-        Button {
-            viewModel.ensureCategoryBudgetsSeeded()
-            showCapsSheet = true
-        } label: {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                HStack {
-                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        Text("CUSTOMIZE SUBCATEGORIES")
-                            .font(.label)
-                            .tracking(1)
-                            .foregroundStyle(AppColors.inkFaint)
-                        Text("Optionally split your monthly budget into category caps now.")
-                            .font(.footnoteRegular)
-                            .foregroundStyle(AppColors.inkSoft)
-                            .lineSpacing(3)
-                    }
-                    Spacer()
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.bodySemibold)
-                        .foregroundStyle(AppColors.accentAmber)
-                }
-
-                if viewModel.categoryBudgets.isEmpty {
-                    Text("Use suggested category caps")
-                        .font(.bodySmallSemibold)
-                        .foregroundStyle(AppColors.accentAmber)
-                } else {
-                    Text("$\(formattedInt(viewModel.categoryBudgetTotal)) assigned · $\(formattedInt(abs(viewModel.categoryBudgetRemaining))) \(viewModel.categoryBudgetRemaining >= 0 ? "left" : "over")")
-                        .font(.bodySmallSemibold)
-                        .foregroundStyle(viewModel.categoryBudgetRemaining >= 0 ? AppColors.inkPrimary : AppColors.error)
-                }
-            }
-            .padding(AppSpacing.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(AppColors.glassCardBg)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.lg)
-                    .stroke(AppColors.inkBorder, lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
     }
 
     private var stickyBottomCTA: some View {
@@ -470,7 +406,7 @@ struct BS_ChoosePathView: View {
                 Task {
                     await viewModel.loadSpendingPlan()
                     guard viewModel.spendingPlan != nil else { return }
-                    await MainActor.run { viewModel.goToStep(.confirm) }
+                    await MainActor.run { viewModel.goToStep(.split) }
                 }
             } label: {
                 Group {
@@ -521,6 +457,142 @@ struct BS_ChoosePathView: View {
         }
     }
 
+    private var currentMonthlySavings: Double {
+        viewModel.spendingStats?.avgMonthlySavings
+            ?? (viewModel.currentSnapshotIncome - viewModel.currentSnapshotSpend)
+    }
+
+    private var currentSavingsRate: Double {
+        guard viewModel.currentSnapshotIncome > 0 else { return 0 }
+        return max(0, currentMonthlySavings / viewModel.currentSnapshotIncome * 100)
+    }
+
+    private func planTitle(for plan: BudgetPlanOption) -> String {
+        switch plan.feasibility {
+        case "already_fire": return "Already FIRE"
+        case "closest_far": return "Fastest reasonable"
+        case "closest_near": return "Closest reasonable"
+        case "exact":
+            return plan.monthlySave <= currentMonthlySavings + 1 ? "Keep your pace" : "Hit your target"
+        default:
+            switch plan.anchor {
+            case "lifestyle": return "Comfortable"
+            case "acceleration": return "Push harder"
+            default: return viewModel.displayName(for: plan.label)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func planInsightRows(plan: BudgetPlanOption) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            detailInsightRow(
+                label: "Budget change",
+                value: budgetChangeText(for: plan),
+                icon: "wallet.pass.fill"
+            )
+            detailInsightRow(
+                label: "Saving rate change",
+                value: savingRateChangeText(for: plan),
+                icon: "arrow.up.forward.circle.fill"
+            )
+            detailInsightRow(
+                label: "Progress boost",
+                value: progressBoostText(for: plan),
+                icon: "calendar.badge.clock"
+            )
+        }
+    }
+
+    private func detailInsightRow(label: String, value: String, icon: String) -> some View {
+        HStack(alignment: .top, spacing: AppSpacing.sm) {
+            Image(systemName: icon)
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.inkFaint)
+                .frame(width: AppSpacing.md, alignment: .center)
+                .padding(.top, 2)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label.uppercased())
+                    .font(.miniLabel)
+                    .tracking(0.8)
+                    .foregroundStyle(AppColors.inkFaint)
+                Text(value)
+                    .font(.bodySmallSemibold)
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(AppSpacing.sm)
+        .background(AppColors.glassCardBg)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+    }
+
+    private func budgetChangeText(for plan: BudgetPlanOption) -> String {
+        let delta = plan.monthlyBudget - viewModel.currentSnapshotSpend
+        if abs(delta) < 1 { return "About the same as today" }
+        if delta < 0 { return "Spend $\(formattedInt(abs(delta)))/mo less than today" }
+        return "Spend $\(formattedInt(delta))/mo more than today"
+    }
+
+    private func savingRateChangeText(for plan: BudgetPlanOption) -> String {
+        let currentRate = currentSavingsRate
+        let planRate = plan.savingsRate * 100
+        let delta = planRate - currentRate
+        if abs(delta) < 0.05 { return "Same as today at \(formattedPct(planRate))" }
+        if delta > 0 {
+            return "Increase from \(formattedPct(currentRate)) to \(formattedPct(planRate))"
+        }
+        return "Decrease from \(formattedPct(currentRate)) to \(formattedPct(planRate))"
+    }
+
+    private func progressBoostText(for plan: BudgetPlanOption) -> String {
+        let monthlyDelta = plan.monthlySave - currentMonthlySavings
+        if abs(monthlyDelta) < 1 {
+            return "Similar projected path to today"
+        }
+
+        let horizonMonths = max(0, (plan.projectedFireAge - viewModel.currentAge) * 12)
+        guard horizonMonths > 0 else {
+            return monthlyDelta > 0 ? "Adds more to your FIRE path" : "Keeps more flexibility today"
+        }
+
+        let projectedBoost = futureValueOfMonthlyDelta(abs(monthlyDelta), months: horizonMonths)
+        if monthlyDelta > 0 {
+            return "+$\(formattedInt(monthlyDelta))/mo could add about $\(formattedInt(projectedBoost)) by age \(plan.projectedFireAge)"
+        }
+        return "$\(formattedInt(abs(monthlyDelta)))/mo less saving could reduce projected assets by about $\(formattedInt(projectedBoost)) by age \(plan.projectedFireAge)"
+    }
+
+    private func planDetailCopy(for plan: BudgetPlanOption) -> String {
+        let currentSave = currentMonthlySavings
+        let delta = plan.monthlySave - currentSave
+        let action: String
+        if abs(delta) < 1 {
+            action = "about the same as today"
+        } else if delta > 0 {
+            action = "$\(formattedInt(delta))/mo more than today"
+        } else {
+            action = "$\(formattedInt(abs(delta)))/mo less than today"
+        }
+
+        switch plan.feasibility {
+        case "closest_far":
+            return "This is the earliest path within healthy limits. It saves \(action) and reaches FIRE around age \(plan.projectedFireAge)."
+        case "closest_near":
+            return "This is the closest reasonable path to your target. It saves \(action) and reaches FIRE around age \(plan.projectedFireAge)."
+        case "exact":
+            return "This plan is designed around your target age. It saves \(action) with a monthly budget of $\(formattedInt(plan.monthlyBudget))."
+        case "already_fire":
+            return "You have already reached the modeled FIRE number. Use this plan to set a sustainable monthly budget."
+        default:
+            return "This plan saves \(action), sets a $\(formattedInt(plan.monthlyBudget))/mo budget, and projects FIRE around age \(plan.projectedFireAge)."
+        }
+    }
+
     private func formattedInt(_ value: Double) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
@@ -534,186 +606,12 @@ struct BS_ChoosePathView: View {
         return String(format: "%.1f%%", rounded)
     }
 
-    private var sliderBounds: ClosedRange<Double>? {
-        guard let slider = viewModel.customSliderRange,
-              slider.isAvailable,
-              let min = slider.minMonthlySave,
-              let max = slider.maxMonthlySave,
-              max > min else {
-            return nil
-        }
-        return min...max
+    private func futureValueOfMonthlyDelta(_ monthlyDelta: Double, months: Int) -> Double {
+        guard months > 0, monthlyDelta > 0 else { return 0 }
+        let monthlyRate = 0.04 / 12.0
+        if monthlyRate == 0 { return monthlyDelta * Double(months) }
+        let growthFactor = (pow(1 + monthlyRate, Double(months)) - 1) / monthlyRate
+        return monthlyDelta * growthFactor
     }
 
-    private var fireAgeValue: String {
-        if let age = viewModel.committedProjectedFireAge {
-            return "Age \(age)"
-        }
-        return "Later"
-    }
-
-    private func seedCustomSaveDraft() {
-        if let committed = viewModel.committedMonthlySave {
-            customSaveDraft = committed
-        } else if let selected = viewModel.selectedPlan {
-            customSaveDraft = selected.monthlySave
-        }
-    }
-}
-
-private struct BS_CapsSheet: View {
-    @Bindable var viewModel: BudgetSetupViewModel
-    @Environment(\.dismiss) private var dismiss
-
-    @State private var draftBudgets: [String: Double] = [:]
-
-    private static let currencyFormatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return formatter
-    }()
-
-    private var sortedCategories: [(String, Double)] {
-        draftBudgets
-            .sorted { lhs, rhs in
-                if lhs.value == rhs.value { return lhs.key < rhs.key }
-                return lhs.value > rhs.value
-            }
-    }
-
-    private var ceiling: Double {
-        viewModel.committedSpendCeiling ?? viewModel.currentSnapshotSpend
-    }
-
-    private var total: Double {
-        draftBudgets.values.reduce(0, +)
-    }
-
-    private var remaining: Double {
-        ceiling - total
-    }
-
-    var body: some View {
-        NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                    summaryCard
-
-                    VStack(alignment: .leading, spacing: AppSpacing.md) {
-                        Text("CATEGORY CAPS")
-                            .font(.label)
-                            .tracking(1)
-                            .foregroundStyle(AppColors.inkFaint)
-
-                        ForEach(sortedCategories, id: \.0) { key, _ in
-                            capRow(for: key)
-                        }
-                    }
-                }
-                .padding(AppSpacing.lg)
-            }
-            .background(LinearGradient(colors: [AppColors.shellBg1, AppColors.shellBg2], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
-            .navigationTitle("Customize Categories")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        viewModel.categoryBudgets = draftBudgets
-                        dismiss()
-                    }
-                    .disabled(remaining < 0)
-                }
-            }
-            .onAppear {
-                viewModel.ensureCategoryBudgetsSeeded()
-                draftBudgets = viewModel.categoryBudgets
-            }
-        }
-    }
-
-    private var summaryCard: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("These caps help split your total monthly budget into categories. They do not change your overall monthly budget.")
-                .font(.bodySmall)
-                .foregroundStyle(AppColors.inkSoft)
-                .lineSpacing(3)
-
-            HStack(spacing: AppSpacing.sm) {
-                summaryMetric(title: "Budget", value: ceiling, tint: AppColors.inkPrimary)
-                summaryMetric(title: "Assigned", value: total, tint: AppColors.budgetTeal)
-                summaryMetric(title: remaining >= 0 ? "Left" : "Over", value: abs(remaining), tint: remaining >= 0 ? AppColors.accentAmber : AppColors.error)
-            }
-        }
-        .padding(AppSpacing.md)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
-    }
-
-    private func summaryMetric(title: String, value: Double, tint: Color) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text(title.uppercased())
-                .font(.miniLabel)
-                .tracking(0.8)
-                .foregroundStyle(AppColors.inkFaint)
-            Text("$\(formatted(value))")
-                .font(.bodySemibold)
-                .foregroundStyle(tint)
-                .monospacedDigit()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func capRow(for key: String) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text(displayName(for: key))
-                .font(.bodySmallSemibold)
-                .foregroundStyle(AppColors.inkPrimary)
-
-            HStack(spacing: AppSpacing.sm) {
-                Text("$")
-                    .font(.bodySemibold)
-                    .foregroundStyle(AppColors.inkFaint)
-                TextField("0", value: binding(for: key), formatter: Self.currencyFormatter)
-                    .font(.bodySmall)
-                    .foregroundStyle(AppColors.inkPrimary)
-                    .keyboardType(.decimalPad)
-            }
-            .padding(.horizontal, AppSpacing.md)
-            .frame(height: 46)
-            .background(AppColors.glassCardBg)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.md)
-                    .stroke(AppColors.inkBorder, lineWidth: 1)
-            )
-        }
-    }
-
-    private func binding(for key: String) -> Binding<Double> {
-        Binding(
-            get: { draftBudgets[key] ?? 0 },
-            set: { draftBudgets[key] = max(0, $0) }
-        )
-    }
-
-    private func displayName(for key: String) -> String {
-        key
-            .replacingOccurrences(of: "_", with: " ")
-            .capitalized
-    }
-
-    private func formatted(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value.rounded())) ?? "\(Int(value.rounded()))"
-    }
 }

@@ -48,8 +48,8 @@
 		12748F302F66B21000410D60 /* BS_AccountSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748F312F66B21000410D60 /* BS_AccountSelectionView.swift */; };
 		12748FE92F7276F100410D60 /* BS_ChoosePathView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748FE82F7276F100410D60 /* BS_ChoosePathView.swift */; };
 		12748FEF2F7277AB00410D60 /* BS_TargetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748FEE2F7277AB00410D60 /* BS_TargetView.swift */; };
+		12748FF12F72790000410D60 /* BS_SplitBudgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748FF02F72790000410D60 /* BS_SplitBudgetView.swift */; };
 		1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */; };
-		CDSP00062FE0000000000006 /* DetailSheetScaffold.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDSP00052FE0000000000005 /* DetailSheetScaffold.swift */; };
 		1508AF372F5D1A2600D59781 /* OB_BarChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1508AF362F5D1A2600D59781 /* OB_BarChartView.swift */; };
 		152BE0842F67A66C00CACBBC /* GlassPillSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152BE0832F67A66C00CACBBC /* GlassPillSelector.swift */; };
 		152BE0862F67A67000CACBBC /* ChartInteractionLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152BE0852F67A67000CACBBC /* ChartInteractionLayer.swift */; };
@@ -90,8 +90,6 @@
 		CD11E0022F90000000000001 /* TransactionCategoryCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11E0012F90000000000001 /* TransactionCategoryCatalog.swift */; };
 		CD11E0042F90000000000001 /* Account+API.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11E0032F90000000000001 /* Account+API.swift */; };
 		CD11E0062F90000000000001 /* CashflowDetailEmptyStates.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11E0052F90000000000001 /* CashflowDetailEmptyStates.swift */; };
-		CDSP00022FD0000000000002 /* SpendingAnalysisDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDSP00012FD0000000000001 /* SpendingAnalysisDetailView.swift */; };
-		CDSP00042FD0000000000004 /* TotalSpendingAnalysisDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDSP00032FD0000000000003 /* TotalSpendingAnalysisDetailView.swift */; };
 		CD11E0082F90000000000001 /* FIREAssumptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11E0072F90000000000001 /* FIREAssumptions.swift */; };
 		CD2604070000000000000002 /* HomeSetupState.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD2604070000000000000001 /* HomeSetupState.swift */; };
 		CD2604070000000000000004 /* HomeHeroModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD2604070000000000000003 /* HomeHeroModel.swift */; };
@@ -105,6 +103,9 @@
 		CDBB00022FA1000000000001 /* CashAccountsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00012FA1000000000001 /* CashAccountsCard.swift */; };
 		CDBB00042FA1000000000001 /* CashAccountDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00032FA1000000000001 /* CashAccountDetailView.swift */; };
 		CDFM00022FB0000000000001 /* FIREMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDFM00012FB0000000000001 /* FIREMath.swift */; };
+		CDSP00022FD0000000000002 /* SpendingAnalysisDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDSP00012FD0000000000001 /* SpendingAnalysisDetailView.swift */; };
+		CDSP00042FD0000000000004 /* TotalSpendingAnalysisDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDSP00032FD0000000000003 /* TotalSpendingAnalysisDetailView.swift */; };
+		CDSP00062FE0000000000006 /* DetailSheetScaffold.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDSP00052FE0000000000005 /* DetailSheetScaffold.swift */; };
 		CF10A0012F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF10A0002F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift */; };
 		CF10A0112F50000100A9BB60 /* CashflowExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF10A0102F50000100A9BB60 /* CashflowExpandedOverlayView.swift */; };
 		CF20A0112F70000100A9BB60 /* HomeExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */; };
@@ -184,8 +185,8 @@
 		12748F312F66B21000410D60 /* BS_AccountSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_AccountSelectionView.swift; sourceTree = "<group>"; };
 		12748FE82F7276F100410D60 /* BS_ChoosePathView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_ChoosePathView.swift; sourceTree = "<group>"; };
 		12748FEE2F7277AB00410D60 /* BS_TargetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_TargetView.swift; sourceTree = "<group>"; };
+		12748FF02F72790000410D60 /* BS_SplitBudgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_SplitBudgetView.swift; sourceTree = "<group>"; };
 		1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBackgroundView.swift; sourceTree = "<group>"; };
-		CDSP00052FE0000000000005 /* DetailSheetScaffold.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheetScaffold.swift; sourceTree = "<group>"; };
 		150899942F30F60F003DDFBF /* Flamora app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Flamora app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899A32F30F611003DDFBF /* Flamora appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899AD2F30F611003DDFBF /* Flamora appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -254,8 +255,6 @@
 		CD11E0012F90000000000001 /* TransactionCategoryCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionCategoryCatalog.swift; sourceTree = "<group>"; };
 		CD11E0032F90000000000001 /* Account+API.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Account+API.swift"; sourceTree = "<group>"; };
 		CD11E0052F90000000000001 /* CashflowDetailEmptyStates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowDetailEmptyStates.swift; sourceTree = "<group>"; };
-		CDSP00012FD0000000000001 /* SpendingAnalysisDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendingAnalysisDetailView.swift; sourceTree = "<group>"; };
-		CDSP00032FD0000000000003 /* TotalSpendingAnalysisDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotalSpendingAnalysisDetailView.swift; sourceTree = "<group>"; };
 		CD11E0072F90000000000001 /* FIREAssumptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIREAssumptions.swift; sourceTree = "<group>"; };
 		CD2604070000000000000001 /* HomeSetupState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeSetupState.swift; sourceTree = "<group>"; };
 		CD2604070000000000000003 /* HomeHeroModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHeroModel.swift; sourceTree = "<group>"; };
@@ -269,6 +268,9 @@
 		CDBB00012FA1000000000001 /* CashAccountsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountsCard.swift; sourceTree = "<group>"; };
 		CDBB00032FA1000000000001 /* CashAccountDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountDetailView.swift; sourceTree = "<group>"; };
 		CDFM00012FB0000000000001 /* FIREMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIREMath.swift; sourceTree = "<group>"; };
+		CDSP00012FD0000000000001 /* SpendingAnalysisDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendingAnalysisDetailView.swift; sourceTree = "<group>"; };
+		CDSP00032FD0000000000003 /* TotalSpendingAnalysisDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotalSpendingAnalysisDetailView.swift; sourceTree = "<group>"; };
+		CDSP00052FE0000000000005 /* DetailSheetScaffold.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheetScaffold.swift; sourceTree = "<group>"; };
 		CF10A0002F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowSpendingOverviewPrototypeCard.swift; sourceTree = "<group>"; };
 		CF10A0102F50000100A9BB60 /* CashflowExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowExpandedOverlayView.swift; sourceTree = "<group>"; };
 		CF20A0102F70000100A9BB60 /* HomeExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeExpandedOverlayView.swift; sourceTree = "<group>"; };
@@ -418,6 +420,7 @@
 				12748F2A2F65D00B00410D60 /* BS_ConfirmView.swift */,
 				12748F2C2F66B21000410D60 /* BS_DiagnosisView.swift */,
 				12748FE82F7276F100410D60 /* BS_ChoosePathView.swift */,
+				12748FF02F72790000410D60 /* BS_SplitBudgetView.swift */,
 				12748F2E2F66B21000410D60 /* BS_LoadingView.swift */,
 				12748F312F66B21000410D60 /* BS_AccountSelectionView.swift */,
 				12748FEE2F7277AB00410D60 /* BS_TargetView.swift */,
@@ -903,6 +906,7 @@
 				124C465F2F56F65E00E4EA8B /* OB_SignInView.swift in Sources */,
 				12748FE92F7276F100410D60 /* BS_ChoosePathView.swift in Sources */,
 				12748FEF2F7277AB00410D60 /* BS_TargetView.swift in Sources */,
+				12748FF12F72790000410D60 /* BS_SplitBudgetView.swift in Sources */,
 				124C46612F56F65E00E4EA8B /* OB_PrimaryButton.swift in Sources */,
 				12748F202F65CA4000410D60 /* APIService+BudgetSetup.swift in Sources */,
 				124C46632F56F65E00E4EA8B /* OB_BackButton.swift in Sources */,
@@ -1074,7 +1078,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 526LTP6Z7D;
+				DEVELOPMENT_TEAM = H9BUW6F8JV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Flamora-App-Info.plist";
@@ -1089,7 +1093,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.LL.fire.Flamora-app9";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.LQ.fire.Flamora-app9";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -1109,7 +1113,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 526LTP6Z7D;
+				DEVELOPMENT_TEAM = H9BUW6F8JV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Flamora-App-Info.plist";

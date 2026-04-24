@@ -3,7 +3,7 @@
 //  Flamora app
 //
 //  Budget Setup — Main container with step navigation
-//  V3 (Phase E): connect → loading → reality → target → plan → confirm
+//  V3 (Phase E): connect → loading → reality → target → plan → split → confirm
 //  See `~/.claude/plans/budget-plan-budget-plan-gentle-blossom.md` § "最终流程"
 //
 
@@ -39,6 +39,9 @@ struct BudgetSetupView: View {
 
                 case .plan:
                     BS_ChoosePathView(viewModel: viewModel)
+
+                case .split:
+                    BS_SplitBudgetView(viewModel: viewModel)
 
                 case .confirm:
                     BS_ConfirmView(viewModel: viewModel, onComplete: {

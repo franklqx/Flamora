@@ -7,7 +7,8 @@
 //  Step 2 Loading:  calculate-spending-stats + (no AI diagnosis in V3)
 //  Step 3 Reality:  3 metric blocks + sparkline + one-time note
 //  Step 4 Target:   target age slider + retirement spending sheet
-//  Step 5 Plan:     1-3 dynamic plans + custom save slider + caps sheet entry
+//  Step 5 Plan:     1-3 dynamic plans
+//  Step 5.5 Split:  Assign wants budget by subcategory
 //  Step 6 Confirm:  Monthly save · Monthly budget · FIRE progress
 //
 
@@ -27,7 +28,8 @@ class BudgetSetupViewModel {
         case reality = 2
         case target  = 3
         case plan    = 4
-        case confirm = 5
+        case split   = 5
+        case confirm = 6
     }
 
     var currentStep: Step = .connect
@@ -979,19 +981,37 @@ class BudgetSetupViewModel {
     }
     
     func updateFlexibleAmount(subcategory: String, amount: Double) {
-        editedFlexibleAmounts[subcategory] = max(0, amount)
+        let sanitized = max(0, amount)
+        let key = canonicalCategoryBudgetKey(for: subcategory)
+        editedFlexibleAmounts[key] = sanitized
+        categoryBudgets[key] = roundBudgetAmount(sanitized)
     }
 
     func suggestedCategoryBudgets() -> [String: Double] {
+        if let spendingPlan {
+            var suggested: [String: Double] = [:]
+            for item in spendingPlan.fixedBudget.items {
+                let key = canonicalCategoryBudgetKey(for: item.name)
+                suggested[key] = roundBudgetAmount(item.monthlyAmount)
+            }
+            for item in spendingPlan.flexibleBudget.items {
+                let key = canonicalCategoryBudgetKey(for: item.subcategory)
+                suggested[key] = roundBudgetAmount(item.suggestedAmount)
+            }
+            return suggested
+        }
+
         guard let stats = spendingStats else { return [:] }
         let totalSpend = max(0.01, currentSnapshotSpend)
         let ceiling = committedSpendCeiling ?? currentSnapshotSpend
         var suggested: [String: Double] = [:]
         for item in stats.fixedExpenses {
-            suggested[item.name] = roundBudgetAmount(item.avgMonthlyAmount / totalSpend * ceiling)
+            let key = canonicalCategoryBudgetKey(for: item.name)
+            suggested[key] = roundBudgetAmount(item.avgMonthlyAmount / totalSpend * ceiling)
         }
         for item in stats.flexibleBreakdown {
-            suggested[item.subcategory] = roundBudgetAmount(item.avgMonthlyAmount / totalSpend * ceiling)
+            let key = canonicalCategoryBudgetKey(for: item.subcategory)
+            suggested[key] = roundBudgetAmount(item.avgMonthlyAmount / totalSpend * ceiling)
         }
         return suggested
     }
@@ -999,6 +1019,22 @@ class BudgetSetupViewModel {
     func ensureCategoryBudgetsSeeded() {
         if categoryBudgets.isEmpty {
             categoryBudgets = suggestedCategoryBudgets()
+        }
+    }
+
+    func resetFlexibleBudgetToSuggested() {
+        editedFlexibleAmounts = [:]
+        categoryBudgets = suggestedCategoryBudgets()
+    }
+
+    private func canonicalCategoryBudgetKey(for raw: String) -> String {
+        TransactionCategoryCatalog.canonicalSubcategory(fromStored: raw) ?? raw
+    }
+
+    private func sanitizedCategoryBudgetsForSave() -> [String: Double] {
+        categoryBudgets.reduce(into: [String: Double]()) { partial, item in
+            let key = canonicalCategoryBudgetKey(for: item.key)
+            partial[key] = roundBudgetAmount(max(item.value, 0))
         }
     }
 
@@ -1063,7 +1099,7 @@ class BudgetSetupViewModel {
 
             // Include user-set category budgets if any
             if !categoryBudgets.isEmpty {
-                upsertBody["category_budgets"] = categoryBudgets
+                upsertBody["category_budgets"] = sanitizedCategoryBudgetsForSave()
             }
             
             let body = try JSONSerialization.data(withJSONObject: upsertBody)

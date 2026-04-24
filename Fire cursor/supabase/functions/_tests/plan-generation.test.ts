@@ -138,3 +138,90 @@ Deno.test('already_fire hides custom slider', () => {
   assertEquals(slider.minMonthlySave, null)
   assertEquals(slider.maxMonthlySave, null)
 })
+
+// ---- Invariants: locks contracts the UI + backend rely on ----
+
+Deno.test('invariant: savingsRate × avgIncome ≈ monthlySave for every plan', () => {
+  const inputs: PlanInput[] = [
+    makeInput(),                                            // exact
+    makeInput({ targetAge: 35, avgIncome: 4_000, avgSpend: 2_500, essentialFloor: 1_800, avgWants: 700 }),   // closest_*
+    makeInput({ avgIncome: 4_000, avgSpend: 1_850, essentialFloor: 1_800, avgWants: 50 }),                   // dedupe
+  ]
+  for (const input of inputs) {
+    const plans = computeBudgetPlans(input)
+    for (const plan of plans) {
+      if (plan.feasibility === 'already_fire') continue
+      const derived = plan.savingsRate * input.avgIncome
+      const diff = Math.abs(derived - plan.monthlySave)
+      assert(
+        diff < 1e-6,
+        `plan ${plan.label}: savingsRate×income (${derived}) !== monthlySave (${plan.monthlySave})`,
+      )
+    }
+  }
+})
+
+Deno.test('invariant: monthlySpendCeiling + monthlySave ≈ avgIncome (non already_fire)', () => {
+  const plans = computeBudgetPlans(makeInput())
+  for (const plan of plans) {
+    if (plan.feasibility === 'already_fire') continue
+    const sum = plan.monthlySpendCeiling + plan.monthlySave
+    const diff = Math.abs(sum - 6_000)
+    assert(diff < 1e-6, `${plan.label}: ceiling+save ${sum} != income 6000`)
+  }
+})
+
+Deno.test('invariant: fireNumber === retirementSpending × 12 / withdrawalRate', () => {
+  const input = makeInput({ retirementSpending: 4_200, withdrawalRate: 0.04 })
+  const plans = computeBudgetPlans(input)
+  const expected = 4_200 * 12 / 0.04    // 1_260_000
+  assertEquals(plans[0].fireNumber, expected)
+})
+
+Deno.test('high-earner + $1.5M NW + $5k retirementSpending → already_fire', () => {
+  // Mirrors high-earner-near-fire fixture: avgIncome 15k, spend 4.5k,
+  // essentialFloor 3080, avgWants 1100, retirementSpending 5k → FN = $1.5M.
+  const plans = computeBudgetPlans(makeInput({
+    currentAge: 40,
+    targetAge: 55,
+    netWorth: 1_500_000,
+    avgIncome: 15_000,
+    avgSpend: 4_500,
+    essentialFloor: 3_080,
+    avgWants: 1_100,
+    retirementSpending: 5_000,
+  }))
+  assertEquals(plans.length, 1)
+  assertEquals(plans[0].feasibility, 'already_fire')
+  assertEquals(plans[0].monthlySave, 0)
+  assertEquals(plans[0].fireAgeMonths, 0)
+  assertEquals(plans[0].fireNumber, 1_500_000)
+})
+
+Deno.test('invariant: closest_* primary uses maxFeasibleSave = min(income − floor, income × 65%)', () => {
+  // Tight cap path: income − floor = 2200, income × 65% = 2600 → cap = 2200 (essentials_floor).
+  let plans = computeBudgetPlans(makeInput({
+    targetAge: 35,
+    netWorth: 10_000,
+    avgIncome: 4_000,
+    avgSpend: 2_500,
+    essentialFloor: 1_800,
+    avgWants: 700,
+    retirementSpending: 2_500,
+  }))
+  assertEquals(plans[0].monthlySave, 2_200)
+  assertEquals(plans[0].limitReason, 'essentials_floor')
+
+  // Cap path: income − floor = 4000, income × 65% = 3250 → cap = 3250 (savings_rate_cap).
+  plans = computeBudgetPlans(makeInput({
+    targetAge: 35,
+    netWorth: 10_000,
+    avgIncome: 5_000,
+    avgSpend: 1_500,
+    essentialFloor: 1_000,
+    avgWants: 500,
+    retirementSpending: 4_000,
+  }))
+  assertEquals(plans[0].monthlySave, 3_250)
+  assertEquals(plans[0].limitReason, 'savings_rate_cap')
+})

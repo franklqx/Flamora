@@ -32,6 +32,7 @@ struct CashflowView: View {
     /// 本年累计收入（多个月 `get-spending-summary` 汇总）；无银行连接时为 nil。
     @State private var incomeYearDisplay: Income?
     @State private var currentSavings: Double = 0
+    @State private var activeSavingsTargetMonthly: Double?
     @State private var needsTotal: Double = 0
     @State private var wantsTotal: Double = 0
     @State private var totalSpend: Double = 0
@@ -109,6 +110,8 @@ struct CashflowView: View {
                         BudgetCard(
                             spending: spendingForDisplay,
                             apiBudget: apiBudget,
+                            savingsTarget: activeSavingsTargetMonthly,
+                            currentSavings: currentSavings,
                             isConnected: plaidManager.hasLinkedBank,
                             hasBudget: hasBudget,
                             onSetupBudget: { plaidManager.openBudgetSetup(mode: .fresh) },
@@ -312,7 +315,7 @@ private extension CashflowView {
                 "savings_ratio": apiBudget.savingsRatio,
                 "needs_budget": payload.needsBudget,
                 "wants_budget": payload.wantsBudget,
-                "savings_budget": apiBudget.savingsBudget,
+                "savings_budget": activeSavingsTargetMonthly ?? apiBudget.savingsBudget,
                 "savings_rate": apiBudget.savingsRatio,
                 "fixed_budget": payload.needsBudget,
                 "flexible_budget": payload.wantsBudget,
@@ -326,7 +329,7 @@ private extension CashflowView {
             // separately, producing a total of ~120 and triggering INVALID_RATIOS from the backend.
             let needsBudget   = payload.needsBudget
             let wantsBudget   = payload.wantsBudget
-            let savingsBudget = apiBudget.savingsBudget
+            let savingsBudget = activeSavingsTargetMonthly ?? apiBudget.savingsBudget
             let totalBudget   = needsBudget + wantsBudget + savingsBudget
             if totalBudget > 0 {
                 requestPayload["needs_ratio"]   = needsBudget   / totalBudget * 100
@@ -419,6 +422,7 @@ private extension CashflowView {
 
         guard isCashflowUnlocked else {
             apiBudget = .empty
+            activeSavingsTargetMonthly = nil
             currentSavings = 0
             needsTotal = 0
             wantsTotal = 0
@@ -445,6 +449,8 @@ private extension CashflowView {
                 TabContentCache.shared.setCashflowBudget(b)
             }
         }
+
+        await refreshActiveSavingsTarget()
 
         let cal = Calendar.current
         let year = cal.component(.year, from: Date())
@@ -524,6 +530,20 @@ private extension CashflowView {
 
     private func fetchBudget(month: String) async -> APIMonthlyBudget? {
         try? await APIService.shared.getMonthlyBudget(month: month)
+    }
+
+    private func refreshActiveSavingsTarget() async {
+        guard budgetSetupCompleted else {
+            activeSavingsTargetMonthly = nil
+            return
+        }
+        do {
+            let goal = try await APIService.shared.getActiveFireGoal()
+            activeSavingsTargetMonthly = goal.savingsTargetMonthly
+        } catch {
+            print("⚠️ [CashflowView] getActiveFireGoal savings target failed: \(error)")
+            activeSavingsTargetMonthly = nil
+        }
     }
 
     func applySavingsCheckIn(_ updated: [Int: [Double?]]) {

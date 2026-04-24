@@ -40,6 +40,8 @@ enum BudgetScope: String, CaseIterable, Identifiable {
 struct BudgetCard: View {
     let spending: Spending
     let apiBudget: APIMonthlyBudget
+    var savingsTarget: Double? = nil
+    var currentSavings: Double = 0
     var isConnected: Bool = true
     var hasBudget: Bool = true
     var onSetupBudget: (() -> Void)? = nil
@@ -62,10 +64,10 @@ struct BudgetCard: View {
     private var draftWantsBudget: Double { wantsCategorySum }
 
     private let needsWantsDisplayHeight: CGFloat = 456
-    private let allDisplayHeightDelta: CGFloat = 68
+    private let allDisplayHeightDelta: CGFloat = 0
     private let ringSectionHeight: CGFloat = 178
     private let needsWantsScopeSectionHeight: CGFloat = 176
-    private let allScopeSectionHeightDelta: CGFloat = 64
+    private let allScopeSectionHeightDelta: CGFloat = 0
 
     private var needsColor: Color { AppColors.budgetNeedsBlue }
     private var wantsColor: Color { AppColors.budgetWantsPurple }
@@ -79,6 +81,7 @@ struct BudgetCard: View {
     }
 
     private var totalBudget: Double { max(apiBudget.needsBudget + apiBudget.wantsBudget, 0) }
+    private var effectiveSavingsTarget: Double { max(savingsTarget ?? apiBudget.savingsBudget, 0) }
     private var totalSpent: Double { max(spending.needs + spending.wants, 0) }
     private var isOverBudget: Bool { totalBudget > 0 && (totalSpent / totalBudget) > 1.0 }
     private var normalizedNeedsCategories: [BudgetCategoryBudget] {
@@ -138,6 +141,8 @@ struct BudgetCard: View {
     init(
         spending: Spending,
         apiBudget: APIMonthlyBudget,
+        savingsTarget: Double? = nil,
+        currentSavings: Double = 0,
         isConnected: Bool = true,
         hasBudget: Bool = true,
         onSetupBudget: (() -> Void)? = nil,
@@ -150,6 +155,8 @@ struct BudgetCard: View {
     ) {
         self.spending = spending
         self.apiBudget = apiBudget
+        self.savingsTarget = savingsTarget
+        self.currentSavings = currentSavings
         self.isConnected = isConnected
         self.hasBudget = hasBudget
         self.onSetupBudget = onSetupBudget
@@ -283,6 +290,13 @@ struct BudgetCard: View {
                 budget: apiBudget.wantsBudget,
                 color: wantsColor,
                 onTap: onWantsTapped
+            )
+            BudgetRowItem(
+                title: "Savings",
+                spent: currentSavings,
+                budget: effectiveSavingsTarget,
+                color: AppColors.accentAmber,
+                onTap: nil
             )
         }
         .padding(.top, AppSpacing.xs)
