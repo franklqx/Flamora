@@ -140,13 +140,27 @@ serve(async (req) => {
     const hasRemainingConnections = remainingItems && remainingItems.length > 0
 
     if (!hasRemainingConnections) {
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('starting_portfolio_source')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      const profileUpdate: Record<string, unknown> = {
+        has_linked_bank: false,
+        plaid_net_worth: null,
+        plaid_net_worth_updated_at: null,
+      }
+
+      if (profile?.starting_portfolio_source === 'plaid_investment') {
+        profileUpdate.starting_portfolio_balance = null
+        profileUpdate.starting_portfolio_source = null
+        profileUpdate.starting_portfolio_updated_at = null
+      }
+
       await supabase
         .from('user_profiles')
-        .update({
-          has_linked_bank: false,
-          plaid_net_worth: null,
-          plaid_net_worth_updated_at: null,
-        })
+        .update(profileUpdate)
         .eq('user_id', user.id)
     }
 

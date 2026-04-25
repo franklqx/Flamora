@@ -22,6 +22,8 @@ struct HomeHeroModel: Codable {
     // ── Progress ──────────────────────────────────────────────
     let fireNumber: Double
     let currentNetWorth: Double
+    let startingPortfolioBalance: Double?
+    let startingPortfolioSource: String?
     let progressPercentage: Double   // 0..100
     let gapToFire: Double
     let onTrack: Bool
@@ -55,6 +57,8 @@ struct HomeHeroModel: Codable {
         case dataSource                = "data_source"
         case fireNumber                = "fire_number"
         case currentNetWorth           = "current_net_worth"
+        case startingPortfolioBalance  = "starting_portfolio_balance"
+        case startingPortfolioSource   = "starting_portfolio_source"
         case progressPercentage        = "progress_percentage"
         case gapToFire                 = "gap_to_fire"
         case onTrack                   = "on_track"

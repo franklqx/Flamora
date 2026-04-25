@@ -42,6 +42,16 @@ struct HomeSetupStateResponse: Codable {
     let activePlanId: String?
     let activeGoalId: String?
 
+    let cashflowComplete: Bool?
+    let portfolioComplete: Bool?
+    let monthlyPlanComplete: Bool?
+    let hasCashflowAccounts: Bool?
+    let hasCashflowTransactions: Bool?
+    let hasInvestmentAccounts: Bool?
+    let startingPortfolioSource: String?
+    let cashflowInstitutionNames: [String]?
+    let portfolioInstitutionNames: [String]?
+
     enum CodingKeys: String, CodingKey {
         case setupStage           = "setup_stage"
         case lastIncompleteStage  = "last_incomplete_stage"
@@ -51,11 +61,26 @@ struct HomeSetupStateResponse: Codable {
         case planAppliedAt        = "plan_applied_at"
         case activePlanId         = "active_plan_id"
         case activeGoalId         = "active_goal_id"
+        case cashflowComplete     = "cashflow_complete"
+        case portfolioComplete    = "portfolio_complete"
+        case monthlyPlanComplete  = "monthly_plan_complete"
+        case hasCashflowAccounts  = "has_cashflow_accounts"
+        case hasCashflowTransactions = "has_cashflow_transactions"
+        case hasInvestmentAccounts = "has_investment_accounts"
+        case startingPortfolioSource = "starting_portfolio_source"
+        case cashflowInstitutionNames = "cashflow_institution_names"
+        case portfolioInstitutionNames = "portfolio_institution_names"
     }
 
     /// Convenience: the stage to resume the setup flow from.
     var resumeStage: HomeSetupStage {
         lastIncompleteStage ?? setupStage
+    }
+
+    var isSetupChecklistComplete: Bool {
+        (cashflowComplete ?? false)
+            && (portfolioComplete ?? false)
+            && (monthlyPlanComplete ?? false)
     }
 }
 

@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
             .maybeSingle(),
           supabase
             .from('user_profiles')
-            .select('plaid_net_worth, current_net_worth, age')
+            .select('starting_portfolio_balance, plaid_net_worth, current_net_worth, age')
             .eq('user_id', user.id)
             .maybeSingle(),
         ])
@@ -113,7 +113,8 @@ Deno.serve(async (req) => {
           officialSpending = goalResult.data?.retirement_spending_monthly ?? null
         }
         if (officialNetWorth == null) {
-          officialNetWorth = profileResult.data?.plaid_net_worth
+          officialNetWorth = profileResult.data?.starting_portfolio_balance
+            ?? profileResult.data?.plaid_net_worth
             ?? profileResult.data?.current_net_worth
             ?? 0
         }

@@ -28,14 +28,19 @@ class BudgetSetupViewModel {
         case reality = 2
         case target  = 3
         case plan    = 4
-        case split   = 5
-        case confirm = 6
+        case planSet = 5
+        case split   = 6
+        case confirm = 7
     }
 
     var currentStep: Step = .connect
     var isNavigatingForward = true
     var postLoadingStep: Step = .reality
     var isResumingState = true
+    private var isAnimatingBack = false
+    /// True when user picked "Skip for now" on the Plan-Set celebration step,
+    /// so confirm's Back button should jump back to .planSet instead of .split.
+    var didSkipCategoryBudgets = false
 
     // MARK: - Step 4: Target (FIRE goal)
 
@@ -83,13 +88,31 @@ class BudgetSetupViewModel {
     var selectedAccountIds: Set<String> = []
     var isLoadingAccounts = false
     var accountsError: String?
+    var isSavingStartingPortfolioDecision = false
 
     var hasTransactionAccounts: Bool {
         plaidAccounts.contains { ["depository", "credit"].contains($0.type) }
     }
 
+    var hasInvestmentAccount: Bool {
+        plaidAccounts.contains { $0.type == "investment" }
+            || startingPortfolioSource == "plaid_investment"
+    }
+
     var selectedTransactionAccountCount: Int {
         plaidAccounts.filter { selectedAccountIds.contains($0.id) && ["depository", "credit"].contains($0.type) }.count
+    }
+
+    var hasManualStartingPortfolioEstimate: Bool {
+        startingPortfolioSource == "manual_estimate" && startingPortfolioBalance > 0
+    }
+
+    var hasExplicitZeroStartingPortfolio: Bool {
+        startingPortfolioSource == "explicit_zero"
+    }
+
+    var hasStartingPortfolioDecision: Bool {
+        hasInvestmentAccount || hasManualStartingPortfolioEstimate || hasExplicitZeroStartingPortfolio
     }
 
     var canProceedFromAccountSelection: Bool {
@@ -112,6 +135,8 @@ class BudgetSetupViewModel {
     var monthlyIncome: Double = 0
     var currentAge: Int = 28
     var currentNetWorth: Double = 0
+    var startingPortfolioBalance: Double = 0
+    var startingPortfolioSource: String = "unknown"
     var currencyCode: String = "USD"
     
     // MARK: - Step 2: Spending Stats & Diagnosis
@@ -148,7 +173,7 @@ class BudgetSetupViewModel {
     var fireProgressRatio: Double {
         guard let selectedPlan else { return 0 }
         guard selectedPlan.fireNumber > 0 else { return 0 }
-        return min(1, max(0, currentNetWorth / selectedPlan.fireNumber))
+        return min(1, max(0, startingPortfolioBalance / selectedPlan.fireNumber))
     }
 
     var hasCustomSaveAdjustment: Bool {
@@ -282,7 +307,7 @@ class BudgetSetupViewModel {
         guard let selectedPlan else { return nil }
         guard let monthlySave = committedMonthlySave else { return selectedPlan.projectedFireAge }
         let months = FIREMath.monthsToFIRE(
-            netWorth: currentNetWorth,
+            netWorth: startingPortfolioBalance,
             monthlySave: monthlySave,
             fireNumber: selectedPlan.fireNumber,
             annualRealReturn: FIREAssumptions.realAnnualReturn
@@ -342,6 +367,7 @@ class BudgetSetupViewModel {
                     .map { $0.id }
             )
 
+            updateStartingPortfolioFromConnectedInvestments(response.accounts)
             isLoadingAccounts = false
             print("✅ [BudgetSetup] loadAccounts success — \(response.totalAccounts) accounts")
         } catch {
@@ -349,6 +375,23 @@ class BudgetSetupViewModel {
             accountsError = "Failed to load your accounts."
             isLoadingAccounts = false
         }
+    }
+
+    func loadAccountSelectionData() async {
+        await loadProfile()
+        await loadAccounts()
+    }
+
+    private func updateStartingPortfolioFromConnectedInvestments(_ accounts: [PlaidAccountItem]) {
+        let investmentAccounts = accounts.filter { $0.type == "investment" }
+        guard !investmentAccounts.isEmpty else { return }
+
+        let investmentTotal = investmentAccounts.reduce(0) { partial, account in
+            partial + max(0, account.balanceCurrent ?? 0)
+        }
+        startingPortfolioBalance = investmentTotal
+        startingPortfolioSource = "plaid_investment"
+        currentNetWorth = investmentTotal
     }
 
     func toggleAccount(_ accountId: String) {
@@ -360,7 +403,31 @@ class BudgetSetupViewModel {
     }
 
     func refreshAccountsAfterNewConnection() async {
+        await loadProfile()
         await loadAccounts()
+    }
+
+    func chooseZeroStartingPortfolio() async -> Bool {
+        return await saveStartingPortfolioDecision(balance: 0, source: "explicit_zero")
+    }
+
+    private func saveStartingPortfolioDecision(balance: Double, source: String) async -> Bool {
+        isSavingStartingPortfolioDecision = true
+        defer { isSavingStartingPortfolioDecision = false }
+
+        do {
+            let profile = try await APIService.shared.updateUserProfile(
+                startingPortfolioBalance: balance,
+                startingPortfolioSource: source
+            )
+            startingPortfolioBalance = profile.startingPortfolioBalance ?? balance
+            startingPortfolioSource = profile.startingPortfolioSource ?? source
+            currentNetWorth = startingPortfolioBalance
+            return true
+        } catch {
+            print("❌ [BudgetSetup] save starting portfolio decision failed: \(error)")
+            return false
+        }
     }
 
     func loadInitialData() async {
@@ -402,7 +469,12 @@ class BudgetSetupViewModel {
             
             monthlyIncome = profile.monthlyIncome
             currentAge = profile.age
-            currentNetWorth = profile.plaidNetWorth ?? profile.currentNetWorth
+            startingPortfolioBalance = profile.startingPortfolioBalance
+                ?? profile.plaidNetWorth
+                ?? profile.currentNetWorth
+            startingPortfolioSource = profile.startingPortfolioSource
+                ?? ((profile.plaidNetWorth ?? 0) > 0 ? "plaid_investment" : "unknown")
+            currentNetWorth = startingPortfolioBalance
             currencyCode = profile.currencyCode
             // Seed manual-mode age from the profile so returning manual
             // users don't have to retype it. The CTA still requires
@@ -442,7 +514,9 @@ class BudgetSetupViewModel {
                 monthlyIncome: incomeToSync,
                 currentNetWorth: netWorthToSync,
                 currentMonthlyExpenses: expensesToSync,
-                currencyCode: nil
+                currencyCode: nil,
+                startingPortfolioBalance: netWorthToSync,
+                startingPortfolioSource: (netWorthToSync ?? 0) > 0 ? "manual_estimate" : "explicit_zero"
             )
             print("✅ [BudgetSetup] syncManualProfileSnapshot success — age: \(ageToSync ?? -1), income: \(incomeToSync ?? -1), netWorth: \(netWorthToSync ?? .nan)")
         } catch {
@@ -535,8 +609,9 @@ class BudgetSetupViewModel {
                 monthlyIncome: stats.avgMonthlyIncome,
                 currentMonthlyExpenses: stats.avgMonthlyExpenses,
                 desiredMonthlyExpenses: retirementSpendingMonthly,
-                currentNetWorth: currentNetWorth > 0 ? currentNetWorth : nil,
-                currentAge: currentAge > 0 ? currentAge : nil
+                currentNetWorth: startingPortfolioBalance > 0 ? startingPortfolioBalance : nil,
+                currentAge: currentAge > 0 ? currentAge : nil,
+                startingPortfolioBalance: startingPortfolioBalance
             )
             print("✅ [BudgetSetup] loadGoalFeasibility success — phase: \(goalFeasibility?.phase ?? -1), achievable: \(goalFeasibility?.isAchievable ?? false)")
         } catch {
@@ -572,7 +647,7 @@ class BudgetSetupViewModel {
                 monthlyBreakdown: breakdown,
                 incomeDiscrepancy: false,
                 fallback: stats.dataQuality == "limited",
-                plaidNetWorth: currentNetWorth,
+                plaidNetWorth: startingPortfolioBalance,
                 age: currentAge
             )
             
@@ -597,9 +672,11 @@ class BudgetSetupViewModel {
                 avgMonthlyExpenses: stats.avgMonthlyExpenses,
                 avgMonthlyFixed: stats.avgMonthlyFixed,
                 avgMonthlyFlexible: stats.avgMonthlyFlexible,
-                currentNetWorth: currentNetWorth,
+                currentNetWorth: startingPortfolioBalance,
                 currentAge: currentAge
             )
+            requestBody.startingPortfolioBalance = startingPortfolioBalance
+            requestBody.startingPortfolioSource = startingPortfolioSource
             // Transmit latest ViewModel goal values as override (Step 4 → Step 5 drift safety).
             // Server priority: request override > fire_goals active row > null.
             if retirementSpendingMonthly > 0 {
@@ -617,6 +694,9 @@ class BudgetSetupViewModel {
 
             let response = try await APIService.shared.generatePlans(data: requestBody)
             plans = response.plans
+            startingPortfolioBalance = response.startingPortfolioBalance ?? response.currentNetWorth
+            startingPortfolioSource = response.startingPortfolioSource ?? startingPortfolioSource
+            currentNetWorth = startingPortfolioBalance
             customSliderRange = response.customSlider
             selectedPlanIndex = 0
 
@@ -692,7 +772,9 @@ class BudgetSetupViewModel {
                 plan: plan,
                 committedPlanLabel: committedPlanLabel ?? plan.label,
                 fixedBudgetMonthly: fixedBudgetMonthly,
-                flexibleBudgetMonthly: flexibleBudgetMonthly
+                flexibleBudgetMonthly: flexibleBudgetMonthly,
+                startingPortfolioBalance: startingPortfolioBalance,
+                startingPortfolioSource: startingPortfolioSource
             )
             _ = try await APIService.shared.applySelectedPlan(data: request)
             try await APIService.shared.markSetupStep("snapshot_reviewed")
@@ -821,6 +903,8 @@ class BudgetSetupViewModel {
             )
             monthlyIncome = manualIncome
             currentNetWorth = manualNetWorth
+            startingPortfolioBalance = manualNetWorth
+            startingPortfolioSource = manualNetWorth > 0 ? "manual_estimate" : "explicit_zero"
             // Commit the manual age into `currentAge` so generate-plans /
             // generate-spending-plan / calculate-fire-goal request bodies
             // pick it up via `currentAge > 0` checks below. The CTA
@@ -852,6 +936,8 @@ class BudgetSetupViewModel {
             }
             return
         }
+
+        guard canProceedFromAccountSelection else { return }
 
         do {
             try await APIService.shared.markSetupStep("accounts_reviewed")
@@ -1091,6 +1177,8 @@ class BudgetSetupViewModel {
                 "snapshot_avg_income": spendingStats?.avgMonthlyIncome ?? monthlyIncome,
                 "snapshot_avg_spend": spendingStats?.avgMonthlyExpenses ?? 0,
                 "snapshot_net_worth": currentNetWorth,
+                "snapshot_starting_portfolio_balance": startingPortfolioBalance,
+                "snapshot_starting_portfolio_source": startingPortfolioSource,
                 "snapshot_essential_floor": spendingStats?.essentialFloor ?? spendingStats?.avgMonthlyFixed ?? 0,
                 "snapshot_date": ISO8601DateFormatter().string(from: Date()),
                 "retirement_spending_monthly": retirementSpendingMonthly,
@@ -1149,10 +1237,28 @@ class BudgetSetupViewModel {
     }
     
     func goBack() {
+        // Reentrancy guard: ignore taps fired during the 0.3s back animation
+        // so spam-clicking the Back button doesn't skip steps.
+        guard !isAnimatingBack else { return }
+        isAnimatingBack = true
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            isAnimatingBack = false
+        }
+
         if currentStep == .reality {
             isNavigatingForward = false
             withAnimation(.easeOut(duration: 0.3)) {
                 currentStep = .connect
+            }
+            return
+        }
+
+        // Confirm reached via "Skip for now" on planSet → back jumps over .split.
+        if currentStep == .confirm && didSkipCategoryBudgets {
+            isNavigatingForward = false
+            withAnimation(.easeOut(duration: 0.3)) {
+                currentStep = .planSet
             }
             return
         }

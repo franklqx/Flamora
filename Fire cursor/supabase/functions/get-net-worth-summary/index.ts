@@ -36,7 +36,7 @@ serve(async (req) => {
     // 获取用户档案
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
-      .select('current_net_worth, has_linked_bank, plaid_net_worth, plaid_net_worth_updated_at')
+      .select('current_net_worth, has_linked_bank, plaid_net_worth, plaid_net_worth_updated_at, starting_portfolio_balance, starting_portfolio_source, starting_portfolio_updated_at')
       .eq('user_id', user.id)
       .single()
 
@@ -143,6 +143,8 @@ serve(async (req) => {
               loan_total: loanTotal,
             },
             fire_progress_percentage: fireProgressPercentage,
+            starting_portfolio_balance: profile.starting_portfolio_balance ?? investmentTotal,
+            starting_portfolio_source: profile.starting_portfolio_source ?? (investmentTotal > 0 ? 'plaid_investment' : 'unknown'),
             last_synced_at: profile.plaid_net_worth_updated_at ?? null,
             // id 必须为字符串且不可省略：JSON.stringify 会丢弃 undefined，客户端会报 Key 'id' not found
             accounts: accountList.map((a: any) => {
@@ -186,6 +188,8 @@ serve(async (req) => {
               loan_total: null,
             },
             fire_progress_percentage: null,
+            starting_portfolio_balance: profile.starting_portfolio_balance ?? profile.current_net_worth ?? 0,
+            starting_portfolio_source: profile.starting_portfolio_source ?? 'unknown',
             last_synced_at: null,
             accounts: [],
             data_source: 'manual',

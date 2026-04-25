@@ -115,6 +115,8 @@ struct PlansResponse: Codable {
     let planCount: Int
     let primaryPlanLabel: String
     let currentNetWorth: Double
+    let startingPortfolioBalance: Double?
+    let startingPortfolioSource: String?
     let currentAge: Int
     let targetRetirementAge: Int
     let retirementSpendingMonthly: Double
@@ -244,6 +246,8 @@ struct GeneratePlansRequest: Encodable {
     var avgWants: Double? = nil               // "avg_wants"
     var accountIds: [String]? = nil           // "account_ids"
     var month: String? = nil                  // "month"
+    var startingPortfolioBalance: Double? = nil
+    var startingPortfolioSource: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case currentSavingsRate        = "current_savings_rate"
@@ -263,6 +267,8 @@ struct GeneratePlansRequest: Encodable {
         case avgWants                  = "avg_wants"
         case accountIds                = "account_ids"
         case month
+        case startingPortfolioBalance  = "starting_portfolio_balance"
+        case startingPortfolioSource   = "starting_portfolio_source"
     }
 }
 
@@ -415,6 +421,9 @@ struct UserProfileForBudget: Codable {
     let age: Int
     let currentNetWorth: Double
     let plaidNetWorth: Double?
+    let startingPortfolioBalance: Double?
+    let startingPortfolioSource: String?
+    let startingPortfolioUpdatedAt: String?
     let hasLinkedBank: Bool
     let currencyCode: String
 }
@@ -432,6 +441,9 @@ struct UpdatedUserProfile: Codable {
     let age: Int?
     let currencyCode: String?
     let plaidNetWorth: Double?
+    let startingPortfolioBalance: Double?
+    let startingPortfolioSource: String?
+    let startingPortfolioUpdatedAt: String?
 }
 
 // MARK: - save-fire-goal v1 (spending-based, no target age required)

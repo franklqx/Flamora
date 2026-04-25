@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
         .maybeSingle(),
       supabase
         .from('user_profiles')
-        .select('current_net_worth, has_linked_bank, plaid_net_worth, age')
+        .select('current_net_worth, has_linked_bank, plaid_net_worth, age, starting_portfolio_balance, starting_portfolio_source')
         .eq('user_id', user.id)
         .maybeSingle(),
       supabase
@@ -73,15 +73,22 @@ Deno.serve(async (req) => {
     const profile   = profileResult.data
     const activePlan = activePlanResult.data
 
-    // ── 3. Resolve current net worth ─────────────────────────
-    let currentNetWorth: number
+    // ── 3. Resolve starting portfolio ────────────────────────
+    let startingPortfolioBalance: number
+    let startingPortfolioSource: string
     let dataSource: string
 
-    if (profile?.has_linked_bank && profile?.plaid_net_worth != null) {
-      currentNetWorth = profile.plaid_net_worth
+    if (profile?.starting_portfolio_balance != null) {
+      startingPortfolioBalance = profile.starting_portfolio_balance
+      startingPortfolioSource = profile.starting_portfolio_source ?? 'unknown'
+      dataSource = startingPortfolioSource === 'plaid_investment' ? 'plaid' : 'manual'
+    } else if (profile?.has_linked_bank && profile?.plaid_net_worth != null) {
+      startingPortfolioBalance = profile.plaid_net_worth
+      startingPortfolioSource = profile.plaid_net_worth > 0 ? 'plaid_investment' : 'unknown'
       dataSource = 'plaid'
     } else {
-      currentNetWorth = profile?.current_net_worth ?? 0
+      startingPortfolioBalance = profile?.current_net_worth ?? 0
+      startingPortfolioSource = 'unknown'
       dataSource = 'manual'
     }
 
@@ -97,9 +104,9 @@ Deno.serve(async (req) => {
           : 0)
 
     // ── 5. Progress percentage ────────────────────────────────
-    const gapToFire = Math.max(fireNumber - currentNetWorth, 0)
+    const gapToFire = Math.max(fireNumber - startingPortfolioBalance, 0)
     const progressPercentage = fireNumber > 0
-      ? parseFloat(((currentNetWorth / fireNumber) * 100).toFixed(2))
+      ? parseFloat(((startingPortfolioBalance / fireNumber) * 100).toFixed(2))
       : 0
 
     // ── 6. Resolve monthly savings source ────────────────────
@@ -117,7 +124,7 @@ Deno.serve(async (req) => {
 
     // ── 7. Compute official FIRE date ─────────────────────────
     const fireResult = computeFireDate(
-      currentNetWorth,
+      startingPortfolioBalance,
       fireNumber,
       monthlySavings,
       returnRate,
@@ -174,7 +181,9 @@ Deno.serve(async (req) => {
           // ── v1 fields (unchanged) ──
           goal_id:               fireGoal.id,
           fire_number:           fireNumber,
-          current_net_worth:     currentNetWorth,
+          current_net_worth:     startingPortfolioBalance,
+          starting_portfolio_balance: startingPortfolioBalance,
+          starting_portfolio_source:  startingPortfolioSource,
           gap_to_fire:           gapToFire,
           required_savings_rate: fireGoal.required_savings_rate ?? 0,
           target_retirement_age: fireGoal.target_retirement_age ?? null,

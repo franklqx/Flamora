@@ -177,9 +177,7 @@ struct BudgetCard: View {
                 .frame(height: 0.5)
                 .padding(.horizontal, AppSpacing.cardPadding)
 
-            if !isConnected {
-                lockedEmptyState
-            } else if hasBudget {
+            if hasBudget {
                 if isEditingBudget {
                     budgetContentArea
                         .padding(.horizontal, AppSpacing.cardPadding)
@@ -566,28 +564,6 @@ struct BudgetCard: View {
                 .buttonStyle(.plain)
             }
         }
-    }
-
-    private var lockedEmptyState: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
-                Text("$—")
-                    .font(.cardFigurePrimary)
-                    .foregroundStyle(AppColors.inkFaint)
-                Text("/ $—")
-                    .font(.inlineLabel)
-                    .foregroundColor(AppColors.inkFaint)
-            }
-            Text("Connect accounts to set up a budget")
-                .font(.footnoteRegular)
-                .foregroundStyle(AppColors.inkSoft)
-            Capsule()
-                .fill(AppColors.inkTrack)
-                .frame(height: (AppSpacing.sm + AppSpacing.xs) / 2)
-        }
-        .padding(.horizontal, AppSpacing.cardPadding)
-        .padding(.top, AppSpacing.md)
-        .padding(.bottom, AppSpacing.cardPadding)
     }
 
     private func categoryBreakdownList(

@@ -32,6 +32,8 @@ interface GeneratePlansRequest {
   avg_monthly_fixed?: number               // legacy alias / fallback for essential_floor
   avg_monthly_flexible?: number            // legacy alias / fallback for avg_wants
   current_net_worth?: number
+  starting_portfolio_balance?: number
+  starting_portfolio_source?: string
   current_age?: number
   fire_number?: number
   retirement_spending_monthly?: number
@@ -57,6 +59,8 @@ interface ProfileRow {
   age: number | null
   current_net_worth: number | null
   plaid_net_worth: number | null
+  starting_portfolio_balance: number | null
+  starting_portfolio_source: string | null
 }
 
 function round2(value: number): number {
@@ -122,7 +126,7 @@ serve(async (req) => {
 
     const body: GeneratePlansRequest = await req.json()
 
-    const needsProfile = body.current_net_worth == null || body.current_age == null
+    const needsProfile = (body.starting_portfolio_balance == null && body.current_net_worth == null) || body.current_age == null
     const needsGoal =
       body.target_retirement_age == null ||
       body.retirement_spending_monthly == null ||
@@ -136,7 +140,7 @@ serve(async (req) => {
       const [profileResult, goalResult] = await Promise.all([
         supabase
           .from('user_profiles')
-          .select('age, current_net_worth, plaid_net_worth')
+          .select('age, current_net_worth, plaid_net_worth, starting_portfolio_balance, starting_portfolio_source')
           .eq('user_id', user.id)
           .maybeSingle(),
         supabase
@@ -191,10 +195,16 @@ serve(async (req) => {
       return errorResponse(400, 'MISSING_TARGET_AGE', 'target_retirement_age is required for V3 plan generation')
     }
 
-    const netWorth = body.current_net_worth
+    const startingPortfolioBalance = body.starting_portfolio_balance
+      ?? body.current_net_worth
+      ?? profile?.starting_portfolio_balance
       ?? profile?.plaid_net_worth
       ?? profile?.current_net_worth
       ?? 0
+    const startingPortfolioSource = body.starting_portfolio_source
+      ?? profile?.starting_portfolio_source
+      ?? (profile?.plaid_net_worth != null && profile.plaid_net_worth > 0 ? 'plaid_investment' : null)
+      ?? 'unknown'
 
     const essentialFloor = body.essential_floor
       ?? body.avg_monthly_fixed
@@ -223,7 +233,7 @@ serve(async (req) => {
     const input: PlanInput = {
       targetAge,
       currentAge,
-      netWorth,
+      netWorth: startingPortfolioBalance,
       avgIncome,
       avgSpend,
       essentialFloor,
@@ -245,7 +255,9 @@ serve(async (req) => {
           plans: plans.map(serializePlan),
           plan_count: plans.length,
           primary_plan_label: primary.label,
-          current_net_worth: round2(netWorth),
+          current_net_worth: round2(startingPortfolioBalance),
+          starting_portfolio_balance: round2(startingPortfolioBalance),
+          starting_portfolio_source: startingPortfolioSource,
           current_age: currentAge,
           target_retirement_age: targetAge,
           retirement_spending_monthly: round2(retirementSpending),

@@ -19,7 +19,11 @@ interface UpdateUserProfileRequest {
   current_net_worth?: number | null
   current_monthly_expenses?: number | null
   currency_code?: string | null
+  starting_portfolio_balance?: number | null
+  starting_portfolio_source?: string | null
 }
+
+const STARTING_PORTFOLIO_SOURCES = ['plaid_investment', 'manual_estimate', 'explicit_zero', 'unknown'] as const
 
 serve(async (req) => {
   const corsResponse = handleCors(req)
@@ -80,6 +84,24 @@ serve(async (req) => {
         return jsonError(400, 'INVALID_NET_WORTH', 'current_net_worth must be a finite number')
       }
       update.current_net_worth = nw
+    }
+
+    if (body.starting_portfolio_balance !== undefined && body.starting_portfolio_balance !== null) {
+      const portfolio = Number(body.starting_portfolio_balance)
+      if (!Number.isFinite(portfolio) || portfolio < 0) {
+        return jsonError(400, 'INVALID_STARTING_PORTFOLIO', 'starting_portfolio_balance must be >= 0')
+      }
+      update.starting_portfolio_balance = portfolio
+      update.starting_portfolio_updated_at = new Date().toISOString()
+    }
+
+    if (body.starting_portfolio_source !== undefined && body.starting_portfolio_source !== null) {
+      const source = String(body.starting_portfolio_source).trim()
+      if (!STARTING_PORTFOLIO_SOURCES.includes(source as typeof STARTING_PORTFOLIO_SOURCES[number])) {
+        return jsonError(400, 'INVALID_STARTING_PORTFOLIO_SOURCE', `starting_portfolio_source must be one of: ${STARTING_PORTFOLIO_SOURCES.join(', ')}`)
+      }
+      update.starting_portfolio_source = source
+      update.starting_portfolio_updated_at = new Date().toISOString()
     }
 
     if (body.current_monthly_expenses !== undefined && body.current_monthly_expenses !== null) {
@@ -171,6 +193,9 @@ function jsonOk(profile: Record<string, unknown>, userId: string): Response {
         has_linked_bank: profile.has_linked_bank ?? false,
         plaid_institution_name: profile.plaid_institution_name ?? null,
         plaid_net_worth: profile.plaid_net_worth ?? null,
+        starting_portfolio_balance: profile.starting_portfolio_balance ?? null,
+        starting_portfolio_source: profile.starting_portfolio_source ?? null,
+        starting_portfolio_updated_at: profile.starting_portfolio_updated_at ?? null,
         created_at: profile.created_at,
         updated_at: profile.updated_at,
       },

@@ -79,27 +79,91 @@ struct BS_ConfirmView: View {
         }
     }
 
-    // MARK: - Metric stack (Monthly save · Monthly budget)
+    // MARK: - Metric stack (Monthly budget · Monthly save)
 
     private var metricsStack: some View {
         VStack(spacing: AppSpacing.cardGap) {
-            metricCard(
-                title: "MONTHLY SAVE",
-                value: monthlySaveDisplay,
-                accentTint: AppColors.accentAmber,
-                subtitle: monthlySaveSubtitle
-            )
-
-            metricCard(
-                title: "MONTHLY BUDGET",
-                value: monthlyBudgetDisplay,
-                accentTint: AppColors.budgetTeal,
-                subtitle: monthlyBudgetSubtitle
-            )
+            monthlyBudgetCard
+            monthlySaveCard
         }
     }
 
-    private func metricCard(title: String, value: String, accentTint: Color, subtitle: String?) -> some View {
+    private var monthlySaveCard: some View {
+        HStack(alignment: .top, spacing: AppSpacing.md) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text("MONTHLY SAVE")
+                    .font(.label)
+                    .tracking(1)
+                    .foregroundStyle(AppColors.inkFaint)
+
+                Text(monthlySaveDisplay)
+                    .font(.cardFigurePrimary)
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .monospacedDigit()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if let rate = savingRateDisplay {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("SAVING RATE")
+                        .font(.label)
+                        .tracking(1)
+                        .foregroundStyle(AppColors.inkFaint)
+
+                    Text(rate)
+                        .font(.cardFigurePrimary)
+                        .foregroundStyle(AppColors.inkPrimary)
+                        .monospacedDigit()
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(AppSpacing.md)
+        .background(AppColors.glassCardBg)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.card)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
+        )
+    }
+
+    private var monthlyBudgetCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text("MONTHLY BUDGET")
+                .font(.label)
+                .tracking(1)
+                .foregroundStyle(AppColors.inkFaint)
+
+            Text(monthlyBudgetDisplay)
+                .font(.cardFigurePrimary)
+                .foregroundStyle(AppColors.inkPrimary)
+                .monospacedDigit()
+
+            if let subtitle = monthlyBudgetSubtitle {
+                Text(subtitle)
+                    .font(.footnoteRegular)
+                    .foregroundStyle(AppColors.inkSoft)
+            }
+
+            if !breakdownRows.isEmpty {
+                Divider()
+                    .overlay(AppColors.inkBorder)
+                    .padding(.vertical, AppSpacing.xs)
+
+                breakdownSection
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(AppSpacing.md)
+        .background(AppColors.glassCardBg)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.card)
+                .stroke(AppColors.inkBorder, lineWidth: 1)
+        )
+    }
+
+    private func metricCard(title: String, value: String, subtitle: String?) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text(title)
                 .font(.label)
@@ -108,7 +172,7 @@ struct BS_ConfirmView: View {
 
             Text(value)
                 .font(.cardFigurePrimary)
-                .foregroundStyle(accentTint)
+                .foregroundStyle(AppColors.inkPrimary)
                 .monospacedDigit()
 
             if let subtitle {
@@ -125,6 +189,102 @@ struct BS_ConfirmView: View {
             RoundedRectangle(cornerRadius: AppRadius.card)
                 .stroke(AppColors.inkBorder, lineWidth: 1)
         )
+    }
+
+    // MARK: - Per-category breakdown
+
+    private struct BreakdownRow: Identifiable, Equatable {
+        let id: String
+        let name: String
+        let icon: String
+        let parent: String
+        let amount: Double
+    }
+
+    private var breakdownRows: [BreakdownRow] {
+        guard !viewModel.didSkipCategoryBudgets,
+              !viewModel.categoryBudgets.isEmpty else { return [] }
+
+        let entries: [BreakdownRow] = viewModel.categoryBudgets.compactMap { key, value in
+            guard value > 0,
+                  let category = TransactionCategoryCatalog.all.first(where: { $0.id == key }) else {
+                return nil
+            }
+            return BreakdownRow(
+                id: category.id,
+                name: category.name,
+                icon: category.icon,
+                parent: category.parent,
+                amount: value
+            )
+        }
+        return entries.sorted { lhs, rhs in
+            if lhs.parent != rhs.parent { return lhs.parent == "needs" }
+            return lhs.amount > rhs.amount
+        }
+    }
+
+    private var needsRows: [BreakdownRow] { breakdownRows.filter { $0.parent == "needs" } }
+    private var wantsRows: [BreakdownRow] { breakdownRows.filter { $0.parent == "wants" } }
+
+    private var breakdownTotal: Double {
+        breakdownRows.reduce(0) { $0 + $1.amount }
+    }
+
+    @ViewBuilder
+    private var breakdownSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            if !needsRows.isEmpty {
+                breakdownGroup(title: "NEEDS", rows: needsRows)
+            }
+            if !wantsRows.isEmpty {
+                breakdownGroup(title: "WANTS", rows: wantsRows)
+            }
+        }
+    }
+
+    private func breakdownGroup(title: String, rows: [BreakdownRow]) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text(title)
+                .font(.cardHeader)
+                .tracking(AppTypography.Tracking.cardHeader)
+                .foregroundStyle(AppColors.inkFaint)
+
+            VStack(spacing: AppSpacing.sm) {
+                ForEach(rows) { row in
+                    breakdownRowView(row)
+                }
+            }
+        }
+    }
+
+    private func breakdownRowView(_ row: BreakdownRow) -> some View {
+        HStack(spacing: AppSpacing.sm) {
+            iconBadge(symbol: row.icon, parent: row.parent)
+
+            Text(row.name)
+                .font(.bodySmall)
+                .foregroundStyle(AppColors.inkPrimary)
+
+            Spacer()
+
+            Text("$\(formattedInt(row.amount))")
+                .font(.bodySmallSemibold)
+                .foregroundStyle(AppColors.inkPrimary)
+                .monospacedDigit()
+        }
+    }
+
+    private func iconBadge(symbol: String, parent: String) -> some View {
+        let tint = parent == "needs" ? AppColors.budgetTeal : AppColors.accentAmber
+        return ZStack {
+            Circle()
+                .fill(tint.opacity(0.18))
+            Image(systemName: symbol)
+                .font(.footnoteSemibold)
+                .foregroundStyle(tint)
+        }
+        .frame(width: 36, height: 36)
     }
 
     // MARK: - FIRE progress card
@@ -254,6 +414,7 @@ struct BS_ConfirmView: View {
 
             VStack(spacing: 0) {
                 Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     Task {
                         let success = await viewModel.finalizeSetup()
                         if success {
@@ -305,6 +466,13 @@ struct BS_ConfirmView: View {
         return "\(formattedPct(rate)) of monthly income"
     }
 
+    private var savingRateDisplay: String? {
+        if isAlreadyFire { return nil }
+        let rate = (viewModel.committedSavingsRate ?? 0) * 100
+        guard rate > 0 else { return nil }
+        return formattedPct(rate)
+    }
+
     private var monthlyBudgetDisplay: String {
         let value: Double
         if isAlreadyFire {
@@ -316,7 +484,7 @@ struct BS_ConfirmView: View {
     }
 
     private var monthlyBudgetSubtitle: String? {
-        isAlreadyFire ? "Sustainable spending" : "Spend ceiling per month"
+        isAlreadyFire ? "Sustainable spending" : nil
     }
 
     private var targetFireNumber: Double {

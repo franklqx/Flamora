@@ -286,6 +286,7 @@ struct BS_TargetView: View {
 
             VStack(spacing: AppSpacing.xs) {
                 Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     if isSpendingFieldFocused { isSpendingFieldFocused = false }
                     Task {
                         let saved = await viewModel.saveFireGoal()

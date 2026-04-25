@@ -30,6 +30,8 @@ interface ApplySelectedPlanRequest {
   official_fire_age?: number | null
   tradeoff_note?: string
   positioning_copy?: string
+  starting_portfolio_balance?: number | null
+  starting_portfolio_source?: string | null
 }
 
 const PLAN_LABELS: Record<string, string> = {
@@ -116,6 +118,8 @@ Deno.serve(async (req) => {
         official_fire_age:        body.official_fire_age  ?? null,
         tradeoff_note:            body.tradeoff_note       ?? null,
         positioning_copy:         body.positioning_copy    ?? null,
+        starting_portfolio_balance: body.starting_portfolio_balance ?? null,
+        starting_portfolio_source:  body.starting_portfolio_source  ?? null,
         is_active:                true,
         created_at:               now,
         updated_at:               now,
@@ -162,6 +166,8 @@ Deno.serve(async (req) => {
           official_fire_age:        newPlan.official_fire_age,
           tradeoff_note:            newPlan.tradeoff_note,
           positioning_copy:         newPlan.positioning_copy,
+          starting_portfolio_balance: newPlan.starting_portfolio_balance,
+          starting_portfolio_source:  newPlan.starting_portfolio_source,
           is_active:                newPlan.is_active,
           created_at:               newPlan.created_at,
         },

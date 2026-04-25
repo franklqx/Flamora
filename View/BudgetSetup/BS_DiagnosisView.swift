@@ -314,6 +314,7 @@ struct BS_DiagnosisView: View {
                 .frame(height: AppRadius.button)
 
             Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 viewModel.seedDefaultsForTargetStep()
                 viewModel.goToStep(.target)
             } label: {

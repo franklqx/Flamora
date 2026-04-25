@@ -536,8 +536,10 @@ serve(async (req) => {
     // ============================================================
     console.log('[exchange] Step 8: Updating net worth')
 
-    const investmentTotal = accountRecords
+    const activeInvestmentAccounts = accountRecords
       .filter((r: any) => r.is_active && r.type === 'investment')
+
+    const investmentTotal = activeInvestmentAccounts
       .reduce((sum: number, r: any) => sum + (r.balance_current || 0), 0)
 
     const depositoryTotal = accountRecords
@@ -550,13 +552,21 @@ serve(async (req) => {
 
     const totalNetWorth = investmentTotal + depositoryTotal - creditTotal
 
+    const profileUpdate: Record<string, unknown> = {
+      plaid_net_worth: investmentTotal,
+      plaid_net_worth_updated_at: new Date().toISOString(),
+      has_linked_bank: true,
+    }
+
+    if (activeInvestmentAccounts.length > 0) {
+      profileUpdate.starting_portfolio_balance = investmentTotal
+      profileUpdate.starting_portfolio_source = 'plaid_investment'
+      profileUpdate.starting_portfolio_updated_at = new Date().toISOString()
+    }
+
     const { error: profileError } = await supabase
       .from('user_profiles')
-      .update({
-        plaid_net_worth: investmentTotal,
-        plaid_net_worth_updated_at: new Date().toISOString(),
-        has_linked_bank: true,
-      })
+      .update(profileUpdate)
       .eq('user_id', user.id)
 
     if (profileError) console.error('[exchange] Error updating profile:', profileError)

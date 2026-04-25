@@ -40,6 +40,9 @@ struct BudgetSetupView: View {
                 case .plan:
                     BS_ChoosePathView(viewModel: viewModel)
 
+                case .planSet:
+                    BS_PlanSetView(viewModel: viewModel)
+
                 case .split:
                     BS_SplitBudgetView(viewModel: viewModel)
 

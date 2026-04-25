@@ -184,9 +184,15 @@ class PlaidManager {
             }
             if response.success {
                 hasLinkedBank = true
-                connectedInstitutionName = response.data.institution_name ?? institutionName
+                let resolvedName = response.data.institution_name ?? institutionName
+                connectedInstitutionName = resolvedName
                 lastConnectionTime = Date()
                 linkError = nil
+                NotificationCenter.default.post(
+                    name: .plaidLinkDidSucceed,
+                    object: nil,
+                    userInfo: resolvedName.isEmpty ? [:] : ["institutionName": resolvedName]
+                )
                 #if DEBUG
                 print("🏦 [PlaidManager] Bank linked — accounts=\(response.data.accounts_linked)")
                 #endif

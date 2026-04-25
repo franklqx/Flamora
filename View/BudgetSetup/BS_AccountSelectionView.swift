@@ -14,6 +14,7 @@ struct BS_AccountSelectionView: View {
     @Environment(PlaidManager.self) private var plaidManager
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @State private var showTrustBridge = false
+    @State private var showZeroPortfolioAssumptionAlert = false
 
     private static let currencyFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
@@ -77,8 +78,22 @@ struct BS_AccountSelectionView: View {
         } message: {
             Text(plaidManager.linkError ?? "")
         }
+        .alert("No investment account added", isPresented: $showZeroPortfolioAssumptionAlert) {
+            Button("Add Investment Account") {
+                startPlaidLinkFlow()
+            }
+            Button("Continue with $0") {
+                Task {
+                    if await viewModel.chooseZeroStartingPortfolio() {
+                        await viewModel.continueFromConnect()
+                    }
+                }
+            }
+        } message: {
+            Text("We'll start your FIRE progress from $0 for now. You can add investment accounts later and your progress will update automatically.")
+        }
         .onAppear {
-            Task { await viewModel.loadAccounts() }
+            Task { await viewModel.loadAccountSelectionData() }
         }
         .onChange(of: plaidManager.lastConnectionTime) { _, _ in
             Task { await viewModel.refreshAccountsAfterNewConnection() }
@@ -112,7 +127,7 @@ struct BS_AccountSelectionView: View {
                     .foregroundStyle(AppColors.inkSoft)
                     .lineSpacing(3)
             } else if plaidManager.hasLinkedBank {
-                Text("For the clearest picture, include all your checking, savings, and credit accounts.")
+                Text("Add your checking, savings, credit, and investment accounts so your budget and FIRE progress start from the right numbers.")
                     .font(.inlineLabel)
                     .foregroundStyle(AppColors.inkSoft)
                     .lineSpacing(3)
@@ -347,7 +362,7 @@ struct BS_AccountSelectionView: View {
                 Image(systemName: "plus.circle.fill")
                     .font(.h4)
                     .foregroundStyle(AppColors.accentAmber)
-                Text("Connect Another Account")
+                Text(viewModel.hasInvestmentAccount ? "Add Another Account" : "Add Investment Account")
                     .font(.figureSecondarySemibold)
                     .foregroundStyle(AppColors.accentAmber)
             }
@@ -369,7 +384,7 @@ struct BS_AccountSelectionView: View {
             Text("Prefer to start manually?")
                 .font(.bodySemibold)
                 .foregroundStyle(AppColors.inkPrimary)
-            Text("You can enter income, essentials, other spending, and net worth now, then connect banks later if you want a richer picture.")
+            Text("You can enter income, spending, and a starting portfolio estimate now, then connect accounts later if you want a richer picture.")
                 .font(.footnoteRegular)
                 .foregroundStyle(AppColors.inkSoft)
                 .lineSpacing(3)
@@ -407,7 +422,7 @@ struct BS_AccountSelectionView: View {
                     Text("Manual Snapshot")
                         .font(.h4)
                         .foregroundStyle(AppColors.inkPrimary)
-                    Text("These four numbers create your starting reality. You can refine the details later.")
+                    Text("These numbers create your starting reality. You can refine the details later.")
                         .font(.footnoteRegular)
                         .foregroundStyle(AppColors.inkSoft)
                         .lineSpacing(3)
@@ -439,8 +454,8 @@ struct BS_AccountSelectionView: View {
                 value: $viewModel.manualOtherSpending
             )
             manualField(
-                title: "Current net worth",
-                subtitle: "Cash + investments - debt",
+                title: "Starting portfolio",
+                subtitle: "Brokerage, retirement, and investment balances",
                 value: $viewModel.manualNetWorth
             )
 
@@ -560,7 +575,12 @@ struct BS_AccountSelectionView: View {
 
             VStack(spacing: AppSpacing.sm) {
                 Button {
-                    Task { await viewModel.continueFromConnect() }
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    if shouldPromptForZeroPortfolio {
+                        showZeroPortfolioAssumptionAlert = true
+                    } else {
+                        Task { await viewModel.continueFromConnect() }
+                    }
                 } label: {
                     Text(primaryButtonTitle)
                         .font(.sheetPrimaryButton)
@@ -581,7 +601,7 @@ struct BS_AccountSelectionView: View {
                         .font(.caption)
                         .foregroundStyle(AppColors.inkSoft)
                 } else if plaidManager.hasLinkedBank && !viewModel.canProceedFromAccountSelection && !viewModel.plaidAccounts.isEmpty {
-                    Text("Select at least one checking or credit card account")
+                    Text(accountSelectionValidationHint)
                         .font(.caption)
                         .foregroundStyle(AppColors.inkSoft)
                 } else if !plaidManager.hasLinkedBank && !viewModel.isManualMode {
@@ -597,7 +617,21 @@ struct BS_AccountSelectionView: View {
     }
 
     private var canContinue: Bool {
-        viewModel.isManualMode ? viewModel.canProceedFromManualInput : viewModel.canProceedFromAccountSelection
+        let base = viewModel.isManualMode ? viewModel.canProceedFromManualInput : viewModel.canProceedFromAccountSelection
+        return base && !viewModel.isSavingStartingPortfolioDecision
+    }
+
+    private var accountSelectionValidationHint: String {
+        if viewModel.selectedTransactionAccountCount <= 0 {
+            return "Select at least one checking or credit card account"
+        }
+        return "Review your account selection"
+    }
+
+    private var shouldPromptForZeroPortfolio: Bool {
+        !viewModel.isManualMode
+            && viewModel.selectedTransactionAccountCount > 0
+            && !viewModel.hasStartingPortfolioDecision
     }
 
     private var primaryButtonTitle: String {

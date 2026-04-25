@@ -28,6 +28,8 @@ interface GenerateBudgetRequest {
   snapshot_avg_income?: number
   snapshot_avg_spend?: number
   snapshot_net_worth?: number
+  snapshot_starting_portfolio_balance?: number
+  snapshot_starting_portfolio_source?: string
   snapshot_essential_floor?: number
   snapshot_date?: string
   retirement_spending_monthly?: number
@@ -261,6 +263,8 @@ serve(async (req) => {
         snapshot_avg_income: body.snapshot_avg_income ?? null,
         snapshot_avg_spend: body.snapshot_avg_spend ?? null,
         snapshot_net_worth: body.snapshot_net_worth ?? null,
+        snapshot_starting_portfolio_balance: body.snapshot_starting_portfolio_balance ?? null,
+        snapshot_starting_portfolio_source: body.snapshot_starting_portfolio_source ?? null,
         snapshot_essential_floor: body.snapshot_essential_floor ?? null,
         snapshot_date: body.snapshot_date ?? null,
         retirement_spending_monthly: body.retirement_spending_monthly ?? null,
@@ -307,6 +311,8 @@ serve(async (req) => {
           snapshot_avg_income: budget.snapshot_avg_income,
           snapshot_avg_spend: budget.snapshot_avg_spend,
           snapshot_net_worth: budget.snapshot_net_worth,
+          snapshot_starting_portfolio_balance: budget.snapshot_starting_portfolio_balance,
+          snapshot_starting_portfolio_source: budget.snapshot_starting_portfolio_source,
           snapshot_essential_floor: budget.snapshot_essential_floor,
           snapshot_date: budget.snapshot_date,
           retirement_spending_monthly: budget.retirement_spending_monthly,

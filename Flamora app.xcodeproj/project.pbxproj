@@ -49,6 +49,7 @@
 		12748FE92F7276F100410D60 /* BS_ChoosePathView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748FE82F7276F100410D60 /* BS_ChoosePathView.swift */; };
 		12748FEF2F7277AB00410D60 /* BS_TargetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748FEE2F7277AB00410D60 /* BS_TargetView.swift */; };
 		12748FF12F72790000410D60 /* BS_SplitBudgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748FF02F72790000410D60 /* BS_SplitBudgetView.swift */; };
+		12748FF32F72790000410D61 /* BS_PlanSetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12748FF22F72790000410D61 /* BS_PlanSetView.swift */; };
 		1504D2E02F35A99D00FEE0E3 /* AppBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */; };
 		1508AF372F5D1A2600D59781 /* OB_BarChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1508AF362F5D1A2600D59781 /* OB_BarChartView.swift */; };
 		152BE0842F67A66C00CACBBC /* GlassPillSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152BE0832F67A66C00CACBBC /* GlassPillSelector.swift */; };
@@ -186,6 +187,7 @@
 		12748FE82F7276F100410D60 /* BS_ChoosePathView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_ChoosePathView.swift; sourceTree = "<group>"; };
 		12748FEE2F7277AB00410D60 /* BS_TargetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_TargetView.swift; sourceTree = "<group>"; };
 		12748FF02F72790000410D60 /* BS_SplitBudgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_SplitBudgetView.swift; sourceTree = "<group>"; };
+		12748FF22F72790000410D61 /* BS_PlanSetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_PlanSetView.swift; sourceTree = "<group>"; };
 		1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBackgroundView.swift; sourceTree = "<group>"; };
 		150899942F30F60F003DDFBF /* Flamora app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Flamora app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		150899A32F30F611003DDFBF /* Flamora appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -421,6 +423,7 @@
 				12748F2C2F66B21000410D60 /* BS_DiagnosisView.swift */,
 				12748FE82F7276F100410D60 /* BS_ChoosePathView.swift */,
 				12748FF02F72790000410D60 /* BS_SplitBudgetView.swift */,
+				12748FF22F72790000410D61 /* BS_PlanSetView.swift */,
 				12748F2E2F66B21000410D60 /* BS_LoadingView.swift */,
 				12748F312F66B21000410D60 /* BS_AccountSelectionView.swift */,
 				12748FEE2F7277AB00410D60 /* BS_TargetView.swift */,
@@ -907,6 +910,7 @@
 				12748FE92F7276F100410D60 /* BS_ChoosePathView.swift in Sources */,
 				12748FEF2F7277AB00410D60 /* BS_TargetView.swift in Sources */,
 				12748FF12F72790000410D60 /* BS_SplitBudgetView.swift in Sources */,
+				12748FF32F72790000410D61 /* BS_PlanSetView.swift in Sources */,
 				124C46612F56F65E00E4EA8B /* OB_PrimaryButton.swift in Sources */,
 				12748F202F65CA4000410D60 /* APIService+BudgetSetup.swift in Sources */,
 				124C46632F56F65E00E4EA8B /* OB_BackButton.swift in Sources */,
@@ -1078,7 +1082,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 526LTP6Z7D;
+				DEVELOPMENT_TEAM = H9BUW6F8JV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Flamora-App-Info.plist";
@@ -1093,7 +1097,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.LQ.fire.Flamora-app10";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.LA.fire.Flamora-app10";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -1113,7 +1117,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 526LTP6Z7D;
+				DEVELOPMENT_TEAM = H9BUW6F8JV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Flamora-App-Info.plist";
@@ -1128,7 +1132,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.LL.fire.Flamora-app9";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.LA.fire.Flamora-app9";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;

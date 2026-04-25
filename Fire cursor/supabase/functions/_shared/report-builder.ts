@@ -543,7 +543,7 @@ async function fetchUserContext(supabase: any, userId: string): Promise<UserCont
   const [profileResult, goalResult, planResult] = await Promise.all([
     supabase
       .from('user_profiles')
-      .select('age, plaid_net_worth, current_net_worth')
+      .select('age, starting_portfolio_balance, plaid_net_worth, current_net_worth')
       .eq('user_id', userId)
       .maybeSingle(),
     supabase
@@ -564,7 +564,7 @@ async function fetchUserContext(supabase: any, userId: string): Promise<UserCont
   const profile = profileResult.data
   const plan = planResult.data
 
-  const currentNetWorth = profile?.plaid_net_worth ?? profile?.current_net_worth ?? 0
+  const currentNetWorth = profile?.starting_portfolio_balance ?? profile?.plaid_net_worth ?? profile?.current_net_worth ?? 0
   const fireNumber = goal?.fire_number && goal.fire_number > 0
     ? Number(goal.fire_number)
     : computeFireNumber(

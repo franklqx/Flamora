@@ -625,6 +625,8 @@ struct NetWorthDetailView: View {
                 APIAccount(id: "3", name: "Savings", type: "depository", subtype: "savings", balance: 47_000, mask: "7788", institution: "Ally"),
                 APIAccount(id: "4", name: "Freedom", type: "credit", subtype: "credit card", balance: 2_400, mask: "9900", institution: "Chase")
             ],
+            startingPortfolioBalance: 182_000,
+            startingPortfolioSource: "plaid_investment",
             lastSyncedAt: "2026-04-20T08:30:00Z"
         ),
         history: [:]

@@ -274,7 +274,9 @@ class APIService {
         monthlyIncome: Double? = nil,
         currentNetWorth: Double? = nil,
         currentMonthlyExpenses: Double? = nil,
-        currencyCode: String? = nil
+        currencyCode: String? = nil,
+        startingPortfolioBalance: Double? = nil,
+        startingPortfolioSource: String? = nil
     ) async throws -> UpdatedUserProfile {
         var payload: [String: Any] = [:]
         if let age { payload["age"] = age }
@@ -282,6 +284,8 @@ class APIService {
         if let currentNetWorth { payload["current_net_worth"] = currentNetWorth }
         if let currentMonthlyExpenses { payload["current_monthly_expenses"] = currentMonthlyExpenses }
         if let currencyCode { payload["currency_code"] = currencyCode }
+        if let startingPortfolioBalance { payload["starting_portfolio_balance"] = startingPortfolioBalance }
+        if let startingPortfolioSource { payload["starting_portfolio_source"] = startingPortfolioSource }
         let body = try JSONSerialization.data(withJSONObject: payload, options: [])
         let request = try await authenticatedRequest(function: "update-user-profile", body: body)
         let result: UpdatedUserProfile = try await perform(request)

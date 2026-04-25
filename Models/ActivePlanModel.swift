@@ -23,6 +23,8 @@ struct ActivePlanModel: Codable {
     let officialFireAge: Int?
     let tradeoffNote: String?
     let positioningCopy: String?
+    let startingPortfolioBalance: Double?
+    let startingPortfolioSource: String?
     let isActive: Bool
     let createdAt: String
 
@@ -39,6 +41,8 @@ struct ActivePlanModel: Codable {
         case officialFireAge         = "official_fire_age"
         case tradeoffNote            = "tradeoff_note"
         case positioningCopy         = "positioning_copy"
+        case startingPortfolioBalance = "starting_portfolio_balance"
+        case startingPortfolioSource  = "starting_portfolio_source"
         case isActive                = "is_active"
         case createdAt               = "created_at"
     }
@@ -57,6 +61,8 @@ struct ApplyPlanRequest: Encodable {
     let officialFireAge: Int?
     let tradeoffNote: String?
     let positioningCopy: String?
+    let startingPortfolioBalance: Double?
+    let startingPortfolioSource: String?
 
     enum CodingKeys: String, CodingKey {
         case planType                = "plan_type"
@@ -69,6 +75,8 @@ struct ApplyPlanRequest: Encodable {
         case officialFireAge         = "official_fire_age"
         case tradeoffNote            = "tradeoff_note"
         case positioningCopy         = "positioning_copy"
+        case startingPortfolioBalance = "starting_portfolio_balance"
+        case startingPortfolioSource  = "starting_portfolio_source"
     }
 
     /// Build from a Phase D `BudgetPlanOption` after plan selection.
@@ -77,7 +85,9 @@ struct ApplyPlanRequest: Encodable {
         plan: BudgetPlanOption,
         committedPlanLabel: String,
         fixedBudgetMonthly: Double,
-        flexibleBudgetMonthly: Double
+        flexibleBudgetMonthly: Double,
+        startingPortfolioBalance: Double? = nil,
+        startingPortfolioSource: String? = nil
     ) -> ApplyPlanRequest {
         ApplyPlanRequest(
             planType:               committedPlanLabel,
@@ -89,7 +99,9 @@ struct ApplyPlanRequest: Encodable {
             officialFireDate:       nil,
             officialFireAge:        plan.projectedFireAge,
             tradeoffNote:           plan.sub,
-            positioningCopy:        plan.headline
+            positioningCopy:        plan.headline,
+            startingPortfolioBalance: startingPortfolioBalance,
+            startingPortfolioSource:  startingPortfolioSource
         )
     }
 }

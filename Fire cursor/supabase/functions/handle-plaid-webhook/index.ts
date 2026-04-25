@@ -506,8 +506,10 @@ async function updateNetWorth(supabase: any, userId: string) {
     .eq('user_id', userId)
     .eq('is_active', true)
 
-  const investmentTotal = accounts
-    ?.filter((a: any) => a.type === 'investment')
+  const activeInvestmentAccounts = accounts
+    ?.filter((a: any) => a.type === 'investment') || []
+
+  const investmentTotal = activeInvestmentAccounts
     .reduce((sum: number, a: any) => sum + (a.balance_current || 0), 0) || 0
 
   const depositoryTotal = accounts
@@ -520,13 +522,23 @@ async function updateNetWorth(supabase: any, userId: string) {
 
   const totalNetWorth = investmentTotal + depositoryTotal - creditTotal
 
-  // 更新 user_profiles
+  // 更新 user_profiles. Keep the legacy plaid_net_worth field for existing
+  // readers, but write the clearer starting portfolio contract when an
+  // investment account exists.
+  const profileUpdate: Record<string, unknown> = {
+    plaid_net_worth: investmentTotal,
+    plaid_net_worth_updated_at: new Date().toISOString(),
+  }
+
+  if (activeInvestmentAccounts.length > 0) {
+    profileUpdate.starting_portfolio_balance = investmentTotal
+    profileUpdate.starting_portfolio_source = 'plaid_investment'
+    profileUpdate.starting_portfolio_updated_at = new Date().toISOString()
+  }
+
   await supabase
     .from('user_profiles')
-    .update({
-      plaid_net_worth: investmentTotal,
-      plaid_net_worth_updated_at: new Date().toISOString(),
-    })
+    .update(profileUpdate)
     .eq('user_id', userId)
 
   // 获取 FIRE 目标

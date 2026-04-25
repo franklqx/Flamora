@@ -299,6 +299,8 @@ struct HomeNetWorthCard: View {
                     loanTotal: 9_740
                 ),
                 accounts: [],
+                startingPortfolioBalance: 182_000,
+                startingPortfolioSource: "plaid_investment",
                 lastSyncedAt: "2026-04-20T08:30:00Z"
             ),
             history: [:],

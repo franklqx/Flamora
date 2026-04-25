@@ -18,6 +18,9 @@ struct InvestmentView: View {
     @State private var portfolioHistoryCache: [String: [PortfolioDataPoint]] = [:]
     @State private var loadError = false
     @State private var showTrustBridge = false
+    @State private var setupState: HomeSetupStateResponse? = HomeSetupStateCache.load()
+    @State private var isMarkingExplicitZero = false
+    @State private var showExplicitZeroConfirm = false
 
     var body: some View {
         connectedView
@@ -40,6 +43,10 @@ struct InvestmentView: View {
                                 message: "Couldn't load portfolio data.",
                                 onRetry: { Task { await loadInvestmentData() } }
                             )
+                        }
+
+                        if showSetupBanner {
+                            setupBanner
                         }
 
                         AssetAllocationCard(
@@ -71,6 +78,13 @@ struct InvestmentView: View {
         } message: {
             Text(plaidManager.linkError ?? "")
         }
+        .alert("Skip investment portfolio?", isPresented: $showExplicitZeroConfirm) {
+            Button("Add Investment Account") { handleAddAccount() }
+            Button("Continue with $0") { Task { await markStartingPortfolioExplicitZero() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("We'll start your FIRE progress from $0 for now. You can add investment accounts later and your progress will update automatically.")
+        }
         .onAppear {
             if apiNetWorth == nil {
                 apiNetWorth = TabContentCache.shared.investmentNetWorth
@@ -94,6 +108,9 @@ struct InvestmentView: View {
         }
         .onChange(of: plaidManager.hasLinkedBank) { _, _ in
             Task { await loadInvestmentData(force: true) }
+        }
+        .onChange(of: plaidManager.lastConnectionTime) { _, _ in
+            Task { await refreshSetupState() }
         }
         .sheet(isPresented: $showTrustBridge, onDismiss: {
             if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {
@@ -135,6 +152,7 @@ private extension InvestmentView {
 
     func loadInvestmentData(force: Bool = false) async {
         loadError = false
+        await refreshSetupState()
         guard plaidManager.hasLinkedBank else {
             apiNetWorth = nil
             apiHoldingsPayload = nil
@@ -234,6 +252,97 @@ private extension InvestmentView {
         } else {
             Task { await plaidManager.startLinkFlow() }
         }
+    }
+
+    func refreshSetupState() async {
+        if let latest = await APIService.shared.getSetupStatePersistingCache() {
+            setupState = latest
+        }
+    }
+
+    func markStartingPortfolioExplicitZero() async {
+        guard !isMarkingExplicitZero else { return }
+        isMarkingExplicitZero = true
+        defer { isMarkingExplicitZero = false }
+        do {
+            _ = try await APIService.shared.updateUserProfile(
+                startingPortfolioBalance: 0,
+                startingPortfolioSource: "explicit_zero"
+            )
+            await refreshSetupState()
+        } catch {
+            print("❌ [InvestmentView] markStartingPortfolioExplicitZero failed: \(error)")
+        }
+    }
+}
+
+// MARK: - Setup banner
+
+private extension InvestmentView {
+    /// Show the "Add investment portfolio" banner when the backend says the
+    /// portfolio setup step is still incomplete. After Plaid link succeeds or
+    /// the user picks "Continue with $0", `portfolioComplete` flips true and
+    /// the banner disappears — Home then advances to "Set monthly plan".
+    var showSetupBanner: Bool {
+        setupState?.portfolioComplete == false
+    }
+
+    var setupBanner: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.h4)
+                    .foregroundStyle(AppColors.accentGreenDeep)
+                Text("Add your investment portfolio")
+                    .font(.h4)
+                    .foregroundStyle(AppColors.inkPrimary)
+            }
+
+            Text("Brokerage and retirement balances let your FIRE progress reflect reality.")
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.inkSoft)
+                .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(spacing: AppSpacing.sm) {
+                Button(action: handleAddAccount) {
+                    Text("Add investment portfolio")
+                        .font(.sheetPrimaryButton)
+                        .foregroundStyle(AppColors.ctaWhite)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(AppColors.inkPrimary)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+                }
+                .buttonStyle(.plain)
+                .disabled(isMarkingExplicitZero)
+
+                Button {
+                    showExplicitZeroConfirm = true
+                } label: {
+                    Text(isMarkingExplicitZero ? "Saving…" : "I don't have one")
+                        .font(.bodySemibold)
+                        .foregroundStyle(AppColors.inkSoft)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                }
+                .buttonStyle(.plain)
+                .disabled(isMarkingExplicitZero)
+            }
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(
+            LinearGradient(
+                colors: [AppColors.glassCardBg, AppColors.glassCardBg2],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.glassCardBorder, lineWidth: 1)
+        )
     }
 }
 

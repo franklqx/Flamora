@@ -13,6 +13,8 @@
 import SwiftUI
 
 struct HomeRoadmapContent: View {
+    var onSelectTab: (MainTabItem) -> Void = { _ in }
+
     private struct SavingsEditTarget: Identifiable, Equatable {
         let year: Int
         let monthIndex: Int
@@ -36,6 +38,8 @@ struct HomeRoadmapContent: View {
     @State private var latestIssueZeroReport: ReportSnapshot? = TabContentCache.shared.homeIssueZeroReport
     @State private var latestAnnualReport: ReportSnapshot? = TabContentCache.shared.homeAnnualReport
     @State private var selectedReport: ReportSnapshot? = nil
+    @State private var setupState: HomeSetupStateResponse? = HomeSetupStateCache.load()
+    @State private var showTrustBridge = false
 
     @State private var netWorthHistory: [NetWorthRange: [NetWorthPoint]] = TabContentCache.shared.homeNetWorthHistory
         ?? [:]
@@ -65,14 +69,15 @@ struct HomeRoadmapContent: View {
         )
     }
 
-    /// 所有 3 步完成 → 隐藏 Roadmap。当前仅以 bank 连接作为代理（FIRE goal / path 选择需后续加 flag）。
-    private var showRoadmap: Bool { !isConnected }
+    private var showSetupChecklist: Bool {
+        !(setupState?.isSetupChecklistComplete ?? (isConnected && hasBudgetSetup))
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppSpacing.cardGap) {
-                if showRoadmap {
-                    roadmapCard
+                if showSetupChecklist {
+                    setupChecklistCard
                 }
 
                 HomeNetWorthCard(
@@ -148,43 +153,44 @@ struct HomeRoadmapContent: View {
         }) { report in
             reportDestination(for: report)
         }
+        .sheet(isPresented: $showTrustBridge, onDismiss: {
+            if UserDefaults.standard.bool(forKey: AppLinks.plaidTrustBridgeSeen) {
+                Task { await plaidManager.startLinkFlow() }
+            }
+        }) {
+            PlaidTrustBridgeView()
+        }
     }
 
-    // MARK: - Roadmap card (未连接状态的 3 步引导)
+    // MARK: - Setup checklist
 
-    private var roadmapCard: some View {
+    private var setupChecklistCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("What happens next")
+            Text("Your setup")
                 .font(.cardHeader)
                 .foregroundStyle(AppColors.inkPrimary)
                 .tracking(AppTypography.Tracking.cardHeader)
                 .textCase(.uppercase)
                 .padding(.bottom, AppSpacing.sm)
 
-            Text("Three steps to unlock Home.")
-                .font(.h3)
-                .foregroundStyle(AppColors.inkPrimary)
-                .tracking(-0.5)
-                .padding(.bottom, AppSpacing.md)
-
             VStack(spacing: 0) {
-                roadmapStep(
+                setupStepRow(
                     index: 1,
-                    isCurrent: true,
-                    title: "Set your FIRE goal",
-                    detail: "Tell Flamora what future you're aiming for."
+                    title: "Connect Bank Account",
+                    detail: cashflowStepDetail,
+                    action: startPlaidLinkFlow
                 )
-                roadmapStep(
+                setupStepRow(
                     index: 2,
-                    isCurrent: false,
-                    title: "Connect your accounts",
-                    detail: "Bring in your real numbers when you're ready."
+                    title: "Add Investment Portfolio",
+                    detail: portfolioStepDetail,
+                    action: startPlaidLinkFlow
                 )
-                roadmapStep(
+                setupStepRow(
                     index: 3,
-                    isCurrent: false,
-                    title: "Choose your path",
-                    detail: "Apply the version of FIRE that fits your life.",
+                    title: "Build Plan",
+                    detail: "Choose a monthly budget and saving target.",
+                    action: { plaidManager.openBudgetSetup(mode: .fresh) },
                     isLast: true
                 )
             }
@@ -201,46 +207,87 @@ struct HomeRoadmapContent: View {
         )
     }
 
-    private func roadmapStep(index: Int, isCurrent: Bool, title: String, detail: String, isLast: Bool = false) -> some View {
-        HStack(alignment: .center, spacing: AppSpacing.md) {
-            ZStack {
-                Circle()
-                    .fill(isCurrent ? AppColors.inkPrimary : AppColors.inkPrimary.opacity(0.06))
-                    .frame(width: 32, height: 32)
-                Text("\(index)")
-                    .font(.smallLabel)
-                    .foregroundStyle(isCurrent ? AppColors.ctaWhite : AppColors.inkSoft)
+    private func setupStepRow(
+        index: Int,
+        title: String,
+        detail: String,
+        action: @escaping () -> Void,
+        isLast: Bool = false
+    ) -> some View {
+        Button(action: action) {
+            HStack(alignment: .center, spacing: AppSpacing.md) {
+                ZStack {
+                    Circle()
+                        .fill(AppColors.inkPrimary)
+                        .frame(width: 32, height: 32)
+                    Text("\(index)")
+                        .font(.smallLabel)
+                        .foregroundStyle(AppColors.ctaWhite)
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.inlineLabel)
+                        .foregroundStyle(AppColors.inkPrimary)
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(AppColors.inkSoft)
+                        .lineSpacing(2)
+                        .multilineTextAlignment(.leading)
+                }
+
+                Spacer(minLength: AppSpacing.sm)
+
+                ZStack {
+                    Circle()
+                        .strokeBorder(AppColors.inkBorder, lineWidth: 1)
+                        .background(Circle().fill(AppColors.ctaWhite))
+                        .frame(width: 34, height: 34)
+                    Image(systemName: "chevron.right")
+                        .font(.footnoteSemibold)
+                        .foregroundStyle(AppColors.inkPrimary.opacity(0.54))
+                }
             }
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.inlineLabel)
-                    .foregroundStyle(AppColors.inkPrimary)
-                Text(detail)
-                    .font(.caption)
-                    .foregroundStyle(AppColors.inkSoft)
-                    .lineSpacing(2)
-            }
-
-            Spacer(minLength: 0)
-
-            ZStack {
-                Circle()
-                    .strokeBorder(AppColors.inkBorder, lineWidth: 1)
-                    .background(Circle().fill(AppColors.ctaWhite))
-                    .frame(width: 34, height: 34)
-                Image(systemName: "chevron.right")
-                    .font(.footnoteSemibold)
-                    .foregroundStyle(AppColors.inkPrimary.opacity(0.54))
+            .padding(.vertical, AppSpacing.rowItem)
+            .contentShape(Rectangle())
+            .overlay(alignment: .bottom) {
+                if !isLast {
+                    Rectangle()
+                        .fill(AppColors.inkDivider)
+                        .frame(height: 1)
+                }
             }
         }
-        .padding(.vertical, AppSpacing.rowItem)
-        .overlay(alignment: .bottom) {
-            if !isLast {
-                Rectangle()
-                    .fill(AppColors.inkDivider)
-                    .frame(height: 1)
-            }
+        .buttonStyle(.plain)
+    }
+
+    private var cashflowStepDetail: String {
+        institutionDetail(
+            names: setupState?.cashflowInstitutionNames ?? [],
+            fallback: "Checking, savings, and credit accounts for income and spending."
+        )
+    }
+
+    private var portfolioStepDetail: String {
+        institutionDetail(
+            names: setupState?.portfolioInstitutionNames ?? [],
+            fallback: "Brokerage and retirement accounts for FIRE progress."
+        )
+    }
+
+    private func institutionDetail(names: [String], fallback: String) -> String {
+        guard let first = names.first else { return fallback }
+        if names.count == 1 {
+            return "Connected to \(first)"
+        }
+        return "Connected to \(first) + \(names.count - 1) more"
+    }
+
+    private func startPlaidLinkFlow() {
+        if plaidManager.shouldShowTrustBridge() {
+            showTrustBridge = true
+        } else {
+            Task { await plaidManager.startLinkFlow() }
         }
     }
 
@@ -253,6 +300,7 @@ struct HomeRoadmapContent: View {
 
         restoreFromCache()
         if !force, hasCachedHomePrimaryData {
+            setupState = await APIService.shared.getSetupStatePersistingCache() ?? setupState
             return
         }
 
@@ -266,9 +314,11 @@ struct HomeRoadmapContent: View {
         async let issueZeroReport: ReportSnapshot? = try? await APIService.shared.getLatestReport(kind: .issueZero)
         async let annualReport: ReportSnapshot? = try? await APIService.shared.getLatestReport(kind: .annual)
         async let savingsSeries: [Int: [Double?]]? = loadSavingsByYearFromAPI()
+        async let setup: HomeSetupStateResponse? = APIService.shared.getSetupStatePersistingCache()
 
-        let (s, b, monthly, issueZero, annual, series) = await (summary, monthBudget, monthlyReport, issueZeroReport, annualReport, savingsSeries)
+        let (s, b, monthly, issueZero, annual, series, setupResponse) = await (summary, monthBudget, monthlyReport, issueZeroReport, annualReport, savingsSeries, setup)
         await MainActor.run {
+            self.setupState = setupResponse ?? self.setupState
             if let s {
                 self.netWorthSummary = s
                 TabContentCache.shared.setHomeNetWorth(summary: s, history: self.netWorthHistory)
@@ -360,6 +410,9 @@ struct HomeRoadmapContent: View {
         }
         if latestAnnualReport == nil {
             latestAnnualReport = TabContentCache.shared.homeAnnualReport
+        }
+        if setupState == nil {
+            setupState = HomeSetupStateCache.load()
         }
     }
 

@@ -89,6 +89,9 @@ struct MainTabView: View {
     @State private var homeJourneySetupState: HomeSetupStateResponse?
     @State private var homeJourneyHero: HomeHeroModel?
 
+    @State private var plaidLinkToastMessage: String?
+    @State private var plaidLinkToastTask: Task<Void, Never>?
+
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(PlaidManager.self) private var plaidManager
 
@@ -114,6 +117,14 @@ struct MainTabView: View {
             )
             .padding(.bottom, tabBarBottomPadding)
             .zIndex(200)
+        }
+        .overlay(alignment: .top) {
+            PlaidLinkSuccessToast(message: plaidLinkToastMessage)
+                .zIndex(300)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .plaidLinkDidSucceed)) { note in
+            let name = note.userInfo?["institutionName"] as? String
+            showPlaidLinkToast(institutionName: name)
         }
         .ignoresSafeArea(.keyboard, edges: .all)
         .ignoresSafeArea(edges: .bottom)
@@ -193,6 +204,7 @@ struct MainTabView: View {
                         contentHeight: layoutMetrics.sheetDefault + HomeLayoutConstants.sheetTopCoverLift,
                         bottomInset: viewportSafeAreaBottom + 2 + sheetBottomExtension,
                         selectedTab: selectedTab,
+                        onSelectTab: { selectedTab = $0 },
                         sheetDragGesture: sheetDragGesture,
                         dragProgress: sheetDragNormalizedProgress()
                     )
@@ -452,6 +464,26 @@ private extension MainTabView {
             restoreSheetFromCollapsed()
         }
         showSettings = true
+    }
+
+    private func showPlaidLinkToast(institutionName: String?) {
+        plaidLinkToastTask?.cancel()
+        let copy: String = {
+            if let name = institutionName, !name.isEmpty {
+                return "✓ Connected to \(name)"
+            }
+            return "✓ Bank account connected"
+        }()
+        withAnimation(.spring(response: 0.36, dampingFraction: 0.86)) {
+            plaidLinkToastMessage = copy
+        }
+        plaidLinkToastTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_200_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 0.24)) {
+                plaidLinkToastMessage = nil
+            }
+        }
     }
 }
 
@@ -1060,6 +1092,31 @@ struct CashUnconnectedContent: View {
         }) {
             PlaidTrustBridgeView()
         }
+    }
+}
+
+private struct PlaidLinkSuccessToast: View {
+    let message: String?
+
+    var body: some View {
+        Group {
+            if let message {
+                Text(message)
+                    .font(.bodySmallSemibold)
+                    .foregroundStyle(AppColors.ctaWhite)
+                    .padding(.horizontal, AppSpacing.md)
+                    .padding(.vertical, AppSpacing.sm)
+                    .background(
+                        Capsule()
+                            .fill(AppColors.inkPrimary)
+                            .shadow(color: AppColors.cardShadow, radius: 18, y: 6)
+                    )
+                    .padding(.top, AppSpacing.lg)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .top)
+        .allowsHitTesting(false)
     }
 }
 

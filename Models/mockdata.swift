@@ -884,6 +884,8 @@ struct APINetWorthSummary: Codable {
     let asOfDate: String
     let breakdown: NetWorthBreakdown
     let accounts: [APIAccount]
+    let startingPortfolioBalance: Double?
+    let startingPortfolioSource: String?
     let lastSyncedAt: String?       // ISO 8601 timestamp of last Plaid sync; null if no Plaid
 
     struct NetWorthBreakdown: Codable {
@@ -902,6 +904,8 @@ struct APINetWorthSummary: Codable {
         asOfDate: "",
         breakdown: NetWorthBreakdown(investmentTotal: nil, depositoryTotal: nil, creditTotal: nil, loanTotal: nil),
         accounts: [],
+        startingPortfolioBalance: nil,
+        startingPortfolioSource: nil,
         lastSyncedAt: nil
     )
 }
@@ -1256,6 +1260,8 @@ extension MockData {
                 institution: "Chase"
             )
         ],
+        startingPortfolioBalance: 150000.00,
+        startingPortfolioSource: "plaid_investment",
         lastSyncedAt: nil
     )
 }

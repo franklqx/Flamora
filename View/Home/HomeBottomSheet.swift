@@ -21,6 +21,7 @@ struct HomeBottomSheet: View {
     /// 仍属于 sheet 本体的底部延伸区，用来让整张 sheet 从屏幕底部开始。
     let bottomInset: CGFloat
     let selectedTab: MainTabItem
+    var onSelectTab: (MainTabItem) -> Void = { _ in }
     let sheetDragGesture: AnyGesture<DragGesture.Value>
     let dragProgress: CGFloat
     @Environment(PlaidManager.self) private var plaidManager
@@ -55,7 +56,7 @@ struct HomeBottomSheet: View {
             }
 
             ZStack {
-                HomeRoadmapContent()
+                HomeRoadmapContent(onSelectTab: onSelectTab)
                     .opacity(selectedTab == .home ? 1 : 0)
                     .allowsHitTesting(selectedTab == .home)
 
@@ -158,5 +159,4 @@ private struct HomeBottomSheetPreview: View {
         }
     }
 }
-
 

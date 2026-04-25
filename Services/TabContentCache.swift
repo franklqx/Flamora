@@ -14,6 +14,8 @@ extension Notification.Name {
     static let transactionClassificationDidPersist = Notification.Name("TransactionClassificationDidPersist")
     /// Budget Setup 全屏流程关闭（完成或取消）后广播，供 Journey / Hero 拉取最新 `setupStage`。
     static let budgetSetupFlowDidDismiss = Notification.Name("BudgetSetupFlowDidDismiss")
+    /// Plaid Link 成功完成时广播，触发一次性 toast。userInfo: ["institutionName": String?]
+    static let plaidLinkDidSucceed = Notification.Name("PlaidLinkDidSucceed")
 }
 
 final class TabContentCache {

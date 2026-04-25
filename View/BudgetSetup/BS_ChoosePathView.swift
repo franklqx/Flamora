@@ -318,21 +318,21 @@ struct BS_ChoosePathView: View {
                 }
 
                 VStack(spacing: AppSpacing.xs) {
-                    Text("SAVE")
+                    Text("BUDGET")
                         .font(.cardHeader)
                         .tracking(1.5)
                         .foregroundStyle(AppColors.inkPrimary)
-                    Text("$\(formattedInt(plan.monthlySave))/mo")
+                    Text("$\(formattedInt(plan.monthlyBudget))/mo")
                         .font(.display)
                         .foregroundStyle(AppColors.inkPrimary)
                         .monospacedDigit()
-                        .accessibilityLabel("Save \(formattedInt(plan.monthlySave)) dollars per month")
+                        .accessibilityLabel("Budget \(formattedInt(plan.monthlyBudget)) dollars per month")
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, AppSpacing.sm)
 
                 HStack(spacing: 0) {
-                    statColumnSmall(label: "BUDGET", value: "$\(formattedInt(plan.monthlyBudget))")
+                    statColumnSmall(label: "SAVE", value: "$\(formattedInt(plan.monthlySave))")
                     Rectangle().fill(AppColors.inkBorder).frame(width: 1, height: AppSpacing.lg)
                     statColumnSmall(label: "SAVING RATE", value: formattedPct(plan.savingsRate * 100))
                     Rectangle().fill(AppColors.inkBorder).frame(width: 1, height: AppSpacing.lg)
@@ -403,10 +403,11 @@ struct BS_ChoosePathView: View {
                 .frame(height: AppRadius.button)
 
             Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 Task {
                     await viewModel.loadSpendingPlan()
                     guard viewModel.spendingPlan != nil else { return }
-                    await MainActor.run { viewModel.goToStep(.split) }
+                    await MainActor.run { viewModel.goToStep(.planSet) }
                 }
             } label: {
                 Group {

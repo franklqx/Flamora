@@ -18,6 +18,7 @@ interface CalculateFireGoalRequest {
   current_age?: number
   desired_monthly_expenses?: number
   current_net_worth?: number
+  starting_portfolio_balance?: number
   monthly_income?: number
   current_monthly_expenses?: number
 }
@@ -74,7 +75,7 @@ serve(async (req) => {
     // ============================================================
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
-      .select('age, monthly_income, current_monthly_expenses, current_net_worth, plaid_net_worth')
+      .select('age, monthly_income, current_monthly_expenses, current_net_worth, plaid_net_worth, starting_portfolio_balance')
       .eq('user_id', user.id)
       .single()
 
@@ -85,8 +86,14 @@ serve(async (req) => {
       )
     }
 
-    // Use Plaid net worth if available (more accurate), otherwise fall back to self-reported
-    const netWorth = body.current_net_worth ?? profile.plaid_net_worth ?? profile.current_net_worth ?? 0
+    // FIRE feasibility uses the starting portfolio contract, with legacy
+    // net-worth fields retained as fallback for older clients.
+    const netWorth = body.starting_portfolio_balance
+      ?? body.current_net_worth
+      ?? profile.starting_portfolio_balance
+      ?? profile.plaid_net_worth
+      ?? profile.current_net_worth
+      ?? 0
     const monthlyIncome = body.monthly_income ?? profile.monthly_income ?? 0
     const currentExpenses = body.current_monthly_expenses ?? profile.current_monthly_expenses ?? 0
     const currentAge = body.current_age ?? profile.age ?? 28
@@ -134,9 +141,12 @@ serve(async (req) => {
             target_retirement_age: body.target_retirement_age,
             desired_monthly_expenses: desiredMonthlyExpenses,
             current_net_worth: netWorth,
+            starting_portfolio_balance: netWorth,
             monthly_income: monthlyIncome,
             current_monthly_expenses: currentExpenses,
-            net_worth_source: profile.plaid_net_worth ? 'plaid' : 'manual',
+            net_worth_source: profile.starting_portfolio_balance != null
+              ? 'starting_portfolio'
+              : (profile.plaid_net_worth ? 'plaid' : 'manual'),
           },
         },
       }),
