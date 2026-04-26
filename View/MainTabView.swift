@@ -23,7 +23,8 @@ private struct HomeLayoutMetrics: Equatable {
     let sheetDefault: CGFloat
     let sheetTall: CGFloat
     let compactDoneHeight: CGFloat
-    private static let unifiedSheetDefaultHeight: CGFloat = 555
+    private static let fallbackSheetDefaultHeight: CGFloat = 555
+    private static let minSheetHeight: CGFloat = 480
 
     /// 固定 pt 回退（首帧 `GeometryReader` 尚未上报高度时与历史布局一致）。
     private init(heroFullHeight: CGFloat, sheetDefault: CGFloat, sheetTall: CGFloat, compactDoneHeight: CGFloat) {
@@ -35,15 +36,32 @@ private struct HomeLayoutMetrics: Equatable {
 
     static let fallback = HomeLayoutMetrics(
         heroFullHeight: AppSpacing.heroFullHeight,
-        sheetDefault: unifiedSheetDefaultHeight,
+        sheetDefault: fallbackSheetDefaultHeight,
         sheetTall: 620,
         compactDoneHeight: 660
     )
 
-    init(usableHeight: CGFloat) {
+    /// 让 sheet 顶端落在 FREEDOM DATE 行下方约 12pt 呼吸处，跨机型保持视觉一致。
+    ///
+    /// 几何展开（自上而下，shellContent 局部坐标系，顶部已扣除 top safe area）：
+    ///   ├─ TopHeaderBar.height (60)        ← `HomeHeroCardSurface .padding(.top)` 的一部分
+    ///   ├─ AppSpacing.md (16)              ← `HomeHeroCardSurface .padding(.top)` 的另一部分
+    ///   ├─ heroStripNaturalHeight (≈84)    ← `HomeJourneyProgressStrip` 自然内容高度
+    ///   │     · title 17 + sm 8 + subtitle 19 + md 16 + bar 4 + sm 8 + label 12 = 84
+    ///   │     这是文字/track 的累加，**不随屏幕缩放**，所以是固定 pt
+    ///   ├─ breathing (12)                  ← FREEDOM DATE ↔ sheet 顶沿呼吸
+    ///   ├─ sheetTopCoverLift (18)          ← sheet 顶端圆角接缝缓冲
+    ///   ├─ sheetDefault                    ← 主体内容区高度（待求）
+    ///   └─ bottomInset = safeAreaBottom + 2 + sheetBottomExtension(58)
+    ///       合计应 = u
+    ///   解出： sheetDefault = u - 275 - safeAreaBottom
+    ///   （60 + 16 + 84 + 37 + 18 + 2 + 58 = 275；FREEDOM DATE 行下方留 ~37pt 呼吸到 sheet 顶。
+    ///    Sheet 后方浅色透出由 BrandHeroBackground 把 gradient 拉长到 sheet_top × 2 解决。）
+    init(usableHeight: CGFloat, safeAreaBottom: CGFloat) {
         let u = max(400, usableHeight)
         let hero = u * AppSpacing.homeHeroRegionFraction
-        let sheet = Self.unifiedSheetDefaultHeight
+        let raw = u - 275 - safeAreaBottom
+        let sheet = min(max(raw, Self.minSheetHeight), u * 0.86)
         let tall = min(sheet * 1.14, u * 0.92)
         self.init(
             heroFullHeight: hero,
@@ -51,18 +69,6 @@ private struct HomeLayoutMetrics: Equatable {
             sheetTall: tall,
             compactDoneHeight: tall + 40
         )
-    }
-}
-
-private struct HomeViewportMetrics: Equatable {
-    let height: CGFloat
-    let safeAreaBottom: CGFloat
-}
-
-private struct HomeViewportHeightKey: PreferenceKey {
-    static var defaultValue: HomeViewportMetrics = .init(height: 0, safeAreaBottom: 0)
-    static func reduce(value: inout HomeViewportMetrics, nextValue: () -> HomeViewportMetrics) {
-        value = nextValue()
     }
 }
 
@@ -150,6 +156,43 @@ struct MainTabView: View {
     }
 
     private var shellContent: some View {
+        GeometryReader { rootGeo in
+            shellInner
+                .onAppear {
+                    updateViewport(
+                        height: rootGeo.size.height,
+                        safeAreaBottom: rootGeo.safeAreaInsets.bottom
+                    )
+                }
+                .onChange(of: rootGeo.size) { _, newSize in
+                    updateViewport(
+                        height: newSize.height,
+                        safeAreaBottom: rootGeo.safeAreaInsets.bottom
+                    )
+                }
+        }
+    }
+
+    private func updateViewport(height: CGFloat, safeAreaBottom: CGFloat) {
+        guard height > 0 else { return }
+        viewportHeight = height
+        viewportSafeAreaBottom = safeAreaBottom
+        let next = HomeLayoutMetrics(usableHeight: height, safeAreaBottom: safeAreaBottom)
+        let oldDefault = layoutMetrics.sheetDefault
+        if !isSheetDragging, homeState == .sheet {
+            if sheetHeight < oldDefault * 0.98 {
+                let ratio = sheetHeight / max(oldDefault, 1)
+                sheetHeight = next.sheetDefault * ratio
+                sheetDragStartHeight = sheetHeight
+            } else {
+                sheetHeight = next.sheetDefault
+                sheetDragStartHeight = next.sheetDefault
+            }
+        }
+        layoutMetrics = next
+    }
+
+    private var shellInner: some View {
         ZStack(alignment: .top) {
             let simulatorFullScreenActive = supportsSimulatorFullScreenBackground && homeState == .simulator
 
@@ -220,32 +263,7 @@ struct MainTabView: View {
                 .opacity(homeState == .simulator ? 1 : 0)
                 .allowsHitTesting(homeState == .simulator)
                 .zIndex(40)
-        }
-        .background(
-            GeometryReader { geo in
-                Color.clear.preference(
-                    key: HomeViewportHeightKey.self,
-                    value: .init(height: geo.size.height, safeAreaBottom: geo.safeAreaInsets.bottom)
-                )
-            }
-        )
-        .onPreferenceChange(HomeViewportHeightKey.self) { metrics in
-            guard metrics.height > 0 else { return }
-            viewportHeight = metrics.height
-            viewportSafeAreaBottom = metrics.safeAreaBottom
-            let next = HomeLayoutMetrics(usableHeight: metrics.height)
-            let oldDefault = layoutMetrics.sheetDefault
-            if !isSheetDragging, homeState == .sheet {
-                if sheetHeight < oldDefault * 0.98 {
-                    let ratio = sheetHeight / max(oldDefault, 1)
-                    sheetHeight = next.sheetDefault * ratio
-                    sheetDragStartHeight = sheetHeight
-                } else {
-                    sheetHeight = next.sheetDefault
-                    sheetDragStartHeight = next.sheetDefault
-                }
-            }
-            layoutMetrics = next
+
         }
         .ignoresSafeArea(edges: .bottom)
     }
@@ -279,7 +297,19 @@ private extension MainTabView {
     }
 
     var brandGradientCollapsedHeight: CGFloat {
-        max(72, layoutMetrics.heroFullHeight * AppSpacing.homeHeroGradientCollapsedFraction)
+        // 让 gradient 拉长到 sheet 顶端再下方约 sheet_top 高度（≈翻倍）。
+        // hero 可见区只看到 gradient 顶部 0–50% 段（`#15162a` → ~`#384EA0` 深蓝紫色），
+        // 80–100% 那截最浅 stops（`#6b7fd8`/`#7a90e8`）整体藏到 sheet 第一张卡片正后方。
+        // viewportHeight 未上报时退回到 hero 高度（与历史首帧 fallback 一致）。
+        if viewportHeight > 0 {
+            let sheetTotal = layoutMetrics.sheetDefault
+                + HomeLayoutConstants.sheetTopCoverLift
+                + viewportSafeAreaBottom + 2
+                + max(0, AppSpacing.homeSheetTopOverlap - AppSpacing.md - 2)
+            let sheetTopY = max(0, viewportHeight - sheetTotal)
+            return max(72, sheetTopY * 2)
+        }
+        return max(72, layoutMetrics.heroFullHeight * AppSpacing.homeHeroGradientCollapsedFraction)
     }
 
     var brandGradientDisplayHeight: CGFloat {
