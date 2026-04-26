@@ -965,6 +965,44 @@ class BudgetSetupViewModel {
         isResumingState = false
     }
 
+    /// Quick-edit entry: skip Reality/Target and land in Plan after Loading.
+    /// Used when the user taps "Adjust overall plan" from the Cashflow budget card.
+    func beginQuickEditPlan() async {
+        defer { isResumingState = false }
+        await restoreFromActiveFireGoal()
+        await preloadCategoryBudgetsFromMonthlyBudget()
+        prepareLoading(nextStep: .plan)
+        currentStep = .loading
+    }
+
+    /// Quick-edit entry: skip Reality/Target/Plan and land in Split after Loading.
+    /// Used when the user taps "Edit category budgets" from the Cashflow budget card.
+    /// We pre-load the current monthly budget's category limits so the SplitView
+    /// shows existing values instead of empty fields.
+    func beginQuickEditCategories() async {
+        defer { isResumingState = false }
+        await restoreFromActiveFireGoal()
+        await preloadCategoryBudgetsFromMonthlyBudget()
+        prepareLoading(nextStep: .split)
+        currentStep = .loading
+    }
+
+    /// Pull existing per-category limits from the current month's `monthly_budgets`
+    /// row so quick-edit flows don't reset user-set values.
+    private func preloadCategoryBudgetsFromMonthlyBudget() async {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM"
+        let currentMonth = formatter.string(from: Date())
+        do {
+            let budget = try await APIService.shared.getMonthlyBudget(month: currentMonth)
+            if let existing = budget.categoryBudgets, !existing.isEmpty {
+                categoryBudgets = existing
+            }
+        } catch {
+            print("⚠️ [BudgetSetup] preloadCategoryBudgetsFromMonthlyBudget failed: \(error)")
+        }
+    }
+
     /// Reads the server-side setup state and advances currentStep to the correct resume point.
     /// V3 (Phase E): goal is collected in Step 4 Target (after Reality), so we no longer
     /// gate routing on `targetRetirementAge` — users always flow through Reality first.

@@ -69,6 +69,10 @@ struct BudgetSetupView: View {
                 await viewModel.beginFreshSetup()
             case .resume:
                 await viewModel.resumeFromSetupState()
+            case .editPlan:
+                await viewModel.beginQuickEditPlan()
+            case .editCategories:
+                await viewModel.beginQuickEditCategories()
             }
         }
         .alert("Discard this setup?", isPresented: $showDiscardConfirmation) {

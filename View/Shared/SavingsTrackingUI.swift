@@ -75,10 +75,18 @@ struct SavingsTrackingSnapshot {
 enum SavingsTrackingBuilder {
     static let monthLabels = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
 
-    static func currentWindowRange(for date: Date) -> ClosedRange<Int> {
+    /// Cumulative rolling 4-month window. The window stays anchored at the
+    /// user's journey start until the current month would slide past the
+    /// rightmost slot, after which it shifts forward by 1 each month so
+    /// `current` always sits within bounds. Passing `journeyStartMonth = 0`
+    /// (no constraint) reproduces the pre-cumulative behaviour for callers
+    /// without plan creation context.
+    static func currentWindowRange(for date: Date, journeyStartMonth: Int = 0) -> ClosedRange<Int> {
         let monthIndex = Calendar.current.component(.month, from: date) - 1
-        let start = (monthIndex / 4) * 4
-        return start...(min(start + 3, 11))
+        let clampedStart = max(0, min(journeyStartMonth, 8))
+        let lowerBound = max(clampedStart, monthIndex - 3)
+        let start = min(max(lowerBound, 0), 8)
+        return start...(start + 3)
     }
 
     static func snapshot(
@@ -86,11 +94,19 @@ enum SavingsTrackingBuilder {
         monthlyAmounts: [Double?],
         targetAmount: Double,
         targetRatePercent: Double,
+        journeyStartDate: Date? = nil,
         referenceDate: Date = Date()
     ) -> SavingsTrackingSnapshot {
         let currentYear = Calendar.current.component(.year, from: referenceDate)
         let currentMonthIndex = Calendar.current.component(.month, from: referenceDate) - 1
-        let windowRange = currentWindowRange(for: referenceDate)
+        let journeyStartMonth = resolveJourneyStartMonth(
+            startDate: journeyStartDate,
+            year: year
+        )
+        let windowRange = currentWindowRange(
+            for: referenceDate,
+            journeyStartMonth: year == currentYear ? journeyStartMonth : 0
+        )
         let inferredMonthlyIncome = inferredIncome(targetAmount: targetAmount, targetRatePercent: targetRatePercent)
 
         let amounts = (0..<12).map { idx in
@@ -106,7 +122,8 @@ enum SavingsTrackingBuilder {
                 amount: amount,
                 targetAmount: targetAmount,
                 currentYear: currentYear,
-                currentMonthIndex: currentMonthIndex
+                currentMonthIndex: currentMonthIndex,
+                journeyStartMonth: year == currentYear ? journeyStartMonth : 0
             )
 
             return SavingsMonthNode(
@@ -157,8 +174,14 @@ enum SavingsTrackingBuilder {
         amount: Double?,
         targetAmount: Double,
         currentYear: Int,
-        currentMonthIndex: Int
+        currentMonthIndex: Int,
+        journeyStartMonth: Int
     ) -> SavingsMonthVisualState {
+        // Months before the user committed to a plan are not "missed" — they
+        // simply pre-date the journey, so render them like upcoming slots.
+        if year == currentYear, monthIndex < journeyStartMonth {
+            return .future
+        }
         if year == currentYear, monthIndex > currentMonthIndex {
             return .future
         }
@@ -172,6 +195,15 @@ enum SavingsTrackingBuilder {
             return .onTarget
         }
         return .belowTarget
+    }
+
+    private static func resolveJourneyStartMonth(startDate: Date?, year: Int) -> Int {
+        guard let startDate else { return 0 }
+        let cal = Calendar.current
+        let startYear = cal.component(.year, from: startDate)
+        if startYear < year { return 0 }
+        if startYear > year { return 11 }
+        return cal.component(.month, from: startDate) - 1
     }
 
     private static func inferredIncome(targetAmount: Double, targetRatePercent: Double) -> Double? {

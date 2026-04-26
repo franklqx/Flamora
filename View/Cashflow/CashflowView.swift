@@ -46,6 +46,9 @@ struct CashflowView: View {
     @State private var showTotalSpendingDetail = false
     @State private var showNeedsSpendingDetail = false
     @State private var showWantsSpendingDetail = false
+    @State private var showMonthSwitcher = false
+    @State private var availableBudgetMonths: [Date] = []
+    @State private var displayBudgetMonth: Date = Date()
 
     /// 已连接银行时由多月份 `get-spending-summary` 构建；未连接或拉取失败时为 nil，详情页使用空数据（非 Mock）。
     @State private var cashflowSpendingTotalDetail: TotalSpendingDetailData?
@@ -120,8 +123,12 @@ struct CashflowView: View {
                             onWantsTapped: { showWantsSpendingDetail = true },
                             needsCategories: currentMonthNeedsCategories,
                             wantsCategories: currentMonthWantsCategories,
-                            onSaveBudget: { payload in
-                                await saveBudgetEdit(payload)
+                            onAdjustOverallPlan: { plaidManager.openBudgetSetup(mode: .editPlan) },
+                            onEditCategoryBudgets: { plaidManager.openBudgetSetup(mode: .editCategories) },
+                            displayMonth: displayBudgetMonth,
+                            onMonthLabelTapped: {
+                                Task { await loadAvailableBudgetMonthsIfNeeded() }
+                                showMonthSwitcher = true
                             }
                         )
                         .padding(.horizontal, AppSpacing.screenPadding)
@@ -202,6 +209,14 @@ struct CashflowView: View {
         }) {
             PlaidTrustBridgeView()
         }
+        .sheet(isPresented: $showMonthSwitcher) {
+            BudgetMonthSwitcherSheet(
+                months: availableBudgetMonths,
+                selected: displayBudgetMonth
+            ) { picked in
+                Task { await switchToBudgetMonth(picked) }
+            }
+        }
     }
 }
 
@@ -266,11 +281,13 @@ private extension CashflowView {
             // Display name → canonical id → budget amount; fall back to name for legacy data
             let budgetId = TransactionCategoryCatalog.id(forDisplayedSubcategory: name)
             let amount = budgetId.flatMap { budgetMap[$0] } ?? budgetMap[name] ?? 0
+            let icon = TransactionCategoryCatalog.all.first { $0.name == name }?.icon
             return BudgetCategoryBudget(
                 name: name,
                 parent: parent,
                 amount: max(amount, 0),
-                spent: spent
+                spent: spent,
+                icon: icon
             )
         }
     }
@@ -293,64 +310,6 @@ private extension CashflowView {
             return base
         case .all:
             return []
-        }
-    }
-
-    func budgetEditMonthString(from date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        let calendar = Calendar.current
-        let firstOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: date)) ?? date
-        return formatter.string(from: firstOfMonth)
-    }
-
-    @MainActor
-    func saveBudgetEdit(_ payload: BudgetEditPayload) async -> Bool {
-        print("▶️ [CashflowView] saveBudgetEdit ENTER")
-        do {
-            var requestPayload: [String: Any] = [
-                "month": budgetEditMonthString(from: Date()),
-                "needs_ratio": payload.needsRatio,
-                "wants_ratio": payload.wantsRatio,
-                "savings_ratio": apiBudget.savingsRatio,
-                "needs_budget": payload.needsBudget,
-                "wants_budget": payload.wantsBudget,
-                "savings_budget": activeSavingsTargetMonthly ?? apiBudget.savingsBudget,
-                "savings_rate": apiBudget.savingsRatio,
-                "fixed_budget": payload.needsBudget,
-                "flexible_budget": payload.wantsBudget,
-                "selected_plan": apiBudget.selectedPlan ?? "custom",
-                "source": "manual",
-                "category_budgets": payload.categoryBudgets
-            ]
-
-            // Recompute all three ratios from absolute amounts so they sum to exactly 100.
-            // Bug fix: previous code normalized needs+wants to 100 then appended savings_ratio
-            // separately, producing a total of ~120 and triggering INVALID_RATIOS from the backend.
-            let needsBudget   = payload.needsBudget
-            let wantsBudget   = payload.wantsBudget
-            let savingsBudget = activeSavingsTargetMonthly ?? apiBudget.savingsBudget
-            let totalBudget   = needsBudget + wantsBudget + savingsBudget
-            if totalBudget > 0 {
-                requestPayload["needs_ratio"]   = needsBudget   / totalBudget * 100
-                requestPayload["wants_ratio"]   = wantsBudget   / totalBudget * 100
-                requestPayload["savings_ratio"] = savingsBudget / totalBudget * 100
-            }
-
-            print("▶️ [CashflowView] calling upsertMonthlyBudget with payload keys: \(requestPayload.keys.sorted())")
-            try await APIService.shared.upsertMonthlyBudget(payload: requestPayload)
-            print("✅ [CashflowView] upsertMonthlyBudget returned OK")
-
-            if let refreshed = try? await APIService.shared.getMonthlyBudget(month: apiMonthString(from: Date())) {
-                apiBudget = refreshed
-                FlamoraStorageKey.migrateBudgetSetupIfNeeded(budget: refreshed, hasLinkedBank: plaidManager.hasLinkedBank)
-                TabContentCache.shared.setCashflowBudget(refreshed)
-            }
-            await loadCashflowData()
-            return true
-        } catch {
-            print("❌ [CashflowView] Failed to save edited budget: \(error)")
-            return false
         }
     }
 
@@ -593,6 +552,49 @@ private extension CashflowView {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM"
         return formatter.string(from: date)
+    }
+
+    /// Probe the last 12 months once and remember which ones have a saved
+    /// monthly_budget record. Cheap to call repeatedly because it short-circuits
+    /// when the list is already populated.
+    @MainActor
+    func loadAvailableBudgetMonthsIfNeeded() async {
+        guard availableBudgetMonths.isEmpty else { return }
+        let calendar = Calendar.current
+        let today = Date()
+        var found: [Date] = []
+        for offset in 0..<12 {
+            guard let monthDate = calendar.date(byAdding: .month, value: -offset, to: today) else { continue }
+            let firstOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: monthDate)) ?? monthDate
+            let monthStr = apiMonthString(from: firstOfMonth)
+            if let budget = try? await APIService.shared.getMonthlyBudget(month: monthStr),
+               !budget.budgetId.isEmpty {
+                found.append(firstOfMonth)
+            }
+        }
+        availableBudgetMonths = found
+    }
+
+    /// Switch the BudgetCard to a historical month. Refetches that month's
+    /// monthly_budget and the matching spending detail so the card body
+    /// reflects the picked month. Returning to the current month falls back
+    /// to the standard `loadCashflowData` path so live data resumes.
+    @MainActor
+    func switchToBudgetMonth(_ month: Date) async {
+        let calendar = Calendar.current
+        let firstOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: month)) ?? month
+        displayBudgetMonth = firstOfMonth
+
+        if calendar.isDate(firstOfMonth, equalTo: Date(), toGranularity: .month) {
+            await loadCashflowData(force: true)
+            return
+        }
+
+        let monthStr = apiMonthString(from: firstOfMonth)
+        if let budget = try? await APIService.shared.getMonthlyBudget(month: monthStr) {
+            apiBudget = budget
+            currentSavings = budget.savingsActual ?? 0
+        }
     }
 }
 

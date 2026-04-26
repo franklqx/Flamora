@@ -15,6 +15,10 @@ class PlaidManager {
     enum BudgetSetupEntryMode {
         case fresh
         case resume
+        /// Quick edit: re-pick plan tier / change saving rate. Skips Reality/Target.
+        case editPlan
+        /// Quick edit: tweak per-category limits. Skips Reality/Target/Plan.
+        case editCategories
     }
 
     static let shared = PlaidManager()

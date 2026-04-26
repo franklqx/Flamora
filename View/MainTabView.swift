@@ -663,6 +663,8 @@ private struct HomeHeroCardHost: View {
     @State private var needsReloadAfterCurrentPass = false
     @State private var savingsCheckInGeneration = 0
     @State private var budgetSetupDismissGeneration = 0
+    @State private var portfolioTotal: Double? = nil
+    @State private var daysSincePlanStart: Int? = nil
 
     let selectedTab: MainTabItem
     let onHeroUpdated: (HomeHeroSnapshot) -> Void
@@ -688,8 +690,14 @@ private struct HomeHeroCardHost: View {
             case .settings:
                 TabHeroTitleContent(title: "Settings")
             case .home:
-                HomeJourneyProgressStrip.heroEmbedded(stage: homeSetupStage, homeHero: homeHero)
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                HomeJourneyProgressStrip.heroEmbedded(
+                    stage: homeSetupStage,
+                    homeHero: homeHero,
+                    portfolioTotal: portfolioTotal,
+                    daysSincePlanStart: daysSincePlanStart,
+                    freedomDateText: homeHero?.displayFireDate
+                )
+                .frame(maxWidth: .infinity, alignment: .topLeading)
             }
         }
         .task(id: heroReloadTrigger) {
@@ -739,7 +747,33 @@ private extension HomeHeroCardHost {
         let shouldLoadHero = (state ?? setupState)?.setupStage == .active
         let nextHero = shouldLoadHero ? await fetchHomeHero() : nil
         homeHero = nextHero
+        if shouldLoadHero {
+            async let summary = try? await APIService.shared.getNetWorthSummary()
+            portfolioTotal = (await summary)?.breakdown.investmentTotal
+            daysSincePlanStart = computeDaysSincePlanStart(from: nextHero?.createdAt)
+        } else {
+            portfolioTotal = nil
+            daysSincePlanStart = nil
+        }
         syncSnapshot(hero: nextHero)
+    }
+
+    /// Day 1 = the calendar day the user committed their plan. Returns nil
+    /// when the timestamp can't be parsed (defensive — backend may evolve format).
+    func computeDaysSincePlanStart(from createdAt: String?) -> Int? {
+        guard let createdAt else { return nil }
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let parsed = iso.date(from: createdAt) ?? {
+            iso.formatOptions = [.withInternetDateTime]
+            return iso.date(from: createdAt)
+        }()
+        guard let start = parsed else { return nil }
+        let cal = Calendar.current
+        let startDay = cal.startOfDay(for: start)
+        let today = cal.startOfDay(for: Date())
+        let diff = cal.dateComponents([.day], from: startDay, to: today).day ?? 0
+        return max(1, diff + 1)
     }
 
     func fetchSetupState() async -> HomeSetupStateResponse? {

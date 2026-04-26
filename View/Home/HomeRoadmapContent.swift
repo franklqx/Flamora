@@ -39,13 +39,20 @@ struct HomeRoadmapContent: View {
     @State private var latestAnnualReport: ReportSnapshot? = TabContentCache.shared.homeAnnualReport
     @State private var selectedReport: ReportSnapshot? = nil
     @State private var setupState: HomeSetupStateResponse? = HomeSetupStateCache.load()
+    @State private var fireGoal: APIFireGoal? = nil
     @State private var showTrustBridge = false
 
     @State private var netWorthHistory: [NetWorthRange: [NetWorthPoint]] = TabContentCache.shared.homeNetWorthHistory
         ?? [:]
 
     private var isConnected: Bool { plaidManager.hasLinkedBank }
-    private var hasBudgetSetup: Bool { (budget?.savingsRatio ?? 0) > 0 }
+    /// Authoritative setup completion comes from server `setupState`. Fall back
+    /// to a local heuristic only when the server flag hasn't been loaded yet,
+    /// so the Home cards aren't blank during cold start.
+    private var hasBudgetSetup: Bool {
+        if let flag = setupState?.monthlyPlanComplete { return flag }
+        return (budget?.savingsRatio ?? 0) > 0
+    }
 
     /// 月收入 = needs + wants + savings（50/30/20 模型里三者相加即收入）。
     private var monthlyIncome: Double {
@@ -54,10 +61,23 @@ struct HomeRoadmapContent: View {
     }
 
     private var targetRatePercent: Double { budget?.savingsRatio ?? 20 }
-    private var targetAmount: Double { budget?.savingsBudget ?? 0 }
+    /// Savings target follows the active plan as the single source of truth;
+    /// monthly_budget is only a fallback when the goal API hasn't loaded yet.
+    private var targetAmount: Double {
+        if let plan = fireGoal?.savingsTargetMonthly, plan > 0 { return plan }
+        return budget?.savingsBudget ?? 0
+    }
     private var currentYear: Int { Calendar.current.component(.year, from: Date()) }
     private var currentYearSavings: [Double?] {
         savingsByYear[currentYear] ?? Array(repeating: nil, count: 12)
+    }
+    private var journeyStartDate: Date? {
+        guard let createdAt = fireGoal?.createdAt else { return nil }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: createdAt) { return date }
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: createdAt)
     }
     private var savingsSnapshot: SavingsTrackingSnapshot? {
         guard hasBudgetSetup else { return nil }
@@ -65,7 +85,8 @@ struct HomeRoadmapContent: View {
             year: currentYear,
             monthlyAmounts: currentYearSavings,
             targetAmount: targetAmount,
-            targetRatePercent: targetRatePercent
+            targetRatePercent: targetRatePercent,
+            journeyStartDate: journeyStartDate
         )
     }
 
@@ -315,10 +336,12 @@ struct HomeRoadmapContent: View {
         async let annualReport: ReportSnapshot? = try? await APIService.shared.getLatestReport(kind: .annual)
         async let savingsSeries: [Int: [Double?]]? = loadSavingsByYearFromAPI()
         async let setup: HomeSetupStateResponse? = APIService.shared.getSetupStatePersistingCache()
+        async let goal: APIFireGoal? = try? await APIService.shared.getActiveFireGoal()
 
-        let (s, b, monthly, issueZero, annual, series, setupResponse) = await (summary, monthBudget, monthlyReport, issueZeroReport, annualReport, savingsSeries, setup)
+        let (s, b, monthly, issueZero, annual, series, setupResponse, goalResponse) = await (summary, monthBudget, monthlyReport, issueZeroReport, annualReport, savingsSeries, setup, goal)
         await MainActor.run {
             self.setupState = setupResponse ?? self.setupState
+            self.fireGoal = goalResponse ?? self.fireGoal
             if let s {
                 self.netWorthSummary = s
                 TabContentCache.shared.setHomeNetWorth(summary: s, history: self.netWorthHistory)

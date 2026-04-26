@@ -5,27 +5,21 @@
 
 import SwiftUI
 
-struct BudgetEditPayload {
-    let needsBudget: Double
-    let wantsBudget: Double
-    let needsRatio: Double
-    let wantsRatio: Double
-    let categoryBudgets: [String: Double]
-}
-
 struct BudgetCategoryBudget: Identifiable, Hashable {
     let id: String
     let name: String
     let parent: BudgetScope
     var amount: Double
     var spent: Double
+    var icon: String?
 
-    init(name: String, parent: BudgetScope, amount: Double, spent: Double = 0) {
+    init(name: String, parent: BudgetScope, amount: Double, spent: Double = 0, icon: String? = nil) {
         self.id = "\(parent.rawValue)-\(name)"
         self.name = name
         self.parent = parent
         self.amount = amount
         self.spent = spent
+        self.icon = icon
     }
 }
 
@@ -50,18 +44,13 @@ struct BudgetCard: View {
     let onWantsTapped: (() -> Void)?
     var needsCategories: [BudgetCategoryBudget] = []
     var wantsCategories: [BudgetCategoryBudget] = []
-    var onSaveBudget: ((BudgetEditPayload) async -> Bool)? = nil
+    var onAdjustOverallPlan: (() -> Void)? = nil
+    var onEditCategoryBudgets: (() -> Void)? = nil
+    var displayMonth: Date = Date()
+    var onMonthLabelTapped: (() -> Void)? = nil
 
     @State private var selectedScope: BudgetScope = .all
-    @State private var isEditingBudget = false
-    @State private var isSaving = false
-
-    @State private var draftNeedsCategories: [BudgetCategoryBudget] = []
-    @State private var draftWantsCategories: [BudgetCategoryBudget] = []
-
-    // Bucket totals are derived from category amounts (S3-2 category-first).
-    private var draftNeedsBudget: Double { needsCategorySum }
-    private var draftWantsBudget: Double { wantsCategorySum }
+    @State private var showEditChooser = false
 
     private let needsWantsDisplayHeight: CGFloat = 456
     private let allDisplayHeightDelta: CGFloat = 0
@@ -101,10 +90,6 @@ struct BudgetCard: View {
         )
     }
 
-    private var draftTotalBudget: Double {
-        max(draftNeedsBudget + draftWantsBudget, 0)
-    }
-
     private func displayHeight(for scope: BudgetScope) -> CGFloat {
         switch scope {
         case .all:
@@ -123,21 +108,6 @@ struct BudgetCard: View {
         }
     }
 
-    private var needsCategorySum: Double {
-        draftNeedsCategories.reduce(0) { $0 + max($1.amount, 0) }
-    }
-
-    private var wantsCategorySum: Double {
-        draftWantsCategories.reduce(0) { $0 + max($1.amount, 0) }
-    }
-
-    private var draftIsValid: Bool {
-        // All per-category amounts must be non-negative; at least one non-zero.
-        let allNonNegative = (draftNeedsCategories + draftWantsCategories).allSatisfy { $0.amount >= 0 }
-        let hasAnyAmount = draftTotalBudget > 0
-        return allNonNegative && hasAnyAmount
-    }
-
     init(
         spending: Spending,
         apiBudget: APIMonthlyBudget,
@@ -151,7 +121,10 @@ struct BudgetCard: View {
         onWantsTapped: (() -> Void)? = nil,
         needsCategories: [BudgetCategoryBudget] = [],
         wantsCategories: [BudgetCategoryBudget] = [],
-        onSaveBudget: ((BudgetEditPayload) async -> Bool)? = nil
+        onAdjustOverallPlan: (() -> Void)? = nil,
+        onEditCategoryBudgets: (() -> Void)? = nil,
+        displayMonth: Date = Date(),
+        onMonthLabelTapped: (() -> Void)? = nil
     ) {
         self.spending = spending
         self.apiBudget = apiBudget
@@ -165,7 +138,14 @@ struct BudgetCard: View {
         self.onWantsTapped = onWantsTapped
         self.needsCategories = needsCategories
         self.wantsCategories = wantsCategories
-        self.onSaveBudget = onSaveBudget
+        self.onAdjustOverallPlan = onAdjustOverallPlan
+        self.onEditCategoryBudgets = onEditCategoryBudgets
+        self.displayMonth = displayMonth
+        self.onMonthLabelTapped = onMonthLabelTapped
+    }
+
+    private var isShowingCurrentMonth: Bool {
+        Calendar.current.isDate(displayMonth, equalTo: Date(), toGranularity: .month)
     }
 
     var body: some View {
@@ -178,17 +158,11 @@ struct BudgetCard: View {
                 .padding(.horizontal, AppSpacing.cardPadding)
 
             if hasBudget {
-                if isEditingBudget {
-                    budgetContentArea
-                        .padding(.horizontal, AppSpacing.cardPadding)
-                        .padding(.vertical, AppSpacing.md)
-                } else {
-                    budgetContentArea
-                        .frame(height: displayHeight(for: selectedScope), alignment: .top)
-                        .padding(.horizontal, AppSpacing.cardPadding)
-                        .padding(.vertical, AppSpacing.md)
-                        .animation(.easeOut(duration: 0.2), value: selectedScope)
-                }
+                budgetDisplaySection
+                    .frame(height: displayHeight(for: selectedScope), alignment: .top)
+                    .padding(.horizontal, AppSpacing.cardPadding)
+                    .padding(.vertical, AppSpacing.md)
+                    .animation(.easeOut(duration: 0.2), value: selectedScope)
             } else {
                 setupEmptyState
             }
@@ -199,11 +173,11 @@ struct BudgetCard: View {
             RoundedRectangle(cornerRadius: AppRadius.lg)
                 .stroke(AppColors.glassCardBorder, lineWidth: 1)
         )
-        .onAppear {
-            resetDraftFromCurrent()
-        }
-        .onChange(of: apiBudget.budgetId) { _, _ in
-            if !isEditingBudget { resetDraftFromCurrent() }
+        .sheet(isPresented: $showEditChooser) {
+            BudgetEditChooserSheet(
+                onAdjustOverallPlan: { onAdjustOverallPlan?() },
+                onEditCategoryBudgets: { onEditCategoryBudgets?() }
+            )
         }
     }
 
@@ -213,37 +187,35 @@ struct BudgetCard: View {
                 .font(.cardHeader)
                 .foregroundColor(AppColors.inkPrimary)
                 .tracking(AppTypography.Tracking.cardHeader)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if isConnected && hasBudget { onCardTapped?() }
+                }
 
             Spacer()
 
-            HStack(spacing: AppSpacing.xs) {
-                Text(currentMonthLabel)
-                    .font(.cardHeader)
-                    .foregroundColor(AppColors.inkPrimary)
-                    .tracking(AppTypography.Tracking.cardHeader)
-                if isConnected && hasBudget && !isEditingBudget {
-                    Image(systemName: "chevron.right")
-                        .font(.miniLabel)
-                        .foregroundColor(AppColors.inkFaint)
+            Button {
+                if isConnected && hasBudget { onMonthLabelTapped?() }
+            } label: {
+                HStack(spacing: AppSpacing.xs) {
+                    Text(monthLabel)
+                        .font(.cardHeader)
+                        .foregroundColor(AppColors.inkPrimary)
+                        .tracking(AppTypography.Tracking.cardHeader)
+                    if isConnected && hasBudget {
+                        Image(systemName: "chevron.right")
+                            .font(.miniLabel)
+                            .foregroundColor(AppColors.inkFaint)
+                    }
                 }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .disabled(!(isConnected && hasBudget))
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.top, AppSpacing.cardPadding)
         .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            if isConnected && hasBudget && !isEditingBudget { onCardTapped?() }
-        }
-    }
-
-    @ViewBuilder
-    private var budgetContentArea: some View {
-        if isEditingBudget {
-            budgetEditSection
-        } else {
-            budgetDisplaySection
-        }
     }
 
     private var budgetDisplaySection: some View {
@@ -274,27 +246,24 @@ struct BudgetCard: View {
     }
 
     private var allScopeSection: some View {
-        VStack(spacing: AppSpacing.md) {
-            BudgetRowItem(
+        let totalSpent = max(spending.needs + spending.wants, 0)
+        let needsShare = totalSpent > 0 ? max(spending.needs, 0) / totalSpent : 0
+        let wantsShare = totalSpent > 0 ? max(spending.wants, 0) / totalSpent : 0
+
+        return VStack(spacing: AppSpacing.md) {
+            BudgetShareRowItem(
                 title: "Needs",
                 spent: spending.needs,
-                budget: apiBudget.needsBudget,
+                share: needsShare,
                 color: needsColor,
                 onTap: onNeedsTapped
             )
-            BudgetRowItem(
+            BudgetShareRowItem(
                 title: "Wants",
                 spent: spending.wants,
-                budget: apiBudget.wantsBudget,
+                share: wantsShare,
                 color: wantsColor,
                 onTap: onWantsTapped
-            )
-            BudgetRowItem(
-                title: "Savings",
-                spent: currentSavings,
-                budget: effectiveSavingsTarget,
-                color: AppColors.accentAmber,
-                onTap: nil
             )
         }
         .padding(.top, AppSpacing.xs)
@@ -316,126 +285,6 @@ struct BudgetCard: View {
             tint: AppColors.budgetWantsPurpleTint,
             accent: wantsColor
         )
-    }
-
-    private var budgetEditSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm + AppSpacing.xs) {
-            // Read-only derived summary
-            editSummaryRow
-
-            categoryEditorSection(title: "Needs categories", scope: .needs, categories: $draftNeedsCategories)
-            categoryEditorSection(title: "Wants categories", scope: .wants, categories: $draftWantsCategories)
-
-            HStack(spacing: AppSpacing.sm) {
-                Button {
-                    isEditingBudget = false
-                    resetDraftFromCurrent()
-                } label: {
-                    Text("Cancel")
-                        .font(.inlineLabel)
-                        .foregroundColor(AppColors.inkPrimary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 42)
-                        .background(AppColors.inkTrack)
-                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    guard draftIsValid, !isSaving else { return }
-                    saveEditedBudget()
-                } label: {
-                    HStack(spacing: AppSpacing.xs) {
-                        if isSaving {
-                            ProgressView()
-                                .tint(AppColors.ctaWhite)
-                                .scaleEffect(0.8)
-                        }
-                        Text(isSaving ? "Saving..." : "Save")
-                            .font(.inlineLabel)
-                            .foregroundColor(AppColors.ctaWhite)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 42)
-                    .background(draftIsValid ? AppColors.ctaBlack : AppColors.inkTrack)
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
-                }
-                .buttonStyle(.plain)
-                .disabled(!draftIsValid || isSaving)
-            }
-            .padding(.top, AppSpacing.xs)
-        }
-        .padding(.bottom, AppSpacing.xs)
-    }
-
-    private var editSummaryRow: some View {
-        HStack(spacing: AppSpacing.md) {
-            summaryColumn(label: "NEEDS", value: draftNeedsBudget, tint: AppColors.budgetNeedsBlue)
-            Rectangle().fill(AppColors.inkTrack).frame(width: 1, height: 30)
-            summaryColumn(label: "WANTS", value: draftWantsBudget, tint: AppColors.budgetWantsPurple)
-            Rectangle().fill(AppColors.inkTrack).frame(width: 1, height: 30)
-            summaryColumn(label: "TOTAL", value: draftTotalBudget, tint: AppColors.inkPrimary)
-        }
-        .padding(.vertical, AppSpacing.sm)
-        .frame(maxWidth: .infinity)
-        .background(AppColors.inkTrack.opacity(0.4))
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-    }
-
-    private func summaryColumn(label: String, value: Double, tint: Color) -> some View {
-        VStack(spacing: 2) {
-            Text(label)
-                .font(.cardHeader)
-                .foregroundColor(AppColors.inkPrimary)
-            Text(formatCurrency(max(value, 0)))
-                .font(.footnoteBold)
-                .foregroundColor(tint)
-                .monospacedDigit()
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private func categoryEditorSection(
-        title: String,
-        scope: BudgetScope,
-        categories: Binding<[BudgetCategoryBudget]>
-    ) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text(title.uppercased())
-                .font(.cardHeader)
-                .foregroundColor(AppColors.inkPrimary)
-
-            if categories.wrappedValue.isEmpty {
-                Text("No categories yet")
-                    .font(.footnoteRegular)
-                    .foregroundColor(AppColors.inkSoft)
-            } else {
-                ForEach(categories) { category in
-                    HStack(spacing: AppSpacing.sm) {
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(category.wrappedValue.name)
-                                .font(.footnoteRegular)
-                                .foregroundColor(AppColors.inkPrimary)
-                                .lineLimit(1)
-                            if category.wrappedValue.spent > 0 {
-                                Text("Spent \(formatCurrency(category.wrappedValue.spent))")
-                                    .font(.caption)
-                                    .foregroundColor(AppColors.inkFaint)
-                                    .monospacedDigit()
-                            }
-                        }
-                        Spacer(minLength: AppSpacing.sm)
-                        BudgetAmountField(value: Binding(
-                            get: { category.wrappedValue.amount },
-                            set: { newAmount in
-                                category.wrappedValue.amount = max(newAmount, 0)
-                            }
-                        ))
-                        .frame(width: 110)
-                    }
-                }
-            }
-        }
     }
 
     private var ringSection: some View {
@@ -473,8 +322,10 @@ struct BudgetCard: View {
                 Circle()
                     .stroke(AppColors.inkTrack, lineWidth: 16)
 
-                switch selectedScope {
-                case .all:
+                // Arc only renders on the All scope. Needs/Wants tabs intentionally
+                // omit a colored arc because we don't track bucket-level limits —
+                // the limit lives at the subcategory level instead.
+                if selectedScope == .all {
                     if allNeedsProgress > 0 {
                         ringArc(start: 0, fraction: allNeedsProgress)
                             .stroke(needsColor, style: StrokeStyle(lineWidth: 16, lineCap: .butt))
@@ -483,18 +334,6 @@ struct BudgetCard: View {
                     if allWantsProgress > 0 {
                         ringArc(start: allNeedsProgress, fraction: allWantsProgress)
                             .stroke(wantsColor, style: StrokeStyle(lineWidth: 16, lineCap: .butt))
-                            .rotationEffect(.degrees(-90))
-                    }
-                case .needs:
-                    if needsProgress > 0 {
-                        ringArc(start: 0, fraction: needsProgress)
-                            .stroke(needsColor, style: StrokeStyle(lineWidth: 16, lineCap: .round))
-                            .rotationEffect(.degrees(-90))
-                    }
-                case .wants:
-                    if wantsProgress > 0 {
-                        ringArc(start: 0, fraction: wantsProgress)
-                            .stroke(wantsColor, style: StrokeStyle(lineWidth: 16, lineCap: .round))
                             .rotationEffect(.degrees(-90))
                     }
                 }
@@ -506,20 +345,27 @@ struct BudgetCard: View {
                 }
 
                 VStack(spacing: AppSpacing.xs) {
-                    Text("\(max(usedPercent, 0))% used")
-                        .font(.footnoteRegular)
-                        .foregroundColor(AppColors.inkSoft)
+                    if selectedScope == .all {
+                        Text("\(max(usedPercent, 0))% used")
+                            .font(.footnoteRegular)
+                            .foregroundColor(AppColors.inkSoft)
+                    } else {
+                        Text(selectedScope == .needs ? "Spent in Needs" : "Spent in Wants")
+                            .font(.footnoteRegular)
+                            .foregroundColor(AppColors.inkSoft)
+                    }
                     Text(formatCurrency(max(selectionSpent, 0)))
                         .font(.h3)
                         .foregroundStyle(AppColors.inkPrimary)
-                    Text("of \(formatCurrency(max(selectionBudget, 0))) budget")
-                        .font(.caption)
-                        .foregroundColor(AppColors.inkFaint)
+                    if selectedScope == .all {
+                        Text("of \(formatCurrency(max(selectionBudget, 0))) budget")
+                            .font(.caption)
+                            .foregroundColor(AppColors.inkFaint)
+                    }
 
-                    if isConnected && hasBudget {
+                    if isConnected && hasBudget && isShowingCurrentMonth {
                         Button {
-                            isEditingBudget = true
-                            resetDraftFromCurrent()
+                            showEditChooser = true
                         } label: {
                             Text("Edit budget")
                                 .font(.caption)
@@ -630,32 +476,15 @@ struct BudgetCard: View {
         .padding(.bottom, AppSpacing.cardPadding)
     }
 
-    private var currentMonthLabel: String {
+    private var monthLabel: String {
         let f = DateFormatter()
         f.dateFormat = "MMM"
-        return f.string(from: Date()).uppercased()
+        return f.string(from: displayMonth).uppercased()
     }
 
     private func ringArc(start: Double, fraction: Double) -> some Shape {
         Circle()
             .trim(from: max(0, min(start, 1)), to: max(0, min(start + fraction, 1)))
-    }
-
-    private func resetDraftFromCurrent() {
-        // S3-2: category-first. Seed directly from current per-category amounts;
-        // bucket totals are derived, no rescaling needed.
-        draftNeedsCategories = seededCategories(for: .needs)
-        draftWantsCategories = seededCategories(for: .wants)
-    }
-
-    private func seededCategories(for scope: BudgetScope) -> [BudgetCategoryBudget] {
-        let source = scope == .needs ? normalizedNeedsCategories : normalizedWantsCategories
-        if source.isEmpty {
-            return [BudgetCategoryBudget(name: scope == .needs ? "Needs" : "Wants", parent: scope, amount: 0)]
-        }
-        return source.map {
-            BudgetCategoryBudget(name: $0.name, parent: scope, amount: max($0.amount, 0), spent: max($0.spent, 0))
-        }
     }
 
     private func normalizedCategories(
@@ -666,11 +495,19 @@ struct BudgetCard: View {
     ) -> [BudgetCategoryBudget] {
         var ordered: [BudgetCategoryBudget] = []
         for item in source where !ordered.contains(where: { $0.name == item.name }) {
-            ordered.append(BudgetCategoryBudget(name: item.name, parent: parent, amount: max(item.amount, 0)))
+            let icon = item.icon ?? TransactionCategoryCatalog.all.first { $0.name == item.name }?.icon
+            ordered.append(BudgetCategoryBudget(
+                name: item.name,
+                parent: parent,
+                amount: max(item.amount, 0),
+                spent: max(item.spent, 0),
+                icon: icon
+            ))
         }
 
         for name in defaults where !ordered.contains(where: { $0.name == name }) {
-            ordered.append(BudgetCategoryBudget(name: name, parent: parent, amount: 0))
+            let icon = TransactionCategoryCatalog.all.first { $0.name == name }?.icon
+            ordered.append(BudgetCategoryBudget(name: name, parent: parent, amount: 0, icon: icon))
         }
 
         while ordered.count < desiredCount {
@@ -685,41 +522,6 @@ struct BudgetCard: View {
         return Array(ordered.prefix(desiredCount))
     }
 
-    private func saveEditedBudget() {
-        guard let onSaveBudget else {
-            isEditingBudget = false
-            return
-        }
-
-        isSaving = true
-
-        let total = max(draftTotalBudget, 1)
-        let categoryMap = (draftNeedsCategories + draftWantsCategories)
-            .reduce(into: [String: Double]()) { partialResult, item in
-                let key = TransactionCategoryCatalog.id(forDisplayedSubcategory: item.name) ?? item.name
-                partialResult[key] = max(item.amount, 0)
-            }
-
-        let payload = BudgetEditPayload(
-            needsBudget: max(draftNeedsBudget, 0),
-            wantsBudget: max(draftWantsBudget, 0),
-            needsRatio: max(draftNeedsBudget, 0) / total * 100,
-            wantsRatio: max(draftWantsBudget, 0) / total * 100,
-            categoryBudgets: categoryMap
-        )
-
-        print("▶️ [BudgetCard] saveEditedBudget fired — needs=\(payload.needsBudget) wants=\(payload.wantsBudget) categories=\(payload.categoryBudgets.count)")
-
-        Task {
-            let success = await onSaveBudget(payload)
-            print("◀️ [BudgetCard] saveEditedBudget returned — success=\(success)")
-            await MainActor.run {
-                isSaving = false
-                if success { isEditingBudget = false }
-            }
-        }
-    }
-
     private func formatCurrency(_ value: Double) -> String {
         let f = NumberFormatter()
         f.numberStyle = .currency
@@ -731,50 +533,12 @@ struct BudgetCard: View {
 
 }
 
-private struct BudgetAmountField: View {
-    @Binding var value: Double
-
-    private static let formatter: NumberFormatter = {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.maximumFractionDigits = 2
-        f.minimumFractionDigits = 0
-        return f
-    }()
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Text("$")
-                .font(.footnoteRegular)
-                .foregroundColor(AppColors.inkFaint)
-            TextField("0", value: $value, formatter: Self.formatter)
-                .keyboardType(.decimalPad)
-                .font(.inlineLabel)
-                .foregroundColor(AppColors.inkPrimary)
-                .multilineTextAlignment(.trailing)
-        }
-        .padding(.horizontal, 10)
-        .frame(height: 34)
-        .background(AppColors.ctaWhite.opacity(0.82))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
-    }
-}
-
-private struct BudgetRowItem: View {
+private struct BudgetShareRowItem: View {
     let title: String
     let spent: Double
-    let budget: Double
+    let share: Double
     let color: Color
     let onTap: (() -> Void)?
-
-    private var progress: Double {
-        guard budget > 0 else { return 0 }
-        return min(max(spent / budget, 0), 1)
-    }
 
     var body: some View {
         Group {
@@ -801,20 +565,21 @@ private struct BudgetRowItem: View {
 
                 Spacer()
 
-                Text("\(formatCurrency(spent)) / \(formatCurrency(budget))")
+                Text(formatCurrency(max(spent, 0)))
                     .font(.footnoteSemibold)
                     .foregroundColor(AppColors.inkPrimary)
             }
 
             GeometryReader { geo in
                 let width = max(geo.size.width, 0)
+                let clamped = min(max(share, 0), 1)
                 ZStack(alignment: .leading) {
                     Capsule()
                         .fill(AppColors.inkTrack)
                         .frame(height: 5)
                     Capsule()
                         .fill(color)
-                        .frame(width: width * progress, height: 5)
+                        .frame(width: width * clamped, height: 5)
                 }
             }
             .frame(height: 5)
@@ -849,13 +614,23 @@ private struct CategoryBudgetRow: View {
         return min(max(category.spent / category.amount, 0), 1)
     }
 
+    private var hasLimit: Bool { category.amount > 0 }
+
     var body: some View {
         HStack(spacing: AppSpacing.xs) {
-            Text(category.name)
-                .font(.footnoteRegular)
-                .foregroundColor(AppColors.inkSoft)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: AppSpacing.xs) {
+                if let icon = category.icon {
+                    Image(systemName: icon)
+                        .font(.footnoteSemibold)
+                        .foregroundColor(accent)
+                        .frame(width: 18, height: 18)
+                }
+                Text(category.name)
+                    .font(.footnoteRegular)
+                    .foregroundColor(AppColors.inkSoft)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(formatCurrency(max(category.spent, 0)))
                 .font(.footnoteSemibold)
@@ -863,20 +638,24 @@ private struct CategoryBudgetRow: View {
                 .monospacedDigit()
                 .frame(width: 64, alignment: .trailing)
 
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(tint)
-                Capsule()
-                    .fill(accent)
-                    .frame(maxWidth: 96 * progress, alignment: .leading)
-            }
-            .frame(width: 96, height: 7)
+            if hasLimit {
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(tint)
+                    Capsule()
+                        .fill(accent)
+                        .frame(maxWidth: 96 * progress, alignment: .leading)
+                }
+                .frame(width: 96, height: 7)
 
-            Text(formatCurrency(max(category.amount, 0)))
-                .font(.footnoteSemibold)
-                .foregroundColor(AppColors.inkPrimary)
-                .monospacedDigit()
-                .frame(width: 64, alignment: .trailing)
+                Text(formatCurrency(max(category.amount, 0)))
+                    .font(.footnoteSemibold)
+                    .foregroundColor(AppColors.inkPrimary)
+                    .monospacedDigit()
+                    .frame(width: 64, alignment: .trailing)
+            } else {
+                Color.clear.frame(width: 96 + AppSpacing.xs + 64, height: 7)
+            }
         }
         .padding(.vertical, 5)
     }
