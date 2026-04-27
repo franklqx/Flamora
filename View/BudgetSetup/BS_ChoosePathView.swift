@@ -14,7 +14,16 @@ struct BS_ChoosePathView: View {
 
     @State private var showContent = false
 
-    private let goldColor = AppColors.budgetGold
+    private let dotSize: CGFloat = 7
+
+    /// Blue → indigo-purple gradient (matches DESIGN.md `gradientShellAccent`).
+    /// Used for the selected plan's border + select indicator. Static so the
+    /// same instance is reused across renders.
+    fileprivate static let selectAccentGradient = LinearGradient(
+        colors: AppColors.gradientShellAccent,
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -104,19 +113,14 @@ struct BS_ChoosePathView: View {
 
                 Image(systemName: "pencil")
                     .font(.bodySemibold)
-                    .foregroundStyle(AppColors.accentAmber)
-                    .frame(width: 32, height: 32)
-                    .background(AppColors.glassCardBg)
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .frame(width: AppSpacing.xl, height: AppSpacing.xl)
+                    .background(AppColors.glassBlockBg)
                     .clipShape(Circle())
             }
-            .padding(AppSpacing.md)
+            .padding(AppSpacing.cardPadding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(AppColors.glassCardBg)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.md)
-                    .stroke(AppColors.inkBorder, lineWidth: 1)
-            )
+            .bsGlassCard()
         }
         .buttonStyle(.plain)
     }
@@ -134,14 +138,9 @@ struct BS_ChoosePathView: View {
                 anchorMetric(label: "Saving", value: "$\(formattedInt(viewModel.spendingStats?.avgMonthlySavings ?? (viewModel.currentSnapshotIncome - viewModel.currentSnapshotSpend)))")
             }
         }
-        .padding(AppSpacing.md)
+        .padding(AppSpacing.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
+        .bsGlassCard()
     }
 
     private func anchorMetric(label: String, value: String) -> some View {
@@ -165,21 +164,21 @@ struct BS_ChoosePathView: View {
         case "already_fire":
             bannerRow(
                 icon: "checkmark.seal.fill",
-                tint: AppColors.budgetTeal,
+                tint: AppColors.planDifficultySteady,
                 title: "You're already financially free",
                 subtitle: "Choose a monthly budget to start tracking sustainable spending."
             )
         case "closest_far":
             bannerRow(
                 icon: "exclamationmark.triangle.fill",
-                tint: AppColors.budgetOrange,
+                tint: AppColors.planDifficultyAccelerate,
                 title: "Your target needs adjustment",
                 subtitle: "The earliest reasonable path reaches FIRE at age \(plan.projectedFireAge)."
             )
         case "closest_near":
             bannerRow(
                 icon: "arrow.trianglehead.clockwise",
-                tint: goldColor,
+                tint: AppColors.warning,
                 title: "Closest reasonable plan",
                 subtitle: "Your target is close. This plan gets you to FIRE around age \(plan.projectedFireAge)."
             )
@@ -189,14 +188,14 @@ struct BS_ChoosePathView: View {
             if needsMore > 1 {
                 bannerRow(
                     icon: "checkmark.seal.fill",
-                    tint: AppColors.budgetTeal,
+                    tint: AppColors.planDifficultySteady,
                     title: "Target is within reach",
                     subtitle: "Save $\(formattedInt(needsMore))/mo more than today to aim for age \(viewModel.targetRetirementAge)."
                 )
             } else {
                 bannerRow(
                     icon: "checkmark.seal.fill",
-                    tint: AppColors.budgetTeal,
+                    tint: AppColors.planDifficultySteady,
                     title: "You have room",
                     subtitle: "Your current pace can support this target. Choose how much flexibility to keep."
                 )
@@ -212,7 +211,7 @@ struct BS_ChoosePathView: View {
             Image(systemName: icon)
                 .font(.bodySemibold)
                 .foregroundStyle(tint)
-                .padding(.top, 2)
+                .padding(.top, AppSpacing.xxs)
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(title)
                     .font(.bodySemibold)
@@ -224,13 +223,8 @@ struct BS_ChoosePathView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(AppSpacing.md)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(tint.opacity(0.4), lineWidth: 1)
-        )
+        .padding(AppSpacing.cardPadding)
+        .bsGlassCard(borderColor: tint.opacity(0.4))
     }
 
     private var loadingSection: some View {
@@ -268,9 +262,9 @@ struct BS_ChoosePathView: View {
                                 Text("BEST FIT")
                                     .font(.miniLabel)
                                     .foregroundStyle(AppColors.ctaWhite)
-                                    .padding(.horizontal, AppSpacing.sm - 2)
-                                    .padding(.vertical, 2)
-                                    .background(goldColor)
+                                    .padding(.horizontal, AppSpacing.xs)
+                                    .padding(.vertical, AppSpacing.xxs)
+                                    .background(AppColors.warning)
                                     .clipShape(RoundedRectangle(cornerRadius: AppSpacing.xs))
                             }
 
@@ -278,9 +272,9 @@ struct BS_ChoosePathView: View {
                                 Text(badge.uppercased())
                                     .font(.miniLabel)
                                     .foregroundStyle(AppColors.ctaWhite)
-                                    .padding(.horizontal, AppSpacing.sm - 2)
-                                    .padding(.vertical, 2)
-                                    .background(AppColors.budgetOrange)
+                                    .padding(.horizontal, AppSpacing.xs)
+                                    .padding(.vertical, AppSpacing.xxs)
+                                    .background(AppColors.planDifficultyAccelerate)
                                     .clipShape(RoundedRectangle(cornerRadius: AppSpacing.xs))
                             }
                         }
@@ -289,30 +283,31 @@ struct BS_ChoosePathView: View {
                             ForEach(0..<3) { i in
                                 Circle()
                                     .fill(i < difficulty ? AppColors.inkPrimary : AppColors.inkSoft)
-                                    .frame(width: AppSpacing.sm - 1, height: AppSpacing.sm - 1)
+                                    .frame(width: dotSize, height: dotSize)
                             }
                             Text(difficultyLabel)
                                 .font(.cardRowMeta)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(AppColors.inkPrimary)
-                                .padding(.leading, AppSpacing.xs / 2)
+                                .padding(.leading, AppSpacing.xxs)
                         }
                     }
 
                     Spacer()
 
                     ZStack {
-                        Circle()
-                            .stroke(isSelected ? AppColors.inkPrimary : AppColors.inkBorder, lineWidth: 2)
-                            .frame(width: AppSpacing.lg, height: AppSpacing.lg)
                         if isSelected {
                             Circle()
-                                .fill(AppColors.inkPrimary)
+                                .fill(BS_ChoosePathView.selectAccentGradient)
                                 .frame(width: AppSpacing.lg, height: AppSpacing.lg)
                             Image(systemName: "checkmark")
                                 .font(.cardRowMeta)
                                 .fontWeight(.bold)
                                 .foregroundStyle(AppColors.ctaWhite)
+                        } else {
+                            Circle()
+                                .stroke(AppColors.inkBorder, lineWidth: 2)
+                                .frame(width: AppSpacing.lg, height: AppSpacing.lg)
                         }
                     }
                 }
@@ -339,22 +334,21 @@ struct BS_ChoosePathView: View {
                     statColumnSmall(label: "FIRE AGE", value: "Age \(plan.projectedFireAge)")
                 }
                 .padding(.vertical, AppSpacing.sm)
-                .background(AppColors.glassCardBg)
-                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+                .background(AppColors.glassBlockBg)
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.glassBlock))
 
                 if isSelected {
                     fireDetailExpand(plan: plan)
                         .transition(.opacity.combined(with: .offset(y: 4)))
                 }
             }
-            .padding(AppSpacing.md)
-            .background(AppColors.glassCardBg)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.lg)
-                    .stroke(AppColors.inkPrimary, lineWidth: isSelected ? 2 : 0)
+            .padding(AppSpacing.cardPadding)
+            .bsGlassCard(
+                borderStyle: isSelected
+                    ? AnyShapeStyle(BS_ChoosePathView.selectAccentGradient)
+                    : AnyShapeStyle(AppColors.glassCardBorder),
+                borderWidth: isSelected ? 2 : 1
             )
-            .shadow(color: isSelected ? AppColors.glassCardBg : .clear, radius: AppSpacing.sm + AppSpacing.xs, y: AppSpacing.xs)
         }
         .buttonStyle(.plain)
     }
@@ -364,11 +358,11 @@ struct BS_ChoosePathView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             planInsightRows(plan: plan)
 
-            HStack(alignment: .top, spacing: AppSpacing.sm - 2) {
+            HStack(alignment: .top, spacing: AppSpacing.xs) {
                 Image(systemName: "info.circle")
                     .font(.footnoteRegular)
                     .foregroundStyle(AppColors.inkFaint)
-                    .padding(.top, 1)
+                    .padding(.top, AppSpacing.xxs)
                 Text(planDetailCopy(for: plan))
                     .font(.footnoteRegular)
                     .foregroundStyle(AppColors.inkSoft)
@@ -377,16 +371,11 @@ struct BS_ChoosePathView: View {
         }
         .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            LinearGradient(
-                colors: [AppColors.glassCardBg, AppColors.glassCardBg.opacity(0.5)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+        .background(AppColors.glassBlockBg)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.glassBlock))
         .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.glassBlock)
+                .stroke(AppColors.glassBlockBorder, lineWidth: 1)
         )
     }
 
@@ -511,9 +500,9 @@ struct BS_ChoosePathView: View {
                 .font(.footnoteRegular)
                 .foregroundStyle(AppColors.inkFaint)
                 .frame(width: AppSpacing.md, alignment: .center)
-                .padding(.top, 2)
+                .padding(.top, AppSpacing.xxs)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 Text(label.uppercased())
                     .font(.miniLabel)
                     .tracking(0.8)
@@ -528,7 +517,7 @@ struct BS_ChoosePathView: View {
             Spacer(minLength: 0)
         }
         .padding(AppSpacing.sm)
-        .background(AppColors.glassCardBg)
+        .background(AppColors.glassBlockBg)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
     }
 

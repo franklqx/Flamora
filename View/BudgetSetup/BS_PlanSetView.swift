@@ -88,13 +88,18 @@ struct BS_PlanSetView: View {
     }
 
     private var checkmarkBadge: some View {
-        ZStack {
+        let accent = LinearGradient(
+            colors: AppColors.gradientShellAccent,
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        return ZStack {
             Circle()
-                .strokeBorder(AppColors.inkPrimary, lineWidth: 2)
-                .frame(width: 72, height: 72)
+                .strokeBorder(accent, lineWidth: 2)
+                .frame(width: AppSpacing.xxl + AppSpacing.lg, height: AppSpacing.xxl + AppSpacing.lg)
             Image(systemName: "checkmark")
-                .font(.system(size: 30, weight: .semibold))
-                .foregroundStyle(AppColors.inkPrimary)
+                .font(.h1)
+                .foregroundStyle(accent)
         }
     }
 
@@ -146,7 +151,7 @@ struct BS_PlanSetView: View {
                             .font(.bodySemibold)
                             .foregroundStyle(AppColors.inkSoft)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 44)
+                            .frame(height: 56)
                     }
                     .buttonStyle(.plain)
                 }

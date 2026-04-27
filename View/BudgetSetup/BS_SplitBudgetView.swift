@@ -180,13 +180,8 @@ struct BS_SplitBudgetView: View {
                 .lineSpacing(3)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(AppSpacing.md)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
+        .padding(AppSpacing.cardPadding)
+        .bsGlassCard(cornerRadius: AppRadius.glassBlock)
     }
 
     // MARK: - Group + Row
@@ -205,12 +200,7 @@ struct BS_SplitBudgetView: View {
             }
             .padding(.horizontal, AppSpacing.md)
             .padding(.vertical, AppSpacing.xs)
-            .background(AppColors.glassCardBg)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.md)
-                    .stroke(AppColors.inkBorder, lineWidth: 1)
-            )
+            .bsGlassCard()
         }
     }
 
@@ -226,7 +216,7 @@ struct BS_SplitBudgetView: View {
                 HStack(spacing: AppSpacing.md) {
                     iconBadge(symbol: row.icon, parent: row.parent)
 
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                         Text(row.name)
                             .font(.bodySmallSemibold)
                             .foregroundStyle(AppColors.inkPrimary)
@@ -248,12 +238,11 @@ struct BS_SplitBudgetView: View {
 
                     trailingGlyph(hasLimit: hasLimit)
                 }
-                .padding(.vertical, AppSpacing.sm + 2)
+                .padding(.vertical, AppSpacing.sm)
 
                 if !isLast {
-                    Rectangle()
-                        .fill(AppColors.inkDivider)
-                        .frame(height: 1)
+                    Divider()
+                        .background(AppColors.inkDivider)
                 }
             }
             .contentShape(Rectangle())
@@ -262,7 +251,7 @@ struct BS_SplitBudgetView: View {
     }
 
     private func iconBadge(symbol: String, parent: String) -> some View {
-        let tint = parent == "needs" ? AppColors.budgetTeal : AppColors.accentAmber
+        let tint = parent == "needs" ? AppColors.budgetNeedsBlue : AppColors.budgetWantsPurple
         return ZStack {
             Circle()
                 .fill(tint.opacity(0.18))
@@ -270,7 +259,7 @@ struct BS_SplitBudgetView: View {
                 .font(.footnoteSemibold)
                 .foregroundStyle(tint)
         }
-        .frame(width: 36, height: 36)
+        .frame(width: AppSpacing.xl + AppSpacing.xs, height: AppSpacing.xl + AppSpacing.xs)
     }
 
     private func trailingGlyph(hasLimit: Bool) -> some View {
@@ -278,9 +267,9 @@ struct BS_SplitBudgetView: View {
             Circle()
                 .strokeBorder(AppColors.inkBorder, lineWidth: 1)
                 .background(Circle().fill(hasLimit ? AppColors.inkPrimary : AppColors.ctaWhite))
-                .frame(width: 28, height: 28)
+                .frame(width: AppSpacing.lg + AppSpacing.xs, height: AppSpacing.lg + AppSpacing.xs)
             Image(systemName: hasLimit ? "checkmark" : "plus")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.footnoteSemibold)
                 .foregroundStyle(hasLimit ? AppColors.ctaWhite : AppColors.inkPrimary)
         }
     }
@@ -295,11 +284,11 @@ struct BS_SplitBudgetView: View {
                 Text(showAllCategories ? "Show less" : "Show all categories")
                     .font(.bodySmallSemibold)
                 Image(systemName: showAllCategories ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.smallLabel)
             }
             .foregroundStyle(AppColors.inkPrimary)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, AppSpacing.sm + 2)
+            .padding(.vertical, AppSpacing.sm)
         }
         .buttonStyle(.plain)
     }
@@ -336,16 +325,20 @@ struct BS_SplitBudgetView: View {
     private func categoryLimitSheet(for row: CategoryBudgetRow) -> some View {
         let existingLimit = viewModel.categoryBudgets[row.id]
 
+        // iOS-standard sheet drag indicator dimensions (44×5pt)
+        let dragIndicatorWidth: CGFloat = 44
+        let dragIndicatorHeight: CGFloat = 5
+
         return VStack(alignment: .leading, spacing: AppSpacing.lg) {
             Capsule()
                 .fill(AppColors.inkBorder)
-                .frame(width: 44, height: 5)
+                .frame(width: dragIndicatorWidth, height: dragIndicatorHeight)
                 .frame(maxWidth: .infinity)
                 .padding(.top, AppSpacing.sm)
 
             HStack(spacing: AppSpacing.md) {
                 iconBadge(symbol: row.icon, parent: row.parent)
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text(row.name)
                         .font(.detailTitle)
                         .foregroundStyle(AppColors.inkPrimary)
@@ -373,7 +366,7 @@ struct BS_SplitBudgetView: View {
                         .monospacedDigit()
                 }
                 .padding(AppSpacing.md)
-                .background(AppColors.ctaWhite.opacity(0.85))
+                .background(AppColors.glassBlockBg)
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                 .overlay(
                     RoundedRectangle(cornerRadius: AppRadius.md)

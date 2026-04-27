@@ -118,13 +118,8 @@ struct BS_ConfirmView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(AppSpacing.md)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
+        .padding(AppSpacing.cardPadding)
+        .bsGlassCard()
     }
 
     private var monthlyBudgetCard: some View {
@@ -154,13 +149,8 @@ struct BS_ConfirmView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(AppSpacing.md)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
+        .padding(AppSpacing.cardPadding)
+        .bsGlassCard()
     }
 
     private func metricCard(title: String, value: String, subtitle: String?) -> some View {
@@ -182,13 +172,8 @@ struct BS_ConfirmView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(AppSpacing.md)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
+        .padding(AppSpacing.cardPadding)
+        .bsGlassCard()
     }
 
     // MARK: - Per-category breakdown
@@ -276,7 +261,7 @@ struct BS_ConfirmView: View {
     }
 
     private func iconBadge(symbol: String, parent: String) -> some View {
-        let tint = parent == "needs" ? AppColors.budgetTeal : AppColors.accentAmber
+        let tint = parent == "needs" ? AppColors.budgetNeedsBlue : AppColors.budgetWantsPurple
         return ZStack {
             Circle()
                 .fill(tint.opacity(0.18))
@@ -284,7 +269,7 @@ struct BS_ConfirmView: View {
                 .font(.footnoteSemibold)
                 .foregroundStyle(tint)
         }
-        .frame(width: 36, height: 36)
+        .frame(width: AppSpacing.xl + AppSpacing.xs, height: AppSpacing.xl + AppSpacing.xs)
     }
 
     // MARK: - FIRE progress card
@@ -316,8 +301,8 @@ struct BS_ConfirmView: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: AppRadius.sm)
-                        .fill(AppColors.glassCardBg)
-                        .frame(height: 14)
+                        .fill(AppColors.glassBlockBg)
+                        .frame(height: AppSpacing.rowItem)
                     RoundedRectangle(cornerRadius: AppRadius.sm)
                         .fill(
                             LinearGradient(
@@ -326,10 +311,10 @@ struct BS_ConfirmView: View {
                                 endPoint: .trailing
                             )
                         )
-                        .frame(width: max(8, geo.size.width * CGFloat(animatedProgress)), height: 14)
+                        .frame(width: max(AppSpacing.sm, geo.size.width * CGFloat(animatedProgress)), height: AppSpacing.rowItem)
                 }
             }
-            .frame(height: 14)
+            .frame(height: AppSpacing.rowItem)
 
             // Footnote: X% complete · ~Xy to age N (suppressed in already_fire)
             HStack {
@@ -347,24 +332,19 @@ struct BS_ConfirmView: View {
                 Spacer()
             }
         }
-        .padding(AppSpacing.md)
+        .padding(AppSpacing.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
+        .bsGlassCard()
     }
 
     @ViewBuilder
     private var progressBadge: some View {
         if isAlreadyFire {
-            badgePill(text: "🎉 You're free", tint: AppColors.accentAmber)
+            badgePill(text: "🎉 You're free", tint: AppColors.warning)
         } else if viewModel.fireProgressRatio >= 0.999 {
-            badgePill(text: "✓ Reached", tint: AppColors.accentAmber)
+            badgePill(text: "✓ Reached", tint: AppColors.warning)
         } else if isOnTrack {
-            badgePill(text: "✓ On track", tint: AppColors.budgetTeal)
+            badgePill(text: "✓ On track", tint: AppColors.success)
         } else {
             EmptyView()
         }
@@ -376,7 +356,7 @@ struct BS_ConfirmView: View {
             .foregroundStyle(tint)
             .padding(.horizontal, AppSpacing.sm)
             .padding(.vertical, AppSpacing.xs)
-            .background(AppColors.glassCardBg)
+            .background(tint.opacity(0.10))
             .clipShape(Capsule())
             .overlay(
                 Capsule()
@@ -387,7 +367,7 @@ struct BS_ConfirmView: View {
     // MARK: - Tip card
 
     private var tipCard: some View {
-        HStack(alignment: .top, spacing: AppSpacing.sm + AppSpacing.xs) {
+        HStack(alignment: .top, spacing: AppSpacing.md) {
             Text("\u{1F4A1}")
                 .font(.bodyRegular)
             Text("You can adjust your budget anytime in Settings.")
@@ -397,12 +377,7 @@ struct BS_ConfirmView: View {
         }
         .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
+        .bsGlassCard(cornerRadius: AppRadius.glassBlock)
     }
 
     // MARK: - Sticky CTA

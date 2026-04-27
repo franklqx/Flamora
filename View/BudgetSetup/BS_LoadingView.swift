@@ -34,6 +34,12 @@ struct BS_LoadingView: View {
     /// preventing stale timers from triggering showError during a newer load cycle.
     @State private var loadAttempt: Int = 0
 
+    // Layout constants — radial glow + checklist indicator + progress bar
+    private let heroGlowSize: CGFloat = 140
+    private let heroGlowRadius: CGFloat = 80
+    private let stepIndicatorSize: CGFloat = 20
+    private let progressBarHeight: CGFloat = 3
+
     var body: some View {
         Group {
             if showError || viewModel.loadingError != nil {
@@ -72,7 +78,7 @@ struct BS_LoadingView: View {
             Spacer()
 
             Image(systemName: "exclamationmark.circle")
-                .font(.system(size: 44, weight: .regular))
+                .font(.iconHero)
                 .foregroundStyle(AppColors.inkSoft)
 
             VStack(spacing: AppSpacing.sm) {
@@ -113,10 +119,10 @@ struct BS_LoadingView: View {
                         colors: [AppColors.accentBlueBright.opacity(0.15), Color.clear],
                         center: .center,
                         startRadius: 0,
-                        endRadius: 80
+                        endRadius: heroGlowRadius
                     )
                 )
-                .frame(width: 140, height: 140)
+                .frame(width: heroGlowSize, height: heroGlowSize)
                 .opacity(showIcon ? 1 : 0)
 
             Image(systemName: "sparkle")
@@ -153,17 +159,17 @@ struct BS_LoadingView: View {
                 switch state {
                 case .waiting:
                     Color.clear
-                        .frame(width: 20, height: 20)
+                        .frame(width: stepIndicatorSize, height: stepIndicatorSize)
                 case .loading:
                     ProgressView()
                         .scaleEffect(0.8)
                         .tint(AppColors.inkSoft)
-                        .frame(width: 20, height: 20)
+                        .frame(width: stepIndicatorSize, height: stepIndicatorSize)
                 case .done:
                     Image(systemName: "checkmark")
                         .font(.inlineLabel)
                         .foregroundStyle(AppColors.inkFaint)
-                        .frame(width: 20, height: 20)
+                        .frame(width: stepIndicatorSize, height: stepIndicatorSize)
                 }
             }
 
@@ -181,7 +187,7 @@ struct BS_LoadingView: View {
             ZStack(alignment: .leading) {
                 Capsule()
                     .fill(AppColors.progressTrack)
-                    .frame(height: 3)
+                    .frame(height: progressBarHeight)
 
                 Capsule()
                     .fill(
@@ -194,7 +200,7 @@ struct BS_LoadingView: View {
                     .frame(width: geo.size.width * barProgress, height: 3)
             }
         }
-        .frame(height: 3)
+        .frame(height: progressBarHeight)
         .padding(.horizontal, AppSpacing.lg)
     }
 

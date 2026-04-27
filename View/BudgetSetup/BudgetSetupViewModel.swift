@@ -1292,11 +1292,22 @@ class BudgetSetupViewModel {
             return
         }
 
-        // Confirm reached via "Skip for now" on planSet → back jumps over .split.
+        // .planSet is a forward-only celebration page (no back/X chrome), so
+        // any back navigation that would land on .planSet skips through to .plan.
+        if currentStep == .split {
+            isNavigatingForward = false
+            withAnimation(.easeOut(duration: 0.3)) {
+                currentStep = .plan
+            }
+            return
+        }
+
+        // Confirm reached via "Skip for now" on planSet → back also skips both
+        // .split (untouched) and .planSet (no chrome) to reach .plan.
         if currentStep == .confirm && didSkipCategoryBudgets {
             isNavigatingForward = false
             withAnimation(.easeOut(duration: 0.3)) {
-                currentStep = .planSet
+                currentStep = .plan
             }
             return
         }

@@ -53,6 +53,8 @@ extension Font {
 
     // ── Headings ──────────────────────────────────────────────
     static var display:     Font { appFont(AppTypography.display, .bold) }
+    /// 大型 SF Symbol 状态图标（错误/成功） — 40pt regular，匹配 SF Symbol 视觉重量
+    static var iconHero:    Font { appFont(AppTypography.display, .regular) }
     static var h1:          Font { appFont(AppTypography.h1,      .bold) }
     static var h2:          Font { appFont(AppTypography.h2,      .bold) }
     static var h3:          Font { appFont(AppTypography.h3,      .semibold) }

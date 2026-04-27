@@ -115,7 +115,7 @@ struct BS_DiagnosisView: View {
                             y: .value(selectedTrend.chartTitle, value(for: row, metric: selectedTrend))
                         )
                         .foregroundStyle(trendAccentGradient)
-                        .cornerRadius(6)
+                        .cornerRadius(AppRadius.xs)
                     }
 
                     RuleMark(y: .value("Typical", typicalTrendValue))
@@ -143,8 +143,8 @@ struct BS_DiagnosisView: View {
                             Text("Typical \(selectedTrend.segmentTitle.lowercased()) $\(formatted(typicalTrendValue))")
                                 .font(.caption)
                                 .foregroundStyle(AppColors.inkSoft)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
+                                .padding(.horizontal, AppSpacing.sm)
+                                .padding(.vertical, AppSpacing.xs)
                                 .background(AppColors.shellBg1.opacity(0.94))
                                 .clipShape(Capsule())
                                 .position(
@@ -154,23 +154,21 @@ struct BS_DiagnosisView: View {
                         }
                     }
                 }
-                .frame(height: 220)
+                .frame(height: chartHeightLarge)
             }
         }
-        .padding(AppSpacing.md)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
+        .padding(AppSpacing.cardPadding)
+        .bsGlassCard()
     }
+
+    private let chartHeightLarge: CGFloat = 220
+    private let chartHeightCompact: CGFloat = 180
 
     private var emptyTrendState: some View {
         VStack(spacing: AppSpacing.sm) {
             RoundedRectangle(cornerRadius: AppRadius.md)
                 .fill(AppColors.inkTrack.opacity(0.45))
-                .frame(height: 180)
+                .frame(height: chartHeightCompact)
                 .overlay(
                     Text("We’ll show your trend as soon as we have complete months to compare.")
                         .font(.footnoteRegular)
@@ -206,13 +204,8 @@ struct BS_DiagnosisView: View {
                 }
             }
         }
-        .padding(AppSpacing.md)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
+        .padding(AppSpacing.cardPadding)
+        .bsGlassCard()
     }
 
     private func categoryRow(_ category: CategorySnapshot) -> some View {
@@ -221,13 +214,13 @@ struct BS_DiagnosisView: View {
                 ZStack {
                     Circle()
                         .fill(category.tint.opacity(0.12))
-                        .frame(width: 28, height: 28)
+                        .frame(width: AppSpacing.lg + AppSpacing.xs, height: AppSpacing.lg + AppSpacing.xs)
                     Image(systemName: category.icon)
                         .font(.caption)
                         .foregroundStyle(category.tint)
                 }
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text(category.name)
                         .font(.bodySmallSemibold)
                         .foregroundStyle(AppColors.inkPrimary)
@@ -238,7 +231,7 @@ struct BS_DiagnosisView: View {
 
                 Spacer()
 
-                VStack(alignment: .trailing, spacing: 2) {
+                VStack(alignment: .trailing, spacing: AppSpacing.xxs) {
                     Text("$\(formatted(category.amount))")
                         .font(.bodySmallSemibold)
                         .foregroundStyle(AppColors.inkPrimary)
@@ -254,10 +247,10 @@ struct BS_DiagnosisView: View {
                         .fill(AppColors.inkBorder.opacity(0.3))
                     RoundedRectangle(cornerRadius: AppRadius.sm)
                         .fill(category.tint)
-                        .frame(width: max(10, geo.size.width * max(0, min(1, category.share))))
+                        .frame(width: max(AppSpacing.sm + AppSpacing.xxs, geo.size.width * max(0, min(1, category.share))))
                 }
             }
-            .frame(height: 8)
+            .frame(height: AppSpacing.sm)
         }
     }
 
@@ -281,13 +274,13 @@ struct BS_DiagnosisView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: AppRadius.sm)
                     .fill(insight.tint.opacity(0.14))
-                    .frame(width: 32, height: 32)
+                    .frame(width: AppSpacing.xl, height: AppSpacing.xl)
                 Image(systemName: insight.icon)
                     .font(.footnoteSemibold)
                     .foregroundStyle(insight.tint)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 Text(insight.title)
                     .font(.bodySmallSemibold)
                     .foregroundStyle(AppColors.inkPrimary)
@@ -299,13 +292,8 @@ struct BS_DiagnosisView: View {
 
             Spacer(minLength: 0)
         }
-        .padding(AppSpacing.md)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
+        .padding(AppSpacing.cardPadding)
+        .bsGlassCard(cornerRadius: AppRadius.glassBlock)
     }
 
     private var stickyBottomCTA: some View {
@@ -442,7 +430,7 @@ struct BS_DiagnosisView: View {
                     title: "Highest spend month",
                     body: "\(strongestMonth.label) was your highest spending month at $\(formatted(strongestMonth.spend)).",
                     icon: "calendar",
-                    tint: AppColors.budgetOrange
+                    tint: AppColors.planDifficultyAccelerate
                 )
             )
         }
@@ -540,13 +528,13 @@ struct BS_DiagnosisView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: AppRadius.sm)
                     .fill(AppColors.inkTrack.opacity(0.55))
-                    .frame(width: 30, height: 30)
+                    .frame(width: AppSpacing.lg + AppSpacing.xs + AppSpacing.xxs, height: AppSpacing.lg + AppSpacing.xs + AppSpacing.xxs)
                 Image(systemName: icon)
                     .font(.caption)
                     .foregroundStyle(AppColors.inkPrimary)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 Text(title)
                     .font(.bodySmallSemibold)
                     .foregroundStyle(AppColors.inkPrimary)
@@ -560,7 +548,7 @@ struct BS_DiagnosisView: View {
 
     private func categoryTint(parent: String, canonicalId: String) -> Color {
         if canonicalId == "uncategorized" { return AppColors.inkSoft }
-        return parent == "needs" ? AppColors.budgetTeal : AppColors.accentAmber
+        return parent == "needs" ? AppColors.budgetNeedsBlue : AppColors.budgetWantsPurple
     }
 
     private func fallbackCategoryName(for canonicalId: String) -> String {

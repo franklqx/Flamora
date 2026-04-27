@@ -63,7 +63,7 @@ struct BS_AccountSelectionView: View {
                             .padding(.top, AppSpacing.md)
                     }
 
-                    Spacer().frame(height: 140)
+                    Spacer().frame(height: AppSpacing.tabBarReserve + AppSpacing.xxl + AppSpacing.lg)
                 }
             }
 
@@ -183,7 +183,7 @@ struct BS_AccountSelectionView: View {
             VStack(spacing: AppSpacing.sm) {
                 Image(systemName: "building.columns.fill")
                     .font(.h2)
-                    .foregroundStyle(AppColors.accentAmber)
+                    .foregroundStyle(AppColors.inkPrimary)
                 Text("Link your first account")
                     .font(.h4)
                     .foregroundStyle(AppColors.inkPrimary)
@@ -249,18 +249,12 @@ struct BS_AccountSelectionView: View {
                 accountRow(account)
 
                 if account.id != viewModel.plaidAccounts.last?.id {
-                    Rectangle()
-                        .fill(AppColors.inkBorder)
-                        .frame(height: 1)
+                    Divider()
+                        .background(AppColors.inkDivider)
                 }
             }
         }
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
+        .bsGlassCard()
     }
 
     private func accountRow(_ account: PlaidAccountItem) -> some View {
@@ -328,8 +322,8 @@ struct BS_AccountSelectionView: View {
     private func accountCheckbox(isSelected: Bool, isEnabled: Bool) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: AppRadius.sm)
-                .fill(isSelected ? AppColors.accentAmber : Color.clear)
-                .frame(width: 24, height: 24)
+                .fill(isSelected ? AppColors.inkPrimary : Color.clear)
+                .frame(width: AppSpacing.lg, height: AppSpacing.lg)
                 .overlay(
                     RoundedRectangle(cornerRadius: AppRadius.sm)
                         .stroke(
@@ -361,20 +355,15 @@ struct BS_AccountSelectionView: View {
             HStack(spacing: AppSpacing.sm) {
                 Image(systemName: "plus.circle.fill")
                     .font(.h4)
-                    .foregroundStyle(AppColors.accentAmber)
+                    .foregroundStyle(AppColors.inkPrimary)
                 Text(viewModel.hasInvestmentAccount ? "Add Another Account" : "Add Investment Account")
                     .font(.figureSecondarySemibold)
-                    .foregroundStyle(AppColors.accentAmber)
+                    .foregroundStyle(AppColors.inkPrimary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, AppSpacing.md)
+            .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.vertical, AppSpacing.rowItem)
-            .background(AppColors.glassCardBg)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.lg)
-                    .stroke(AppColors.accentAmber.opacity(0.2), lineWidth: 1)
-            )
+            .bsGlassCard(borderColor: AppColors.inkPrimary.opacity(0.2))
         }
         .buttonStyle(.plain)
     }
@@ -394,25 +383,20 @@ struct BS_AccountSelectionView: View {
             } label: {
                 Text("Enter Numbers Instead")
                     .font(.bodySmallSemibold)
-                    .foregroundStyle(AppColors.accentAmber)
+                    .foregroundStyle(AppColors.inkPrimary)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 48)
-                    .background(AppColors.glassCardBg)
+                    .frame(height: AppSpacing.xxl)
+                    .background(AppColors.glassBlockBg)
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
                     .overlay(
                         RoundedRectangle(cornerRadius: AppRadius.button)
-                            .stroke(AppColors.accentAmber.opacity(0.35), lineWidth: 1)
+                            .stroke(AppColors.inkPrimary.opacity(0.35), lineWidth: 1)
                     )
             }
             .buttonStyle(.plain)
         }
-        .padding(AppSpacing.md)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
+        .padding(AppSpacing.cardPadding)
+        .bsGlassCard()
     }
 
     private var manualEntrySection: some View {
@@ -433,7 +417,7 @@ struct BS_AccountSelectionView: View {
                         viewModel.exitManualMode()
                     }
                     .font(.footnoteSemibold)
-                    .foregroundStyle(AppColors.accentAmber)
+                    .foregroundStyle(AppColors.inkPrimary)
                 }
             }
 
@@ -465,13 +449,8 @@ struct BS_AccountSelectionView: View {
                     .foregroundStyle(AppColors.inkSoft)
             }
         }
-        .padding(AppSpacing.md)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
+        .padding(AppSpacing.cardPadding)
+        .bsGlassCard()
     }
 
     /// Manual-mode age input. Pre-filled from `user_profiles.age` when
@@ -502,7 +481,7 @@ struct BS_AccountSelectionView: View {
                     .foregroundStyle(AppColors.inkFaint)
             }
             .padding(.horizontal, AppSpacing.md)
-            .frame(height: 48)
+            .frame(height: AppSpacing.xxl)
             .background(AppColors.shellBg2.opacity(0.65))
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
             .overlay(
@@ -552,7 +531,7 @@ struct BS_AccountSelectionView: View {
                     .keyboardType(.decimalPad)
             }
             .padding(.horizontal, AppSpacing.md)
-            .frame(height: 48)
+            .frame(height: AppSpacing.xxl)
             .background(AppColors.shellBg2.opacity(0.65))
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
             .overlay(

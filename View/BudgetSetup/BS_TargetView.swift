@@ -135,17 +135,12 @@ struct BS_TargetView: View {
                     Spacer()
                     Image(systemName: "pencil")
                         .font(.footnoteRegular)
-                        .foregroundStyle(AppColors.accentAmber)
+                        .foregroundStyle(AppColors.warning)
                 }
             }
-            .padding(AppSpacing.md)
+            .padding(AppSpacing.cardPadding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(AppColors.glassCardBg)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.lg)
-                    .stroke(AppColors.inkBorder, lineWidth: 1)
-            )
+            .bsGlassCard()
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(title) \(value). Tap to edit.")
@@ -168,9 +163,8 @@ struct BS_TargetView: View {
                 }
             }
 
-            Rectangle()
-                .fill(AppColors.inkBorder)
-                .frame(height: 1)
+            Divider()
+                .background(AppColors.inkBorder)
 
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text("YOUR FIRE NUMBER")
@@ -187,7 +181,7 @@ struct BS_TargetView: View {
                 Button {
                     showFireInfoSheet = true
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: AppSpacing.xs) {
                         Text("Based on the 4% rule")
                             .font(.caption)
                             .foregroundStyle(AppColors.inkSoft)
@@ -201,13 +195,8 @@ struct BS_TargetView: View {
                 .padding(.top, AppSpacing.xxs)
             }
         }
-        .padding(AppSpacing.md)
-        .background(AppColors.glassCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.inkBorder, lineWidth: 1)
-        )
+        .padding(AppSpacing.cardPadding)
+        .bsGlassCard()
     }
 
     private var spendingAmountRow: some View {
@@ -215,7 +204,7 @@ struct BS_TargetView: View {
             primeSpendingEditor()
             showSpendingSheet = true
         } label: {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
                 Text("$\(formatted(viewModel.retirementSpendingMonthly))")
                     .font(.h1)
                     .foregroundStyle(AppColors.inkPrimary)
@@ -225,7 +214,7 @@ struct BS_TargetView: View {
                     .foregroundStyle(AppColors.inkSoft)
                 Image(systemName: "pencil")
                     .font(.footnoteRegular)
-                    .foregroundStyle(AppColors.accentAmber)
+                    .foregroundStyle(AppColors.warning)
                 Spacer()
             }
         }
@@ -237,12 +226,12 @@ struct BS_TargetView: View {
     private func spendingComparisonFootnote(for state: SpendingComparisonState) -> some View {
         switch state {
         case .above(let pct):
-            HStack(spacing: 6) {
-                HStack(spacing: 4) {
+            HStack(spacing: AppSpacing.xs) {
+                HStack(spacing: AppSpacing.xs) {
                     Image(systemName: "arrow.up")
                     Text("\(pct)%")
                 }
-                .foregroundStyle(AppColors.accentAmber)
+                .foregroundStyle(AppColors.warning)
                 Text("more than you spend today")
                     .font(.footnoteRegular)
                     .foregroundStyle(AppColors.inkFaint)
@@ -251,12 +240,12 @@ struct BS_TargetView: View {
             .contentTransition(.numericText())
             .padding(.leading, AppSpacing.sm + AppSpacing.xs)
         case .below(let pct):
-            HStack(spacing: 6) {
-                HStack(spacing: 4) {
+            HStack(spacing: AppSpacing.xs) {
+                HStack(spacing: AppSpacing.xs) {
                     Image(systemName: "arrow.down")
                     Text("\(pct)%")
                 }
-                .foregroundStyle(AppColors.accentAmber)
+                .foregroundStyle(AppColors.warning)
                 Text("less than you spend today")
                     .font(.footnoteRegular)
                     .foregroundStyle(AppColors.inkFaint)
@@ -265,9 +254,9 @@ struct BS_TargetView: View {
             .contentTransition(.numericText())
             .padding(.leading, AppSpacing.sm + AppSpacing.xs)
         case .matches:
-            HStack(spacing: 6) {
+            HStack(spacing: AppSpacing.xs) {
                 Image(systemName: "equal")
-                    .foregroundStyle(AppColors.accentAmber)
+                    .foregroundStyle(AppColors.warning)
                 Text("About what you spend today")
                     .font(.footnoteRegular)
                     .foregroundStyle(AppColors.inkFaint)
@@ -351,7 +340,7 @@ struct BS_TargetView: View {
 
                 VStack(spacing: AppSpacing.xs) {
                     Slider(value: draftSpendingSliderBinding, in: spendingMin...spendingSliderMax, step: 50)
-                        .tint(AppColors.accentAmber)
+                        .tint(AppColors.warning)
 
                     HStack {
                         Text("$\(formatted(spendingMin))")
@@ -424,7 +413,7 @@ struct BS_TargetView: View {
     }
 
     private var spendingSheetAmountRow: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 2) {
+        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xxs) {
             Text("$")
                 .font(.h1)
                 .foregroundStyle(AppColors.inkPrimary)
@@ -533,7 +522,7 @@ struct BS_TargetView: View {
                         in: Double(range.lowerBound)...Double(range.upperBound),
                         step: 1
                     )
-                    .tint(AppColors.accentAmber)
+                    .tint(AppColors.warning)
 
                     HStack {
                         Text("\(range.lowerBound)")
@@ -595,14 +584,9 @@ struct BS_TargetView: View {
                         .foregroundStyle(AppColors.inkPrimary)
                         .monospacedDigit()
                 }
-                .padding(AppSpacing.md)
+                .padding(AppSpacing.cardPadding)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(AppColors.glassCardBg)
-                .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppRadius.lg)
-                        .stroke(AppColors.inkBorder, lineWidth: 1)
-                )
+                .bsGlassCard()
 
                 Spacer(minLength: 0)
             }
