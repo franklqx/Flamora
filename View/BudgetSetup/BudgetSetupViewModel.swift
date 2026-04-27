@@ -445,6 +445,17 @@ class BudgetSetupViewModel {
         // Restore goal fields from DB — covers old users, mid-flow exits, multi-device
         await restoreFromActiveFireGoal()
         seedDefaultsForTargetStep()
+
+        // Quick-edit flows skip Reality and Plan steps, so loadPlans() / loadSpendingPlan()
+        // are never called through the normal path. Hydrate them here so committedDefaults
+        // and spendingPlan are ready before the user reaches Split or Confirm.
+        if postLoadingStep == .split || postLoadingStep == .plan {
+            await loadPlans()
+            if selectedPlan != nil {
+                await loadSpendingPlan()
+            }
+        }
+
         isLoadingDiagnosis = false
     }
 
@@ -778,6 +789,8 @@ class BudgetSetupViewModel {
             )
             _ = try await APIService.shared.applySelectedPlan(data: request)
             try await APIService.shared.markSetupStep("snapshot_reviewed")
+            // Force fresh setup-state fetch so Home Hero card sees .active immediately
+            HomeSetupStateCache.clear()
             print("✅ [BudgetSetup] applyPlan success")
             return true
         } catch {

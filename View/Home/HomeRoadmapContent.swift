@@ -60,7 +60,17 @@ struct HomeRoadmapContent: View {
         return b.needsBudget + b.wantsBudget + b.savingsBudget
     }
 
-    private var targetRatePercent: Double { budget?.savingsRatio ?? 20 }
+    private var targetRatePercent: Double {
+        // Prefer the budget row's committed ratio (written by saveFinalBudget).
+        if let ratio = budget?.savingsRatio, ratio > 0 { return ratio }
+        // Fallback: derive from the active plan's monthly save target when the
+        // monthly budget row hasn't loaded yet (e.g. right after first plan submit).
+        if let monthlySave = fireGoal?.savingsTargetMonthly, monthlySave > 0 {
+            let income = monthlyIncome
+            if income > 0 { return (monthlySave / income) * 100 }
+        }
+        return 0
+    }
     /// Savings target follows the active plan as the single source of truth;
     /// monthly_budget is only a fallback when the goal API hasn't loaded yet.
     private var targetAmount: Double {
