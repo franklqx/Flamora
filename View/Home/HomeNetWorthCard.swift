@@ -159,6 +159,18 @@ struct HomeNetWorthCard: View {
                     .foregroundColor(AppColors.inkFaint)
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Net worth")
+        .accessibilityValue(netWorthAccessibilityValue)
+    }
+
+    private var netWorthAccessibilityValue: String {
+        let amount = formatCurrency(totalValue)
+        guard let amt = growthAmount, let pct = growthPercent else {
+            return "\(amount). No prior data to compare yet."
+        }
+        let direction = amt >= 0 ? "up" : "down"
+        return "\(amount), \(direction) \(formatCurrency(abs(amt))) or \(formatPercent(pct)) this month"
     }
 
     // MARK: - Chart

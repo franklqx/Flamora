@@ -619,6 +619,33 @@ private extension CashflowView {
                     }
                 )
                 .padding(.horizontal, AppSpacing.screenPadding)
+            } else if !plaidManager.hasLinkedBank {
+                EmptyStateView(
+                    icon: "building.columns",
+                    title: "Connect your first account",
+                    message: "Link a checking account to see balances, transactions, and budget progress in one place.",
+                    actionTitle: "Connect bank account",
+                    action: {
+                        if plaidManager.shouldShowTrustBridge() {
+                            showTrustBridge = true
+                        } else {
+                            Task { await plaidManager.startLinkFlow() }
+                        }
+                    }
+                )
+                .background(
+                    LinearGradient(
+                        colors: [AppColors.glassCardBg, AppColors.glassCardBg2],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.glassCard))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.glassCard)
+                        .stroke(AppColors.glassCardBorder, lineWidth: 1)
+                )
+                .padding(.horizontal, AppSpacing.screenPadding)
             }
         }
     }

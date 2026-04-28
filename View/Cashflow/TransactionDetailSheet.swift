@@ -115,6 +115,9 @@ struct TransactionDetailSheet: View {
                 .font(.currencyHero)
                 .foregroundStyle(AppColors.inkPrimary)
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .dynamicTypeSize(...DynamicTypeSize.xLarge)
 
             if let acct = transactionAccount {
                 HStack(spacing: AppSpacing.sm) {

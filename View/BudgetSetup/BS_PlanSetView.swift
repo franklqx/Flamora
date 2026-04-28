@@ -61,6 +61,9 @@ struct BS_PlanSetView: View {
                     Text(formatted(monthlyBudgetValue))
                         .font(.currencyHero)
                         .foregroundStyle(AppColors.inkPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                        .dynamicTypeSize(...DynamicTypeSize.xLarge)
 
                     Text("MONTHLY BUDGET")
                         .font(.cardHeader)

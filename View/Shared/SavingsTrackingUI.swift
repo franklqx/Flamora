@@ -234,6 +234,31 @@ struct SavingsMonthOrb: View {
                 .tracking(0.6)
         }
         .frame(width: diameter + 8)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(node.label)
+        .accessibilityValue(accessibilityValueText)
+    }
+
+    private var accessibilityValueText: String {
+        switch node.state {
+        case .future:    return "Upcoming"
+        case .pending:   return node.isEditable ? "No check-in yet, tap to log" : "No check-in yet"
+        case .missed:    return node.isEditable ? "Missed, tap to log" : "Missed"
+        case .belowTarget:
+            if let amt = node.amount { return "Below target, saved \(formattedAmount(amt))" }
+            return "Below target"
+        case .onTarget:
+            if let amt = node.amount { return "On target, saved \(formattedAmount(amt))" }
+            return "On target"
+        }
+    }
+
+    private func formattedAmount(_ value: Double) -> String {
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.currencyCode = "USD"
+        f.maximumFractionDigits = 0
+        return f.string(from: NSNumber(value: value)) ?? "$\(Int(value))"
     }
 
     @ViewBuilder

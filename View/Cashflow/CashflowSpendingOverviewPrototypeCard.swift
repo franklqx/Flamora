@@ -22,6 +22,8 @@ struct CashflowSpendingOverviewPrototypeCard: View {
                     Text("$3,420")
                         .font(.currencyHero)
                         .foregroundStyle(AppColors.inkPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
 
                     Text("Monthly spending split into needs and wants.")
                         .font(.bodySmall)

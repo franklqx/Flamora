@@ -150,6 +150,9 @@ struct TotalSpendingAnalysisDetailView: View {
                 .font(.currencyHero)
                 .foregroundStyle(AppColors.inkPrimary)
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .dynamicTypeSize(...DynamicTypeSize.xLarge)
 
             chartView.frame(height: 180)
 

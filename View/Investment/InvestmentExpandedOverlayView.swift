@@ -73,6 +73,9 @@ private extension InvestmentExpandedOverlayView {
                 .foregroundStyle(AppColors.heroTextPrimary)
                 .contentTransition(.numericText())
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .dynamicTypeSize(...DynamicTypeSize.xLarge)
 
             if plaidManager.hasLinkedBank, let pct = store.todayChangePct {
                 Text(formattedPercent(pct) + " today")

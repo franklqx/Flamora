@@ -257,12 +257,12 @@ struct AccountDetailView: View {
             .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
 
             if holdings.isEmpty {
-                Text("No holdings available for this account")
-                    .font(.bodyRegular)
-                    .foregroundStyle(AppColors.inkSoft)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, AppSpacing.cardPadding)
-                    .padding(.bottom, AppSpacing.cardPadding)
+                EmptyStateView(
+                    icon: "chart.pie",
+                    title: "No holdings yet",
+                    message: "Once your brokerage syncs, your positions will appear here with live allocation and growth."
+                )
+                .padding(.bottom, AppSpacing.sm)
             } else {
                 ForEach(Array(holdings.enumerated()), id: \.element.id) { idx, holding in
                     HoldingRow(holding: holding)
@@ -297,12 +297,12 @@ struct AccountDetailView: View {
             .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
 
             if groupedTransactions.isEmpty {
-                Text("No transactions for this account")
-                    .font(.bodyRegular)
-                    .foregroundStyle(AppColors.inkSoft)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, AppSpacing.cardPadding)
-                    .padding(.bottom, AppSpacing.cardPadding)
+                EmptyStateView(
+                    icon: "creditcard",
+                    title: "No transactions yet",
+                    message: "Recent activity will appear here within 24 hours of syncing this account."
+                )
+                .padding(.bottom, AppSpacing.sm)
             } else {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(groupedTransactions.enumerated()), id: \.element.0) { sectionIndex, group in

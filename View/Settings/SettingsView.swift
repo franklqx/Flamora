@@ -323,17 +323,11 @@ private extension SettingsView {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(AppSpacing.cardPadding)
                 } else if archivedReports.isEmpty {
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text("No archived reports yet")
-                            .font(.inlineLabel)
-                            .foregroundStyle(AppColors.inkPrimary)
-                        Text("Viewed and older weekly, monthly, annual, and Issue Zero stories will live here.")
-                            .font(.footnoteRegular)
-                            .foregroundStyle(AppColors.inkSoft)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(AppSpacing.cardPadding)
+                    EmptyStateView(
+                        icon: "archivebox",
+                        title: "No archived reports yet",
+                        message: "Viewed and older weekly, monthly, annual, and Issue Zero stories will live here."
+                    )
                 } else {
                     VStack(spacing: 0) {
                         ForEach(Array(archivedReports.prefix(8).enumerated()), id: \.element.id) { index, item in

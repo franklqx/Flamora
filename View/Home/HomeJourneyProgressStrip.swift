@@ -113,6 +113,8 @@ struct HomeJourneyProgressStrip: View {
                     .font(.inlineFigureBold)
                     .foregroundStyle(AppColors.heroTextPrimary)
                     .tracking(AppTypography.Tracking.miniUppercase)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
 
                 Spacer(minLength: AppSpacing.sm)
 
@@ -121,6 +123,7 @@ struct HomeJourneyProgressStrip: View {
                         .font(.smallLabel)
                         .foregroundStyle(AppColors.heroTextPrimary)
                         .tracking(AppTypography.Tracking.miniUppercase)
+                        .lineLimit(1)
                         .padding(.horizontal, AppSpacing.sm)
                         .padding(.vertical, 4)
                         .background(
@@ -168,12 +171,16 @@ struct HomeJourneyProgressStrip: View {
                             Text(startAmountText)
                                 .font(.footnoteBold)
                                 .foregroundStyle(AppColors.heroTextPrimary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
                         }
-                        Spacer(minLength: 0)
+                        Spacer(minLength: AppSpacing.xs)
                         if let targetAmountText {
                             Text(targetAmountText)
                                 .font(.footnoteBold)
                                 .foregroundStyle(AppColors.heroTextPrimary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
                         }
                     }
 
@@ -185,10 +192,13 @@ struct HomeJourneyProgressStrip: View {
                                 .foregroundStyle(AppColors.heroTextHint)
                                 .tracking(AppTypography.Tracking.miniUppercase)
                                 .textCase(.uppercase)
+                                .lineLimit(1)
                             if let freedomDateText {
                                 Text(freedomDateText)
                                     .font(.footnoteSemibold)
                                     .foregroundStyle(AppColors.heroTextPrimary)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
                             }
                         }
                     }
@@ -198,6 +208,8 @@ struct HomeJourneyProgressStrip: View {
                             Text(trailingPercentText)
                                 .font(.cardFigurePrimary)
                                 .foregroundStyle(AppColors.heroTextPrimary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.6)
                         }
                         Spacer(minLength: 0)
                         Text(footerLabel)
@@ -205,12 +217,14 @@ struct HomeJourneyProgressStrip: View {
                             .foregroundStyle(AppColors.heroTextHint)
                             .tracking(AppTypography.Tracking.miniUppercase)
                             .textCase(.uppercase)
+                            .lineLimit(1)
                     }
                 }
             }
         }
         .padding(.horizontal, AppSpacing.screenPadding)
         .frame(maxWidth: .infinity, alignment: .topLeading)
+        .dynamicTypeSize(...DynamicTypeSize.xLarge)
     }
 }
 

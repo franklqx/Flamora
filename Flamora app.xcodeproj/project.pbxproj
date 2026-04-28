@@ -115,6 +115,7 @@
 		CF30A0012F80000100A9BB60 /* HomeBottomSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF30A0002F80000100A9BB60 /* HomeBottomSheet.swift */; };
 		EABDEF89FBE940EB9923E4BD /* LiquidGlassTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A76DFA412FAB4ECEB53AA9BB /* LiquidGlassTabBar.swift */; };
 		EB0000012F9A00000000EB01 /* ErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB0000022F9A00000000EB01 /* ErrorBanner.swift */; };
+		EB0000032F9A00000000EB02 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB0000042F9A00000000EB02 /* EmptyStateView.swift */; };
 		F10000022FB0000000000001 /* InvestmentDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000012FB0000000000001 /* InvestmentDataStore.swift */; };
 		F10000042FB0000000000001 /* InvestmentExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000032FB0000000000001 /* InvestmentExpandedOverlayView.swift */; };
 		F10000062FB0000000000001 /* InvestmentSheetContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000052FB0000000000001 /* InvestmentSheetContent.swift */; };
@@ -283,6 +284,7 @@
 		CF30A0002F80000100A9BB60 /* HomeBottomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeBottomSheet.swift; sourceTree = "<group>"; };
 		D4B6BBC00A0F486AB485D850 /* Shadows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shadows.swift; sourceTree = "<group>"; };
 		EB0000022F9A00000000EB01 /* ErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBanner.swift; sourceTree = "<group>"; };
+		EB0000042F9A00000000EB02 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		F10000012FB0000000000001 /* InvestmentDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentDataStore.swift; sourceTree = "<group>"; };
 		F10000032FB0000000000001 /* InvestmentExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentExpandedOverlayView.swift; sourceTree = "<group>"; };
 		F10000052FB0000000000001 /* InvestmentSheetContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentSheetContent.swift; sourceTree = "<group>"; };
@@ -632,6 +634,7 @@
 				A76DFA412FAB4ECEB53AA9BB /* LiquidGlassTabBar.swift */,
 				15FF6ED92F31043F0005F482 /* GradientButton.swift */,
 				EB0000022F9A00000000EB01 /* ErrorBanner.swift */,
+				EB0000042F9A00000000EB02 /* EmptyStateView.swift */,
 				CDSP00052FE0000000000005 /* DetailSheetScaffold.swift */,
 			);
 			path = Components;
@@ -823,6 +826,7 @@
 				RPT000012FC000000000001 /* ReportModels.swift in Sources */,
 				152BE0842F67A66C00CACBBC /* GlassPillSelector.swift in Sources */,
 				EB0000012F9A00000000EB01 /* ErrorBanner.swift in Sources */,
+				EB0000032F9A00000000EB02 /* EmptyStateView.swift in Sources */,
 				CDSP00062FE0000000000006 /* DetailSheetScaffold.swift in Sources */,
 				152BE0862F67A67000CACBBC /* ChartInteractionLayer.swift in Sources */,
 				15E21AED2F33C11A00A9BB60 /* MainTabView.swift in Sources */,

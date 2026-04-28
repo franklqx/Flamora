@@ -91,6 +91,7 @@ struct GlassmorphicTabBar: View {
                                 ) {
                                     onTabTapped(tab.item)
                                 }
+                                .accessibilityIdentifier(Self.accessibilityIdentifier(for: tab.item))
                                 .offset(x: collapseTabOffset(for: index))
                                 .onLongPressGesture(
                                     minimumDuration: 0.16,
@@ -245,6 +246,16 @@ struct GlassmorphicTabBar: View {
         let distance = abs(CGFloat(index) - focus)
         return max(0, 1 - min(1, distance))
     }
+
+    /// Stable accessibility identifiers consumed by `Flamora_appUITests`.
+    private static func accessibilityIdentifier(for item: MainTabItem) -> String {
+        switch item {
+        case .home: return "tab_home"
+        case .cashflow: return "tab_cashflow"
+        case .investment: return "tab_investment"
+        case .settings: return "tab_settings"
+        }
+    }
 }
 
 private struct GlassTabButton: View {
@@ -295,6 +306,9 @@ private struct GlassTabButton: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
         .animation(.easeOut(duration: 0.14), value: isLongPressed)
     }
 

@@ -1046,18 +1046,11 @@ private struct NotificationsView: View {
 
     private var emptyCard: some View {
         cardContainer {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text("No reports yet")
-                    .font(.inlineLabel)
-                    .foregroundStyle(AppColors.inkPrimary)
-
-                Text("Your latest weekly, monthly, and annual stories will appear here once they are generated.")
-                    .font(.footnoteRegular)
-                    .foregroundStyle(AppColors.inkSoft)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(AppSpacing.cardPadding)
+            EmptyStateView(
+                icon: "bell",
+                title: "No reports yet",
+                message: "Your latest weekly, monthly, and annual stories will appear here once they're generated."
+            )
         }
     }
 

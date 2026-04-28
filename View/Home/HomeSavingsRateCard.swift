@@ -113,6 +113,9 @@ struct HomeSavingsRateCard: View {
                     value: "\(Int(snapshot.targetRatePercent.rounded()))%"
                 )
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Savings target")
+            .accessibilityValue("\(savingsAmountText(snapshot)), \(Int(snapshot.targetRatePercent.rounded())) percent of income")
 
             HStack(alignment: .top, spacing: AppSpacing.sm + AppSpacing.xs) {
                 ForEach(snapshot.currentWindowNodes) { node in

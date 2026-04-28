@@ -60,6 +60,7 @@ struct PlaidTrustBridgeView: View {
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ))
+                        .dynamicTypeSize(...DynamicTypeSize.xLarge)
                 }
 
                 Spacer().frame(height: AppSpacing.lg)
