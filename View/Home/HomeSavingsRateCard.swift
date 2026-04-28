@@ -110,12 +110,12 @@ struct HomeSavingsRateCard: View {
 
                 summaryBlock(
                     label: "Savings Rate",
-                    value: "\(Int(snapshot.targetRatePercent.rounded()))%"
+                    value: formatPercent(snapshot.targetRatePercent)
                 )
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Savings target")
-            .accessibilityValue("\(savingsAmountText(snapshot)), \(Int(snapshot.targetRatePercent.rounded())) percent of income")
+            .accessibilityValue("\(savingsAmountText(snapshot)), \(formatPercent(snapshot.targetRatePercent)) of income")
 
             HStack(alignment: .top, spacing: AppSpacing.sm + AppSpacing.xs) {
                 ForEach(snapshot.currentWindowNodes) { node in
@@ -149,6 +149,14 @@ struct HomeSavingsRateCard: View {
 
     private func savingsAmountText(_ snapshot: SavingsTrackingSnapshot) -> String {
         "\(formatCurrency(snapshot.targetAmount))/month"
+    }
+
+    private func formatPercent(_ value: Double) -> String {
+        let rounded = (value * 10).rounded() / 10
+        if rounded.truncatingRemainder(dividingBy: 1) == 0 {
+            return "\(Int(rounded))%"
+        }
+        return String(format: "%.1f%%", rounded)
     }
 
     private func formatCurrency(_ value: Double) -> String {

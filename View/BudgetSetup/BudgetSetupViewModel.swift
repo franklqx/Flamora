@@ -86,6 +86,7 @@ class BudgetSetupViewModel {
 
     var plaidAccounts: [PlaidAccountItem] = []
     var selectedAccountIds: Set<String> = []
+    private var analyzedAccountIds: Set<String>?
     var isLoadingAccounts = false
     var accountsError: String?
     var isSavingStartingPortfolioDecision = false
@@ -145,6 +146,11 @@ class BudgetSetupViewModel {
     var diagnosis: FinancialDiagnosisResponse?
     var goalFeasibility: GoalFeasibilityResult? = nil
     var isLoadingFeasibility = false
+
+    private var hasFreshSpendingStatsForSelectedAccounts: Bool {
+        guard spendingStats != nil else { return false }
+        return analyzedAccountIds == selectedAccountIds
+    }
     
     // MARK: - Step 3: Plans
 
@@ -358,6 +364,7 @@ class BudgetSetupViewModel {
         accountsError = nil
         do {
             let response = try await APIService.shared.getPlaidAccounts()
+            let previousSelection = selectedAccountIds
             plaidAccounts = response.accounts
 
             // 默认选中 depository 和 credit 类型
@@ -366,6 +373,9 @@ class BudgetSetupViewModel {
                     .filter { ["depository", "credit"].contains($0.type) }
                     .map { $0.id }
             )
+            if previousSelection != selectedAccountIds {
+                invalidateAccountScopedAnalysis()
+            }
 
             updateStartingPortfolioFromConnectedInvestments(response.accounts)
             isLoadingAccounts = false
@@ -400,6 +410,26 @@ class BudgetSetupViewModel {
         } else {
             selectedAccountIds.insert(accountId)
         }
+        invalidateAccountScopedAnalysis()
+    }
+
+    private func invalidateAccountScopedAnalysis() {
+        analyzedAccountIds = nil
+        spendingStats = nil
+        diagnosis = nil
+        goalFeasibility = nil
+        plans = []
+        selectedPlanIndex = 0
+        customSliderRange = nil
+        committedSavingsRate = nil
+        committedMonthlySave = nil
+        committedSpendCeiling = nil
+        committedPlanLabel = nil
+        spendingPlan = nil
+        spendingPlanError = nil
+        editedFlexibleAmounts = [:]
+        categoryBudgets = [:]
+        showCategoryBudgets = false
     }
 
     func refreshAccountsAfterNewConnection() async {
@@ -579,14 +609,16 @@ class BudgetSetupViewModel {
 
     private func loadSpendingStats() async {
         do {
+            let accountScope = selectedAccountIds
             var requestBody: [String: Any] = ["months": 6]
-            if !selectedAccountIds.isEmpty {
-                requestBody["account_ids"] = Array(selectedAccountIds)
+            if !accountScope.isEmpty {
+                requestBody["account_ids"] = Array(accountScope).sorted()
             }
             let body = try JSONSerialization.data(withJSONObject: requestBody)
             let request = try await APIService.shared.authenticatedRequest(function: "calculate-spending-stats", body: body)
             let response: SpendingStatsResponse = try await APIService.shared.perform(request)
             spendingStats = response
+            analyzedAccountIds = accountScope
             
             // Update income from Plaid if available
             if response.incomeSource == "plaid" && response.avgMonthlyIncome > 0 {
@@ -622,7 +654,8 @@ class BudgetSetupViewModel {
                 desiredMonthlyExpenses: retirementSpendingMonthly,
                 currentNetWorth: startingPortfolioBalance > 0 ? startingPortfolioBalance : nil,
                 currentAge: currentAge > 0 ? currentAge : nil,
-                startingPortfolioBalance: startingPortfolioBalance
+                startingPortfolioBalance: startingPortfolioBalance,
+                startingPortfolioSource: startingPortfolioSource == "unknown" ? nil : startingPortfolioSource
             )
             print("✅ [BudgetSetup] loadGoalFeasibility success — phase: \(goalFeasibility?.phase ?? -1), achievable: \(goalFeasibility?.isAchievable ?? false)")
         } catch {
@@ -686,8 +719,12 @@ class BudgetSetupViewModel {
                 currentNetWorth: startingPortfolioBalance,
                 currentAge: currentAge
             )
-            requestBody.startingPortfolioBalance = startingPortfolioBalance
-            requestBody.startingPortfolioSource = startingPortfolioSource
+            if startingPortfolioBalance > 0 || startingPortfolioSource == "explicit_zero" {
+                requestBody.startingPortfolioBalance = startingPortfolioBalance
+            }
+            if startingPortfolioSource != "unknown" {
+                requestBody.startingPortfolioSource = startingPortfolioSource
+            }
             // Transmit latest ViewModel goal values as override (Step 4 → Step 5 drift safety).
             // Server priority: request override > fire_goals active row > null.
             if retirementSpendingMonthly > 0 {
@@ -788,7 +825,11 @@ class BudgetSetupViewModel {
                 startingPortfolioSource: startingPortfolioSource
             )
             _ = try await APIService.shared.applySelectedPlan(data: request)
-            try await APIService.shared.markSetupStep("snapshot_reviewed")
+            do {
+                try await APIService.shared.markSetupStep("snapshot_reviewed")
+            } catch {
+                print("⚠️ [BudgetSetup] mark snapshot_reviewed failed after plan activation: \(error)")
+            }
             // Force fresh setup-state fetch so Home Hero card sees .active immediately
             HomeSetupStateCache.clear()
             print("✅ [BudgetSetup] applyPlan success")
@@ -959,7 +1000,7 @@ class BudgetSetupViewModel {
         }
 
         await MainActor.run {
-            if spendingStats != nil && loadingError == nil {
+            if hasFreshSpendingStatsForSelectedAccounts && loadingError == nil {
                 goToStep(.reality)
             } else {
                 prepareLoading(nextStep: .reality)

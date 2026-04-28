@@ -744,12 +744,17 @@ private extension HomeHeroCardHost {
             setupState = state
         }
 
-        let shouldLoadHero = (state ?? setupState)?.setupStage == .active
-        let nextHero = shouldLoadHero ? await fetchHomeHero() : nil
+        // Hero renders the active layout once the user has built a plan, even
+        // if they haven't linked investment accounts yet (portfolioTotal will
+        // simply be 0 until accounts come online). Server-side `setup_stage`
+        // only flips to `.active` after all three setup steps are done, which
+        // would leave a plan-complete user stuck in the setup-incomplete copy.
+        let planComplete = (state ?? setupState)?.monthlyPlanComplete == true
+        let nextHero = planComplete ? await fetchHomeHero() : nil
         homeHero = nextHero
-        if shouldLoadHero {
+        if planComplete {
             async let summary = try? await APIService.shared.getNetWorthSummary()
-            portfolioTotal = (await summary)?.breakdown.investmentTotal
+            portfolioTotal = (await summary)?.breakdown.investmentTotal ?? 0
             daysSincePlanStart = computeDaysSincePlanStart(from: nextHero?.createdAt)
         } else {
             portfolioTotal = nil

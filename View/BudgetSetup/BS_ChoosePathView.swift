@@ -268,8 +268,8 @@ struct BS_ChoosePathView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: AppSpacing.xs))
                             }
 
-                            if let badge = plan.badge, !badge.isEmpty, !showBestFit {
-                                Text(badge.uppercased())
+                            if let badge = badgeText(for: plan, showBestFit: showBestFit) {
+                                Text(badge)
                                     .font(.miniLabel)
                                     .foregroundStyle(AppColors.ctaWhite)
                                     .padding(.horizontal, AppSpacing.xs)
@@ -439,6 +439,8 @@ struct BS_ChoosePathView: View {
     }
 
     private func difficultyLabel(for plan: BudgetPlanOption) -> String {
+        if isEarlyBufferPlan(plan) { return "Earlier FIRE" }
+
         switch plan.anchor {
         case "target": return "Target"
         case "lifestyle": return "Lifestyle"
@@ -463,14 +465,33 @@ struct BS_ChoosePathView: View {
         case "closest_far": return "Fastest reasonable"
         case "closest_near": return "Closest reasonable"
         case "exact":
-            return plan.monthlySave <= currentMonthlySavings + 1 ? "Keep your pace" : "Hit your target"
+            let delta = plan.monthlySave - currentMonthlySavings
+            if abs(delta) < 1 { return "Keep your pace" }
+            return delta < 0 ? "Target pace" : "Hit your target"
         default:
             switch plan.anchor {
-            case "lifestyle": return "Comfortable"
+            case "lifestyle": return isEarlyBufferPlan(plan) ? "Faster path" : "Comfortable"
             case "acceleration": return "Push harder"
             default: return viewModel.displayName(for: plan.label)
             }
         }
+    }
+
+    private func isEarlyBufferPlan(_ plan: BudgetPlanOption) -> Bool {
+        guard plan.anchor == "lifestyle" else { return false }
+        guard plan.projectedFireAge < viewModel.targetRetirementAge else { return false }
+        guard let primary = viewModel.primaryPlan else { return false }
+        return plan.monthlySave > primary.monthlySave + 1
+    }
+
+    private func badgeText(for plan: BudgetPlanOption, showBestFit: Bool) -> String? {
+        if showBestFit { return nil }
+        if isEarlyBufferPlan(plan) {
+            let yearsEarly = max(1, viewModel.targetRetirementAge - plan.projectedFireAge)
+            return "\(yearsEarly)Y EARLY"
+        }
+        guard let badge = plan.badge, !badge.isEmpty else { return nil }
+        return badge.uppercased()
     }
 
     @ViewBuilder
@@ -579,6 +600,13 @@ struct BS_ChoosePathView: View {
         case "already_fire":
             return "You have already reached the modeled FIRE number. Use this plan to set a sustainable monthly budget."
         default:
+            if isEarlyBufferPlan(plan) {
+                let yearsEarly = max(1, viewModel.targetRetirementAge - plan.projectedFireAge)
+                return "This plan keeps a tighter budget than target pace, builds more margin, and projects FIRE about \(yearsEarly) years before your target."
+            }
+            if plan.anchor == "lifestyle" {
+                return "This plan keeps more lifestyle flexibility. It saves \(action), sets a $\(formattedInt(plan.monthlyBudget))/mo budget, and projects FIRE around age \(plan.projectedFireAge)."
+            }
             return "This plan saves \(action), sets a $\(formattedInt(plan.monthlyBudget))/mo budget, and projects FIRE around age \(plan.projectedFireAge)."
         }
     }

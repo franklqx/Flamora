@@ -23,6 +23,10 @@ import {
   type PlanInput,
   type PlanOutput,
 } from '../_shared/plan-generator.ts'
+import {
+  fetchActiveInvestmentAccountTotal,
+  pickStartingPortfolio,
+} from '../_shared/starting-portfolio.ts'
 
 interface GeneratePlansRequest {
   current_savings_rate?: number            // legacy percent (0..100), retained for compatibility only
@@ -126,7 +130,13 @@ serve(async (req) => {
 
     const body: GeneratePlansRequest = await req.json()
 
-    const needsProfile = (body.starting_portfolio_balance == null && body.current_net_worth == null) || body.current_age == null
+    const shouldFetchProfileForPortfolio =
+      body.starting_portfolio_source !== 'explicit_zero' &&
+      ((body.starting_portfolio_balance ?? body.current_net_worth ?? 0) <= 0)
+    const needsProfile =
+      (body.starting_portfolio_balance == null && body.current_net_worth == null) ||
+      body.current_age == null ||
+      shouldFetchProfileForPortfolio
     const needsGoal =
       body.target_retirement_age == null ||
       body.retirement_spending_monthly == null ||
@@ -195,16 +205,40 @@ serve(async (req) => {
       return errorResponse(400, 'MISSING_TARGET_AGE', 'target_retirement_age is required for V3 plan generation')
     }
 
-    const startingPortfolioBalance = body.starting_portfolio_balance
-      ?? body.current_net_worth
-      ?? profile?.starting_portfolio_balance
-      ?? profile?.plaid_net_worth
-      ?? profile?.current_net_worth
-      ?? 0
-    const startingPortfolioSource = body.starting_portfolio_source
-      ?? profile?.starting_portfolio_source
-      ?? (profile?.plaid_net_worth != null && profile.plaid_net_worth > 0 ? 'plaid_investment' : null)
-      ?? 'unknown'
+    let startingPortfolio = pickStartingPortfolio({
+      bodyStartingPortfolioBalance: body.starting_portfolio_balance,
+      bodyStartingPortfolioSource: body.starting_portfolio_source,
+      bodyCurrentNetWorth: body.current_net_worth,
+      profile,
+    })
+
+    if (
+      body.starting_portfolio_source !== 'explicit_zero' &&
+      startingPortfolio.balance <= 0
+    ) {
+      const connectedInvestmentTotal = await fetchActiveInvestmentAccountTotal(supabase, user.id)
+      startingPortfolio = pickStartingPortfolio({
+        bodyStartingPortfolioBalance: body.starting_portfolio_balance,
+        bodyStartingPortfolioSource: body.starting_portfolio_source,
+        bodyCurrentNetWorth: body.current_net_worth,
+        profile,
+        connectedInvestmentTotal,
+      })
+    }
+
+    if (startingPortfolio.shouldPersistProfile) {
+      await supabase
+        .from('user_profiles')
+        .update({
+          starting_portfolio_balance: round2(startingPortfolio.balance),
+          starting_portfolio_source: startingPortfolio.source,
+          starting_portfolio_updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id)
+    }
+
+    const startingPortfolioBalance = startingPortfolio.balance
+    const startingPortfolioSource = startingPortfolio.source
 
     const essentialFloor = body.essential_floor
       ?? body.avg_monthly_fixed

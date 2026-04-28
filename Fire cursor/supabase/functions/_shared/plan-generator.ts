@@ -297,7 +297,11 @@ function makeCopy(p: CopyArgs): CopyResult {
       return {
         headline: `Keep today's lifestyle: save ${money(p.save)}/mo`,
         sub: `Trim ${money(p.spendCut)}/mo off current spending · FIRE at ${p.fireAge}`,
-        badge: p.hitsTarget ? '✓ Still hits target' : `+${p.gapYears}y vs target`,
+        badge: p.beatsTarget
+          ? `-${p.beatYears}y before target`
+          : p.hitsTarget
+            ? '✓ Hits target'
+            : `+${p.gapYears}y vs target`,
         cta: null,
       }
 

@@ -188,6 +188,10 @@ class PlaidManager {
             }
             if response.success {
                 hasLinkedBank = true
+                // Persistent "user has linked at least once" marker. Survives
+                // disconnect so we can distinguish a returning-but-disconnected
+                // user from a brand-new manual user. Never gets reset.
+                UserDefaults.standard.set(true, forKey: FlamoraStorageKey.everConnectedAccounts)
                 let resolvedName = response.data.institution_name ?? institutionName
                 connectedInstitutionName = resolvedName
                 lastConnectionTime = Date()
@@ -234,7 +238,10 @@ class PlaidManager {
             let _: DisconnectResponse = try await client.functions.invoke("disconnect-bank", options: options)
             hasLinkedBank = false
             connectedInstitutionName = nil
-            UserDefaults.standard.set(false, forKey: FlamoraStorageKey.budgetSetupCompleted)
+            // Plan-snapshot model: the plan record stays in the DB after
+            // disconnect, so the local "budget setup completed" flag must NOT
+            // be wiped. Without this, Settings/Cashflow regress to a "Build
+            // Your Plan" CTA even though the plan is still active.
             TabContentCache.shared.clearAfterBankDisconnect()
         } catch {
             #if DEBUG
@@ -303,6 +310,10 @@ enum FlamoraStorageKey {
     static let budgetSetupCompleted = "flamoraBudgetSetupCompleted"
     /// JSON-encoded `HomeSetupStateResponse` from last successful `get-setup-state`; cleared on sign-out.
     static let cachedHomeSetupState = "flamoraCachedHomeSetupStateJSON"
+    /// True once the user has linked at least one Plaid item. Survives
+    /// disconnect so the home reconnect banner can distinguish "previously
+    /// connected, now offline" from "manual user who never linked".
+    static let everConnectedAccounts = "flamoraEverConnectedAccounts"
 
     /// 旧版未写入该标记但后端已有预算时，首次启动视为已完成，避免老用户被挡在「Build Your Plan」外。
     static func migrateBudgetSetupIfNeeded(budget: APIMonthlyBudget?, hasLinkedBank: Bool) {

@@ -99,12 +99,14 @@ extension HomeHeroModel {
         return "Age \(age)"
     }
 
-    /// Compact fire_number string e.g. "$2.4M"
+    /// Display-ready FIRE number.
     var fireNumberFormatted: String { Self.formatCurrency(fireNumber) }
 
     private static func formatCurrency(_ value: Double) -> String {
-        if value >= 1_000_000 { return String(format: "$%.1fM", value / 1_000_000) }
-        if value >= 1_000     { return String(format: "$%.0fK", value / 1_000) }
-        return String(format: "$%.0f", value)
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = "USD"
+        formatter.maximumFractionDigits = 0
+        return formatter.string(from: NSNumber(value: value)) ?? "$0"
     }
 }

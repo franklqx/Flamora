@@ -12,30 +12,23 @@ import SwiftUI
 enum HomeJourneyProgressMapping {
     static let totalSegments = 12
 
-    /// Filled segment count for the strip (0...totalSegments).
-    /// In active mode the fill follows portfolio-toward-FIRE progress, computed
-    /// client-side from `portfolioTotal / fireNumber` so it matches what the
-    /// build-plan flow used to size the goal.
-    static func filledSegments(
+    /// 0..1 progress fraction. Once the user has a plan (hero loaded), this is
+    /// portfolio-toward-FIRE. Before that, it follows the setup stage so the
+    /// strip animates as the user advances through onboarding.
+    static func progressFraction(
         for stage: HomeSetupStage,
         hero: HomeHeroModel?,
         portfolioTotal: Double? = nil
-    ) -> Int {
+    ) -> Double {
+        if hero != nil {
+            return activeProgress(hero: hero, portfolioTotal: portfolioTotal)
+        }
         switch stage {
-        case .noGoal, .goalSet:
-            return 3
-        case .accountsLinked:
-            return 5
-        case .snapshotPending:
-            return 7
-        case .planPending:
-            return 9
-        case .active:
-            let progress = activeProgress(hero: hero, portfolioTotal: portfolioTotal)
-            return min(
-                totalSegments,
-                max(0, Int(round(progress * Double(totalSegments))))
-            )
+        case .noGoal, .goalSet:    return 3.0  / Double(totalSegments)
+        case .accountsLinked:      return 5.0  / Double(totalSegments)
+        case .snapshotPending:     return 7.0  / Double(totalSegments)
+        case .planPending:         return 9.0  / Double(totalSegments)
+        case .active:              return 12.0 / Double(totalSegments)
         }
     }
 
@@ -46,13 +39,14 @@ enum HomeJourneyProgressMapping {
         return min(max(portfolio / hero.fireNumber, 0), 1)
     }
 
-    /// Only when active and hero data exists (per product: no misleading % before setup).
+    /// Show the % readout once a plan exists. Pre-plan we keep the copy clean
+    /// so users aren't seeing fake-precision percentages.
     static func trailingPercentText(
         stage: HomeSetupStage,
         hero: HomeHeroModel?,
         portfolioTotal: Double? = nil
     ) -> String? {
-        guard stage == .active, hero != nil else { return nil }
+        guard hero != nil else { return nil }
         let pct = activeProgress(hero: hero, portfolioTotal: portfolioTotal) * 100
         if pct < 1 { return String(format: "%.1f%%", pct) }
         return "\(Int(pct.rounded()))%"
@@ -65,14 +59,16 @@ struct HomeJourneyProgressStrip: View {
     let title: String
     let subtitle: String
     let totalSegments: Int
-    let filledSegments: Int
+    /// 0..1 progress fraction. The in-progress segment is partially filled to
+    /// reflect the remainder (e.g. 0.17 fills the first segment 17%).
+    let progressFraction: Double
     let footerLabel: String
     let trailingPercentText: String?
 
-    /// When the user has an active plan we render a richer layout: DAY counter
-    /// chip, current portfolio amount on the left, FIRE target on the right,
-    /// and a Freedom Date stamp in the bottom-right. All four are optional —
-    /// missing values fall back to the setup layout (subtitle row + percent).
+    /// When the user has an active plan we render a richer layout: DAY counter,
+    /// current portfolio amount on the left, FIRE target on the right, and a
+    /// Freedom Date stamp in the bottom-right. All four are optional — missing
+    /// values fall back to the setup layout (subtitle row + percent).
     let dayCount: Int?
     let startAmountText: String?
     let targetAmountText: String?
@@ -82,7 +78,7 @@ struct HomeJourneyProgressStrip: View {
         title: String = "YOUR FIRE JOURNEY",
         subtitle: String = "Finish the set up to track your progress.",
         totalSegments: Int = HomeJourneyProgressMapping.totalSegments,
-        filledSegments: Int,
+        progressFraction: Double,
         footerLabel: String = "FREEDOM DATE",
         trailingPercentText: String? = nil,
         dayCount: Int? = nil,
@@ -93,7 +89,7 @@ struct HomeJourneyProgressStrip: View {
         self.title = title
         self.subtitle = subtitle
         self.totalSegments = totalSegments
-        self.filledSegments = min(totalSegments, max(0, filledSegments))
+        self.progressFraction = min(max(progressFraction, 0), 1)
         self.footerLabel = footerLabel
         self.trailingPercentText = trailingPercentText
         self.dayCount = dayCount
@@ -104,6 +100,16 @@ struct HomeJourneyProgressStrip: View {
 
     private var isActiveLayout: Bool {
         startAmountText != nil || targetAmountText != nil || dayCount != nil
+    }
+
+    /// Per-segment fill fraction (0..1) so the in-progress segment can render
+    /// a partial bar without rounding up.
+    private func segmentFill(at index: Int) -> Double {
+        let segmentSize = 1.0 / Double(totalSegments)
+        let segmentStart = Double(index) * segmentSize
+        if progressFraction <= segmentStart { return 0 }
+        if progressFraction >= segmentStart + segmentSize { return 1 }
+        return (progressFraction - segmentStart) / segmentSize
     }
 
     var body: some View {
@@ -124,12 +130,6 @@ struct HomeJourneyProgressStrip: View {
                         .foregroundStyle(AppColors.heroTextPrimary)
                         .tracking(AppTypography.Tracking.miniUppercase)
                         .lineLimit(1)
-                        .padding(.horizontal, AppSpacing.sm)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .stroke(AppColors.heroTextPrimary.opacity(0.4), lineWidth: 1)
-                        )
                 }
             }
             .padding(.bottom, AppSpacing.sm)
@@ -155,15 +155,13 @@ struct HomeJourneyProgressStrip: View {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 HStack(spacing: AppSpacing.xs) {
                     ForEach(0..<totalSegments, id: \.self) { index in
-                        RoundedRectangle(cornerRadius: AppRadius.full)
-                            .fill(index < filledSegments ? AppColors.heroTrackFill : AppColors.heroTrack)
-                            .frame(height: 4)
+                        SegmentBar(fillFraction: segmentFill(at: index))
                             .frame(maxWidth: .infinity)
                     }
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("FIRE progress")
-                .accessibilityValue("\(filledSegments) of \(totalSegments) segments")
+                .accessibilityValue("\(Int(progressFraction * 100)) percent")
 
                 if isActiveLayout {
                     HStack(alignment: .firstTextBaseline) {
@@ -228,6 +226,25 @@ struct HomeJourneyProgressStrip: View {
     }
 }
 
+// MARK: - Segment bar (supports partial fill)
+
+private struct SegmentBar: View {
+    let fillFraction: Double
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(AppColors.heroTrack)
+                Capsule()
+                    .fill(AppColors.heroTrackFill)
+                    .frame(width: geo.size.width * min(max(fillFraction, 0), 1))
+            }
+        }
+        .frame(height: 4)
+    }
+}
+
 // MARK: - Factory (Hero layer only)
 
 extension HomeJourneyProgressStrip {
@@ -243,7 +260,7 @@ extension HomeJourneyProgressStrip {
         daysSincePlanStart: Int? = nil,
         freedomDateText: String? = nil
     ) -> HomeJourneyProgressStrip {
-        let filled = HomeJourneyProgressMapping.filledSegments(
+        let progress = HomeJourneyProgressMapping.progressFraction(
             for: stage,
             hero: homeHero,
             portfolioTotal: portfolioTotal
@@ -254,7 +271,9 @@ extension HomeJourneyProgressStrip {
             portfolioTotal: portfolioTotal
         )
 
-        let isActive = stage == .active && homeHero != nil
+        // Active layout kicks in once a plan exists. Investment accounts can
+        // still be missing — portfolioTotal then reads as $0 and progress 0%.
+        let isActive = homeHero != nil
         let startText: String? = {
             guard isActive else { return nil }
             let portfolio = portfolioTotal ?? homeHero?.startingPortfolioBalance ?? 0
@@ -266,7 +285,7 @@ extension HomeJourneyProgressStrip {
         }()
 
         return HomeJourneyProgressStrip(
-            filledSegments: filled,
+            progressFraction: progress,
             trailingPercentText: percent,
             dayCount: isActive ? daysSincePlanStart : nil,
             startAmountText: startText,
@@ -276,16 +295,6 @@ extension HomeJourneyProgressStrip {
     }
 
     private static func formatHeroAmount(_ value: Double) -> String {
-        if value >= 1_000_000 {
-            let m = value / 1_000_000
-            if m >= 10 { return String(format: "$%.0fM", m) }
-            return String(format: "$%.1fM", m)
-        }
-        if value >= 1_000 {
-            let k = value / 1_000
-            if k >= 100 { return String(format: "$%.0fK", k) }
-            return String(format: "$%.1fK", k)
-        }
         let f = NumberFormatter()
         f.numberStyle = .currency
         f.currencyCode = "USD"

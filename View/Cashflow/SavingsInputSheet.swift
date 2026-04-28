@@ -10,6 +10,7 @@ import SwiftUI
 
 struct SavingsInputSheet: View {
     @Binding var amount: Double
+    var targetAmount: Double = 0
     var onSubmit: ((Double) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @State private var inputText: String = ""
@@ -19,6 +20,46 @@ struct SavingsInputSheet: View {
     private var parsedAmount: Double? {
         guard !inputText.isEmpty else { return nil }
         return Double(inputText)
+    }
+
+    private var formattedAmountText: String {
+        guard let value = parsedAmount, value > 0 else { return "0" }
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.maximumFractionDigits = 0
+        f.groupingSeparator = ","
+        return f.string(from: NSNumber(value: value)) ?? inputText
+    }
+
+    private enum DeltaState {
+        case onTarget
+        case over(Int)
+        case under(Int)
+
+        var text: String {
+            switch self {
+            case .onTarget:    return "On target"
+            case .over(let p): return "+\(p)% vs target"
+            case .under(let p): return "-\(p)% vs target"
+            }
+        }
+    }
+
+    private var deltaState: DeltaState? {
+        guard let value = parsedAmount, value > 0, targetAmount > 0 else { return nil }
+        let pct = ((value - targetAmount) / targetAmount) * 100
+        let rounded = Int(abs(pct).rounded())
+        if rounded == 0 { return .onTarget }
+        return pct > 0 ? .over(rounded) : .under(rounded)
+    }
+
+    private var deltaColor: Color {
+        switch deltaState {
+        case .onTarget: return AppColors.inkSoft
+        case .over:     return AppColors.progressGreen
+        case .under:    return AppColors.accentAmber
+        case .none:     return .clear
+        }
     }
 
     var body: some View {
@@ -93,19 +134,32 @@ struct SavingsInputSheet: View {
     // MARK: - Amount display
 
     private var amountDisplay: some View {
-        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
-            Text("$")
-                .font(.h1)
-                .foregroundStyle(AppColors.inkSoft)
+        VStack(spacing: AppSpacing.xs) {
+            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
+                Text("$")
+                    .font(.h1)
+                    .foregroundStyle(AppColors.inkSoft)
 
-            Text(inputText.isEmpty ? "0" : inputText)
-                .font(.currencyHero)
-                .foregroundStyle(inputText.isEmpty ? AppColors.inkFaint : AppColors.inkPrimary)
-                .monospacedDigit()
-                .contentTransition(.numericText())
-                .animation(.easeOut(duration: 0.15), value: inputText)
+                Text(inputText.isEmpty ? "0" : formattedAmountText)
+                    .font(.currencyHero)
+                    .foregroundStyle(inputText.isEmpty ? AppColors.inkFaint : AppColors.inkPrimary)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .animation(.easeOut(duration: 0.15), value: inputText)
+            }
+
+            if let delta = deltaState {
+                Text(delta.text)
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(deltaColor)
+                    .transition(.opacity)
+            } else {
+                Text(" ")
+                    .font(.footnoteSemibold)
+            }
         }
         .padding(.vertical, AppSpacing.sm)
+        .animation(.easeOut(duration: 0.15), value: inputText)
     }
 
     // MARK: - Keypad

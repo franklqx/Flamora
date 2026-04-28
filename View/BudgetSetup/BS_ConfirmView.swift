@@ -21,6 +21,7 @@ struct BS_ConfirmView: View {
 
     @State private var showContent = false
     @State private var animatedProgress: Double = 0
+    @State private var progressShimmerPhase = false
 
     private var isAlreadyFire: Bool {
         viewModel.committedPlanLabel == "already_fire"
@@ -55,6 +56,15 @@ struct BS_ConfirmView: View {
                 withAnimation(.easeOut(duration: 0.6)) { showContent = true }
                 withAnimation(.easeOut(duration: 1.2).delay(0.3)) {
                     animatedProgress = isAlreadyFire ? 1.0 : viewModel.fireProgressRatio
+                }
+                progressShimmerPhase = false
+                withAnimation(.linear(duration: 1.6).repeatForever(autoreverses: false).delay(0.45)) {
+                    progressShimmerPhase = true
+                }
+            }
+            .onChange(of: viewModel.fireProgressRatio) { _, newValue in
+                withAnimation(.easeOut(duration: 0.8)) {
+                    animatedProgress = isAlreadyFire ? 1.0 : newValue
                 }
             }
 
@@ -287,34 +297,21 @@ struct BS_ConfirmView: View {
 
             // Headline: net worth / fire number
             HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
-                Text("$\(formattedCompact(viewModel.currentNetWorth))")
+                Text(formattedCurrency(viewModel.currentNetWorth))
                     .font(.h2)
                     .foregroundStyle(AppColors.inkPrimary)
                     .monospacedDigit()
-                Text("of $\(formattedCompact(targetFireNumber))")
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+                Text("of \(formattedCurrency(targetFireNumber))")
                     .font(.bodySmall)
                     .foregroundStyle(AppColors.inkSoft)
                     .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
             }
 
-            // Progress bar with flame gradient
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: AppRadius.sm)
-                        .fill(AppColors.glassBlockBg)
-                        .frame(height: AppSpacing.rowItem)
-                    RoundedRectangle(cornerRadius: AppRadius.sm)
-                        .fill(
-                            LinearGradient(
-                                colors: AppColors.gradientShellAccent,
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(width: max(AppSpacing.sm, geo.size.width * CGFloat(animatedProgress)), height: AppSpacing.rowItem)
-                }
-            }
-            .frame(height: AppSpacing.rowItem)
+            progressBar
 
             // Footnote: X% complete · ~Xy to age N (suppressed in already_fire)
             HStack {
@@ -335,6 +332,72 @@ struct BS_ConfirmView: View {
         .padding(AppSpacing.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
         .bsGlassCard()
+    }
+
+    private var progressBar: some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            let progress = min(1, max(0, animatedProgress))
+            let fillWidth = width * CGFloat(progress)
+            let barHeight: CGFloat = 12
+            let minFillWidth: CGFloat = 12
+
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(AppColors.glassBlockBg.opacity(0.9))
+                    .frame(height: barHeight)
+                    .overlay(
+                        Capsule()
+                            .stroke(AppColors.glassBlockBorder.opacity(0.65), lineWidth: 1)
+                    )
+                    .shadow(color: AppColors.inkPrimary.opacity(0.04), radius: 8, x: 0, y: 4)
+
+                if progress > 0.004 {
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: AppColors.gradientShellAccent,
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: max(minFillWidth, fillWidth), height: barHeight)
+                        .overlay(alignment: .leading) {
+                            Capsule()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.white.opacity(0),
+                                            Color.white.opacity(0.48),
+                                            Color.white.opacity(0),
+                                        ],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .frame(width: min(90, max(minFillWidth, fillWidth) * 0.8), height: barHeight)
+                                .offset(x: progressShimmerPhase ? max(minFillWidth, fillWidth) : -90)
+                        }
+                        .clipShape(Capsule())
+                        .shadow(color: AppColors.accentBlue.opacity(0.22), radius: 8, x: 0, y: 3)
+                } else {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: AppColors.gradientShellAccent,
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: minFillWidth, height: minFillWidth)
+                        .scaleEffect(progressShimmerPhase ? 1.05 : 0.78)
+                        .opacity(progressShimmerPhase ? 0.95 : 0.65)
+                        .shadow(color: AppColors.accentBlue.opacity(0.22), radius: 8, x: 0, y: 3)
+                }
+            }
+            .frame(height: barHeight)
+        }
+        .frame(height: 12)
     }
 
     @ViewBuilder
@@ -505,10 +568,8 @@ struct BS_ConfirmView: View {
         return String(format: "%.1f%%", rounded)
     }
 
-    private func formattedCompact(_ value: Double) -> String {
-        if value >= 1_000_000 { return String(format: "%.1fM", value / 1_000_000) }
-        if value >= 1_000 { return "\(Int(value / 1_000))K" }
-        return formattedInt(value)
+    private func formattedCurrency(_ value: Double) -> String {
+        "$\(formattedInt(value))"
     }
 }
 

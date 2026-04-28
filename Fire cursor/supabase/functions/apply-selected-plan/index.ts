@@ -8,6 +8,10 @@
 
 import { corsHeaders, handleCors } from '../_shared/cors.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+  fetchActiveInvestmentAccountTotal,
+  pickStartingPortfolio,
+} from '../_shared/starting-portfolio.ts'
 
 interface ApplySelectedPlanRequest {
   plan_type:
@@ -86,14 +90,50 @@ Deno.serve(async (req) => {
     if (!body.plan_type || !validPlanTypes.includes(body.plan_type)) {
       return errorResponse(400, 'INVALID_PLAN_TYPE', 'plan_type is not recognized')
     }
-    if (!body.savings_target_monthly || body.savings_target_monthly < 0) {
+    if (body.savings_target_monthly == null || !Number.isFinite(body.savings_target_monthly) || body.savings_target_monthly < 0) {
       return errorResponse(400, 'INVALID_SAVINGS', 'savings_target_monthly must be >= 0')
     }
-    if (!body.spending_ceiling_monthly || body.spending_ceiling_monthly < 0) {
+    if (body.spending_ceiling_monthly == null || !Number.isFinite(body.spending_ceiling_monthly) || body.spending_ceiling_monthly < 0) {
       return errorResponse(400, 'INVALID_SPENDING', 'spending_ceiling_monthly must be >= 0')
     }
 
     const now = new Date().toISOString()
+
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('current_net_worth, plaid_net_worth, starting_portfolio_balance, starting_portfolio_source')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    let startingPortfolio = pickStartingPortfolio({
+      bodyStartingPortfolioBalance: body.starting_portfolio_balance,
+      bodyStartingPortfolioSource: body.starting_portfolio_source,
+      profile,
+    })
+
+    if (
+      body.starting_portfolio_source !== 'explicit_zero' &&
+      startingPortfolio.balance <= 0
+    ) {
+      const connectedInvestmentTotal = await fetchActiveInvestmentAccountTotal(supabase, user.id)
+      startingPortfolio = pickStartingPortfolio({
+        bodyStartingPortfolioBalance: body.starting_portfolio_balance,
+        bodyStartingPortfolioSource: body.starting_portfolio_source,
+        profile,
+        connectedInvestmentTotal,
+      })
+    }
+
+    if (startingPortfolio.shouldPersistProfile) {
+      await supabase
+        .from('user_profiles')
+        .update({
+          starting_portfolio_balance: startingPortfolio.balance,
+          starting_portfolio_source: startingPortfolio.source,
+          starting_portfolio_updated_at: now,
+        })
+        .eq('user_id', user.id)
+    }
 
     // ── 1. Deactivate existing active plans ───────────────────
     await supabase
@@ -118,8 +158,8 @@ Deno.serve(async (req) => {
         official_fire_age:        body.official_fire_age  ?? null,
         tradeoff_note:            body.tradeoff_note       ?? null,
         positioning_copy:         body.positioning_copy    ?? null,
-        starting_portfolio_balance: body.starting_portfolio_balance ?? null,
-        starting_portfolio_source:  body.starting_portfolio_source  ?? null,
+        starting_portfolio_balance: startingPortfolio.balance,
+        starting_portfolio_source:  startingPortfolio.source,
         is_active:                true,
         created_at:               now,
         updated_at:               now,
@@ -137,9 +177,11 @@ Deno.serve(async (req) => {
       .from('user_setup_state')
       .upsert(
         {
-          user_id:         user.id,
-          plan_applied_at: now,
-          updated_at:      now,
+          user_id:              user.id,
+          accounts_reviewed_at: now,
+          snapshot_reviewed_at: now,
+          plan_applied_at:      now,
+          updated_at:           now,
         },
         { onConflict: 'user_id' }
       )

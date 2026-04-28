@@ -160,17 +160,17 @@ final class TabContentCache {
         investmentAccountHistory["\(accountId)::\(range.rawValue)"] = value
     }
 
+    /// Clear LIVE data tied to the now-removed bank connection. Historical
+    /// artifacts (savings check-ins, generated reports, the committed budget)
+    /// are preserved per the plan-snapshot model — disconnect pauses tracking
+    /// rather than resetting the user's progress.
     func clearAfterBankDisconnect() {
+        // Live: balances, accounts, transactions
         homeNetWorthSummary = nil
         homeNetWorthHistory = nil
-        homeMonthlyReport = nil
-        homeIssueZeroReport = nil
-        homeAnnualReport = nil
         investmentNetWorth = nil
         portfolioHistory = [:]
         investmentHoldings = nil
-        cashflowBudget = nil
-        cashflowSavingsByYear = nil
         cashflowSpendingTotalDetail = nil
         cashflowNeedsDetail = nil
         cashflowWantsDetail = nil
@@ -181,5 +181,10 @@ final class TabContentCache {
         cashAccountHistory = [:]
         investmentAccountTransactions = [:]
         investmentAccountHistory = [:]
+        // Preserved on purpose:
+        //   • cashflowSavingsByYear — manual savings check-in history
+        //   • cashflowBudget — committed plan numbers (user can still review)
+        //   • homeMonthlyReport / homeIssueZeroReport / homeAnnualReport —
+        //     past reports are historical artifacts, not live data
     }
 }

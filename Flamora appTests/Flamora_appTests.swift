@@ -82,4 +82,37 @@ final class Flamora_appTests: XCTestCase {
         cache.clearAfterBankDisconnect()
         XCTAssertNil(cache.cashflowMonthlySummaries)
     }
+
+    @MainActor
+    func testBudgetSetupAccountToggleInvalidatesCachedAnalysis() {
+        let viewModel = BudgetSetupViewModel()
+        viewModel.selectedAccountIds = ["account-a", "account-b"]
+        viewModel.spendingStats = Self.makeSpendingStats()
+        viewModel.committedMonthlySave = 500
+        viewModel.categoryBudgets = ["shopping": 100]
+
+        viewModel.toggleAccount("account-b")
+
+        XCTAssertNil(viewModel.spendingStats)
+        XCTAssertNil(viewModel.committedMonthlySave)
+        XCTAssertTrue(viewModel.categoryBudgets.isEmpty)
+    }
+
+    private static func makeSpendingStats() -> SpendingStatsResponse {
+        SpendingStatsResponse(
+            avgMonthlyIncome: 4_000,
+            avgMonthlyExpenses: 2_500,
+            avgMonthlySavings: 1_500,
+            currentSavingsRate: 37.5,
+            avgMonthlyFixed: 1_500,
+            avgMonthlyFlexible: 1_000,
+            fixedExpenses: [],
+            flexibleBreakdown: [],
+            incomeSource: "plaid",
+            monthsAnalyzed: 3,
+            dataQuality: "good",
+            totalTransactions: 12,
+            monthlyBreakdown: []
+        )
+    }
 }

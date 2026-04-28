@@ -102,7 +102,8 @@ Deno.serve(async (req) => {
     )
   } catch (error) {
     console.error('Error in mark-setup-step:', error)
-    return errorResponse(500, 'INTERNAL_SERVER_ERROR', error.message)
+    const message = error instanceof Error ? error.message : 'An unexpected error occurred'
+    return errorResponse(500, 'INTERNAL_SERVER_ERROR', message)
   }
 })
 

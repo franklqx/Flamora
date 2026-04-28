@@ -11,6 +11,10 @@ import { corsHeaders, handleCors } from '../_shared/cors.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { FIRECalculator } from '../_shared/fire-calculator.ts'
 import { ASSUMPTIONS } from '../_shared/fire-assumptions.ts'
+import {
+  fetchActiveInvestmentAccountTotal,
+  pickStartingPortfolio,
+} from '../_shared/starting-portfolio.ts'
 
 interface CalculateFireGoalRequest {
   target_retirement_age: number
@@ -21,6 +25,7 @@ interface CalculateFireGoalRequest {
   starting_portfolio_balance?: number
   monthly_income?: number
   current_monthly_expenses?: number
+  starting_portfolio_source?: string
 }
 
 serve(async (req) => {
@@ -75,7 +80,7 @@ serve(async (req) => {
     // ============================================================
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
-      .select('age, monthly_income, current_monthly_expenses, current_net_worth, plaid_net_worth, starting_portfolio_balance')
+      .select('age, monthly_income, current_monthly_expenses, current_net_worth, plaid_net_worth, starting_portfolio_balance, starting_portfolio_source')
       .eq('user_id', user.id)
       .single()
 
@@ -86,14 +91,42 @@ serve(async (req) => {
       )
     }
 
-    // FIRE feasibility uses the starting portfolio contract, with legacy
-    // net-worth fields retained as fallback for older clients.
-    const netWorth = body.starting_portfolio_balance
-      ?? body.current_net_worth
-      ?? profile.starting_portfolio_balance
-      ?? profile.plaid_net_worth
-      ?? profile.current_net_worth
-      ?? 0
+    // FIRE feasibility uses the starting portfolio contract. A client-provided
+    // 0 only means "zero" when paired with explicit_zero; otherwise connected
+    // investment accounts remain the source of truth.
+    let startingPortfolio = pickStartingPortfolio({
+      bodyStartingPortfolioBalance: body.starting_portfolio_balance,
+      bodyStartingPortfolioSource: body.starting_portfolio_source,
+      bodyCurrentNetWorth: body.current_net_worth,
+      profile,
+    })
+
+    if (
+      body.starting_portfolio_source !== 'explicit_zero' &&
+      startingPortfolio.balance <= 0
+    ) {
+      const connectedInvestmentTotal = await fetchActiveInvestmentAccountTotal(supabase, user.id)
+      startingPortfolio = pickStartingPortfolio({
+        bodyStartingPortfolioBalance: body.starting_portfolio_balance,
+        bodyStartingPortfolioSource: body.starting_portfolio_source,
+        bodyCurrentNetWorth: body.current_net_worth,
+        profile,
+        connectedInvestmentTotal,
+      })
+    }
+
+    if (startingPortfolio.shouldPersistProfile) {
+      await supabase
+        .from('user_profiles')
+        .update({
+          starting_portfolio_balance: startingPortfolio.balance,
+          starting_portfolio_source: startingPortfolio.source,
+          starting_portfolio_updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id)
+    }
+
+    const netWorth = startingPortfolio.balance
     const monthlyIncome = body.monthly_income ?? profile.monthly_income ?? 0
     const currentExpenses = body.current_monthly_expenses ?? profile.current_monthly_expenses ?? 0
     const currentAge = body.current_age ?? profile.age ?? 28
@@ -144,9 +177,7 @@ serve(async (req) => {
             starting_portfolio_balance: netWorth,
             monthly_income: monthlyIncome,
             current_monthly_expenses: currentExpenses,
-            net_worth_source: profile.starting_portfolio_balance != null
-              ? 'starting_portfolio'
-              : (profile.plaid_net_worth ? 'plaid' : 'manual'),
+            net_worth_source: startingPortfolio.source,
           },
         },
       }),
@@ -154,8 +185,9 @@ serve(async (req) => {
     )
   } catch (error) {
     console.error('Error in calculate-fire-goal:', error)
+    const message = error instanceof Error ? error.message : 'An unexpected error occurred'
     return new Response(
-      JSON.stringify({ success: false, error: { code: 'INTERNAL_SERVER_ERROR', message: error.message || 'An unexpected error occurred' } }),
+      JSON.stringify({ success: false, error: { code: 'INTERNAL_SERVER_ERROR', message } }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

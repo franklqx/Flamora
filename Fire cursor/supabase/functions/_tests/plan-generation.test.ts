@@ -38,6 +38,31 @@ Deno.test('target feasible, primary is exact and returns dynamic alternatives', 
   assert(plans.length <= 3)
 })
 
+Deno.test('easy target: lifestyle plan that beats target is labeled as early, not still hitting', () => {
+  const input = makeInput({
+    targetAge: 40,
+    currentAge: 28,
+    netWorth: 250_000,
+    avgIncome: 10_000,
+    avgSpend: 2_447,
+    essentialFloor: 3_500,
+    avgWants: 0,
+    retirementSpending: 3_550,
+    currentMonthlySave: 7_553,
+  })
+  const plans = computeBudgetPlans(input)
+  const primary = plans[0]
+  const lifestyle = plans.find((plan) => plan.anchor === 'lifestyle')
+
+  assertEquals(primary.feasibility, 'exact')
+  assertEquals(primary.fireAge, input.targetAge)
+  assert(lifestyle, 'expected a lifestyle alternative')
+  assert(lifestyle.monthlySave > primary.monthlySave)
+  assert(lifestyle.fireAge < input.targetAge)
+  assert(lifestyle.badge?.includes('before target'))
+  assert(!lifestyle.badge?.includes('Still'))
+})
+
 Deno.test('target infeasible due to guardrails returns closest_* primary', () => {
   const plans = computeBudgetPlans(makeInput({
     targetAge: 35,

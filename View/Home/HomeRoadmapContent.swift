@@ -89,6 +89,10 @@ struct HomeRoadmapContent: View {
         formatter.formatOptions = [.withInternetDateTime]
         return formatter.date(from: createdAt)
     }
+    private var planCreationYear: Int {
+        guard let date = journeyStartDate else { return currentYear }
+        return Calendar.current.component(.year, from: date)
+    }
     private var savingsSnapshot: SavingsTrackingSnapshot? {
         guard hasBudgetSetup else { return nil }
         return SavingsTrackingBuilder.snapshot(
@@ -100,8 +104,38 @@ struct HomeRoadmapContent: View {
         )
     }
 
+    /// Setup checklist is the pre-plan onboarding card. Once the user has
+    /// committed a plan the Hero takes over as the primary status surface, so
+    /// this card hides — even if cashflow/portfolio steps are still open.
+    /// Linking missing accounts can still be done from the relevant tabs.
     private var showSetupChecklist: Bool {
-        !(setupState?.isSetupChecklistComplete ?? (isConnected && hasBudgetSetup))
+        if let flag = setupState?.monthlyPlanComplete { return !flag }
+        return !hasBudgetSetup
+    }
+
+    /// Plan-snapshot model: disconnecting accounts after plan commit doesn't
+    /// reset the plan, but tracking can't update. We surface a reconnect
+    /// banner so the user has a clear path back.
+    ///
+    /// Why we don't trust `cashflowComplete` / `portfolioComplete`: those
+    /// flags are re-derived live by the backend from "currently has accounts",
+    /// so they flip to false after disconnect — making them useless for
+    /// detecting "previously connected, now offline".
+    ///
+    /// Instead we lean on a persistent local flag (`everConnectedAccounts`)
+    /// set the first time a Plaid link succeeds and never cleared. Combined
+    /// with `monthlyPlanComplete` (plan exists) and `hasLinkedBank == false`
+    /// (currently disconnected), this gives a reliable signal that survives
+    /// across launches.
+    private var everConnectedAccounts: Bool {
+        UserDefaults.standard.bool(forKey: FlamoraStorageKey.everConnectedAccounts)
+    }
+    private var showReconnectBanner: Bool {
+        guard everConnectedAccounts else { return false }
+        guard !plaidManager.hasLinkedBank else { return false }
+        // Plan must be committed — pre-plan users get the setup checklist instead.
+        if let flag = setupState?.monthlyPlanComplete { return flag }
+        return hasBudgetSetup
     }
 
     var body: some View {
@@ -109,6 +143,8 @@ struct HomeRoadmapContent: View {
             VStack(alignment: .leading, spacing: AppSpacing.cardGap) {
                 if showSetupChecklist {
                     setupChecklistCard
+                } else if showReconnectBanner {
+                    reconnectBanner
                 }
 
                 HomeNetWorthCard(
@@ -156,7 +192,10 @@ struct HomeRoadmapContent: View {
             Task { await loadInitialData(force: true) }
         }
         .sheet(item: $editingSavingsTarget, onDismiss: handleSavingsSheetDismiss) { target in
-            SavingsInputSheet(amount: $editingSavingsAmount) { value in
+            SavingsInputSheet(
+                amount: $editingSavingsAmount,
+                targetAmount: targetAmount
+            ) { value in
                 Task { await persistSavings(value, year: target.year, monthIndex: target.monthIndex) }
             }
         }
@@ -167,6 +206,7 @@ struct HomeRoadmapContent: View {
                 savingsRatioPercent: targetRatePercent,
                 savingsBudgetTarget: targetAmount,
                 monthlyAmountsByYear: savingsByYear,
+                planCreationYear: planCreationYear,
                 onMonthlyAmountsChange: { updated in
                     savingsByYear = updated
                     TabContentCache.shared.setCashflowSavingsByYear(updated)
@@ -312,6 +352,47 @@ struct HomeRoadmapContent: View {
             return "Connected to \(first)"
         }
         return "Connected to \(first) + \(names.count - 1) more"
+    }
+
+    // MARK: - Reconnect banner
+
+    private var reconnectBanner: some View {
+        Button(action: startPlaidLinkFlow) {
+            HStack(spacing: AppSpacing.md) {
+                ZStack {
+                    Circle()
+                        .fill(AppColors.warning.opacity(0.18))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.footnoteSemibold)
+                        .foregroundStyle(AppColors.warning)
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Reconnect your accounts")
+                        .font(.inlineLabel)
+                        .foregroundStyle(AppColors.inkPrimary)
+                    Text("Resume cashflow and investment tracking.")
+                        .font(.caption)
+                        .foregroundStyle(AppColors.inkSoft)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer(minLength: AppSpacing.sm)
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(AppColors.inkFaint)
+            }
+            .padding(AppSpacing.cardPadding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: AppRadius.glassPanel)
+                    .fill(AppColors.warning.opacity(0.10))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.glassPanel)
+                    .stroke(AppColors.warning.opacity(0.30), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private func startPlaidLinkFlow() {

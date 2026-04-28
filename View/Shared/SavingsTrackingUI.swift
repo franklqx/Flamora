@@ -101,7 +101,9 @@ enum SavingsTrackingBuilder {
         let currentMonthIndex = Calendar.current.component(.month, from: referenceDate) - 1
         let journeyStartMonth = resolveJourneyStartMonth(
             startDate: journeyStartDate,
-            year: year
+            year: year,
+            monthlyAmounts: monthlyAmounts,
+            referenceDate: referenceDate
         )
         let windowRange = currentWindowRange(
             for: referenceDate,
@@ -177,14 +179,13 @@ enum SavingsTrackingBuilder {
         currentMonthIndex: Int,
         journeyStartMonth: Int
     ) -> SavingsMonthVisualState {
-        // Months before the user committed to a plan are not "missed" — they
-        // simply pre-date the journey, so render them like upcoming slots.
-        if year == currentYear, monthIndex < journeyStartMonth {
-            return .future
-        }
+        // Future months (haven't arrived yet) are locked.
+        if year > currentYear { return .future }
         if year == currentYear, monthIndex > currentMonthIndex {
             return .future
         }
+        // Past or current month — including pre-plan months, which the user
+        // can backfill by tapping the "+" orb.
         guard let amount else {
             if year == currentYear, monthIndex == currentMonthIndex {
                 return .pending
@@ -197,13 +198,27 @@ enum SavingsTrackingBuilder {
         return .belowTarget
     }
 
-    private static func resolveJourneyStartMonth(startDate: Date?, year: Int) -> Int {
-        guard let startDate else { return 0 }
+    private static func resolveJourneyStartMonth(
+        startDate: Date?,
+        year: Int,
+        monthlyAmounts: [Double?],
+        referenceDate: Date
+    ) -> Int {
         let cal = Calendar.current
-        let startYear = cal.component(.year, from: startDate)
-        if startYear < year { return 0 }
-        if startYear > year { return 11 }
-        return cal.component(.month, from: startDate) - 1
+        if let startDate {
+            let startYear = cal.component(.year, from: startDate)
+            if startYear < year { return 0 }
+            if startYear > year { return 11 }
+            return cal.component(.month, from: startDate) - 1
+        }
+        // No stored startDate: treat as "registered this month". Falling back
+        // to current month avoids using auto-imported Plaid history (which
+        // would pull the journey start before the user actually committed
+        // a plan).
+        let referenceYear = cal.component(.year, from: referenceDate)
+        if year < referenceYear { return 0 }
+        if year > referenceYear { return 11 }
+        return cal.component(.month, from: referenceDate) - 1
     }
 
     private static func inferredIncome(targetAmount: Double, targetRatePercent: Double) -> Double? {
@@ -304,8 +319,8 @@ struct SavingsMonthOrb: View {
     private var selectionRing: some View {
         if isSelected {
             Circle()
-                .inset(by: -4)
-                .stroke(AppColors.inkPrimary.opacity(0.18), style: StrokeStyle(lineWidth: 6))
+                .inset(by: -2)
+                .stroke(AppColors.inkPrimary, style: StrokeStyle(lineWidth: 1.25))
         }
     }
 
@@ -313,7 +328,9 @@ struct SavingsMonthOrb: View {
     private var centerSymbol: some View {
         switch node.state {
         case .future:
-            EmptyView()
+            Image(systemName: "lock.fill")
+                .font(.caption)
+                .foregroundStyle(AppColors.inkFaint)
         case .pending:
             Image(systemName: "plus")
                 .font(.footnoteSemibold)

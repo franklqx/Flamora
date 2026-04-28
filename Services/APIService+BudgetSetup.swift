@@ -81,7 +81,8 @@ extension APIService {
         desiredMonthlyExpenses: Double,
         currentNetWorth: Double?,
         currentAge: Int?,
-        startingPortfolioBalance: Double? = nil
+        startingPortfolioBalance: Double? = nil,
+        startingPortfolioSource: String? = nil
     ) async throws -> GoalFeasibilityResult {
         var body: [String: Any] = [
             "target_retirement_age": targetRetirementAge,
@@ -91,6 +92,7 @@ extension APIService {
         ]
         if let nw = currentNetWorth, nw > 0 { body["current_net_worth"] = nw }
         if let startingPortfolioBalance { body["starting_portfolio_balance"] = startingPortfolioBalance }
+        if let startingPortfolioSource { body["starting_portfolio_source"] = startingPortfolioSource }
         if let age = currentAge, age > 0 { body["current_age"] = age }
         let data = try JSONSerialization.data(withJSONObject: body)
         let request = try await authenticatedRequest(function: "calculate-fire-goal", body: data)
