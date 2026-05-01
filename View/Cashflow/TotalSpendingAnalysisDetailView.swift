@@ -14,6 +14,9 @@ struct TotalSpendingAnalysisDetailView: View {
     let data: TotalSpendingDetailData
     let needsDetailData: SpendingDetailData
     let wantsDetailData: SpendingDetailData
+    /// 子类目预算（canonical id → amount）。透传给 Needs / Wants L2，给设了预算的子类目
+    /// 渲染进度条 + Over 徽章。
+    var categoryBudgets: [String: Double]? = nil
     var linkedAccounts: [Account] = []
     var onTransactionPersist: ((Transaction) async throws -> Void)? = nil
 
@@ -34,17 +37,23 @@ struct TotalSpendingAnalysisDetailView: View {
         needsDetailData: SpendingDetailData = .emptyNeeds,
         wantsDetailData: SpendingDetailData = .emptyWants,
         initialSelectedMonth: Int? = nil,
+        initialSelectedYear: Int? = nil,
+        categoryBudgets: [String: Double]? = nil,
         linkedAccounts: [Account] = [],
         onTransactionPersist: ((Transaction) async throws -> Void)? = nil
     ) {
         self.data = data
         self.needsDetailData = needsDetailData
         self.wantsDetailData = wantsDetailData
+        self.categoryBudgets = categoryBudgets
         self.linkedAccounts = linkedAccounts
         self.onTransactionPersist = onTransactionPersist
-        let latest = data.availableYears.last ?? Calendar.current.component(.year, from: Date())
-        let trend = data.trendsByYear[latest] ?? []
-        _selectedYear = State(initialValue: latest)
+        let resolvedYear: Int = {
+            if let y = initialSelectedYear, data.availableYears.contains(y) { return y }
+            return data.availableYears.last ?? Calendar.current.component(.year, from: Date())
+        }()
+        let trend = data.trendsByYear[resolvedYear] ?? []
+        _selectedYear = State(initialValue: resolvedYear)
         _selectedBarIndex = State(initialValue: preferredCashflowMonthIndex(in: trend, requested: initialSelectedMonth))
     }
 
@@ -106,6 +115,8 @@ struct TotalSpendingAnalysisDetailView: View {
                 data: needsDetailData,
                 flamoraCategory: "needs",
                 initialSelectedMonth: selectedBarIndex,
+                initialSelectedYear: selectedYear,
+                categoryBudgets: categoryBudgets,
                 linkedAccounts: linkedAccounts,
                 onTransactionPersist: onTransactionPersist
             )
@@ -115,6 +126,8 @@ struct TotalSpendingAnalysisDetailView: View {
                 data: wantsDetailData,
                 flamoraCategory: "wants",
                 initialSelectedMonth: selectedBarIndex,
+                initialSelectedYear: selectedYear,
+                categoryBudgets: categoryBudgets,
                 linkedAccounts: linkedAccounts,
                 onTransactionPersist: onTransactionPersist
             )
@@ -138,7 +151,7 @@ struct TotalSpendingAnalysisDetailView: View {
                         .font(.cardHeader)
                         .foregroundStyle(AppColors.inkPrimary)
                         .tracking(AppTypography.Tracking.cardHeader)
-                    Text("\(selectedMonthLabel) \(selectedYear)")
+                    Text("\(selectedMonthLabel) \(String(selectedYear))")
                         .font(.caption)
                         .foregroundStyle(AppColors.inkSoft)
                 }
@@ -334,7 +347,7 @@ struct TotalSpendingAnalysisDetailView: View {
                 .buttonStyle(.plain)
                     .padding(.bottom, AppSpacing.sm)
             } else {
-                Text("No spend recorded for \(selectedMonthLabel) \(selectedYear)")
+                Text("No spend recorded for \(selectedMonthLabel) \(String(selectedYear))")
                     .font(.bodyRegular)
                     .foregroundStyle(AppColors.inkSoft)
                     .frame(maxWidth: .infinity, alignment: .leading)

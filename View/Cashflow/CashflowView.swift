@@ -62,6 +62,18 @@ struct CashflowView: View {
         Calendar.current.component(.month, from: Date()) - 1
     }
 
+    /// 当前展示月份对应的 (year, monthIndex0..11)。
+    /// 显示历史月份时用它代替 `currentMonthIndex`，避免类目/全屏初始月份永远落在系统当月。
+    private var displayMonthYear: Int {
+        Calendar.current.component(.year, from: displayBudgetMonth)
+    }
+    private var displayMonthIndex: Int {
+        Calendar.current.component(.month, from: displayBudgetMonth) - 1
+    }
+    private var isShowingCurrentMonth: Bool {
+        Calendar.current.isDate(displayBudgetMonth, equalTo: Date(), toGranularity: .month)
+    }
+
     private var spendingForDisplay: Spending {
         Spending(
             total: totalSpend,
@@ -85,14 +97,6 @@ struct CashflowView: View {
         return (income - totalSpend) / income
     }
 
-    private var currentMonthNeedsCategories: [BudgetCategoryBudget] {
-        budgetCategories(from: cashflowNeedsDetail, parent: .needs)
-    }
-
-    private var currentMonthWantsCategories: [BudgetCategoryBudget] {
-        budgetCategories(from: cashflowWantsDetail, parent: .wants)
-    }
-
     private var incomePlaceholderMessage: String {
         plaidManager.hasLinkedBank
             ? "Complete budget setup to unlock income"
@@ -113,16 +117,12 @@ struct CashflowView: View {
                         BudgetCard(
                             spending: spendingForDisplay,
                             apiBudget: apiBudget,
-                            savingsTarget: activeSavingsTargetMonthly,
-                            currentSavings: currentSavings,
                             isConnected: plaidManager.hasLinkedBank,
                             hasBudget: hasBudget,
                             onSetupBudget: { plaidManager.openBudgetSetup(mode: .fresh) },
                             onCardTapped: { showTotalSpendingDetail = true },
                             onNeedsTapped: { showNeedsSpendingDetail = true },
                             onWantsTapped: { showWantsSpendingDetail = true },
-                            needsCategories: currentMonthNeedsCategories,
-                            wantsCategories: currentMonthWantsCategories,
                             onAdjustOverallPlan: { plaidManager.openBudgetSetup(mode: .editPlan) },
                             onEditCategoryBudgets: { plaidManager.openBudgetSetup(mode: .editCategories) },
                             displayMonth: displayBudgetMonth,
@@ -172,6 +172,9 @@ struct CashflowView: View {
             Task { await loadCashflowData(force: true) }
         }
         .onReceive(NotificationCenter.default.publisher(for: .budgetSetupFlowDidDismiss)) { _ in
+            // Setup 流程可能创建新月份的 monthly_budget，需要让月份选择器列表重新探测一次，
+            // 否则 `availableBudgetMonths` 会一直停留在第一次打开 sheet 时的快照。
+            availableBudgetMonths = []
             Task { await loadCashflowData(force: true) }
         }
         .fullScreenCover(isPresented: $showTotalSpendingDetail) {
@@ -179,7 +182,9 @@ struct CashflowView: View {
                 data: cashflowSpendingTotalDetail ?? .empty,
                 needsDetailData: cashflowNeedsDetail ?? .emptyNeeds,
                 wantsDetailData: cashflowWantsDetail ?? .emptyWants,
-                initialSelectedMonth: currentMonthIndex,
+                initialSelectedMonth: displayMonthIndex,
+                initialSelectedYear: displayMonthYear,
+                categoryBudgets: apiBudget.categoryBudgets,
                 linkedAccounts: linkedAccounts,
                 onTransactionPersist: { tx in try await persistTransactionClassification(tx) }
             )
@@ -188,7 +193,9 @@ struct CashflowView: View {
             SpendingAnalysisDetailView(
                 data: cashflowNeedsDetail ?? .emptyNeeds,
                 flamoraCategory: "needs",
-                initialSelectedMonth: currentMonthIndex,
+                initialSelectedMonth: displayMonthIndex,
+                initialSelectedYear: displayMonthYear,
+                categoryBudgets: apiBudget.categoryBudgets,
                 linkedAccounts: linkedAccounts,
                 onTransactionPersist: { tx in try await persistTransactionClassification(tx) }
             )
@@ -197,7 +204,9 @@ struct CashflowView: View {
             SpendingAnalysisDetailView(
                 data: cashflowWantsDetail ?? .emptyWants,
                 flamoraCategory: "wants",
-                initialSelectedMonth: currentMonthIndex,
+                initialSelectedMonth: displayMonthIndex,
+                initialSelectedYear: displayMonthYear,
+                categoryBudgets: apiBudget.categoryBudgets,
                 linkedAccounts: linkedAccounts,
                 onTransactionPersist: { tx in try await persistTransactionClassification(tx) }
             )
@@ -223,95 +232,6 @@ struct CashflowView: View {
 // MARK: - Data Loading
 
 private extension CashflowView {
-    func budgetCategories(
-        from detail: SpendingDetailData?,
-        parent: BudgetScope
-    ) -> [BudgetCategoryBudget] {
-        let budgetMap = apiBudget.categoryBudgets ?? [:]
-        let parentKey = parent.rawValue.lowercased()
-
-        // budgetMap keys are canonical ids (e.g. "groceries"); map to display names
-        // before merging into orderedNames to avoid "groceries" / "Groceries" duplication.
-        let budgetDisplayNamesForParent: [String] = budgetMap.keys
-            .filter { key in
-                (TransactionCategoryCatalog.all.first(where: { $0.id == key })?.parent
-                 ?? TransactionCategoryCatalog.parent(for: key)) == parentKey
-            }
-            .sorted { (budgetMap[$0] ?? 0) > (budgetMap[$1] ?? 0) }
-            .map { key in
-                TransactionCategoryCatalog.all.first(where: { $0.id == key })?.name ?? key
-            }
-
-        let monthCategories = monthlySpendingCategories(from: detail)
-        let spendingNamesForParent = monthCategories
-            .filter { TransactionCategoryCatalog.parent(for: $0.name) == parentKey }
-            .sorted { $0.amount > $1.amount }
-            .map(\.name)
-
-        let defaultNames = defaultBudgetCategoryNames(for: parent)
-
-        var orderedNames: [String] = []
-        for name in budgetDisplayNamesForParent where !orderedNames.contains(name) {
-            orderedNames.append(name)
-        }
-        for name in defaultNames where !orderedNames.contains(name) {
-            orderedNames.append(name)
-        }
-        for name in spendingNamesForParent where !orderedNames.contains(name) {
-            orderedNames.append(name)
-        }
-
-        // Product requirement: each side shows 6 categories.
-        while orderedNames.count < 6 {
-            let filler = parent == .needs ? "Other Needs \(orderedNames.count + 1)" : "Other Wants \(orderedNames.count + 1)"
-            if !orderedNames.contains(filler) {
-                orderedNames.append(filler)
-            }
-        }
-
-        let spendingByName: [String: Double] = monthCategories.reduce(into: [:]) { partial, category in
-            partial[category.name, default: 0] += max(category.amount, 0)
-        }
-        let spendingByNameLower: [String: Double] = spendingByName.reduce(into: [:]) { partial, item in
-            partial[item.key.lowercased()] = item.value
-        }
-
-        return Array(orderedNames.prefix(6)).map { name in
-            let spent = spendingByName[name] ?? spendingByNameLower[name.lowercased()] ?? 0
-            // Display name → canonical id → budget amount; fall back to name for legacy data
-            let budgetId = TransactionCategoryCatalog.id(forDisplayedSubcategory: name)
-            let amount = budgetId.flatMap { budgetMap[$0] } ?? budgetMap[name] ?? 0
-            let icon = TransactionCategoryCatalog.all.first { $0.name == name }?.icon
-            return BudgetCategoryBudget(
-                name: name,
-                parent: parent,
-                amount: max(amount, 0),
-                spent: spent,
-                icon: icon
-            )
-        }
-    }
-
-    private func monthlySpendingCategories(from detail: SpendingDetailData?) -> [SpendingDetailCategory] {
-        guard let detail else { return [] }
-        let year = Calendar.current.component(.year, from: Date())
-        return detail.monthlyDataByYear[year]?[currentMonthIndex]?.categories ?? []
-    }
-
-    private func defaultBudgetCategoryNames(for parent: BudgetScope) -> [String] {
-        switch parent {
-        case .needs:
-            var base = TransactionCategoryCatalog.needsCategories.map(\.name)
-            base.append("Other Needs")
-            return base
-        case .wants:
-            var base = TransactionCategoryCatalog.wantsCategories.map(\.name)
-            base.append("Other Wants")
-            return base
-        case .all:
-            return []
-        }
-    }
 
     func restoreFromCache() {
         let cache = TabContentCache.shared
@@ -335,7 +255,10 @@ private extension CashflowView {
         if let wants = cache.cashflowWantsDetail, cashflowWantsDetail == nil {
             cashflowWantsDetail = wants
         }
-        if let summaries = cache.cashflowMonthlySummaries {
+        // 跨过新年凌晨时缓存里的「当年」会变成上一年；此处对比当前日历年再决定是否复用。
+        let currentYear = Calendar.current.component(.year, from: Date())
+        if let summaries = cache.cashflowMonthlySummaries,
+           cache.cashflowMonthlySummariesYear == currentYear {
             applyMonthlySummaries(summaries)
         }
         if let accounts = cache.cashflowAccounts {
@@ -415,7 +338,11 @@ private extension CashflowView {
         let year = cal.component(.year, from: Date())
         let through = cal.component(.month, from: Date())
 
-        if !force, let cachedSummaries = TabContentCache.shared.cashflowMonthlySummaries, !cachedSummaries.isEmpty {
+        let cache = TabContentCache.shared
+        if !force,
+           let cachedSummaries = cache.cashflowMonthlySummaries,
+           !cachedSummaries.isEmpty,
+           cache.cashflowMonthlySummariesYear == year {
             applyMonthlySummaries(cachedSummaries)
         } else {
             let summaries = await CashflowAPICharts.fetchMonthlySummaries(year: year, throughMonth: through)
@@ -476,7 +403,7 @@ private extension CashflowView {
             currentSavings = currentSavingsForCurrentMonth(from: savings) ?? currentSavings
             TabContentCache.shared.setCashflowSavingsByYear(savings)
             TabContentCache.shared.setCashflowSpendingDetails(total: total, needs: needs, wants: wants)
-            TabContentCache.shared.setCashflowMonthlySummaries(summaries)
+            TabContentCache.shared.setCashflowMonthlySummaries(summaries, year: year)
         } else {
             cashflowSpendingTotalDetail = nil
             cashflowNeedsDetail = nil
@@ -554,31 +481,49 @@ private extension CashflowView {
         return formatter.string(from: date)
     }
 
-    /// Probe the last 12 months once and remember which ones have a saved
-    /// monthly_budget record. Cheap to call repeatedly because it short-circuits
-    /// when the list is already populated.
+    /// Probe the last 12 months and remember which ones have a saved
+    /// `monthly_budget` record. Short-circuits when the list is already populated;
+    /// pass `force: true` to refetch (e.g. after a budget setup completes and
+    /// creates a new month record).
+    /// 12 个月份的探测请求并行发出，避免月份选择器首次打开时串行 12 次网络往返。
     @MainActor
-    func loadAvailableBudgetMonthsIfNeeded() async {
-        guard availableBudgetMonths.isEmpty else { return }
+    func loadAvailableBudgetMonthsIfNeeded(force: Bool = false) async {
+        if !force, !availableBudgetMonths.isEmpty { return }
         let calendar = Calendar.current
         let today = Date()
-        var found: [Date] = []
-        for offset in 0..<12 {
-            guard let monthDate = calendar.date(byAdding: .month, value: -offset, to: today) else { continue }
-            let firstOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: monthDate)) ?? monthDate
-            let monthStr = apiMonthString(from: firstOfMonth)
-            if let budget = try? await APIService.shared.getMonthlyBudget(month: monthStr),
-               !budget.budgetId.isEmpty {
-                found.append(firstOfMonth)
+        let monthStarts: [Date] = (0..<12).compactMap { offset in
+            guard let monthDate = calendar.date(byAdding: .month, value: -offset, to: today) else { return nil }
+            return calendar.date(from: calendar.dateComponents([.year, .month], from: monthDate)) ?? monthDate
+        }
+
+        let found: [Date] = await withTaskGroup(of: (Int, Date?).self) { group in
+            for (index, firstOfMonth) in monthStarts.enumerated() {
+                let monthStr = apiMonthString(from: firstOfMonth)
+                group.addTask {
+                    if let budget = try? await APIService.shared.getMonthlyBudget(month: monthStr),
+                       !budget.budgetId.isEmpty {
+                        return (index, firstOfMonth)
+                    }
+                    return (index, nil)
+                }
             }
+            var byIndex: [Int: Date] = [:]
+            for await (index, date) in group {
+                if let date { byIndex[index] = date }
+            }
+            // 保持与 monthStarts 相同的「最近优先」顺序（offset 0 = 当月，offset 11 = 11 个月前）。
+            return byIndex.keys.sorted().compactMap { byIndex[$0] }
         }
         availableBudgetMonths = found
     }
 
     /// Switch the BudgetCard to a historical month. Refetches that month's
-    /// monthly_budget and the matching spending detail so the card body
-    /// reflects the picked month. Returning to the current month falls back
-    /// to the standard `loadCashflowData` path so live data resumes.
+    /// monthly_budget, applies its spent totals to the card, and lazy-fetches
+    /// the per-month spending detail (needs / wants / total) when the picked
+    /// month isn't already cached — typically the case for cross-year picks
+    /// since the bulk loader only covers the current year.
+    /// Returning to the current month falls back to the standard
+    /// `loadCashflowData` path so live data resumes.
     @MainActor
     func switchToBudgetMonth(_ month: Date) async {
         let calendar = Calendar.current
@@ -594,7 +539,45 @@ private extension CashflowView {
         if let budget = try? await APIService.shared.getMonthlyBudget(month: monthStr) {
             apiBudget = budget
             currentSavings = budget.savingsActual ?? 0
+            // 历史月的实际花费来自后端基于该月 transactions 的实时计算（见 get-monthly-budget edge function）。
+            needsTotal = budget.needsSpent ?? 0
+            wantsTotal = budget.wantsSpent ?? 0
+            totalSpend = needsTotal + wantsTotal
         }
+
+        await ensureSpendingDetailLoaded(year: displayMonthYear, monthIndex: displayMonthIndex)
+    }
+
+    /// 如果指定 year/monthIndex 在 4 个 detail 字典里都已经有数据，直接返回；否则调
+    /// `get-spending-summary` 拉一次并 merge。仅在切换到历史月时调用。
+    @MainActor
+    private func ensureSpendingDetailLoaded(year: Int, monthIndex: Int) async {
+        let totalHas = cashflowSpendingTotalDetail?.monthlyDataByYear[year]?[monthIndex] != nil
+        let needsHas = cashflowNeedsDetail?.monthlyDataByYear[year]?[monthIndex] != nil
+        let wantsHas = cashflowWantsDetail?.monthlyDataByYear[year]?[monthIndex] != nil
+        if totalHas && needsHas && wantsHas { return }
+
+        guard let summary = await CashflowAPICharts.fetchSingleMonthSummary(
+            year: year, monthIndex: monthIndex
+        ) else { return }
+
+        let merged = CashflowAPICharts.mergedDetails(
+            summary: summary,
+            year: year,
+            monthIndex: monthIndex,
+            existingTotal: cashflowSpendingTotalDetail,
+            existingNeeds: cashflowNeedsDetail,
+            existingWants: cashflowWantsDetail,
+            existingSavings: cashflowSavingsByYear
+        )
+        cashflowSpendingTotalDetail = merged.total
+        cashflowNeedsDetail = merged.needs
+        cashflowWantsDetail = merged.wants
+        cashflowSavingsByYear = merged.savings
+        TabContentCache.shared.setCashflowSpendingDetails(
+            total: merged.total, needs: merged.needs, wants: merged.wants
+        )
+        TabContentCache.shared.setCashflowSavingsByYear(merged.savings)
     }
 }
 

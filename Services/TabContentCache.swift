@@ -59,6 +59,10 @@ final class TabContentCache {
     /// Cash Flow 展开层上次成功的当年逐月支出 summary；用于避免 overlay 重新打开时的空白闪烁。
     private(set) var cashflowMonthlySummaries: [Int: APISpendingSummary]?
 
+    /// `cashflowMonthlySummaries` 对应的日历年。session 跨过 1 月 1 日时缓存的「当年」会
+    /// 突然变成「去年」；读取方需对比此值与当前年份并丢弃过期数据。
+    private(set) var cashflowMonthlySummariesYear: Int?
+
     /// Cash Flow 上次成功拉到的账户列表（来自 net worth summary 全量 accounts）。
     private(set) var cashflowAccounts: [APIAccount]?
 
@@ -106,8 +110,9 @@ final class TabContentCache {
         cashflowSavingsByYear = value
     }
 
-    func setCashflowMonthlySummaries(_ value: [Int: APISpendingSummary]?) {
+    func setCashflowMonthlySummaries(_ value: [Int: APISpendingSummary]?, year: Int? = nil) {
         cashflowMonthlySummaries = value
+        cashflowMonthlySummariesYear = (value == nil) ? nil : year
     }
 
     func setCashflowAccounts(_ value: [APIAccount]?) {
@@ -175,6 +180,7 @@ final class TabContentCache {
         cashflowNeedsDetail = nil
         cashflowWantsDetail = nil
         cashflowMonthlySummaries = nil
+        cashflowMonthlySummariesYear = nil
         cashflowAccounts = nil
         cashflowRecentTransactions = nil
         cashAccountTransactions = [:]

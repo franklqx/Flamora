@@ -43,6 +43,130 @@ enum CashflowAPICharts {
         }
     }
 
+    /// 单月按需补拉。预选月份选择器最多回溯 12 个月，可能跨年；`fetchMonthlySummaries` 只覆盖
+    /// "今年 1 月 → 当月"，跨年或缺月时由 `switchToBudgetMonth` 调用本方法补齐。
+    static func fetchSingleMonthSummary(year: Int, monthIndex: Int) async -> APISpendingSummary? {
+        let month = monthIndex + 1
+        guard month >= 1, month <= 12 else { return nil }
+        let monthStr = String(format: "%04d-%02d", year, month)
+        do {
+            return try await APIService.shared.getSpendingSummary(month: monthStr)
+        } catch {
+            print("⚠️ [CashflowAPICharts] single-month summary failed for \(monthStr): \(error)")
+            return nil
+        }
+    }
+
+    /// 把单月 summary merge 进 4 个 detail 结构（`total` / `needs` / `wants` / `savings`）。
+    /// 用于切换到缓存里没有的月份（典型为跨年）。其余月份保持不变。
+    static func mergedDetails(
+        summary: APISpendingSummary,
+        year: Int,
+        monthIndex: Int,
+        existingTotal: TotalSpendingDetailData?,
+        existingNeeds: SpendingDetailData?,
+        existingWants: SpendingDetailData?,
+        existingSavings: [Int: [Double?]]?
+    ) -> (
+        total: TotalSpendingDetailData,
+        needs: SpendingDetailData,
+        wants: SpendingDetailData,
+        savings: [Int: [Double?]]
+    ) {
+        func ensure12(_ arr: [Double?]?) -> [Double?] {
+            var copy = arr ?? Array(repeating: nil, count: 12)
+            while copy.count < 12 { copy.append(nil) }
+            return copy
+        }
+
+        // Total
+        let totalSpending = summary.totalSpending
+        let n = summary.needs.total
+        let w = summary.wants.total
+        let denom = totalSpending > 0 ? totalSpending : 1
+        let totalEntry = TotalSpendingMonthData(
+            total: totalSpending,
+            needsAmount: n,
+            wantsAmount: w,
+            needsPercentage: n / denom * 100,
+            wantsPercentage: w / denom * 100
+        )
+        var totalTrendsByYear = existingTotal?.trendsByYear ?? [:]
+        var totalMonthlyByYear = existingTotal?.monthlyDataByYear ?? [:]
+        var totalTrend = ensure12(totalTrendsByYear[year])
+        totalTrend[monthIndex] = totalSpending
+        var totalMonthly = totalMonthlyByYear[year] ?? [:]
+        totalMonthly[monthIndex] = totalEntry
+        totalTrendsByYear[year] = totalTrend
+        totalMonthlyByYear[year] = totalMonthly
+        let mergedTotal = TotalSpendingDetailData(
+            title: existingTotal?.title ?? "Total Spending",
+            trendsByYear: totalTrendsByYear,
+            monthlyDataByYear: totalMonthlyByYear
+        )
+
+        // Needs
+        let needsCats = summary.needs.subcategories.enumerated().map { i, sub in
+            SpendingDetailCategory(
+                id: "\(year)-\(monthIndex)-\(sub.subcategory)-\(i)",
+                icon: "tag.fill",
+                name: sub.subcategory,
+                amount: sub.amount,
+                percentage: sub.percentage
+            )
+        }
+        let needsEntry = SpendingDetailMonthData(total: n, categories: needsCats)
+        var needsTrendsByYear = existingNeeds?.trendsByYear ?? [:]
+        var needsMonthlyByYear = existingNeeds?.monthlyDataByYear ?? [:]
+        var needsTrend = ensure12(needsTrendsByYear[year])
+        needsTrend[monthIndex] = n
+        var needsMonthly = needsMonthlyByYear[year] ?? [:]
+        needsMonthly[monthIndex] = needsEntry
+        needsTrendsByYear[year] = needsTrend
+        needsMonthlyByYear[year] = needsMonthly
+        let mergedNeeds = SpendingDetailData(
+            title: existingNeeds?.title ?? "Spending Analysis (Needs)",
+            accentColor: existingNeeds?.accentColor ?? "#2563EB",
+            trendsByYear: needsTrendsByYear,
+            monthlyDataByYear: needsMonthlyByYear
+        )
+
+        // Wants
+        let wantsCats = summary.wants.subcategories.enumerated().map { i, sub in
+            SpendingDetailCategory(
+                id: "\(year)-\(monthIndex)-\(sub.subcategory)-\(i)",
+                icon: "tag.fill",
+                name: sub.subcategory,
+                amount: sub.amount,
+                percentage: sub.percentage
+            )
+        }
+        let wantsEntry = SpendingDetailMonthData(total: w, categories: wantsCats)
+        var wantsTrendsByYear = existingWants?.trendsByYear ?? [:]
+        var wantsMonthlyByYear = existingWants?.monthlyDataByYear ?? [:]
+        var wantsTrend = ensure12(wantsTrendsByYear[year])
+        wantsTrend[monthIndex] = w
+        var wantsMonthly = wantsMonthlyByYear[year] ?? [:]
+        wantsMonthly[monthIndex] = wantsEntry
+        wantsTrendsByYear[year] = wantsTrend
+        wantsMonthlyByYear[year] = wantsMonthly
+        let mergedWants = SpendingDetailData(
+            title: existingWants?.title ?? "Spending Analysis (Wants)",
+            accentColor: existingWants?.accentColor ?? "#D97706",
+            trendsByYear: wantsTrendsByYear,
+            monthlyDataByYear: wantsMonthlyByYear
+        )
+
+        // Savings (manual check-in 优先；否则 estimated；再否则 income - spending)
+        var mergedSavings = existingSavings ?? [:]
+        var savingsTrend = ensure12(mergedSavings[year])
+        let fallback = max(0, summary.totalIncome - summary.totalSpending)
+        savingsTrend[monthIndex] = summary.savings.actual ?? summary.savings.estimated ?? fallback
+        mergedSavings[year] = savingsTrend
+
+        return (mergedTotal, mergedNeeds, mergedWants, mergedSavings)
+    }
+
     /// 每月储蓄优先使用手动 check-in；若无手动值，再回退到 summary 推导值。
     static func savingsMonthlyAmountsByYear(summaries: [Int: APISpendingSummary], year: Int) -> [Int: [Double?]] {
         var trend: [Double?] = Array(repeating: nil, count: 12)

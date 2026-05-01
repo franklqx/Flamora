@@ -36,6 +36,10 @@ struct SpendingAnalysisDetailView: View {
     let data: SpendingDetailData
     /// "needs" 或 "wants"，用于向 get-transactions 传递正确的分类过滤。
     let flamoraCategory: String
+    /// 子类目预算（canonical id → amount）。给设过预算的类目额外渲染进度条 + "Over"
+    /// 徽章；没设的就只展示金额。预算是可选的——用户没设代表不想为该类目设上限，
+    /// 不在这里推他去设。
+    var categoryBudgets: [String: Double]? = nil
     var linkedAccounts: [Account] = []
     /// 来自 Cashflow 时传入 `persistTransactionClassification`；未传时在子页内调 API 并广播 `transactionClassificationDidPersist`。
     var onTransactionPersist: ((Transaction) async throws -> Void)? = nil
@@ -53,17 +57,90 @@ struct SpendingAnalysisDetailView: View {
         data: SpendingDetailData,
         flamoraCategory: String = "needs",
         initialSelectedMonth: Int? = nil,
+        initialSelectedYear: Int? = nil,
+        categoryBudgets: [String: Double]? = nil,
         linkedAccounts: [Account] = [],
         onTransactionPersist: ((Transaction) async throws -> Void)? = nil
     ) {
         self.data = data
         self.flamoraCategory = flamoraCategory
+        self.categoryBudgets = categoryBudgets
         self.linkedAccounts = linkedAccounts
         self.onTransactionPersist = onTransactionPersist
-        let latest = data.availableYears.last ?? Calendar.current.component(.year, from: Date())
-        let trend = data.trendsByYear[latest] ?? []
-        _selectedYear = State(initialValue: latest)
+        let resolvedYear: Int = {
+            if let y = initialSelectedYear, data.availableYears.contains(y) { return y }
+            return data.availableYears.last ?? Calendar.current.component(.year, from: Date())
+        }()
+        let trend = data.trendsByYear[resolvedYear] ?? []
+        _selectedYear = State(initialValue: resolvedYear)
         _selectedBarIndex = State(initialValue: preferredCashflowMonthIndex(in: trend, requested: initialSelectedMonth))
+    }
+
+    private struct DetailCategoryRow: Identifiable {
+        let id: String
+        let name: String
+        let icon: String
+        let spent: Double
+        let budget: Double
+        /// 重建 `SpendingDetailCategory` 用于交易钻取（保留原本的 percentage）。
+        let drilldown: SpendingDetailCategory
+    }
+
+    /// 当月该桶的所有可展示子类目，按 canonical id 归一化（避免 "groceries" / "Groceries" 重复）。
+    /// 排序：先展示用户设了预算的（按支出降序），再展示没设预算但有支出的（按支出降序）。
+    /// 没设预算且支出为 0 的不显示。
+    private var categoryRows: [DetailCategoryRow] {
+        let budgetMap = categoryBudgets ?? [:]
+        let bucketCatalog = TransactionCategoryCatalog.all.filter { $0.parent == flamoraCategory }
+
+        struct SpentEntry {
+            let icon: String
+            let displayName: String
+            let amount: Double
+            let drilldown: SpendingDetailCategory
+        }
+        var spentByKey: [String: SpentEntry] = [:]
+        for cat in selectedCategories {
+            let canonical = TransactionCategoryCatalog.canonicalSubcategory(fromStored: cat.name)
+                         ?? TransactionCategoryCatalog.id(forDisplayedSubcategory: cat.name)
+            let key = canonical ?? cat.name.lowercased()
+            let catalog = canonical.flatMap { id in bucketCatalog.first { $0.id == id } }
+            spentByKey[key] = SpentEntry(
+                icon: catalog?.icon ?? cat.icon,
+                displayName: catalog?.name ?? cat.name,
+                amount: max(cat.amount, 0),
+                drilldown: cat
+            )
+        }
+
+        var budgeted: [DetailCategoryRow] = []
+        var budgetedKeys = Set<String>()
+        for cat in bucketCatalog {
+            let budget = budgetMap[cat.id] ?? 0
+            guard budget > 0 else { continue }
+            let entry = spentByKey[cat.id]
+            let drill = entry?.drilldown ?? SpendingDetailCategory(
+                id: "budgeted-\(cat.id)-\(selectedYear)-\(selectedBarIndex)",
+                icon: cat.icon, name: cat.name, amount: 0, percentage: 0
+            )
+            budgeted.append(DetailCategoryRow(
+                id: cat.id, name: cat.name, icon: cat.icon,
+                spent: entry?.amount ?? 0, budget: budget, drilldown: drill
+            ))
+            budgetedKeys.insert(cat.id)
+        }
+        budgeted.sort { $0.spent > $1.spent }
+
+        var unbudgeted: [DetailCategoryRow] = []
+        for (key, entry) in spentByKey where !budgetedKeys.contains(key) && entry.amount > 0.005 {
+            unbudgeted.append(DetailCategoryRow(
+                id: key, name: entry.displayName, icon: entry.icon,
+                spent: entry.amount, budget: 0, drilldown: entry.drilldown
+            ))
+        }
+        unbudgeted.sort { $0.spent > $1.spent }
+
+        return budgeted + unbudgeted
     }
 
     private var accentColor: Color {
@@ -152,7 +229,7 @@ struct SpendingAnalysisDetailView: View {
                         .font(.cardHeader)
                         .foregroundStyle(AppColors.inkPrimary)
                         .tracking(AppTypography.Tracking.cardHeader)
-                    Text("\(selectedMonthLabel) \(selectedYear)")
+                    Text("\(selectedMonthLabel) \(String(selectedYear))")
                         .font(.caption)
                         .foregroundStyle(AppColors.inkSoft)
                 }
@@ -263,6 +340,8 @@ struct SpendingAnalysisDetailView: View {
 
     @ViewBuilder
     private var categoriesCard: some View {
+        let rows = categoryRows
+
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text("CATEGORIES")
@@ -275,7 +354,7 @@ struct SpendingAnalysisDetailView: View {
             .padding(.top, AppSpacing.cardPadding)
             .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
 
-            if selectedCategories.isEmpty {
+            if rows.isEmpty {
                 Text("No spend recorded in \(selectedMonthLongLabel)")
                     .font(.bodyRegular)
                     .foregroundStyle(AppColors.inkSoft)
@@ -284,16 +363,10 @@ struct SpendingAnalysisDetailView: View {
                     .padding(.bottom, AppSpacing.cardPadding)
             } else {
                 LazyVStack(spacing: 0) {
-                    ForEach(Array(selectedCategories.enumerated()), id: \.element.id) { index, category in
-                        if index > 0 {
-                            Rectangle()
-                                .fill(AppColors.inkDivider)
-                                .frame(height: 0.5)
-                                .padding(.leading, AppSpacing.cardPadding + 38 + AppSpacing.md)
-                                .padding(.trailing, AppSpacing.cardPadding)
-                        }
-                        Button { selectedCategory = category } label: {
-                            categoryRow(category)
+                    ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                        if index > 0 { rowDivider }
+                        Button { selectedCategory = row.drilldown } label: {
+                            categoryRow(row)
                         }
                         .buttonStyle(.plain)
                     }
@@ -309,39 +382,92 @@ struct SpendingAnalysisDetailView: View {
         )
     }
 
-    private func categoryRow(_ category: SpendingDetailCategory) -> some View {
-        HStack(spacing: AppSpacing.md) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(accentColor.opacity(0.14))
-                    .frame(width: 38, height: 38)
-                Image(systemName: category.icon)
-                    .font(.footnoteSemibold)
-                    .foregroundStyle(accentColor)
-            }
+    private var rowDivider: some View {
+        Rectangle()
+            .fill(AppColors.inkDivider)
+            .frame(height: 0.5)
+            .padding(.leading, AppSpacing.cardPadding + 38 + AppSpacing.md)
+            .padding(.trailing, AppSpacing.cardPadding)
+    }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(category.name)
-                    .font(.footnoteSemibold)
-                    .foregroundStyle(AppColors.inkPrimary)
-                Text("\(Int(category.percentage.rounded()))% of \(flamoraCategory)")
+    /// 一行展示一个子类目。设了预算 → 进度条 + "$X of $Y" + "Over" 徽章；
+    /// 没设 → 只展示金额。预算是可选的，没设并不是缺失状态，所以不渲染任何
+    /// "No budget" 提示或 CTA。
+    private func categoryRow(_ row: DetailCategoryRow) -> some View {
+        let hasBudget = row.budget > 0
+        let safeBudget = max(row.budget, 0.0001)
+        let progress = min(max(row.spent / safeBudget, 0), 1)
+        let isOver = hasBudget && row.spent > row.budget
+        let iconColor = isOver ? AppColors.error : accentColor
+
+        return VStack(spacing: AppSpacing.xs) {
+            HStack(spacing: AppSpacing.md) {
+                categoryIcon(row.icon, color: iconColor)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: AppSpacing.xs) {
+                        Text(row.name)
+                            .font(.footnoteSemibold)
+                            .foregroundStyle(AppColors.inkPrimary)
+                        if isOver {
+                            Text("Over")
+                                .font(.miniLabel)
+                                .foregroundStyle(AppColors.error)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(AppColors.error.opacity(0.12))
+                                .clipShape(Capsule())
+                        }
+                    }
+                    if hasBudget {
+                        Text("\(formatCurrency(row.spent)) of \(formatCurrency(row.budget))")
+                            .font(.caption)
+                            .foregroundStyle(AppColors.inkFaint)
+                            .monospacedDigit()
+                    }
+                }
+
+                Spacer()
+
+                if !hasBudget {
+                    Text(formatCurrency(row.spent))
+                        .font(.footnoteBold)
+                        .foregroundStyle(AppColors.inkPrimary)
+                        .monospacedDigit()
+                }
+
+                Image(systemName: "chevron.right")
                     .font(.caption)
                     .foregroundStyle(AppColors.inkFaint)
             }
 
-            Spacer()
-
-            Text(formatCurrency(category.amount))
-                .font(.footnoteBold)
-                .foregroundStyle(AppColors.inkPrimary)
-                .monospacedDigit()
-
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundStyle(AppColors.inkFaint)
+            if hasBudget {
+                GeometryReader { geo in
+                    let width = max(geo.size.width, 0)
+                    let barColor = isOver ? AppColors.error : accentColor
+                    let trackColor = isOver ? AppColors.error.opacity(0.18) : accentColor.opacity(0.14)
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(trackColor).frame(height: 5)
+                        Capsule().fill(barColor).frame(width: width * progress, height: 5)
+                    }
+                }
+                .frame(height: 5)
+                .padding(.leading, 38 + AppSpacing.md)
+            }
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.sm + 2)
+    }
+
+    private func categoryIcon(_ icon: String, color: Color) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(color.opacity(0.14))
+                .frame(width: 38, height: 38)
+            Image(systemName: icon)
+                .font(.footnoteSemibold)
+                .foregroundStyle(color)
+        }
     }
 
     // MARK: Formatters
