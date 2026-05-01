@@ -59,6 +59,17 @@ enum TransactionCategoryCatalog {
         "home_services": "utilities",
     ]
 
+    static func displayName(for raw: String?) -> String {
+        guard let raw, !raw.isEmpty else { return "Uncategorized" }
+        if let category = category(forStoredSubcategory: raw) {
+            return category.name
+        }
+        if let displayMatch = all.first(where: { $0.name == raw }) {
+            return displayMatch.name
+        }
+        return CategoryDisplay.displayName(raw)
+    }
+
     static func parent(forStoredSubcategory subcategory: String) -> String? {
         guard let canonical = canonicalSubcategory(fromStored: subcategory) else { return nil }
         return all.first(where: { $0.id == canonical })?.parent
@@ -90,10 +101,7 @@ enum TransactionCategoryCatalog {
 
     static func displayName(forStoredSubcategory raw: String?) -> String? {
         guard let raw, !raw.isEmpty else { return nil }
-        if let category = category(forStoredSubcategory: raw) {
-            return category.name
-        }
-        return CategoryDisplay.displayName(raw)
+        return displayName(for: raw)
     }
 
     static func icon(forStoredSubcategory raw: String?) -> String? {

@@ -68,7 +68,7 @@ struct CashflowSpendingOverviewPrototypeCard: View {
                         ("Shopping", "$515"),
                         ("Travel", "$365")
                     ],
-                    accent: AppColors.warning
+                    accent: AppColors.budgetWantsPurple
                 )
             }
         }

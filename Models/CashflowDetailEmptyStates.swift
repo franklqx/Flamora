@@ -71,7 +71,7 @@ extension SpendingDetailData {
         let y = CashflowDetailEmptyStates.currentYear
         return SpendingDetailData(
             title: "Spending Analysis (Wants)",
-            accentColor: "#D97706",
+            accentColor: "#8B5CF6",
             trendsByYear: [y: CashflowDetailEmptyStates.twelveNils],
             monthlyDataByYear: [y: [:]]
         )

@@ -48,6 +48,7 @@ struct SpendingAnalysisDetailView: View {
     @State private var selectedBarIndex: Int
     @State private var selectedYear: Int
     @State private var selectedCategory: SpendingDetailCategory?
+    @State private var showYearSwitcher = false
 
     private let monthLabels = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
     private let monthsFull = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -105,9 +106,10 @@ struct SpendingAnalysisDetailView: View {
                          ?? TransactionCategoryCatalog.id(forDisplayedSubcategory: cat.name)
             let key = canonical ?? cat.name.lowercased()
             let catalog = canonical.flatMap { id in bucketCatalog.first { $0.id == id } }
+            let displayName = catalog?.name ?? TransactionCategoryCatalog.displayName(for: cat.name)
             spentByKey[key] = SpentEntry(
                 icon: catalog?.icon ?? cat.icon,
-                displayName: catalog?.name ?? cat.name,
+                displayName: displayName,
                 amount: max(cat.amount, 0),
                 drilldown: cat
             )
@@ -144,7 +146,7 @@ struct SpendingAnalysisDetailView: View {
     }
 
     private var accentColor: Color {
-        flamoraCategory == "wants" ? AppColors.allocAmber : AppColors.allocIndigo
+        flamoraCategory == "wants" ? AppColors.budgetWantsPurple : AppColors.budgetNeedsBlue
     }
 
     private var cardBackground: LinearGradient {
@@ -177,17 +179,25 @@ struct SpendingAnalysisDetailView: View {
 
     private var canGoPrev: Bool { (data.availableYears.first ?? Int.max) < selectedYear }
     private var canGoNext: Bool { (data.availableYears.last  ?? Int.min) > selectedYear }
+    private var selectableYears: [Int] {
+        let years = data.availableYears
+        if years.isEmpty { return [selectedYear] }
+        return years
+    }
 
     private func navigateYear(_ delta: Int) {
         let years = data.availableYears
         guard let idx = years.firstIndex(of: selectedYear) else { return }
         let newIdx = idx + delta
         guard newIdx >= 0 && newIdx < years.count else { return }
-        let newYear = years[newIdx]
+        selectYear(years[newIdx])
+    }
+
+    private func selectYear(_ newYear: Int) {
         let trend = data.trendsByYear[newYear] ?? []
         withAnimation(.easeInOut(duration: 0.2)) {
             selectedYear = newYear
-            selectedBarIndex = trend.indices.last(where: { trend[$0] != nil }) ?? 0
+            selectedBarIndex = preferredCashflowMonthIndex(in: trend, requested: selectedBarIndex)
         }
     }
 
@@ -216,6 +226,14 @@ struct SpendingAnalysisDetailView: View {
                 linkedAccounts: linkedAccounts,
                 onTransactionPersist: onTransactionPersist
             )
+        }
+        .sheet(isPresented: $showYearSwitcher) {
+            CashflowYearSwitcherSheet(
+                years: selectableYears,
+                selected: selectedYear
+            ) { year in
+                selectYear(year)
+            }
         }
     }
 
@@ -257,29 +275,21 @@ struct SpendingAnalysisDetailView: View {
     }
 
     private var yearPicker: some View {
-        HStack(spacing: 10) {
-            Button { navigateYear(-1) } label: {
-                Image(systemName: "chevron.left")
-                    .font(.footnoteSemibold)
-                    .foregroundStyle(canGoPrev ? AppColors.inkSoft : AppColors.inkFaint.opacity(0.5))
-            }
-            .disabled(!canGoPrev)
-            .buttonStyle(.plain)
-
-            Text(String(selectedYear))
-                .font(.footnoteBold)
-                .foregroundStyle(AppColors.inkPrimary)
-                .frame(minWidth: 40)
-                .monospacedDigit()
-
-            Button { navigateYear(1) } label: {
+        Button {
+            showYearSwitcher = true
+        } label: {
+            HStack(spacing: AppSpacing.xs) {
+                Text(String(selectedYear))
+                    .font(.footnoteBold)
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .monospacedDigit()
                 Image(systemName: "chevron.right")
                     .font(.footnoteSemibold)
-                    .foregroundStyle(canGoNext ? AppColors.inkSoft : AppColors.inkFaint.opacity(0.5))
+                    .foregroundStyle(AppColors.inkFaint)
             }
-            .disabled(!canGoNext)
-            .buttonStyle(.plain)
         }
+        .buttonStyle(.plain)
+        .contentShape(Rectangle())
     }
 
     private var chartView: some View {
@@ -398,42 +408,45 @@ struct SpendingAnalysisDetailView: View {
         let safeBudget = max(row.budget, 0.0001)
         let progress = min(max(row.spent / safeBudget, 0), 1)
         let isOver = hasBudget && row.spent > row.budget
-        let iconColor = isOver ? AppColors.error : accentColor
+        let statusColor = AppColors.warning
 
         return VStack(spacing: AppSpacing.xs) {
             HStack(spacing: AppSpacing.md) {
-                categoryIcon(row.icon, color: iconColor)
+                categoryIcon(row.icon, color: accentColor)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: AppSpacing.xs) {
-                        Text(row.name)
-                            .font(.footnoteSemibold)
-                            .foregroundStyle(AppColors.inkPrimary)
-                        if isOver {
-                            Text("Over")
-                                .font(.miniLabel)
-                                .foregroundStyle(AppColors.error)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(AppColors.error.opacity(0.12))
-                                .clipShape(Capsule())
-                        }
-                    }
+                    Text(row.name)
+                        .font(.footnoteSemibold)
+                        .foregroundStyle(AppColors.inkPrimary)
+                        .lineLimit(1)
                     if hasBudget {
-                        Text("\(formatCurrency(row.spent)) of \(formatCurrency(row.budget))")
-                            .font(.caption)
-                            .foregroundStyle(AppColors.inkFaint)
-                            .monospacedDigit()
+                        HStack(spacing: AppSpacing.xs) {
+                            Text("\(formatCurrency(row.budget)) budget")
+                                .font(.caption)
+                                .foregroundStyle(AppColors.inkFaint)
+                                .monospacedDigit()
+                            if isOver {
+                                Text("Over")
+                                    .font(.miniLabel)
+                                    .foregroundStyle(statusColor)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(statusColor.opacity(0.12))
+                                    .clipShape(Capsule())
+                            }
+                        }
                     }
                 }
 
                 Spacer()
 
-                if !hasBudget {
+                VStack(alignment: .trailing, spacing: 2) {
                     Text(formatCurrency(row.spent))
                         .font(.footnoteBold)
                         .foregroundStyle(AppColors.inkPrimary)
                         .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
 
                 Image(systemName: "chevron.right")
@@ -444,8 +457,8 @@ struct SpendingAnalysisDetailView: View {
             if hasBudget {
                 GeometryReader { geo in
                     let width = max(geo.size.width, 0)
-                    let barColor = isOver ? AppColors.error : accentColor
-                    let trackColor = isOver ? AppColors.error.opacity(0.18) : accentColor.opacity(0.14)
+                    let barColor = accentColor
+                    let trackColor = accentColor.opacity(isOver ? 0.20 : 0.14)
                     ZStack(alignment: .leading) {
                         Capsule().fill(trackColor).frame(height: 5)
                         Capsule().fill(barColor).frame(width: width * progress, height: 5)
@@ -488,6 +501,86 @@ struct SpendingAnalysisDetailView: View {
         formatter.maximumFractionDigits = 2
         formatter.minimumFractionDigits = 2
         return formatter.string(from: NSNumber(value: value)) ?? "$0.00"
+    }
+}
+
+// MARK: - Year switcher
+
+struct CashflowYearSwitcherSheet: View {
+    let years: [Int]
+    let selected: Int
+    let onSelect: (Int) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    private var sortedYears: [Int] {
+        years.sorted(by: >)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.lg) {
+            HStack {
+                Text("Select year")
+                    .font(.h3)
+                    .foregroundStyle(AppColors.inkPrimary)
+                Spacer()
+                Button("Done") { dismiss() }
+                    .font(.bodySemibold)
+                    .foregroundStyle(AppColors.inkPrimary)
+            }
+
+            ScrollView {
+                VStack(spacing: AppSpacing.sm) {
+                    ForEach(sortedYears, id: \.self) { year in
+                        row(for: year)
+                    }
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, AppSpacing.screenPadding)
+        .padding(.top, AppSpacing.lg)
+        .padding(.bottom, AppSpacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.shellBg1)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func row(for year: Int) -> some View {
+        Button {
+            onSelect(year)
+            dismiss()
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(String(year))
+                        .font(.bodyRegular)
+                        .foregroundStyle(AppColors.inkPrimary)
+                    if Calendar.current.component(.year, from: Date()) == year {
+                        Text("Current")
+                            .font(.caption)
+                            .foregroundStyle(AppColors.inkSoft)
+                    }
+                }
+                Spacer()
+                if selected == year {
+                    Image(systemName: "checkmark")
+                        .font(.bodySemibold)
+                        .foregroundStyle(AppColors.inkPrimary)
+                }
+            }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.vertical, AppSpacing.md)
+            .background(AppColors.glassCardBg)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.md)
+                    .stroke(AppColors.glassCardBorder, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -596,7 +689,7 @@ struct SpendingCategoryTransactionsDetailView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(category.name.uppercased())
+                    Text(TransactionCategoryCatalog.displayName(for: category.name).uppercased())
                         .font(.cardHeader)
                         .foregroundStyle(AppColors.inkPrimary)
                         .tracking(AppTypography.Tracking.cardHeader)
@@ -811,7 +904,7 @@ struct SpendingCategoryTransactionsDetailView: View {
                 SpendingCategoryTransaction(
                     id: tx.id,
                     merchant: tx.merchantDisplay,
-                    subtitle: tx.flamoraSubcategory?.replacingOccurrences(of: "_", with: " ").capitalized ?? "",
+                    subtitle: tx.flamoraSubcategory.map { TransactionCategoryCatalog.displayName(for: $0) } ?? "",
                     amount: tx.amount,
                     raw: tx
                 )

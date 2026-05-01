@@ -152,7 +152,7 @@ enum CashflowAPICharts {
         wantsMonthlyByYear[year] = wantsMonthly
         let mergedWants = SpendingDetailData(
             title: existingWants?.title ?? "Spending Analysis (Wants)",
-            accentColor: existingWants?.accentColor ?? "#D97706",
+            accentColor: existingWants?.accentColor ?? "#8B5CF6",
             trendsByYear: wantsTrendsByYear,
             monthlyDataByYear: wantsMonthlyByYear
         )
@@ -216,7 +216,7 @@ enum CashflowAPICharts {
     static func wantsSpendingDetail(summaries: [Int: APISpendingSummary], year: Int) -> SpendingDetailData {
         spendingBucketDetail(
             title: "Spending Analysis (Wants)",
-            accentColor: "#D97706",
+            accentColor: "#8B5CF6",
             summaries: summaries,
             year: year,
             bucket: { $0.wants }

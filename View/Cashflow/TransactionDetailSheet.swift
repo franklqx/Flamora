@@ -202,7 +202,7 @@ struct TransactionDetailSheet: View {
                 .tracking(AppTypography.Tracking.cardHeader)
 
             categoryGroup(label: "NEEDS", color: AppColors.allocIndigo, categories: needsCategories)
-            categoryGroup(label: "WANTS", color: AppColors.allocAmber, categories: wantsCategories)
+            categoryGroup(label: "WANTS", color: AppColors.budgetWantsPurple, categories: wantsCategories)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppSpacing.cardPadding)
@@ -304,8 +304,8 @@ struct TransactionDetailSheet: View {
 
     private var effectiveTint: Color {
         switch effectiveCategory {
-        case "needs": return AppColors.allocIndigo
-        case "wants": return AppColors.allocAmber
+        case "needs": return AppColors.budgetNeedsBlue
+        case "wants": return AppColors.budgetWantsPurple
         default: return AppColors.inkSoft
         }
     }

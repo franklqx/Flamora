@@ -21,16 +21,17 @@ struct TotalSpendingAnalysisDetailView: View {
     var onTransactionPersist: ((Transaction) async throws -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedBarIndex: Int
+    @State private var selectedBarIndex: Int?
     @State private var selectedYear: Int
     @State private var showNeedsDetail = false
     @State private var showWantsDetail = false
+    @State private var showYearSwitcher = false
 
     private let monthLabels = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
     private let monthsFull = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-    private var needsColor: Color { AppColors.allocIndigo }
-    private var wantsColor: Color { AppColors.allocAmber }
+    private var needsColor: Color { AppColors.budgetNeedsBlue }
+    private var wantsColor: Color { AppColors.budgetWantsPurple }
 
     init(
         data: TotalSpendingDetailData,
@@ -52,9 +53,8 @@ struct TotalSpendingAnalysisDetailView: View {
             if let y = initialSelectedYear, data.availableYears.contains(y) { return y }
             return data.availableYears.last ?? Calendar.current.component(.year, from: Date())
         }()
-        let trend = data.trendsByYear[resolvedYear] ?? []
         _selectedYear = State(initialValue: resolvedYear)
-        _selectedBarIndex = State(initialValue: preferredCashflowMonthIndex(in: trend, requested: initialSelectedMonth))
+        _selectedBarIndex = State(initialValue: nil)
     }
 
     private var cardBackground: LinearGradient {
@@ -78,28 +78,83 @@ struct TotalSpendingAnalysisDetailView: View {
     }
 
     private var selectedMonthData: TotalSpendingMonthData? {
-        currentMonthlyData[selectedBarIndex]
+        guard let selectedBarIndex else { return nil }
+        return currentMonthlyData[selectedBarIndex]
     }
 
     private var selectedTotal: Double {
-        selectedMonthData?.total ?? (currentTrend.indices.contains(selectedBarIndex) ? currentTrend[selectedBarIndex] : nil) ?? 0
+        if let selectedBarIndex {
+            return selectedMonthData?.total ?? (currentTrend.indices.contains(selectedBarIndex) ? currentTrend[selectedBarIndex] : nil) ?? 0
+        }
+        return yearModeData?.total ?? 0
     }
 
-    private var selectedMonthLabel: String { monthsFull[selectedBarIndex] }
+    private var latestDataMonthIndex: Int? {
+        currentTrend.indices.last { index in
+            currentTrend[index] != nil || currentMonthlyData[index] != nil
+        }
+    }
+
+    private var selectedMonthLabel: String {
+        guard let selectedBarIndex else { return yearModeRangeLabel }
+        return monthsFull[selectedBarIndex]
+    }
+
+    private var selectedPeriodLabel: String {
+        guard let selectedBarIndex else { return yearModeTitleLabel }
+        return "\(monthsFull[selectedBarIndex]) \(String(selectedYear))"
+    }
+
+    private var yearModeTitleLabel: String {
+        "\(String(selectedYear)) YTD"
+    }
+
+    private var yearModeRangeLabel: String {
+        guard let latestDataMonthIndex else { return String(selectedYear) }
+        return "Jan-\(monthsFull[latestDataMonthIndex]) \(String(selectedYear))"
+    }
+
+    private var displayedSpendData: TotalSpendingMonthData? {
+        selectedMonthData ?? yearModeData
+    }
+
+    private var yearModeData: TotalSpendingMonthData? {
+        let months = currentMonthlyData.values
+        guard !months.isEmpty else { return nil }
+        let needs = months.reduce(0) { $0 + max($1.needsAmount, 0) }
+        let wants = months.reduce(0) { $0 + max($1.wantsAmount, 0) }
+        let total = needs + wants
+        guard total > 0 else { return nil }
+        return TotalSpendingMonthData(
+            total: total,
+            needsAmount: needs,
+            wantsAmount: wants,
+            needsPercentage: needs / total * 100,
+            wantsPercentage: wants / total * 100
+        )
+    }
 
     private var canGoPrev: Bool { (data.availableYears.first ?? Int.max) < selectedYear }
     private var canGoNext: Bool { (data.availableYears.last  ?? Int.min) > selectedYear }
+
+    private var selectableYears: [Int] {
+        let years = data.availableYears
+        if years.isEmpty { return [selectedYear] }
+        return years
+    }
 
     private func navigateYear(_ delta: Int) {
         let years = data.availableYears
         guard let idx = years.firstIndex(of: selectedYear) else { return }
         let newIdx = idx + delta
         guard newIdx >= 0 && newIdx < years.count else { return }
-        let newYear = years[newIdx]
-        let trend = data.trendsByYear[newYear] ?? []
+        selectYear(years[newIdx])
+    }
+
+    private func selectYear(_ newYear: Int) {
         withAnimation(.easeInOut(duration: 0.2)) {
             selectedYear = newYear
-            selectedBarIndex = trend.indices.last(where: { trend[$0] != nil }) ?? 0
+            selectedBarIndex = nil
         }
     }
 
@@ -134,9 +189,14 @@ struct TotalSpendingAnalysisDetailView: View {
         }
         .onChange(of: data.trendsByYear.isEmpty) { _, isEmpty in
             guard !isEmpty else { return }
-            let trend = data.trendsByYear[selectedYear] ?? []
-            if let lastIndex = trend.indices.last(where: { trend[$0] != nil }) {
-                selectedBarIndex = lastIndex
+            selectedBarIndex = nil
+        }
+        .sheet(isPresented: $showYearSwitcher) {
+            CashflowYearSwitcherSheet(
+                years: selectableYears,
+                selected: selectedYear
+            ) { year in
+                selectYear(year)
             }
         }
     }
@@ -151,7 +211,7 @@ struct TotalSpendingAnalysisDetailView: View {
                         .font(.cardHeader)
                         .foregroundStyle(AppColors.inkPrimary)
                         .tracking(AppTypography.Tracking.cardHeader)
-                    Text("\(selectedMonthLabel) \(String(selectedYear))")
+                    Text(selectedPeriodLabel)
                         .font(.caption)
                         .foregroundStyle(AppColors.inkSoft)
                 }
@@ -169,7 +229,7 @@ struct TotalSpendingAnalysisDetailView: View {
 
             chartView.frame(height: 180)
 
-            if selectedMonthData != nil {
+            if displayedSpendData != nil {
                 legend
             }
         }
@@ -180,32 +240,31 @@ struct TotalSpendingAnalysisDetailView: View {
             RoundedRectangle(cornerRadius: AppRadius.lg)
                 .stroke(AppColors.glassCardBorder, lineWidth: 1)
         )
+        .contentShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .onTapGesture {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selectedBarIndex = nil
+            }
+        }
     }
 
     private var yearPicker: some View {
-        HStack(spacing: 10) {
-            Button { navigateYear(-1) } label: {
-                Image(systemName: "chevron.left")
-                    .font(.footnoteSemibold)
-                    .foregroundStyle(canGoPrev ? AppColors.inkSoft : AppColors.inkFaint.opacity(0.5))
-            }
-            .disabled(!canGoPrev)
-            .buttonStyle(.plain)
+        Button {
+            showYearSwitcher = true
+        } label: {
+            HStack(spacing: AppSpacing.xs) {
+                Text(String(selectedYear))
+                    .font(.footnoteBold)
+                    .foregroundStyle(AppColors.inkPrimary)
+                    .monospacedDigit()
 
-            Text(String(selectedYear))
-                .font(.footnoteBold)
-                .foregroundStyle(AppColors.inkPrimary)
-                .frame(minWidth: 40)
-                .monospacedDigit()
-
-            Button { navigateYear(1) } label: {
                 Image(systemName: "chevron.right")
                     .font(.footnoteSemibold)
-                    .foregroundStyle(canGoNext ? AppColors.inkSoft : AppColors.inkFaint.opacity(0.5))
+                    .foregroundStyle(AppColors.inkFaint)
             }
-            .disabled(!canGoNext)
-            .buttonStyle(.plain)
         }
+        .buttonStyle(.plain)
+        .contentShape(Rectangle())
     }
 
     private var legend: some View {
@@ -237,11 +296,12 @@ struct TotalSpendingAnalysisDetailView: View {
             HStack(alignment: .bottom, spacing: barSpacing) {
                 ForEach(0..<12, id: \.self) { index in
                     barColumn(index: index, barWidth: barWidth, maxHeight: barAreaHeight)
-                        .onTapGesture {
+                        .highPriorityGesture(
+                            TapGesture().onEnded {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedBarIndex = index
                             }
-                        }
+                        })
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
@@ -258,7 +318,7 @@ struct TotalSpendingAnalysisDetailView: View {
     private func barColumn(index: Int, barWidth: CGFloat, maxHeight: CGFloat) -> some View {
         let amount: Double? = currentTrend.indices.contains(index) ? currentTrend[index] : nil
         let height = barHeight(for: amount, maxHeight: maxHeight)
-        let isSelected = index == selectedBarIndex
+        let isSelected = selectedBarIndex == index
 
         return VStack(spacing: 8) {
             Group {
@@ -317,7 +377,7 @@ struct TotalSpendingAnalysisDetailView: View {
             .padding(.top, AppSpacing.cardPadding)
             .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
 
-            if let monthData = selectedMonthData {
+            if let monthData = displayedSpendData {
                 Button { showNeedsDetail = true } label: {
                     sourceRow(
                         name: "Needs",
@@ -338,7 +398,7 @@ struct TotalSpendingAnalysisDetailView: View {
                 Button { showWantsDetail = true } label: {
                     sourceRow(
                         name: "Wants",
-                        icon: "sparkles",
+                        icon: "heart.fill",
                         amount: monthData.wantsAmount,
                         percentage: monthData.wantsPercentage,
                         color: wantsColor
@@ -347,7 +407,7 @@ struct TotalSpendingAnalysisDetailView: View {
                 .buttonStyle(.plain)
                     .padding(.bottom, AppSpacing.sm)
             } else {
-                Text("No spend recorded for \(selectedMonthLabel) \(String(selectedYear))")
+                Text("No spend recorded for \(selectedPeriodLabel)")
                     .font(.bodyRegular)
                     .foregroundStyle(AppColors.inkSoft)
                     .frame(maxWidth: .infinity, alignment: .leading)

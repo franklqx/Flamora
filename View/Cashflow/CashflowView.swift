@@ -75,10 +75,11 @@ struct CashflowView: View {
     }
 
     private var spendingForDisplay: Spending {
-        Spending(
-            total: totalSpend,
-            needs: needsTotal,
-            wants: wantsTotal,
+        let displaySpending = budgetCardDisplaySpending()
+        return Spending(
+            total: displaySpending.needs + displaySpending.wants,
+            needs: displaySpending.needs,
+            wants: displaySpending.wants,
             budgetLimit: apiBudget.needsBudget + apiBudget.wantsBudget
         )
     }
@@ -103,6 +104,24 @@ struct CashflowView: View {
             : "Connect accounts to see income"
     }
 
+    private func budgetCardDisplaySpending() -> (needs: Double, wants: Double) {
+        if let monthData = cashflowSpendingTotalDetail?.monthlyDataByYear[displayMonthYear]?[displayMonthIndex] {
+            return (max(monthData.needsAmount, 0), max(monthData.wantsAmount, 0))
+        }
+
+        let needsDetailTotal = cashflowNeedsDetail?.monthlyDataByYear[displayMonthYear]?[displayMonthIndex]?.total
+        let wantsDetailTotal = cashflowWantsDetail?.monthlyDataByYear[displayMonthYear]?[displayMonthIndex]?.total
+        if needsDetailTotal != nil || wantsDetailTotal != nil {
+            return (max(needsDetailTotal ?? 0, 0), max(wantsDetailTotal ?? 0, 0))
+        }
+
+        if isShowingCurrentMonth {
+            return (max(needsTotal, 0), max(wantsTotal, 0))
+        }
+
+        return (max(apiBudget.needsSpent ?? 0, 0), max(apiBudget.wantsSpent ?? 0, 0))
+    }
+
     var body: some View {
         connectedView
     }
@@ -117,6 +136,8 @@ struct CashflowView: View {
                         BudgetCard(
                             spending: spendingForDisplay,
                             apiBudget: apiBudget,
+                            needsDetailData: cashflowNeedsDetail,
+                            wantsDetailData: cashflowWantsDetail,
                             isConnected: plaidManager.hasLinkedBank,
                             hasBudget: hasBudget,
                             onSetupBudget: { plaidManager.openBudgetSetup(mode: .fresh) },
@@ -528,24 +549,40 @@ private extension CashflowView {
     func switchToBudgetMonth(_ month: Date) async {
         let calendar = Calendar.current
         let firstOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: month)) ?? month
-        displayBudgetMonth = firstOfMonth
+        let targetYear = calendar.component(.year, from: firstOfMonth)
+        let targetMonthIndex = calendar.component(.month, from: firstOfMonth) - 1
+        let monthStr = apiMonthString(from: firstOfMonth)
 
-        if calendar.isDate(firstOfMonth, equalTo: Date(), toGranularity: .month) {
-            await loadCashflowData(force: true)
-            return
+        async let budgetTask = try? APIService.shared.getMonthlyBudget(month: monthStr)
+        async let summaryTask = CashflowAPICharts.fetchSingleMonthSummary(
+            year: targetYear,
+            monthIndex: targetMonthIndex
+        )
+
+        let budget = await budgetTask
+        let summary = await summaryTask
+
+        if let summary {
+            mergeSpendingSummary(summary, year: targetYear, monthIndex: targetMonthIndex)
         }
 
-        let monthStr = apiMonthString(from: firstOfMonth)
-        if let budget = try? await APIService.shared.getMonthlyBudget(month: monthStr) {
+        if let budget {
             apiBudget = budget
             currentSavings = budget.savingsActual ?? 0
-            // 历史月的实际花费来自后端基于该月 transactions 的实时计算（见 get-monthly-budget edge function）。
+        }
+
+        if calendar.isDate(firstOfMonth, equalTo: Date(), toGranularity: .month),
+           let currentMonthData = cashflowSpendingTotalDetail?.monthlyDataByYear[targetYear]?[targetMonthIndex] {
+            needsTotal = currentMonthData.needsAmount
+            wantsTotal = currentMonthData.wantsAmount
+            totalSpend = currentMonthData.total
+        } else if summary == nil, let budget {
             needsTotal = budget.needsSpent ?? 0
             wantsTotal = budget.wantsSpent ?? 0
             totalSpend = needsTotal + wantsTotal
         }
 
-        await ensureSpendingDetailLoaded(year: displayMonthYear, monthIndex: displayMonthIndex)
+        displayBudgetMonth = firstOfMonth
     }
 
     /// 如果指定 year/monthIndex 在 4 个 detail 字典里都已经有数据，直接返回；否则调
@@ -561,6 +598,11 @@ private extension CashflowView {
             year: year, monthIndex: monthIndex
         ) else { return }
 
+        mergeSpendingSummary(summary, year: year, monthIndex: monthIndex)
+    }
+
+    @MainActor
+    private func mergeSpendingSummary(_ summary: APISpendingSummary, year: Int, monthIndex: Int) {
         let merged = CashflowAPICharts.mergedDetails(
             summary: summary,
             year: year,

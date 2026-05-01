@@ -400,10 +400,10 @@ struct AppColors {
     static let budgetNeedsBlue      = allocIndigo
     /// Needs 浅色底（用于浅色卡中的标签/子块）
     static let budgetNeedsBlueTint  = Color(hex: "#EAF0FF")
-    /// Wants 主色 — Origin Amber
-    static let budgetWantsPurple    = allocAmber
-    /// Wants 浅色底（用于浅色卡中的标签/子块）— 琥珀浅底
-    static let budgetWantsPurpleTint = Color(hex: "#FEF3C7")
+    /// Wants 主色 — violet, paired with Needs blue for Cash Flow budget surfaces.
+    static let budgetWantsPurple    = Color(hex: "#8B5CF6")
+    /// Wants 浅色底（用于浅色卡中的标签/子块）
+    static let budgetWantsPurpleTint = Color(hex: "#F1ECFF")
 }
 
 // MARK: - Gradient Wallpaper (Welcome / Onboarding 背景)

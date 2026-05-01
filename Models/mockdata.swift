@@ -1116,7 +1116,7 @@ extension MockData {
             ("Hobbies & Leisure", "paintpalette.fill",   129.50)
         ]
         return SpendingDetailData(
-            title: "Spending Analysis (Wants)", accentColor: "#D97706",
+            title: "Spending Analysis (Wants)", accentColor: "#8B5CF6",
             trendsByYear: [2025: trend2025, 2026: trend2026],
             monthlyDataByYear: [
                 2025: buildSpendingMonthlyData(prefix: "wants-2025", trend: trend2025, baseCategories: base),
