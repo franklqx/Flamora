@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flamora FIRE Simulator Clean Prototype</title>
+<style>
+  :root {
+    --ink: #111827;
+    --hero-a: #15162a;
+    --hero-b: #252d68;
+    --hero-c: #6d82e7;
+    --white: rgba(255,255,255,0.96);
+    --soft: rgba(255,255,255,0.68);
+    --muted: rgba(255,255,255,0.44);
+    --line: rgba(255,255,255,0.13);
+    --panel: rgba(255,255,255,0.08);
+    --panel-2: rgba(255,255,255,0.12);
+    --gold: #fcd34d;
+    --blue: #93c5fd;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: start center;
+    padding: 28px 14px;
+    background: linear-gradient(180deg, #f7f8fb, #edf1f8);
+    font-family: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    color: var(--ink);
+  }
+
+  button,
+  input { font: inherit; }
+
+  .wrap { width: min(430px, 100%); }
+
+  .meta {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 8px 10px;
+    font-size: 13px;
+    color: rgba(17,24,39,0.58);
+  }
+
+  .phone {
+    padding: 14px;
+    border-radius: 52px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.38));
+    border: 1px solid rgba(255,255,255,0.88);
+    box-shadow: 0 30px 84px rgba(31,40,74,0.16);
+  }
+
+  .screen {
+    position: relative;
+    height: 892px;
+    overflow: hidden;
+    border-radius: 38px;
+    background:
+      radial-gradient(circle at 18% 5%, rgba(196,181,253,0.20), transparent 24%),
+      radial-gradient(circle at 82% 10%, rgba(167,139,250,0.22), transparent 27%),
+      linear-gradient(180deg, var(--hero-a) 0%, var(--hero-b) 38%, var(--hero-c) 100%);
+  }
+
+  .scroll {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    padding: 18px 18px 104px;
+    scrollbar-width: none;
+  }
+
+  .scroll::-webkit-scrollbar { display: none; }
+
+  .status {
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--white);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .island {
+    width: 108px;
+    height: 30px;
+    border-radius: 999px;
+    background: rgba(8,10,18,0.96);
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 12px 0 22px;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--white);
+    font-size: 14px;
+    font-weight: 650;
+  }
+
+  .mark,
+  .close {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.09);
+    border: 1px solid rgba(255,255,255,0.14);
+    color: var(--white);
+  }
+
+  .close {
+    border: 0;
+    cursor: pointer;
+  }
+
+  .flame {
+    width: 14px;
+    height: 19px;
+    border-radius: 11px 11px 12px 12px;
+    background: linear-gradient(180deg, var(--gold), #fca5a5 52%, #a78bfa);
+    transform: rotate(8deg);
+  }
+
+  .hero {
+    margin-bottom: 14px;
+  }
+
+  .eyebrow {
+    margin-bottom: 8px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 8px;
+    color: var(--white);
+    font-size: 30px;
+    line-height: 1.08;
+    font-weight: 650;
+    letter-spacing: 0;
+  }
+
+  h1 span { color: var(--gold); }
+
+  .hero p {
+    margin: 0;
+    color: var(--soft);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .answer {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .answer-card {
+    min-height: 72px;
+    padding: 11px 10px;
+    border-radius: 16px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+  }
+
+  .answer-card strong {
+    display: block;
+    color: var(--white);
+    font-size: 15px;
+    line-height: 1.1;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .answer-card span {
+    display: block;
+    margin-top: 7px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .chart-card,
+  .controls,
+  .calc-card {
+    border-radius: 22px;
+    background: linear-gradient(145deg, rgba(255,255,255,0.10), rgba(255,255,255,0.055));
+    border: 1px solid var(--line);
+    backdrop-filter: blur(22px);
+  }
+
+  .chart-card {
+    padding: 15px 14px 14px;
+    margin-bottom: 12px;
+  }
+
+  .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .title {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--soft);
+    font-size: 11px;
+  }
+
+  .legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .legend i {
+    width: 17px;
+    height: 2px;
+    border-radius: 999px;
+    display: inline-block;
+  }
+
+  .legend .base {
+    background: repeating-linear-gradient(90deg, rgba(255,255,255,0.54) 0 5px, transparent 5px 9px);
+  }
+
+  .legend .adj { background: var(--gold); }
+
+  .chart-wrap {
+    position: relative;
+    border-radius: 18px;
+    background: rgba(5,7,22,0.18);
+    border: 1px solid rgba(255,255,255,0.07);
+    overflow: hidden;
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: 280px;
+  }
+
+  .grid { stroke: rgba(255,255,255,0.075); stroke-width: 1; }
+  .target { stroke: rgba(252,211,77,0.48); stroke-width: 1.2; stroke-dasharray: 5 6; }
+  .base-line { fill: none; stroke: rgba(255,255,255,0.55); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 7 7; }
+  .adj-line { fill: none; stroke: var(--gold); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .axis { fill: rgba(255,255,255,0.48); font-size: 11px; font-weight: 550; }
+  .dot-base { fill: rgba(255,255,255,0.68); stroke: rgba(5,7,22,0.55); stroke-width: 2; }
+  .dot-adj { fill: var(--gold); stroke: rgba(5,7,22,0.55); stroke-width: 2; }
+  .pin-base { stroke: rgba(255,255,255,0.34); stroke-width: 1; stroke-dasharray: 3 5; }
+  .pin-adj { stroke: rgba(252,211,77,0.58); stroke-width: 1; stroke-dasharray: 3 5; }
+
+  .chart-results {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .result-pill {
+    padding: 10px;
+    border-radius: 15px;
+    background: rgba(255,255,255,0.065);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .result-pill small {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .result-pill strong {
+    display: block;
+    color: var(--white);
+    font-size: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .diff-strip {
+    margin-top: 8px;
+    padding: 11px 12px;
+    border-radius: 15px;
+    background: rgba(252,211,77,0.13);
+    border: 1px solid rgba(252,211,77,0.24);
+    color: var(--white);
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .diff-strip strong {
+    color: var(--gold);
+    font-weight: 650;
+  }
+
+  .controls {
+    padding: 15px;
+    margin-bottom: 12px;
+  }
+
+  .intro {
+    margin: 5px 0 13px;
+    color: var(--soft);
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .control {
+    padding: 12px;
+    border-radius: 17px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.09);
+  }
+
+  .control + .control { margin-top: 10px; }
+
+  .control-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .control-name {
+    color: var(--white);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .control-sub {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .value {
+    min-width: 92px;
+    color: var(--white);
+    text-align: right;
+    font-size: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    height: 30px;
+    margin: 0;
+    appearance: none;
+    background: transparent;
+  }
+
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 5px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--blue), var(--gold));
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    margin-top: -8.5px;
+    border-radius: 999px;
+    background: #fff;
+    border: 3px solid var(--gold);
+    box-shadow: 0 5px 16px rgba(0,0,0,0.24);
+  }
+
+  .calc-card {
+    padding: 14px;
+  }
+
+  .calc-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 7px;
+    margin-top: 10px;
+  }
+
+  .calc {
+    min-height: 50px;
+    padding: 9px 6px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(255,255,255,0.075);
+  }
+
+  .calc strong {
+    display: block;
+    color: var(--white);
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .calc span {
+    display: block;
+    margin-top: 5px;
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 550;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .tabbar {
+    position: absolute;
+    left: 40px;
+    right: 40px;
+    bottom: 22px;
+    height: 64px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    align-items: center;
+    padding: 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.64);
+    border: 1px solid rgba(255,255,255,0.86);
+    box-shadow: 0 18px 48px rgba(40,52,92,0.18);
+    backdrop-filter: blur(26px);
+  }
+
+  .tab {
+    height: 48px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: rgba(17,24,39,0.5);
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  .tab.active {
+    background: rgba(17,24,39,0.92);
+    color: #fff;
+  }
+
+  @media (max-width: 460px) {
+    body { padding: 12px 8px 24px; }
+    .phone { padding: 8px; border-radius: 38px; }
+    .screen { height: 852px; border-radius: 30px; }
+    .scroll { padding-inline: 12px; }
+    .answer { grid-template-columns: 1fr; }
+    .calc-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="meta">
+      <span><strong>Flamora</strong> FIRE simulator</span>
+      <span>Clean</span>
+    </div>
+
+    <div class="phone">
+      <div class="screen">
+        <div class="scroll">
+          <div class="status">
+            <span>9:41</span>
+            <span class="island"></span>
+            <span>100%</span>
+          </div>
+
+          <div class="topbar">
+            <div class="brand">
+              <span class="mark"><span class="flame"></span></span>
+              <span>Flamora</span>
+            </div>
+            <button class="close" aria-label="Close">
+              <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+
+          <section class="hero">
+            <div class="eyebrow">Scenario result</div>
+            <h1 id="headline">Adjusted FIRE: <span>age 42</span></h1>
+            <p id="subhead">Your official plan reaches FIRE at age 45. This scenario gets you there 2 years 11 months earlier.</p>
+          </section>
+
+          <section class="answer" aria-label="FIRE result">
+            <div class="answer-card">
+              <strong id="officialAge">Age 45</strong>
+              <span>Official</span>
+            </div>
+            <div class="answer-card">
+              <strong id="scenarioAge">Age 42</strong>
+              <span>Scenario</span>
+            </div>
+            <div class="answer-card">
+              <strong id="timeDiff">2y 11m</strong>
+              <span id="timeDiffLabel">Earlier</span>
+            </div>
+          </section>
+
+          <section class="chart-card" aria-label="FIRE timeline chart">
+            <div class="section-head">
+              <div class="title">FIRE timeline</div>
+              <div class="legend">
+                <span><i class="base"></i>Official</span>
+                <span><i class="adj"></i>Scenario</span>
+              </div>
+            </div>
+
+            <div class="chart-wrap">
+              <svg viewBox="0 0 360 280" role="img" aria-label="Official and scenario paths crossing FIRE target">
+                <g id="grid"></g>
+                <line id="targetLine" class="target"></line>
+                <text id="targetLabel" class="axis">FIRE target</text>
+                <path id="officialPath" class="base-line"></path>
+                <path id="scenarioPath" class="adj-line"></path>
+                <line id="officialPin" class="pin-base"></line>
+                <line id="scenarioPin" class="pin-adj"></line>
+                <circle id="officialDot" class="dot-base" r="5"></circle>
+                <circle id="scenarioDot" class="dot-adj" r="5"></circle>
+                <text class="axis" x="16" y="258">Today</text>
+                <text class="axis" x="316" y="258">15 yrs</text>
+              </svg>
+            </div>
+
+            <div class="chart-results">
+              <div class="result-pill">
+                <small>Official FIRE</small>
+                <strong id="officialResult">Feb 2038 · Age 45</strong>
+              </div>
+              <div class="result-pill">
+                <small>Scenario FIRE</small>
+                <strong id="scenarioResult">Mar 2035 · Age 42</strong>
+              </div>
+            </div>
+            <div class="diff-strip" id="diffStrip">This scenario is <strong>35 months earlier</strong>.</div>
+          </section>
+
+          <section class="controls" aria-label="Adjust scenario">
+            <div class="title">Adjust scenario</div>
+            <p class="intro">Two main levers. Everything else stays as the official plan assumption.</p>
+
+            <article class="control">
+              <div class="control-top">
+                <div>
+                  <div class="control-name">Monthly investment</div>
+                  <div class="control-sub">Official plan: $2,200/mo</div>
+                </div>
+                <div class="value" id="saveValue">$3,200</div>
+              </div>
+              <input id="save" type="range" min="500" max="10000" step="250" value="3200" aria-label="Monthly investment">
+            </article>
+
+            <article class="control">
+              <div class="control-top">
+                <div>
+                  <div class="control-name">Retirement spending</div>
+                  <div class="control-sub">Official goal: $6,500/mo</div>
+                </div>
+                <div class="value" id="spendValue">$5,500</div>
+              </div>
+              <input id="spend" type="range" min="2500" max="15000" step="250" value="5500" aria-label="Retirement spending">
+            </article>
+          </section>
+
+          <section class="calc-card" aria-label="Used for calculation">
+            <div class="title">Used for calculation</div>
+            <div class="calc-grid">
+              <div class="calc"><strong>33</strong><span>Age</span></div>
+              <div class="calc"><strong>$310K</strong><span>Assets</span></div>
+              <div class="calc"><strong>6.0%</strong><span>Return</span></div>
+              <div class="calc"><strong>4.0%</strong><span>WR</span></div>
+            </div>
+          </section>
+        </div>
+
+        <nav class="tabbar" aria-label="Main navigation">
+          <button class="tab active">Home</button>
+          <button class="tab">Cash Flow</button>
+          <button class="tab">Invest</button>
+        </nav>
+      </div>
+    </div>
+  </main>
+
+<script>
+  const official = {
+    age: 33,
+    assets: 310000,
+    save: 2200,
+    spend: 6500,
+    annualReturn: 0.06,
+    withdrawalRate: 0.04
+  };
+
+  const money = (value) => new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0
+  }).format(value);
+
+  const fireNumber = (monthlySpend) => monthlySpend * 12 / official.withdrawalRate;
+
+  const monthsToFire = (monthlySave, monthlySpend) => {
+    const target = fireNumber(monthlySpend);
+    if (official.assets >= target) return 0;
+    const r = official.annualReturn / 12;
+    const num = target * r + monthlySave;
+    const den = official.assets * r + monthlySave;
+    if (den <= 0 || num <= 0) return Infinity;
+    return Math.log(num / den) / Math.log(1 + r);
+  };
+
+  const formatAge = (months) => `Age ${Math.round(official.age + months / 12)}`;
+
+  const formatDate = (months) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + Math.max(0, Math.round(months)));
+    return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  };
+
+  const formatShortDelta = (months) => {
+    const abs = Math.abs(Math.round(months));
+    const y = Math.floor(abs / 12);
+    const m = abs % 12;
+    if (abs < 1) return "0m";
+    if (y && m) return `${y}y ${m}m`;
+    if (y) return `${y}y`;
+    return `${m}m`;
+  };
+
+  const buildSeries = (monthlySave, monthlySpend) => {
+    const target = fireNumber(monthlySpend);
+    const r = official.annualReturn / 12;
+    let value = official.assets;
+    const points = [];
+    for (let month = 0; month <= 180; month += 6) {
+      if (month > 0) {
+        for (let i = 0; i < 6; i += 1) value = value * (1 + r) + monthlySave;
+      }
+      points.push({ month, ratio: Math.min(1.08, value / target) });
+    }
+    return points;
+  };
+
+  const chart = { left: 16, top: 28, width: 328, height: 204, maxRatio: 1.08 };
+
+  const point = (month, ratio = 1) => ({
+    x: chart.left + (Math.min(180, month) / 180) * chart.width,
+    y: chart.top + chart.height - (ratio / chart.maxRatio) * chart.height
+  });
+
+  const path = (series) => series.map((p, i) => {
+    const pos = point(p.month, p.ratio);
+    return `${i === 0 ? "M" : "L"} ${pos.x.toFixed(1)} ${pos.y.toFixed(1)}`;
+  }).join(" ");
+
+  const setLine = (id, x1, y1, x2, y2) => {
+    const el = document.getElementById(id);
+    el.setAttribute("x1", x1);
+    el.setAttribute("y1", y1);
+    el.setAttribute("x2", x2);
+    el.setAttribute("y2", y2);
+  };
+
+  const update = () => {
+    const save = Number(document.getElementById("save").value);
+    const spend = Number(document.getElementById("spend").value);
+    const officialMonths = monthsToFire(official.save, official.spend);
+    const scenarioMonths = monthsToFire(save, spend);
+    const deltaMonths = scenarioMonths - officialMonths;
+    const earlier = deltaMonths < 0;
+    const same = Math.abs(deltaMonths) < 1;
+
+    const officialAge = formatAge(officialMonths);
+    const scenarioAge = formatAge(scenarioMonths);
+    const deltaText = formatShortDelta(deltaMonths);
+    const direction = same ? "No change" : earlier ? "Earlier" : "Later";
+
+    document.getElementById("headline").innerHTML = `Adjusted FIRE: <span>${scenarioAge.toLowerCase()}</span>`;
+    document.getElementById("subhead").textContent = same
+      ? `This matches your official plan: ${officialAge}, ${formatDate(officialMonths)}.`
+      : `Your official plan reaches FIRE at ${officialAge}. This scenario gets you there ${deltaText} ${earlier ? "earlier" : "later"}.`;
+    document.getElementById("officialAge").textContent = officialAge;
+    document.getElementById("scenarioAge").textContent = scenarioAge;
+    document.getElementById("timeDiff").textContent = deltaText;
+    document.getElementById("timeDiffLabel").textContent = direction;
+    document.getElementById("officialResult").textContent = `${formatDate(officialMonths)} · ${officialAge}`;
+    document.getElementById("scenarioResult").textContent = `${formatDate(scenarioMonths)} · ${scenarioAge}`;
+    document.getElementById("diffStrip").innerHTML = same
+      ? `This scenario matches your official plan.`
+      : `This scenario is <strong>${Math.abs(Math.round(deltaMonths))} months ${earlier ? "earlier" : "later"}</strong>.`;
+    document.getElementById("saveValue").textContent = money(save);
+    document.getElementById("spendValue").textContent = money(spend);
+
+    const grid = document.getElementById("grid");
+    grid.innerHTML = "";
+    for (let i = 0; i < 4; i += 1) {
+      const y = chart.top + i * (chart.height / 3);
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", chart.left);
+      line.setAttribute("x2", chart.left + chart.width);
+      line.setAttribute("y1", y);
+      line.setAttribute("y2", y);
+      line.setAttribute("class", "grid");
+      grid.appendChild(line);
+    }
+
+    const targetY = point(0, 1).y;
+    setLine("targetLine", chart.left, targetY, chart.left + chart.width, targetY);
+    const targetLabel = document.getElementById("targetLabel");
+    targetLabel.setAttribute("x", chart.left + 3);
+    targetLabel.setAttribute("y", targetY - 9);
+
+    document.getElementById("officialPath").setAttribute("d", path(buildSeries(official.save, official.spend)));
+    document.getElementById("scenarioPath").setAttribute("d", path(buildSeries(save, spend)));
+
+    const op = point(officialMonths, 1);
+    const sp = point(scenarioMonths, 1);
+    setLine("officialPin", op.x, targetY, op.x, chart.top + chart.height);
+    setLine("scenarioPin", sp.x, targetY, sp.x, chart.top + chart.height);
+    document.getElementById("officialDot").setAttribute("cx", op.x);
+    document.getElementById("officialDot").setAttribute("cy", targetY);
+    document.getElementById("scenarioDot").setAttribute("cx", sp.x);
+    document.getElementById("scenarioDot").setAttribute("cy", targetY);
+  };
+
+  document.getElementById("save").addEventListener("input", update);
+  document.getElementById("spend").addEventListener("input", update);
+  update();
+</script>
+</body>
+</html>

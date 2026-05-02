@@ -6,6 +6,12 @@ Config.xcconfig
 # Claude Code 本地设置（可能含 shell allowlist，不提交）
 .claude/settings.local.json
 
+# Claude worktrees（嵌套仓库副本，勿提交）
+.claude/worktrees/
+
+# 本地下载的参考压缩包
+*.zip
+
 # Xcode
 xcuserdata/
 *.xcuserstate
