@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="The first iOS app that turns FIRE into a date you can actually plan for. Connect once, watch your Freedom Date update daily.">
+<title>Flamora — Your fire, made visible.</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          'display': ['"Playfair Display"', 'Georgia', 'serif'],
+          'body': ['Inter', 'system-ui', 'sans-serif'],
+        },
+        colors: { ink: '#111827', shell: '#F5F6F8' }
+      }
+    }
+  }
+</script>
+
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; color: #111827; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  .font-display { font-family: 'Playfair Display', Georgia, serif; }
+  .bg-fire { background: linear-gradient(135deg, #A78BFA 0%, #FCA5A5 50%, #FCD34D 100%); }
+  .bg-hero {
+    background:
+      radial-gradient(at 30% 20%, rgba(196,181,253,0.30), transparent 50%),
+      radial-gradient(at 80% 30%, rgba(167,139,250,0.30), transparent 60%),
+      radial-gradient(at 60% 90%, rgba(252,165,165,0.18), transparent 70%),
+      linear-gradient(180deg, #15162A 0%, #242B63 40%, #5A6FE0 80%, #D8DBFF 100%);
+  }
+  .glass-card {
+    background: rgba(255, 255, 255, 0.84);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 28px;
+    box-shadow: 0 18px 24px -8px rgba(71, 55, 101, 0.14), 0 2px 4px rgba(71, 55, 101, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .glass-card:hover { transform: translateY(-6px); box-shadow: 0 32px 48px -8px rgba(71, 55, 101, 0.22), 0 2px 4px rgba(71, 55, 101, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.72); }
+  .iphone-frame { background: linear-gradient(145deg, #1c1c1e, #2c2c2e); border-radius: 48px; padding: 8px; box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.5), 0 30px 60px -30px rgba(167, 139, 250, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+  .iphone-screen { border-radius: 40px; overflow: hidden; background: #fff; position: relative; display: flex; flex-direction: column; }
+  .iphone-sheet { flex: 1 1 auto; background: #fff; }
+  .notch { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 90px; height: 26px; background: #000; border-radius: 999px; z-index: 10; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+  @keyframes scrollPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+  .fade-up { animation: fadeUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .glow-anim { animation: glow 3s ease-in-out infinite; }
+  .scroll-cue { animation: scrollPulse 2s ease-in-out infinite; }
+  .stars::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(1px 1px at 20% 30%, white, transparent), radial-gradient(1px 1px at 60% 70%, white, transparent), radial-gradient(1px 1px at 50% 50%, white, transparent), radial-gradient(2px 2px at 80% 10%, white, transparent), radial-gradient(1px 1px at 90% 60%, white, transparent), radial-gradient(1px 1px at 33% 80%, white, transparent), radial-gradient(1px 1px at 15% 60%, white, transparent), radial-gradient(1px 1px at 75% 35%, white, transparent);
+    opacity: 0.35; pointer-events: none;
+  }
+  .showcase-scroll::-webkit-scrollbar { height: 0; }
+  .showcase-scroll { scroll-snap-type: x mandatory; }
+  .showcase-card { scroll-snap-align: center; }
+  details > summary { list-style: none; cursor: pointer; }
+  details > summary::-webkit-details-marker { display: none; }
+  details[open] .arrow { transform: rotate(180deg); }
+  .arrow { transition: transform 0.3s ease; }
+  html { scroll-behavior: smooth; }
+</style>
+</head>
+<body class="bg-white">
+
+  <nav class="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-black/20 border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-6 lg:px-12 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-fire flex items-center justify-center"><span class="font-display font-bold text-white text-lg">F</span></div>
+        <span class="font-display font-semibold text-xl text-white">Flamora</span>
+      </div>
+      <a href="#waitlist" class="px-5 py-2.5 bg-white text-black rounded-full text-sm font-semibold hover:bg-white/90 transition">Get early access</a>
+    </div>
+  </nav>
+
+  <section class="bg-hero stars relative min-h-screen flex items-center pt-28 pb-12 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-6 lg:px-12 w-full grid lg:grid-cols-12 gap-12 items-center relative z-10">
+      <div class="lg:col-span-7 fade-up">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-8">
+          <span class="w-2 h-2 rounded-full bg-[#FCD34D] glow-anim"></span>
+          <span class="text-white/90 text-xs font-medium tracking-wide uppercase">Coming soon · iOS</span>
+        </div>
+        <h1 class="font-display text-5xl md:text-6xl lg:text-7xl font-semibold text-white leading-[1.05] tracking-tight mb-6">Your fire,<br><span class="italic font-medium">made visible.</span></h1>
+        <p class="text-lg md:text-xl text-white/80 leading-relaxed max-w-xl mb-10">Flamora turns the chaos of paychecks, savings, and investments into one number that matters: the day you don't have to work anymore.</p>
+        <form id="waitlist-form" class="flex flex-col sm:flex-row gap-3 max-w-lg" onsubmit="event.preventDefault(); document.getElementById('waitlist-form').classList.add('hidden'); document.getElementById('waitlist-success').classList.remove('hidden');">
+          <input type="email" placeholder="you@email.com" class="flex-1 px-6 py-4 rounded-full bg-white/95 text-ink placeholder-gray-400 outline-none focus:ring-4 focus:ring-white/30 transition" required />
+          <button type="submit" class="px-8 py-4 bg-white text-black font-semibold rounded-full hover:bg-white/90 transition shadow-xl whitespace-nowrap">Get early access</button>
+        </form>
+        <div id="waitlist-success" class="hidden bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-5 text-white max-w-lg">
+          <div class="font-display text-xl mb-1">You're #347 in line.</div>
+          <div class="text-white/70 text-sm">We'll email you when Flamora opens. Early users get lifetime Pro.</div>
+        </div>
+        <p class="text-white/60 text-sm mt-6 flex items-center gap-3">
+          <span class="flex -space-x-2">
+            <span class="w-7 h-7 rounded-full bg-gradient-to-br from-purple-400 to-pink-300 border-2 border-[#15162A]"></span>
+            <span class="w-7 h-7 rounded-full bg-gradient-to-br from-pink-300 to-amber-300 border-2 border-[#15162A]"></span>
+            <span class="w-7 h-7 rounded-full bg-gradient-to-br from-amber-300 to-purple-400 border-2 border-[#15162A]"></span>
+          </span>
+          1,247 builders already in line
+        </p>
+      </div>
+      <div class="lg:col-span-5 hidden lg:block fade-up" style="animation-delay: 0.3s">
+        <div class="iphone-frame max-w-[300px] mx-auto" style="transform: rotate(-4deg);">
+          <div class="iphone-screen aspect-[9/19.5]">
+            <div class="notch"></div>
+            <div class="bg-fire pt-12 px-6 pb-8 relative">
+              <div class="text-white/90 text-[10px] font-bold tracking-widest uppercase mb-2">Your FIRE Journey</div>
+              <div class="font-display text-white text-3xl font-bold leading-none">$127,403</div>
+              <div class="text-white/85 text-xs mb-4">Net Worth · ↑ 8 months ahead</div>
+              <div class="bg-black/20 rounded-full h-2 mb-2 overflow-hidden"><div class="h-full bg-white rounded-full" style="width: 23%;"></div></div>
+              <div class="flex justify-between text-white/90 text-[10px] font-medium"><span>23% to FIRE</span><span>Mar 14, 2041</span></div>
+            </div>
+            <div class="iphone-sheet -mt-4 rounded-t-3xl px-4 py-5 relative">
+              <div class="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-3">Net Worth</div>
+              <svg viewBox="0 0 280 70" class="w-full mb-4">
+                <path d="M 0 55 Q 60 48 100 38 T 180 22 T 280 8" stroke="#A78BFA" stroke-width="2.5" fill="none"/>
+                <path d="M 0 55 Q 60 48 100 38 T 180 22 T 280 8 L 280 70 L 0 70 Z" fill="url(#grad1)" opacity="0.25"/>
+                <circle cx="280" cy="8" r="4" fill="#A78BFA"/>
+                <defs><linearGradient id="grad1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#A78BFA"/><stop offset="100%" stop-color="#A78BFA" stop-opacity="0"/></linearGradient></defs>
+              </svg>
+              <div class="grid grid-cols-2 gap-2 mb-4">
+                <div class="bg-gray-50 rounded-xl p-2.5"><div class="text-[8px] text-gray-500 uppercase tracking-wide font-semibold">Savings rate</div><div class="text-base font-bold text-ink mt-0.5">42%</div></div>
+                <div class="bg-gray-50 rounded-xl p-2.5"><div class="text-[8px] text-gray-500 uppercase tracking-wide font-semibold">Months ahead</div><div class="text-base font-bold text-emerald-600 mt-0.5">+8</div></div>
+              </div>
+              <div class="flex gap-1">
+                <div class="flex-1 h-2 bg-blue-500 rounded-sm"></div>
+                <div class="flex-1 h-2 bg-purple-500 rounded-sm" style="flex-grow: 0.6"></div>
+                <div class="h-2 bg-emerald-500 rounded-sm" style="width: 22%"></div>
+              </div>
+              <div class="flex gap-1 mt-1.5 text-[8px] text-gray-500 font-medium"><div class="flex-1">NEEDS 50%</div><div class="flex-1">WANTS 28%</div><div>SAVE 22%</div></div>
+              <div class="mt-5 pt-4 border-t border-gray-100 space-y-2.5">
+                <div class="flex items-center justify-between text-xs"><div class="flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center text-[10px]">🏠</div><span class="text-gray-700">Rent</span></div><span class="font-semibold text-ink">$1,800</span></div>
+                <div class="flex items-center justify-between text-xs"><div class="flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center text-[10px]">🛒</div><span class="text-gray-700">Groceries</span></div><span class="font-semibold text-ink">$420</span></div>
+                <div class="flex items-center justify-between text-xs"><div class="flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-purple-50 flex items-center justify-center text-[10px]">☕</div><span class="text-gray-700">Coffee</span></div><span class="font-semibold text-ink">$84</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/60 text-[10px] uppercase tracking-widest flex flex-col items-center gap-3 scroll-cue"><span>Scroll</span><div class="w-px h-12 bg-gradient-to-b from-white/60 to-transparent"></div></div>
+  </section>
+
+  <section class="bg-shell py-32 md:py-40">
+    <div class="max-w-3xl mx-auto px-6 lg:px-12">
+      <div class="space-y-7">
+        <p class="text-2xl md:text-3xl text-gray-400 leading-relaxed">You track your spending in Notes.</p>
+        <p class="text-2xl md:text-3xl text-gray-400 leading-relaxed">You "kind of" know your net worth.</p>
+        <p class="text-2xl md:text-3xl text-gray-400 leading-relaxed">You've Googled "FIRE calculator" 14 times.</p>
+        <p class="text-3xl md:text-4xl text-ink font-medium leading-relaxed font-display italic mt-12">There's a better way.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-black py-32 md:py-40 text-white relative overflow-hidden">
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-fire opacity-25 blur-[120px] pointer-events-none"></div>
+    <div class="max-w-6xl mx-auto px-6 lg:px-12 relative">
+      <div class="text-center mb-20">
+        <div class="text-[#FCD34D] text-xs font-bold tracking-[0.25em] uppercase mb-5">The number that matters</div>
+        <h2 class="font-display text-4xl md:text-5xl lg:text-6xl font-semibold leading-[1.1]">Know the exact day<br><span class="italic font-medium">you don't have to work.</span></h2>
+      </div>
+      <div class="grid lg:grid-cols-12 gap-8 items-center max-w-5xl mx-auto">
+        <div class="lg:col-span-3 space-y-14 hidden lg:block text-right">
+          <div><div class="text-xs uppercase tracking-[0.15em] mb-2" style="color: #FCA5A5;">Live data</div><div class="font-display text-xl">Your savings rate</div><div class="text-white/50 text-sm mt-1">Updated every paycheck</div></div>
+          <div><div class="text-xs uppercase tracking-[0.15em] mb-2" style="color: #A78BFA;">Compounding</div><div class="font-display text-xl">Months ahead<br>of plan</div><div class="text-white/50 text-sm mt-1">Or behind. We're honest.</div></div>
+        </div>
+        <div class="lg:col-span-6">
+          <div class="iphone-frame max-w-[280px] mx-auto">
+            <div class="iphone-screen aspect-[9/19.5]">
+              <div class="notch"></div>
+              <div class="bg-fire pt-14 px-6 pb-10 text-center relative">
+                <div class="text-white/90 text-[10px] font-bold tracking-widest uppercase mb-3">Freedom Date</div>
+                <div class="font-display text-white text-4xl font-bold leading-none">Mar 14<br>2041</div>
+                <div class="text-white/90 text-[11px] mt-4">14 years, 10 months</div>
+              </div>
+              <div class="iphone-sheet -mt-5 rounded-t-3xl px-5 py-5 relative">
+                <div class="text-[9px] font-bold tracking-widest uppercase text-gray-500 mb-3">Your FIRE Journey</div>
+                <div class="flex gap-1 mb-5">
+                  <div class="flex-1 h-3 bg-fire rounded-sm"></div><div class="flex-1 h-3 bg-fire rounded-sm"></div><div class="flex-1 h-3 bg-fire rounded-sm" style="opacity: 0.5;"></div>
+                  <div class="flex-1 h-3 bg-gray-200 rounded-sm"></div><div class="flex-1 h-3 bg-gray-200 rounded-sm"></div><div class="flex-1 h-3 bg-gray-200 rounded-sm"></div><div class="flex-1 h-3 bg-gray-200 rounded-sm"></div><div class="flex-1 h-3 bg-gray-200 rounded-sm"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                  <div><div class="text-[9px] uppercase tracking-wide text-gray-400 font-semibold">Net Worth</div><div class="text-base font-bold mt-0.5">$127K</div></div>
+                  <div><div class="text-[9px] uppercase tracking-wide text-gray-400 font-semibold">Savings</div><div class="text-base font-bold mt-0.5">42%</div></div>
+                </div>
+                <div class="bg-gray-50 rounded-xl p-3 mb-3"><div class="text-[9px] uppercase tracking-wide text-gray-400 font-semibold mb-1">Ahead of plan</div><div class="text-emerald-600 font-bold text-sm">↑ 8 months</div></div>
+                <div class="bg-gradient-to-br from-purple-50 to-amber-50 rounded-xl p-3 border border-purple-100"><div class="text-[9px] uppercase tracking-wide text-purple-600 font-semibold mb-1">Simulator</div><div class="text-xs text-gray-600">+$200/mo savings →</div><div class="text-xs font-bold text-ink mt-0.5">FIRE 11 months sooner</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="lg:col-span-3 space-y-14 hidden lg:block">
+          <div><div class="text-xs uppercase tracking-[0.15em] mb-2" style="color: #FCD34D;">All accounts</div><div class="font-display text-xl">Net worth, live</div><div class="text-white/50 text-sm mt-1">Every account, every day</div></div>
+          <div><div class="text-xs uppercase tracking-[0.15em] mb-2" style="color: #FCA5A5;">Calculated</div><div class="font-display text-xl">Freedom Date</div><div class="text-white/50 text-sm mt-1">Based on your real numbers</div></div>
+        </div>
+      </div>
+      <p class="text-center text-white/50 mt-20 max-w-xl mx-auto">No spreadsheets. No guesswork. Real numbers, updated daily.</p>
+    </div>
+  </section>
+
+  <section class="bg-shell py-32 md:py-40">
+    <div class="max-w-7xl mx-auto px-6 lg:px-12">
+      <div class="text-center mb-20"><h2 class="font-display text-4xl md:text-5xl font-semibold text-ink leading-tight">Three things, <span class="italic font-medium">done well.</span></h2></div>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="glass-card p-8">
+          <div class="text-[11px] font-bold tracking-[0.18em] uppercase text-purple-600 mb-5">Compounding</div>
+          <h3 class="font-display text-2xl font-semibold mb-3 leading-snug">Watch your net worth grow.</h3>
+          <p class="text-gray-600 leading-relaxed mb-6 text-[15px]">Connect once. See your numbers update across every account, every day.</p>
+          <div class="bg-white/60 rounded-2xl p-4 border border-white/40">
+            <svg viewBox="0 0 240 60" class="w-full"><path d="M 0 50 Q 40 45 70 35 T 130 22 T 200 12 T 240 5" stroke="#A78BFA" stroke-width="2.5" fill="none"/><circle cx="240" cy="5" r="4" fill="#A78BFA"/><circle cx="240" cy="5" r="8" fill="#A78BFA" opacity="0.3"/></svg>
+            <div class="flex justify-between mt-3 text-xs text-gray-500"><span>1Y ago</span><span class="font-semibold text-emerald-600">+$23,400</span></div>
+          </div>
+        </div>
+        <div class="glass-card p-8">
+          <div class="text-[11px] font-bold tracking-[0.18em] uppercase text-pink-600 mb-5">Momentum</div>
+          <h3 class="font-display text-2xl font-semibold mb-3 leading-snug">The single metric that matters.</h3>
+          <p class="text-gray-600 leading-relaxed mb-6 text-[15px]">Your savings rate decides your Freedom Date. We make it impossible to forget.</p>
+          <div class="bg-white/60 rounded-2xl p-4 border border-white/40">
+            <div class="flex items-end gap-1.5 h-16">
+              <div class="flex-1 bg-fire rounded-sm" style="height: 30%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 45%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 38%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 60%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 52%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 75%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 68%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 82%;"></div>
+            </div>
+            <div class="flex justify-between mt-3 text-xs text-gray-500"><span>Jan</span><span class="font-semibold text-ink">42% avg</span></div>
+          </div>
+        </div>
+        <div class="glass-card p-8">
+          <div class="text-[11px] font-bold tracking-[0.18em] uppercase text-amber-600 mb-5">Clarity</div>
+          <h3 class="font-display text-2xl font-semibold mb-3 leading-snug">Where your money actually goes.</h3>
+          <p class="text-gray-600 leading-relaxed mb-6 text-[15px]">Needs, wants, savings — sorted automatically. No tagging required.</p>
+          <div class="bg-white/60 rounded-2xl p-4 border border-white/40 space-y-3">
+            <div><div class="flex justify-between text-xs mb-1.5"><span class="text-gray-600">Needs</span><span class="font-semibold">50%</span></div><div class="h-2 bg-gray-200 rounded-full overflow-hidden"><div class="h-full bg-blue-500" style="width: 50%;"></div></div></div>
+            <div><div class="flex justify-between text-xs mb-1.5"><span class="text-gray-600">Wants</span><span class="font-semibold">28%</span></div><div class="h-2 bg-gray-200 rounded-full overflow-hidden"><div class="h-full bg-purple-500" style="width: 28%;"></div></div></div>
+            <div><div class="flex justify-between text-xs mb-1.5"><span class="text-gray-600">Savings</span><span class="font-semibold">22%</span></div><div class="h-2 bg-gray-200 rounded-full overflow-hidden"><div class="h-full bg-emerald-500" style="width: 22%;"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-32 md:py-40 relative overflow-hidden" style="background: linear-gradient(180deg, #242B63, #5A6FE0);">
+    <div class="max-w-7xl mx-auto px-6 lg:px-12 mb-16 text-center"><h2 class="font-display text-4xl md:text-5xl font-semibold text-white">See it <span class="italic font-medium">in motion.</span></h2></div>
+    <div class="showcase-scroll overflow-x-auto pb-12">
+      <div class="flex gap-8 px-12 lg:px-24" style="width: max-content;">
+        <div class="showcase-card text-center w-[260px] flex-shrink-0">
+          <div class="iphone-frame mb-5"><div class="iphone-screen aspect-[9/19.5]"><div class="notch"></div>
+            <div class="bg-fire flex-1 pt-16 px-6 text-center flex flex-col justify-center">
+              <div class="text-white text-[10px] font-bold tracking-widest uppercase mb-4">Welcome</div>
+              <div class="font-display text-white text-3xl font-semibold leading-tight mb-3">Retire on<br>your terms.</div>
+              <div class="text-white/85 text-xs">Plan your path to financial freedom.</div>
+            </div>
+          </div></div>
+          <p class="font-display italic text-lg text-white/90">"Start with why."</p>
+        </div>
+        <div class="showcase-card text-center w-[260px] flex-shrink-0">
+          <div class="iphone-frame mb-5"><div class="iphone-screen aspect-[9/19.5]"><div class="notch"></div>
+            <div class="iphone-sheet pt-14 px-6 text-center">
+              <div class="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-4">FIRE Timeline</div>
+              <svg viewBox="0 0 200 200" class="mx-auto w-44 h-44 mb-4 -rotate-90">
+                <circle cx="100" cy="100" r="80" stroke="#F3F4F6" stroke-width="14" fill="none"/>
+                <circle cx="100" cy="100" r="80" stroke="url(#ringGrad)" stroke-width="14" fill="none" stroke-dasharray="502" stroke-dashoffset="385" stroke-linecap="round"/>
+                <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#A78BFA"/><stop offset="50%" stop-color="#FCA5A5"/><stop offset="100%" stop-color="#FCD34D"/></linearGradient></defs>
+              </svg>
+              <div class="font-display text-3xl font-bold leading-none">23%</div>
+              <div class="text-xs text-gray-500 mt-2">to financial freedom</div>
+              <div class="text-xs text-gray-400 mt-3">Mar 14, 2041</div>
+            </div>
+          </div></div>
+          <p class="font-display italic text-lg text-white/90">"Your day, calculated."</p>
+        </div>
+        <div class="showcase-card text-center w-[260px] flex-shrink-0">
+          <div class="iphone-frame mb-5"><div class="iphone-screen aspect-[9/19.5]"><div class="notch"></div>
+            <div class="iphone-sheet pt-14 px-5">
+              <div class="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-2">Net Worth</div>
+              <div class="font-display text-2xl font-bold mb-1">$127,403</div>
+              <div class="text-emerald-600 text-xs mb-5">↑ $23,400 (1Y)</div>
+              <svg viewBox="0 0 240 100" class="w-full mb-4">
+                <path d="M 0 90 Q 40 80 70 60 T 130 35 T 200 20 T 240 8" stroke="#A78BFA" stroke-width="2.5" fill="none"/>
+                <path d="M 0 90 Q 40 80 70 60 T 130 35 T 200 20 T 240 8 L 240 100 L 0 100 Z" fill="url(#nwGrad)" opacity="0.4"/>
+                <circle cx="240" cy="8" r="4" fill="#A78BFA"/>
+                <defs><linearGradient id="nwGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#A78BFA"/><stop offset="100%" stop-color="#A78BFA" stop-opacity="0"/></linearGradient></defs>
+              </svg>
+              <div class="flex justify-between text-[9px] text-gray-400 mb-4 font-medium"><span>6M</span><span>1Y</span><span class="font-bold text-ink bg-gray-100 px-2 py-0.5 rounded">3Y</span><span>5Y</span><span>ALL</span></div>
+              <div class="bg-gray-50 rounded-xl p-3"><div class="text-[9px] uppercase text-gray-500 tracking-wide font-semibold">Investments</div><div class="text-sm font-bold mt-0.5">$84,200</div></div>
+            </div>
+          </div></div>
+          <p class="font-display italic text-lg text-white/90">"Track every dollar."</p>
+        </div>
+        <div class="showcase-card text-center w-[260px] flex-shrink-0">
+          <div class="iphone-frame mb-5"><div class="iphone-screen aspect-[9/19.5]"><div class="notch"></div>
+            <div class="iphone-sheet pt-14 px-5">
+              <div class="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-4">Cash Flow</div>
+              <div class="space-y-3.5">
+                <div><div class="flex justify-between text-xs mb-1.5"><span class="text-gray-700 font-medium">Needs</span><span class="font-bold">$2,450</span></div><div class="h-2 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-blue-500" style="width: 50%;"></div></div></div>
+                <div><div class="flex justify-between text-xs mb-1.5"><span class="text-gray-700 font-medium">Wants</span><span class="font-bold">$1,400</span></div><div class="h-2 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-purple-500" style="width: 28%;"></div></div></div>
+                <div><div class="flex justify-between text-xs mb-1.5"><span class="text-gray-700 font-medium">Savings</span><span class="font-bold">$1,070</span></div><div class="h-2 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500" style="width: 22%;"></div></div></div>
+              </div>
+              <div class="mt-5 pt-4 border-t border-gray-100">
+                <div class="text-[9px] uppercase text-gray-400 tracking-wide font-semibold mb-2">Top categories</div>
+                <div class="flex justify-between text-xs"><span class="text-gray-600">Rent</span><span class="font-semibold">$1,800</span></div>
+                <div class="flex justify-between text-xs mt-1.5"><span class="text-gray-600">Groceries</span><span class="font-semibold">$420</span></div>
+                <div class="flex justify-between text-xs mt-1.5"><span class="text-gray-600">Coffee</span><span class="font-semibold">$84</span></div>
+              </div>
+            </div>
+          </div></div>
+          <p class="font-display italic text-lg text-white/90">"Spend without guilt."</p>
+        </div>
+        <div class="showcase-card text-center w-[260px] flex-shrink-0">
+          <div class="iphone-frame mb-5"><div class="iphone-screen aspect-[9/19.5]"><div class="notch"></div>
+            <div class="iphone-sheet pt-14 px-5">
+              <div class="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-2">Savings Rate</div>
+              <div class="font-display text-3xl font-bold leading-none">42%</div>
+              <div class="text-gray-500 text-xs mt-1 mb-5">12-month average</div>
+              <div class="flex items-end gap-1 h-28 mb-3 relative">
+                <div class="flex-1 bg-fire rounded-sm" style="height: 30%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 45%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 38%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 60%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 52%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 75%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 68%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 82%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 78%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 85%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 90%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 95%;"></div>
+                <div class="absolute left-0 right-0 border-t border-dashed border-gray-300" style="top: 50%;"></div>
+              </div>
+              <div class="text-xs text-gray-500 text-left">Target: <span class="font-bold text-ink">50%</span></div>
+            </div>
+          </div></div>
+          <p class="font-display italic text-lg text-white/90">"Build the habit."</p>
+        </div>
+      </div>
+    </div>
+    <p class="text-center text-white/60 text-sm mt-2">← swipe →</p>
+  </section>
+
+  <section class="bg-shell py-32 md:py-40">
+    <div class="max-w-5xl mx-auto px-6 lg:px-12">
+      <h2 class="font-display text-4xl md:text-5xl font-semibold text-ink leading-tight text-center mb-16 max-w-3xl mx-auto">Other apps track your money.<br><span class="italic font-medium">Flamora plans your freedom.</span></h2>
+      <div class="overflow-x-auto">
+        <table class="w-full bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100">
+          <thead><tr class="border-b border-gray-100">
+            <th class="text-left p-5 text-xs uppercase tracking-wider font-medium text-gray-400"></th>
+            <th class="p-5 text-sm font-bold text-ink relative"><div class="absolute inset-0 bg-fire opacity-10"></div><span class="relative">Flamora</span></th>
+            <th class="p-5 text-sm font-medium text-gray-500">Mint</th>
+            <th class="p-5 text-sm font-medium text-gray-500">YNAB</th>
+            <th class="p-5 text-sm font-medium text-gray-500">Personal Capital</th>
+          </tr></thead>
+          <tbody class="text-center">
+            <tr class="border-b border-gray-50"><td class="text-left p-5 text-sm text-gray-700">FIRE Date auto-calculated</td><td class="p-5 text-emerald-500 font-bold text-lg">✓</td><td class="p-5 text-gray-300">—</td><td class="p-5 text-gray-300">—</td><td class="p-5 text-amber-500 text-sm">partial</td></tr>
+            <tr class="border-b border-gray-50"><td class="text-left p-5 text-sm text-gray-700">50/30/20 auto-categorized</td><td class="p-5 text-emerald-500 font-bold text-lg">✓</td><td class="p-5 text-amber-500 text-xs">manual</td><td class="p-5 text-amber-500 text-xs">manual</td><td class="p-5 text-gray-300">—</td></tr>
+            <tr class="border-b border-gray-50"><td class="text-left p-5 text-sm text-gray-700">Net worth history curve</td><td class="p-5 text-emerald-500 font-bold text-lg">✓</td><td class="p-5 text-gray-300">—</td><td class="p-5 text-gray-300">—</td><td class="p-5 text-emerald-500 font-bold text-lg">✓</td></tr>
+            <tr class="border-b border-gray-50"><td class="text-left p-5 text-sm text-gray-700">iOS-native experience</td><td class="p-5 text-emerald-500 font-bold text-lg">✓</td><td class="p-5 text-gray-400 text-xs">web first</td><td class="p-5 text-amber-500 text-xs">partial</td><td class="p-5 text-gray-400 text-xs">web first</td></tr>
+            <tr class="border-b border-gray-50"><td class="text-left p-5 text-sm text-gray-700">Ad-free</td><td class="p-5 text-emerald-500 font-bold text-lg">✓</td><td class="p-5 text-gray-300">—</td><td class="p-5 text-emerald-500 font-bold text-lg">✓</td><td class="p-5 text-gray-300">—</td></tr>
+            <tr><td class="text-left p-5 text-sm text-gray-700">Design language</td><td class="p-5 font-bold text-ink">2026</td><td class="p-5 text-gray-400 text-xs">2014</td><td class="p-5 text-gray-400 text-xs">2018</td><td class="p-5 text-gray-400 text-xs">2016</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-center mt-14 font-display text-xl md:text-2xl italic text-gray-600 max-w-2xl mx-auto leading-relaxed">We didn't reinvent the budget app. We built the FIRE app that should have existed.</p>
+    </div>
+  </section>
+
+  <section class="py-32 md:py-40" style="background: #FAFBFC;">
+    <div class="max-w-4xl mx-auto px-6 lg:px-12">
+      <h2 class="font-display text-3xl md:text-4xl font-semibold text-ink leading-tight text-center mb-20 max-w-2xl mx-auto">Your money is your business. <span class="italic font-medium">We mean that literally.</span></h2>
+      <div class="grid md:grid-cols-3 gap-10 md:gap-8">
+        <div class="text-center"><div class="inline-flex w-14 h-14 rounded-2xl bg-white items-center justify-center mb-5 shadow-sm border border-gray-100"><svg class="w-6 h-6 text-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div><h3 class="font-display text-lg font-semibold mb-2">Bank-grade encryption</h3><p class="text-gray-600 text-sm leading-relaxed">Powered by Plaid — the same security used by Robinhood, Venmo, Acorns.</p></div>
+        <div class="text-center"><div class="inline-flex w-14 h-14 rounded-2xl bg-white items-center justify-center mb-5 shadow-sm border border-gray-100"><svg class="w-6 h-6 text-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></div><h3 class="font-display text-lg font-semibold mb-2">We don't sell your data</h3><p class="text-gray-600 text-sm leading-relaxed">Not to advertisers. Not to data brokers. Not to anyone.</p></div>
+        <div class="text-center"><div class="inline-flex w-14 h-14 rounded-2xl bg-white items-center justify-center mb-5 shadow-sm border border-gray-100"><svg class="w-6 h-6 text-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></div><h3 class="font-display text-lg font-semibold mb-2">Delete everything, anytime</h3><p class="text-gray-600 text-sm leading-relaxed">Real account deletion. Real data wipe. Verified within 24 hours.</p></div>
+      </div>
+      <div class="text-center mt-14"><a href="#" class="text-sm text-gray-500 underline underline-offset-4 hover:text-ink transition">Read our full privacy policy →</a></div>
+    </div>
+  </section>
+
+  <section class="py-32 md:py-40 relative overflow-hidden" style="background: linear-gradient(180deg, #15162A 0%, #1F1B3A 50%, #2D1B3D 100%);">
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full bg-fire opacity-30 blur-[140px] pointer-events-none"></div>
+    <div class="max-w-3xl mx-auto px-6 lg:px-12 text-center relative">
+      <h2 class="font-display text-4xl md:text-5xl lg:text-6xl font-semibold text-white leading-tight mb-6">Be among the<br><span class="italic font-medium">first 1,000.</span></h2>
+      <p class="text-white/70 text-lg mb-12">Early users get lifetime access to Flamora Pro.</p>
+      <form class="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto" onsubmit="event.preventDefault(); alert('In the real version, this hits Supabase. ✨');">
+        <input type="email" placeholder="you@email.com" class="flex-1 px-6 py-4 rounded-full bg-white/95 text-ink placeholder-gray-400 outline-none focus:ring-4 focus:ring-white/20 transition" required />
+        <button type="submit" class="px-8 py-4 bg-fire text-white font-semibold rounded-full hover:opacity-90 transition shadow-xl whitespace-nowrap">Reserve my spot</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="bg-black text-white py-32 md:py-40">
+    <div class="max-w-3xl mx-auto px-6 lg:px-12">
+      <h2 class="font-display text-3xl md:text-4xl font-semibold mb-16 text-center">Common <span class="italic font-medium">questions.</span></h2>
+      <div class="space-y-3">
+        <details class="bg-white/[0.04] rounded-2xl border border-white/10 overflow-hidden hover:bg-white/[0.06] transition"><summary class="px-6 py-5 flex items-center justify-between text-left"><span class="font-medium">When does Flamora launch?</span><svg class="arrow w-5 h-5 text-white/40 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-6 pb-5 text-white/65 text-sm leading-relaxed">We're targeting Q3 2026. Waitlist members get access 1 week before public launch.</div></details>
+        <details class="bg-white/[0.04] rounded-2xl border border-white/10 overflow-hidden hover:bg-white/[0.06] transition"><summary class="px-6 py-5 flex items-center justify-between text-left"><span class="font-medium">Is it free?</span><svg class="arrow w-5 h-5 text-white/40 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-6 pb-5 text-white/65 text-sm leading-relaxed">Yes — core tracking is free forever. Flamora Pro adds advanced FIRE simulators and tax-aware projections. Early waitlist users get Pro for life.</div></details>
+        <details class="bg-white/[0.04] rounded-2xl border border-white/10 overflow-hidden hover:bg-white/[0.06] transition"><summary class="px-6 py-5 flex items-center justify-between text-left"><span class="font-medium">Does it work outside the US?</span><svg class="arrow w-5 h-5 text-white/40 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-6 pb-5 text-white/65 text-sm leading-relaxed">Yes. Flamora supports US, UK, EU, CA, AU, JP, CN, IN, SG, HK currencies and bank connections via Plaid (where supported).</div></details>
+        <details class="bg-white/[0.04] rounded-2xl border border-white/10 overflow-hidden hover:bg-white/[0.06] transition"><summary class="px-6 py-5 flex items-center justify-between text-left"><span class="font-medium">How do you connect to my bank?</span><svg class="arrow w-5 h-5 text-white/40 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-6 pb-5 text-white/65 text-sm leading-relaxed">Through Plaid — read-only access. We never see your password. We can't move money. We just see balances and transactions.</div></details>
+        <details class="bg-white/[0.04] rounded-2xl border border-white/10 overflow-hidden hover:bg-white/[0.06] transition"><summary class="px-6 py-5 flex items-center justify-between text-left"><span class="font-medium">Will my partner see my data?</span><svg class="arrow w-5 h-5 text-white/40 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-6 pb-5 text-white/65 text-sm leading-relaxed">Only if you invite them. Flamora is single-user by default. Couple's mode is on the roadmap.</div></details>
+        <details class="bg-white/[0.04] rounded-2xl border border-white/10 overflow-hidden hover:bg-white/[0.06] transition"><summary class="px-6 py-5 flex items-center justify-between text-left"><span class="font-medium">What if I don't want to connect a bank?</span><svg class="arrow w-5 h-5 text-white/40 flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-6 pb-5 text-white/65 text-sm leading-relaxed">Manual entry mode is supported. You'll input balances yourself, and Flamora calculates the rest.</div></details>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-black text-white py-16 border-t border-white/10">
+    <div class="max-w-7xl mx-auto px-6 lg:px-12">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
+        <div class="col-span-2"><div class="flex items-center gap-2.5 mb-3"><div class="w-9 h-9 rounded-xl bg-fire flex items-center justify-center"><span class="font-display font-bold text-white text-lg">F</span></div><span class="font-display font-semibold text-xl">Flamora</span></div><p class="text-white/50 text-sm font-display italic">Plan your freedom. Quietly.</p></div>
+        <div><div class="text-xs uppercase tracking-wider text-white/40 mb-4 font-semibold">Product</div><ul class="space-y-2.5 text-sm text-white/65"><li><a href="#" class="hover:text-white transition">Features</a></li><li><a href="#" class="hover:text-white transition">Pricing</a></li><li><a href="#" class="hover:text-white transition">FAQ</a></li></ul></div>
+        <div><div class="text-xs uppercase tracking-wider text-white/40 mb-4 font-semibold">Connect</div><ul class="space-y-2.5 text-sm text-white/65"><li><a href="#" class="hover:text-white transition">Twitter</a></li><li><a href="#" class="hover:text-white transition">TikTok</a></li><li><a href="#" class="hover:text-white transition">Instagram</a></li></ul></div>
+      </div>
+      <div class="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
+        <p class="text-white/40 text-xs">© 2026 Flamora. Built quietly.</p>
+        <div class="flex gap-6 text-xs text-white/40"><a href="#" class="hover:text-white/70 transition">Privacy</a><a href="#" class="hover:text-white/70 transition">Terms</a></div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
