@@ -47,6 +47,7 @@ struct SpendingAnalysisDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedBarIndex: Int
     @State private var selectedYear: Int
+    @State private var isShowingAnnualTotal = false
     @State private var selectedCategory: SpendingDetailCategory?
     @State private var showYearSwitcher = false
 
@@ -174,7 +175,14 @@ struct SpendingAnalysisDetailView: View {
     }
 
     private var selectedTotal: Double {
-        selectedMonthData?.total ?? (currentTrend.indices.contains(selectedBarIndex) ? currentTrend[selectedBarIndex] : nil) ?? 0
+        if isShowingAnnualTotal { return annualTotal }
+        return selectedMonthData?.total ?? (currentTrend.indices.contains(selectedBarIndex) ? currentTrend[selectedBarIndex] : nil) ?? 0
+    }
+
+    private var annualTotal: Double {
+        currentTrend.reduce(0) { partial, amount in
+            partial + max(amount ?? 0, 0)
+        }
     }
 
     private var canGoPrev: Bool { (data.availableYears.first ?? Int.max) < selectedYear }
@@ -198,6 +206,7 @@ struct SpendingAnalysisDetailView: View {
         withAnimation(.easeInOut(duration: 0.2)) {
             selectedYear = newYear
             selectedBarIndex = preferredCashflowMonthIndex(in: trend, requested: selectedBarIndex)
+            isShowingAnnualTotal = false
         }
     }
 
@@ -247,7 +256,7 @@ struct SpendingAnalysisDetailView: View {
                         .font(.cardHeader)
                         .foregroundStyle(AppColors.inkPrimary)
                         .tracking(AppTypography.Tracking.cardHeader)
-                    Text("\(selectedMonthLabel) \(String(selectedYear))")
+                    Text(isShowingAnnualTotal ? "\(String(selectedYear)) Total" : "\(selectedMonthLabel) \(String(selectedYear))")
                         .font(.caption)
                         .foregroundStyle(AppColors.inkSoft)
                 }
@@ -304,28 +313,29 @@ struct SpendingAnalysisDetailView: View {
             HStack(alignment: .bottom, spacing: barSpacing) {
                 ForEach(0..<12, id: \.self) { index in
                     barColumn(index: index, barWidth: barWidth, maxHeight: barAreaHeight)
-                        .onTapGesture {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                selectedBarIndex = index
-                            }
-                        }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            .contentShape(Rectangle())
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onEnded { value in
+                        handleChartGesture(
+                            value,
+                            width: availableWidth,
+                            barWidth: barWidth,
+                            barSpacing: barSpacing,
+                            barAreaHeight: barAreaHeight
+                        )
+                    }
+            )
         }
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 30)
-                .onEnded { value in
-                    guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                    navigateYear(value.translation.width < 0 ? 1 : -1)
-                }
-        )
     }
 
     private func barColumn(index: Int, barWidth: CGFloat, maxHeight: CGFloat) -> some View {
         let amount: Double? = currentTrend.indices.contains(index) ? currentTrend[index] : nil
         let height = barHeight(for: amount, maxHeight: maxHeight)
-        let isSelected = index == selectedBarIndex
+        let isSelected = !isShowingAnnualTotal && index == selectedBarIndex
 
         return VStack(spacing: 8) {
             RoundedRectangle(cornerRadius: 4)
@@ -338,6 +348,47 @@ struct SpendingAnalysisDetailView: View {
                 .foregroundStyle(isSelected ? AppColors.inkPrimary : AppColors.inkFaint)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private func handleChartGesture(
+        _ value: DragGesture.Value,
+        width: CGFloat,
+        barWidth: CGFloat,
+        barSpacing: CGFloat,
+        barAreaHeight: CGFloat
+    ) {
+        let horizontal = value.translation.width
+        let vertical = value.translation.height
+        if abs(horizontal) > 30, abs(horizontal) > abs(vertical) {
+            navigateYear(horizontal < 0 ? 1 : -1)
+            return
+        }
+
+        guard abs(horizontal) < 10, abs(vertical) < 10 else { return }
+
+        let x = value.location.x
+        let y = value.location.y
+        guard x >= 0, x <= width, y >= 0 else { return }
+
+        let step = barWidth + barSpacing
+        guard step > 0 else { return }
+
+        let rawIndex = Int(floor(x / step))
+        let index = min(max(rawIndex, 0), 11)
+        let columnStart = CGFloat(index) * step
+        let columnEnd = columnStart + barWidth
+        let amount: Double? = currentTrend.indices.contains(index) ? currentTrend[index] : nil
+        let height = barHeight(for: amount, maxHeight: barAreaHeight)
+        let barTop = max(barAreaHeight - height, 0)
+
+        withAnimation(.easeInOut(duration: 0.2)) {
+            if x >= columnStart, x <= columnEnd, y >= barTop {
+                selectedBarIndex = index
+                isShowingAnnualTotal = false
+            } else if y < barAreaHeight {
+                isShowingAnnualTotal = true
+            }
+        }
     }
 
     private func barHeight(for amount: Double?, maxHeight: CGFloat) -> CGFloat {
