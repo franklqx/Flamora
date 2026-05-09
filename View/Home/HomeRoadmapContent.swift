@@ -405,6 +405,38 @@ struct HomeRoadmapContent: View {
 
     // MARK: - Data loading
 
+    /// 并发拉取 5 个 range 的 net-worth 历史，组装成 `[NetWorthRange: [NetWorthPoint]]`。
+    /// - 每个 range 失败/无数据 → 空数组，不阻塞其它 range
+    /// - 单 range 只有 1 个点（Day 1 用户）→ 仍返回 1 个点，由 UI 的 `currentPoints.count >= 2`
+    ///   守门触发 empty-state 占位
+    private func fetchAllNetWorthHistory() async -> [NetWorthRange: [NetWorthPoint]] {
+        async let week        = fetchNetWorthRange(.week)
+        async let month       = fetchNetWorthRange(.month)
+        async let threeMonths = fetchNetWorthRange(.threeMonths)
+        async let year        = fetchNetWorthRange(.year)
+        async let all         = fetchNetWorthRange(.all)
+        let results = await (week, month, threeMonths, year, all)
+        return [
+            .week:        results.0,
+            .month:       results.1,
+            .threeMonths: results.2,
+            .year:        results.3,
+            .all:         results.4,
+        ]
+    }
+
+    private func fetchNetWorthRange(_ range: NetWorthRange) async -> [NetWorthPoint] {
+        guard let payload = try? await APIService.shared.getNetWorthHistory(range: range.apiQueryValue) else {
+            return []
+        }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withFullDate]
+        return payload.points.compactMap { point in
+            guard let date = formatter.date(from: point.date) else { return nil }
+            return NetWorthPoint(date: date, value: point.value)
+        }
+    }
+
     private func loadInitialData(force: Bool = false) async {
         guard !isLoading else { return }
         isLoading = true
@@ -428,14 +460,21 @@ struct HomeRoadmapContent: View {
         async let savingsSeries: [Int: [Double?]]? = loadSavingsByYearFromAPI()
         async let setup: HomeSetupStateResponse? = APIService.shared.getSetupStatePersistingCache()
         async let goal: APIFireGoal? = try? await APIService.shared.getActiveFireGoal()
+        async let history: [NetWorthRange: [NetWorthPoint]] = fetchAllNetWorthHistory()
 
-        let (s, b, monthly, issueZero, annual, series, setupResponse, goalResponse) = await (summary, monthBudget, monthlyReport, issueZeroReport, annualReport, savingsSeries, setup, goal)
+        let (s, b, monthly, issueZero, annual, series, setupResponse, goalResponse, hist) = await (summary, monthBudget, monthlyReport, issueZeroReport, annualReport, savingsSeries, setup, goal, history)
         await MainActor.run {
             self.setupState = setupResponse ?? self.setupState
             self.fireGoal = goalResponse ?? self.fireGoal
+            if !hist.isEmpty {
+                self.netWorthHistory = hist
+            }
             if let s {
                 self.netWorthSummary = s
                 TabContentCache.shared.setHomeNetWorth(summary: s, history: self.netWorthHistory)
+            } else if !hist.isEmpty {
+                // 即使 summary 失败，也把刚拉到的 history 写入缓存。
+                TabContentCache.shared.setHomeNetWorth(summary: self.netWorthSummary, history: self.netWorthHistory)
             }
             if let b {
                 self.budget = b

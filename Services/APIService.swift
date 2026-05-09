@@ -325,6 +325,17 @@ class APIService {
         return try await perform(request)
     }
 
+    /// 拉用户每日 net-worth 快照序列（来自 `net_worth_history`，由 Plaid webhook 自动写入）。
+    /// `range`: `1w` | `1m` | `3m` | `1y` | `all`
+    func getNetWorthHistory(range: String) async throws -> APINetWorthHistory {
+        var request = try await authenticatedRequest(function: "get-net-worth-history")
+        if var components = URLComponents(url: request.url!, resolvingAgainstBaseURL: false) {
+            components.queryItems = [URLQueryItem(name: "range", value: range)]
+            request.url = components.url
+        }
+        return try await perform(request)
+    }
+
     func getAccountBalanceHistory(accountId: String, range: String) async throws -> APIAccountBalanceHistory {
         var request = try await authenticatedRequest(function: "get-account-balance-history")
         if var components = URLComponents(url: request.url!, resolvingAgainstBaseURL: false) {
@@ -661,6 +672,12 @@ struct APIPortfolioHistory: Codable {
 struct APIPortfolioPoint: Codable {
     let date: String
     let value: Double
+}
+
+/// 与 Edge Function `get-net-worth-history` 的 `data` 对齐（`{ points: [{date, value}], range }`）。
+struct APINetWorthHistory: Codable {
+    let points: [APIPortfolioPoint]
+    let range: String
 }
 
 struct APIAccountBalanceHistory: Codable {

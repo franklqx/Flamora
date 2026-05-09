@@ -185,14 +185,8 @@ struct NetWorthDetailView: View {
         if currentPoints.count >= 2 {
             interactiveChart
         } else {
-            RoundedRectangle(cornerRadius: AppRadius.md)
-                .fill(AppColors.inkTrack)
-                .frame(height: 220)
-                .overlay(
-                    Text("Not enough history yet")
-                        .font(.bodyRegular)
-                        .foregroundStyle(AppColors.inkSoft)
-                )
+            NetWorthEmptyHistoryView(chartHeight: 220)
+                .padding(.vertical, AppSpacing.sm)
         }
     }
 
@@ -206,8 +200,9 @@ struct NetWorthDetailView: View {
                 .foregroundStyle(
                     LinearGradient(
                         colors: [
-                            AppColors.allocIndigo.opacity(0.16),
-                            AppColors.allocIndigo.opacity(0.0)
+                            Color(hex: "#60A5FA").opacity(0.30),
+                            Color(hex: "#818CF8").opacity(0.08),
+                            Color(hex: "#818CF8").opacity(0.0)
                         ],
                         startPoint: .top,
                         endPoint: .bottom
@@ -219,8 +214,14 @@ struct NetWorthDetailView: View {
                     x: .value("Date", point.date),
                     y: .value("Net Worth", point.value)
                 )
-                .foregroundStyle(AppColors.allocIndigo)
-                .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: AppColors.gradientShellAccent,
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
                 .interpolationMethod(.monotone)
             }
         }
@@ -263,7 +264,7 @@ struct NetWorthDetailView: View {
                             .allowsHitTesting(false)
 
                         Circle()
-                            .fill(AppColors.allocIndigo)
+                            .fill(Color(hex: "#60A5FA"))
                             .frame(width: 10, height: 10)
                             .overlay(
                                 Circle()

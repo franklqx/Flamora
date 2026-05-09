@@ -34,6 +34,17 @@ enum NetWorthRange: String, CaseIterable, Identifiable {
         case .all: return 24           // 按月（2 年）
         }
     }
+
+    /// 与 `get-net-worth-history` Edge Function 接受的 `range` 查询参数对齐。
+    var apiQueryValue: String {
+        switch self {
+        case .week:        return "1w"
+        case .month:       return "1m"
+        case .threeMonths: return "3m"
+        case .year:        return "1y"
+        case .all:         return "all"
+        }
+    }
 }
 
 // MARK: - Data
@@ -184,9 +195,15 @@ struct HomeNetWorthCard: View {
                             x: .value("Date", point.date),
                             y: .value("Value", point.value)
                         )
-                        .foregroundStyle(AppColors.inkPrimary)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: AppColors.gradientShellAccent,
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                         .interpolationMethod(.monotone)
-                        .lineStyle(StrokeStyle(lineWidth: 2))
+                        .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
 
                         AreaMark(
                             x: .value("Date", point.date),
@@ -195,8 +212,9 @@ struct HomeNetWorthCard: View {
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [
-                                    AppColors.inkPrimary.opacity(0.16),
-                                    AppColors.inkPrimary.opacity(0.02)
+                                    Color(hex: "#60A5FA").opacity(0.30),
+                                    Color(hex: "#818CF8").opacity(0.08),
+                                    Color(hex: "#818CF8").opacity(0.0)
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -209,15 +227,7 @@ struct HomeNetWorthCard: View {
                 .chartXAxis(.hidden)
                 .frame(height: 128)
             } else {
-                // 数据不足时占位
-                RoundedRectangle(cornerRadius: AppRadius.sm)
-                    .fill(AppColors.inkTrack.opacity(0.5))
-                    .frame(height: 128)
-                    .overlay(
-                        Text("Not enough history yet")
-                            .font(.footnoteRegular)
-                            .foregroundColor(AppColors.inkFaint)
-                    )
+                NetWorthEmptyHistoryView(chartHeight: 128)
             }
         }
     }
@@ -288,6 +298,91 @@ struct HomeNetWorthCard: View {
     private func formatPercent(_ value: Double) -> String {
         let sign = value >= 0 ? "+" : ""
         return "\(sign)\(String(format: "%.1f", value))%"
+    }
+}
+
+// MARK: - Empty history state (shared by Home card + Detail view)
+
+/// 没有历史数据时的占位图：一条蓝色的渐变曲线 + 下方填充阴影 + 下方文案 "Tracking starts today"。
+/// 视觉上像一张真实 graph 的轮廓预览，避免空白或灰色占位。
+struct NetWorthEmptyHistoryView: View {
+    let chartHeight: CGFloat
+    var caption: String = "Tracking starts today"
+
+    /// 占位曲线的归一化 y 值（0=底，1=顶）。轻微上扬，暗示增长方向。
+    private static let curvePoints: [CGPoint] = [
+        CGPoint(x: 0.00, y: 0.55),
+        CGPoint(x: 0.12, y: 0.50),
+        CGPoint(x: 0.24, y: 0.58),
+        CGPoint(x: 0.38, y: 0.46),
+        CGPoint(x: 0.52, y: 0.42),
+        CGPoint(x: 0.66, y: 0.34),
+        CGPoint(x: 0.80, y: 0.30),
+        CGPoint(x: 0.92, y: 0.22),
+        CGPoint(x: 1.00, y: 0.18)
+    ]
+
+    var body: some View {
+        VStack(spacing: AppSpacing.sm) {
+            GeometryReader { geo in
+                let pts = Self.curvePoints.map {
+                    CGPoint(
+                        x: $0.x * geo.size.width,
+                        y: (1 - $0.y) * geo.size.height
+                    )
+                }
+
+                ZStack {
+                    // 曲线下方的填充阴影（蓝紫渐变 → 透明）
+                    Path { path in
+                        guard let first = pts.first else { return }
+                        path.move(to: CGPoint(x: first.x, y: geo.size.height))
+                        path.addLine(to: first)
+                        for p in pts.dropFirst() {
+                            path.addLine(to: p)
+                        }
+                        if let last = pts.last {
+                            path.addLine(to: CGPoint(x: last.x, y: geo.size.height))
+                        }
+                        path.closeSubpath()
+                    }
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(hex: "#60A5FA").opacity(0.35),
+                                Color(hex: "#818CF8").opacity(0.10),
+                                Color(hex: "#818CF8").opacity(0.0)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+
+                    // 主曲线（蓝紫渐变）+ 下方柔光阴影
+                    Path { path in
+                        guard let first = pts.first else { return }
+                        path.move(to: first)
+                        for p in pts.dropFirst() {
+                            path.addLine(to: p)
+                        }
+                    }
+                    .stroke(
+                        LinearGradient(
+                            colors: AppColors.gradientShellAccent,
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round)
+                    )
+                    .shadow(color: Color(hex: "#60A5FA").opacity(0.45), radius: 6, x: 0, y: 4)
+                }
+            }
+            .frame(height: chartHeight)
+
+            Text(caption)
+                .font(.footnoteRegular)
+                .foregroundColor(AppColors.inkFaint)
+        }
     }
 }
 

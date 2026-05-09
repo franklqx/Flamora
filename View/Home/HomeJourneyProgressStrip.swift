@@ -102,8 +102,7 @@ struct HomeJourneyProgressStrip: View {
         startAmountText != nil || targetAmountText != nil || dayCount != nil
     }
 
-    /// Per-segment fill fraction (0..1) so the in-progress segment can render
-    /// a partial bar without rounding up.
+    /// 单段填充比例（0..1）。已过的段=1，未到的段=0，正在进行的那一段=部分填充。
     private func segmentFill(at index: Int) -> Double {
         let segmentSize = 1.0 / Double(totalSegments)
         let segmentStart = Double(index) * segmentSize
@@ -114,6 +113,7 @@ struct HomeJourneyProgressStrip: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            // Kicker row: "YOUR FIRE JOURNEY" 左 + "DAY 9 · 9%" 右（layout X）
             HStack(alignment: .firstTextBaseline) {
                 Text(title)
                     .font(.inlineFigureBold)
@@ -124,8 +124,8 @@ struct HomeJourneyProgressStrip: View {
 
                 Spacer(minLength: AppSpacing.sm)
 
-                if let dayCount {
-                    Text("DAY \(dayCount)")
+                if let kicker = kickerRightText {
+                    Text(kicker)
                         .font(.smallLabel)
                         .foregroundStyle(AppColors.heroTextPrimary)
                         .tracking(AppTypography.Tracking.miniUppercase)
@@ -142,20 +142,11 @@ struct HomeJourneyProgressStrip: View {
                     .padding(.bottom, AppSpacing.md)
             }
 
-            if isActiveLayout, let trailingPercentText {
-                HStack {
-                    Spacer(minLength: 0)
-                    Text(trailingPercentText)
-                        .font(.footnoteSemibold)
-                        .foregroundStyle(AppColors.heroTextPrimary)
-                }
-                .padding(.bottom, 4)
-            }
-
+            // 进度条
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 HStack(spacing: AppSpacing.xs) {
                     ForEach(0..<totalSegments, id: \.self) { index in
-                        SegmentBar(fillFraction: segmentFill(at: index))
+                        FillableSegment(fillFraction: segmentFill(at: index))
                             .frame(maxWidth: .infinity)
                     }
                 }
@@ -164,6 +155,7 @@ struct HomeJourneyProgressStrip: View {
                 .accessibilityValue("\(Int(progressFraction * 100)) percent")
 
                 if isActiveLayout {
+                    // 起止金额（左右对齐进度条两端）
                     HStack(alignment: .firstTextBaseline) {
                         if let startAmountText {
                             Text(startAmountText)
@@ -182,22 +174,21 @@ struct HomeJourneyProgressStrip: View {
                         }
                     }
 
-                    HStack {
+                    // 终点 FREEDOM DATE（右下，单行）
+                    HStack(spacing: AppSpacing.xs) {
                         Spacer(minLength: 0)
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text(footerLabel)
-                                .font(.label)
-                                .foregroundStyle(AppColors.heroTextHint)
-                                .tracking(AppTypography.Tracking.miniUppercase)
-                                .textCase(.uppercase)
+                        Text(footerLabel)
+                            .font(.label)
+                            .foregroundStyle(AppColors.heroTextHint)
+                            .tracking(AppTypography.Tracking.miniUppercase)
+                            .textCase(.uppercase)
+                            .lineLimit(1)
+                        if let freedomDateText {
+                            Text(freedomDateText)
+                                .font(.footnoteSemibold)
+                                .foregroundStyle(AppColors.heroTextPrimary)
                                 .lineLimit(1)
-                            if let freedomDateText {
-                                Text(freedomDateText)
-                                    .font(.footnoteSemibold)
-                                    .foregroundStyle(AppColors.heroTextPrimary)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.8)
-                            }
+                                .minimumScaleFactor(0.8)
                         }
                     }
                 } else {
@@ -224,24 +215,51 @@ struct HomeJourneyProgressStrip: View {
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .dynamicTypeSize(...DynamicTypeSize.xLarge)
     }
+
+    /// Active 时把 DAY 与百分比合并到右上角："DAY 9 · 9%"。
+    /// 其中一个缺失就只显示另一个；都没有则不渲染右上角文本。
+    private var kickerRightText: String? {
+        let dayPart: String? = dayCount.map { "DAY \($0)" }
+        let pctPart: String? = isActiveLayout ? trailingPercentText : nil
+        switch (dayPart, pctPart) {
+        case let (d?, p?): return "\(d) · \(p)"
+        case let (d?, nil): return d
+        case let (nil, p?): return p
+        case (nil, nil):    return nil
+        }
+    }
 }
 
-// MARK: - Segment bar (supports partial fill)
+// MARK: - Fillable segment (per-segment partial fill, brand blue-purple)
 
-private struct SegmentBar: View {
+/// 单段进度 capsule。
+/// - 底轨：`heroTrack`（淡白色）
+/// - 已填充部分：`gradientShellAccent`（onboarding CTA 蓝紫渐变）从左向右铺
+/// - `fillFraction = 0..1`：0 全空、1 全满、中间值=该段正在被填充
+private struct FillableSegment: View {
     let fillFraction: Double
 
     var body: some View {
         GeometryReader { geo in
+            let clamped = min(max(fillFraction, 0), 1)
             ZStack(alignment: .leading) {
                 Capsule()
                     .fill(AppColors.heroTrack)
-                Capsule()
-                    .fill(AppColors.heroTrackFill)
-                    .frame(width: geo.size.width * min(max(fillFraction, 0), 1))
+
+                if clamped > 0 {
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: AppColors.gradientShellAccent,
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: geo.size.width * CGFloat(clamped))
+                }
             }
         }
-        .frame(height: 4)
+        .frame(height: 6)
     }
 }
 

@@ -197,18 +197,21 @@ private extension SimulatorView {
             .padding(.top, contentTopPadding)
             .padding(.bottom, max(bottomPadding, compactLayout ? AppSpacing.xs : AppSpacing.sm))
         }
-        .alert(
-            "Edit Value",
-            isPresented: Binding(
-                get: { editingField != nil },
-                set: { if !$0 { editingField = nil } }
+        .sheet(item: $editingField) { field in
+            SimulatorEditValueSheet(
+                field: field,
+                initialText: editInput,
+                onSave: { newText in
+                    editInput = newText
+                    commitManualEdit()
+                },
+                onCancel: {
+                    editingField = nil
+                }
             )
-        ) {
-            TextField("Value", text: $editInput)
-            Button("Save") { commitManualEdit() }
-            Button("Cancel", role: .cancel) { editingField = nil }
-        } message: {
-            Text(editingField?.displayTitle ?? "")
+            .presentationDetents([.height(280)])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(AppColors.shellBg1)
         }
     }
 
@@ -247,11 +250,10 @@ private extension SimulatorView {
                     resultCard
                 }
 
-                htmlSandboxHeader
+                sandboxHeader
+                    .padding(.horizontal, AppSpacing.screenPadding)
 
-                htmlSimSubheader
-
-                htmlBarGraphSection(chartHeight: chartHeight)
+                lifecycleChartSection(chartHeight: chartHeight)
                     .padding(.horizontal, AppSpacing.screenPadding)
 
                 htmlRetirementDetailPanel
@@ -266,219 +268,118 @@ private extension SimulatorView {
         }
     }
 
-    private var htmlSandboxHeader: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text("Sandbox")
-                .font(.cardHeader)
+    // MARK: - Sandbox header (kicker + outcome)
+
+    /// 静态 kicker + 动态 FIRE age outcome。统一字号，靠 uppercase + opacity + weight 拉层级。
+    private var sandboxHeader: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+            Text("TRY DIFFERENT SCENARIOS")
+                .font(.bodySmallSemibold)
                 .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
                 .tracking(AppTypography.Tracking.cardHeader)
 
-            Text(sandboxHeadlineTitle)
-                .font(.portfolioHero)
+            Text(sandboxOutcomeText)
+                .font(.bodySmallSemibold)
                 .foregroundStyle(AppColors.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+                .contentTransition(.numericText())
+                .animation(.easeOut(duration: 0.35), value: sandboxOutcomeText)
         }
-        .padding(.horizontal, AppSpacing.screenPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var sandboxHeadlineTitle: String {
-        let age = preview?.previewFireAge ?? 30
-        return "You will be financial free by age \(age)."
+    /// 输出：永远是 `FIRE at age <number>.`；数学层不可达时显示 `—`。
+    private var sandboxOutcomeText: String {
+        guard let age = preview?.previewFireAge else { return "FIRE at age —." }
+        return "FIRE at age \(age)."
     }
 
-    private var htmlSimSubheader: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text("Demo Simulator")
-                    .font(.h3)
-                    .foregroundStyle(AppColors.textPrimary)
-                Text("Explore the path before your real data exists.")
-                    .font(.bodySmall)
-                    .foregroundStyle(AppColors.textSecondary)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, AppSpacing.screenPadding)
-    }
+    // MARK: - Lifecycle area chart (accumulation + decumulation to age 90)
 
-    private func htmlBarGraphSection(chartHeight: CGFloat) -> some View {
-        let floorPad = AppSpacing.md
-        let barCount = barHeightsForHTMLChart.count
-        let horizontalPad = AppSpacing.sm
-        let barGap = AppSpacing.xs
-        return VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            ZStack(alignment: .topTrailing) {
-                // 柱宽随容器均分，从左缘铺满到右缘（与底部年份轴对齐）；勿用固定 5pt 宽 + 默认居中 ZStack，否则会挤在图中间偏右。
-                ZStack(alignment: .bottom) {
-                    GeometryReader { geo in
-                        let innerW = max(0, geo.size.width - horizontalPad * 2)
-                        let totalGaps = barGap * CGFloat(max(0, barCount - 1))
-                        // 均分剩余宽度；若极端窄屏下 (innerW - gaps) 为负，仍用公式保证柱群不强制撑破父级（避免再出现“居中窄条”）
-                        let barW = max(0, (innerW - totalGaps) / CGFloat(max(1, barCount)))
+    private func lifecycleChartSection(chartHeight: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            SandboxLifecycleChart(
+                points: lifecyclePoints,
+                fireAge: preview?.previewFireAge,
+                currentAge: controls.currentAge,
+                endAge: lifecycleEndAge,
+                revealAnimation: chartRevealAnimation
+            )
+            .frame(height: chartHeight)
 
-                        ZStack(alignment: .bottom) {
-                            HStack(alignment: .bottom, spacing: barGap) {
-                                ForEach(0..<barCount, id: \.self) { index in
-                                    htmlBarCapsule(
-                                        width: barW,
-                                        height: max(
-                                            4,
-                                            barHeightsForHTMLChart[index] * (chartHeight - floorPad - AppSpacing.xs)
-                                        ),
-                                        isActive: index == barCount - 1,
-                                        isSoft: index < 7
-                                    )
-                                }
-                            }
-                            .frame(width: innerW, alignment: .leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, horizontalPad)
-                            .padding(.bottom, floorPad)
-                            .scaleEffect(x: 1, y: chartRevealAnimation ? 1 : 0.02, anchor: .bottom)
-                            .opacity(chartRevealAnimation ? 1 : 0)
-
-                            VStack {
-                                Spacer()
-                                Rectangle()
-                                    .fill(AppColors.heroTrack)
-                                    .frame(height: 1)
-                            }
-                            .padding(.horizontal, horizontalPad)
-                            .padding(.bottom, floorPad)
-                        }
-                    }
-                }
-                .frame(height: chartHeight)
-
-                htmlBarCalloutPill
-                    .padding(.top, AppSpacing.xs)
-                    .padding(.trailing, AppSpacing.lg)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
+            // 横轴标签：Today / FIRE @X / Age 90
             HStack {
-                ForEach(0..<htmlAxisYearLabels.count, id: \.self) { index in
-                    Group {
-                        if index > 0 {
-                            Spacer(minLength: 0)
-                        }
-                        Text(htmlAxisYearLabels[index])
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(AppColors.heroTextHint)
-                    }
+                Text("Today")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(AppColors.heroTextHint)
+
+                Spacer(minLength: 0)
+
+                if let fireAge = preview?.previewFireAge,
+                   fireAge > controls.currentAge,
+                   fireAge < SandboxLifecycle.endAge {
+                    Text("FIRE @\(fireAge)")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(AppColors.textPrimary)
+                    Spacer(minLength: 0)
                 }
+
+                Text("Age \(SandboxLifecycle.endAge)")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(AppColors.heroTextHint)
             }
-            .padding(.horizontal, horizontalPad)
+
+            Text(lifecycleMicrolabel)
+                .font(.footnoteRegular)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, AppSpacing.xxs)
         }
         .padding(.vertical, AppSpacing.sm)
         .onAppear {
             chartRevealAnimation = false
-            withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+            withAnimation(.spring(response: 0.42, dampingFraction: 0.85)) {
                 chartRevealAnimation = true
             }
         }
     }
 
-    /// Glass pill — single money + age label (HTML `.bar-callout.one`), on the chart wall only.
-    private var htmlBarCalloutPill: some View {
-        Text(htmlBarCalloutText)
-            .font(.inlineFigureBold)
-            .foregroundStyle(AppColors.simulatorCalloutForeground)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(AppColors.simulatorCalloutBubbleFill)
-                    .background {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(.ultraThinMaterial)
-                    }
-            }
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(AppColors.simulatorCalloutBubbleBorder, lineWidth: 1)
-            )
-    }
+    /// 横轴终点：固定 age 90（用户拍板）。
+    private var lifecycleEndAge: Int { SandboxLifecycle.endAge }
 
-    private func htmlBarCapsule(width: CGFloat, height: CGFloat, isActive: Bool, isSoft: Bool) -> some View {
-        let fill = monochromeBarFill(isActive: isActive, isSoft: isSoft)
-        return Capsule()
-            .fill(fill)
-            .overlay(
-                Capsule()
-                    .stroke(AppColors.overlayWhiteWash, lineWidth: 1)
-            )
-            .shadow(
-                color: isActive ? AppColors.overlayWhiteMid : .clear,
-                radius: isActive ? 12 : 0,
-                y: 0
-            )
-            .frame(width: width, height: height)
-    }
-
-    /// Prototype `.bar` / `.bar.soft` / `.bar.active`: white-only gradients, no accent hues.
-    private func monochromeBarFill(isActive: Bool, isSoft: Bool) -> LinearGradient {
-        if isActive {
-            return LinearGradient(
-                colors: [Color.white.opacity(1), Color.white.opacity(0.56)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        }
-        if isSoft {
-            return LinearGradient(
-                colors: [Color.white.opacity(0.4), Color.white.opacity(0.18)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        }
-        return LinearGradient(
-            colors: [Color.white.opacity(0.9), Color.white.opacity(0.42)],
-            startPoint: .top,
-            endPoint: .bottom
+    /// 整段生命周期数据：从 currentAge 起，每月模拟 portfolio 演化到 age 90。
+    /// 累积期：portfolio = portfolio*(1+r/12) + monthly_savings
+    /// FIRE 后取款期：portfolio = portfolio*(1+r/12) − retirement_spending
+    /// portfolio 跌到 0 之后保持 0（视觉上一条贴底直线）。
+    private var lifecyclePoints: [SandboxLifecyclePoint] {
+        SandboxLifecycle.compute(
+            currentAge: controls.currentAge,
+            startingNetWorth: controls.investableAssets,
+            monthlySavings: controls.savingsMonthly,
+            annualReturnPercent: controls.returnRate,
+            retirementSpendingMonthly: controls.retirementSpending,
+            fireNumber: preview?.previewFireNumber,
+            fireAge: preview?.previewFireAge
         )
     }
 
-    private var htmlBarCalloutText: String {
-        let path = displayAdjustedPath
-        let lastNW = path.last?.netWorth ?? 128_000
-        let age = preview?.previewFireAge ?? 30
-        return "\(NumberFormatter.appCurrency(lastNW)) by age \(age)"
-    }
+    /// 图表下方一行 microlabel — 解释 portfolio 寿命。
+    private var lifecycleMicrolabel: String {
+        let pts = lifecyclePoints
+        guard !pts.isEmpty else { return " " }
 
-    private var htmlAxisYearLabels: [String] {
-        let path = displayAdjustedPath
-        guard let first = path.first?.year, let last = path.last?.year, first <= last else {
-            return ["2026", "2029", "2032"]
+        // FIRE 都到不了
+        if preview?.previewFireAge == nil {
+            return "Not reaching FIRE within 50 years."
         }
-        let mid = first + (last - first) / 2
-        return ["\(first)", "\(mid)", "\(last)"]
-    }
 
-    private var barHeightsForHTMLChart: [CGFloat] {
-        let path = displayAdjustedPath
-        let target = 16
-        guard path.count > 1 else {
-            return (0..<target).map { i in
-                CGFloat(i + 1) / CGFloat(target)
-            }
+        // 找第一个 portfolio == 0 的点（耗尽）
+        if let depleted = pts.first(where: { $0.netWorth <= 0 && $0.age > controls.currentAge }) {
+            return "Portfolio depletes at age \(depleted.age)."
         }
-        let values = path.map(\.netWorth)
-        let minV = values.min() ?? 0
-        let maxV = values.max() ?? 1
-        let range = max(maxV - minV, 1)
-
-        return (0..<target).map { i in
-            let t = Double(i) / Double(target - 1)
-            let idx = t * Double(max(0, values.count - 1))
-            let lo = Int(floor(idx))
-            let hi = min(lo + 1, values.count - 1)
-            let frac = idx - Double(lo)
-            let v = values[lo] * (1 - frac) + values[hi] * frac
-            let norm = CGFloat((v - minV) / range)
-            return max(0.08, norm)
-        }
+        return "Portfolio lasts beyond age \(SandboxLifecycle.endAge)."
     }
 
     private var htmlRetirementDetailPanel: some View {
@@ -1194,13 +1095,24 @@ private struct SimulatorControlState: Equatable {
     var currentAge: Int = 33
 }
 
-private enum SimulatorEditableField {
+private enum SimulatorEditableField: Identifiable {
     case monthlyInvestment
     case investableAssets
     case expectedReturn
     case monthlyExpenses
     case withdrawalRate
     case currentAge
+
+    var id: String {
+        switch self {
+        case .monthlyInvestment: return "monthlyInvestment"
+        case .investableAssets:  return "investableAssets"
+        case .expectedReturn:    return "expectedReturn"
+        case .monthlyExpenses:   return "monthlyExpenses"
+        case .withdrawalRate:    return "withdrawalRate"
+        case .currentAge:        return "currentAge"
+        }
+    }
 
     var displayTitle: String {
         switch self {
@@ -1211,6 +1123,214 @@ private enum SimulatorEditableField {
         case .withdrawalRate: return "Withdrawal Rate (%)"
         case .currentAge: return "Current Age"
         }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .monthlyInvestment: return "How much you invest each month."
+        case .investableAssets: return "Total amount currently invested."
+        case .expectedReturn: return "Annual nominal return assumption."
+        case .monthlyExpenses: return "Spending you'll need each month in retirement."
+        case .withdrawalRate: return "Safe withdrawal rate (Trinity Study uses 4%)."
+        case .currentAge: return "Your age today."
+        }
+    }
+
+    /// iOS 数字键盘类型：整数 vs 小数。
+    var prefersDecimal: Bool {
+        switch self {
+        case .expectedReturn, .withdrawalRate: return true
+        default: return false
+        }
+    }
+}
+
+// MARK: - Sandbox Lifecycle (accumulation + decumulation)
+
+/// 单点：年龄 + portfolio 估值。一年一个点。
+private struct SandboxLifecyclePoint: Equatable {
+    let age: Int
+    let netWorth: Double
+}
+
+/// 生命周期模拟逻辑 + 横轴常量。
+/// - 横轴永远从 currentAge → endAge (90)
+/// - 累积期：每月 portfolio = portfolio*(1+r/12) + savings_monthly
+/// - FIRE 后取款期：每月 portfolio = portfolio*(1+r/12) − retirement_spending
+/// - portfolio ≤ 0 之后保持 0（视觉上贴底）
+private enum SandboxLifecycle {
+    /// 横轴终点年龄（用户拍板）。介于 longevity-aware 与可读性之间。
+    static let endAge: Int = 90
+
+    static func compute(
+        currentAge: Int,
+        startingNetWorth: Double,
+        monthlySavings: Double,
+        annualReturnPercent: Double,
+        retirementSpendingMonthly: Double,
+        fireNumber: Double?,
+        fireAge: Int?
+    ) -> [SandboxLifecyclePoint] {
+        guard currentAge < endAge else {
+            return [SandboxLifecyclePoint(age: currentAge, netWorth: startingNetWorth)]
+        }
+        let annualRate = max(0.001, annualReturnPercent / 100.0)
+        let monthlyRate = annualRate / 12.0
+        var portfolio = max(0, startingNetWorth)
+        var points: [SandboxLifecyclePoint] = [
+            SandboxLifecyclePoint(age: currentAge, netWorth: portfolio)
+        ]
+
+        // 决定何时切换到取款期：用 fireAge 作为 boundary；如果 fireAge 不可达，
+        // 则永远在累积期（最后一年仍可能远低于 fire_number，视觉上仍单调上升）。
+        let switchAge: Int = fireAge ?? Int.max
+
+        for age in (currentAge + 1)...endAge {
+            let isWithdrawing = age > switchAge
+            for _ in 0..<12 {
+                if isWithdrawing {
+                    portfolio = portfolio * (1 + monthlyRate) - retirementSpendingMonthly
+                } else {
+                    portfolio = portfolio * (1 + monthlyRate) + monthlySavings
+                }
+                if portfolio < 0 { portfolio = 0 }
+            }
+            points.append(SandboxLifecyclePoint(age: age, netWorth: portfolio))
+        }
+        return points
+    }
+}
+
+// MARK: - Sandbox Lifecycle Chart (area chart, blue-purple gradient)
+
+/// 完整生命周期 area chart。
+/// - 蓝紫渐变线 + 软填充
+/// - FIRE 节点：垂直虚线 + 玻璃圆点
+/// - portfolio 耗尽后曲线贴底
+private struct SandboxLifecycleChart: View {
+    let points: [SandboxLifecyclePoint]
+    let fireAge: Int?
+    let currentAge: Int
+    let endAge: Int
+    let revealAnimation: Bool
+
+    var body: some View {
+        GeometryReader { geo in
+            let layout = computeLayout(in: geo.size)
+            ZStack {
+                // Area fill
+                Path { path in
+                    guard let first = layout.linePoints.first else { return }
+                    path.move(to: CGPoint(x: first.x, y: geo.size.height))
+                    path.addLine(to: first)
+                    for p in layout.linePoints.dropFirst() {
+                        path.addLine(to: p)
+                    }
+                    if let last = layout.linePoints.last {
+                        path.addLine(to: CGPoint(x: last.x, y: geo.size.height))
+                    }
+                    path.closeSubpath()
+                }
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(hex: "#60A5FA").opacity(0.32),
+                            Color(hex: "#818CF8").opacity(0.10),
+                            Color(hex: "#818CF8").opacity(0.0)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+
+                // Line stroke
+                Path { path in
+                    guard let first = layout.linePoints.first else { return }
+                    path.move(to: first)
+                    for p in layout.linePoints.dropFirst() {
+                        path.addLine(to: p)
+                    }
+                }
+                .stroke(
+                    LinearGradient(
+                        colors: AppColors.gradientShellAccent,
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round)
+                )
+                .shadow(color: Color(hex: "#60A5FA").opacity(0.40), radius: 6, y: 4)
+
+                // FIRE marker (vertical dashed line + glass dot)
+                if let fireMarker = layout.fireMarker {
+                    Path { path in
+                        path.move(to: CGPoint(x: fireMarker.x, y: 0))
+                        path.addLine(to: CGPoint(x: fireMarker.x, y: geo.size.height))
+                    }
+                    .stroke(
+                        AppColors.overlayWhiteForegroundMuted,
+                        style: StrokeStyle(lineWidth: 1, dash: [3, 4])
+                    )
+
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 12, height: 12)
+                        .overlay(
+                            Circle()
+                                .stroke(Color(hex: "#60A5FA"), lineWidth: 2.5)
+                        )
+                        .shadow(color: Color(hex: "#60A5FA").opacity(0.6), radius: 6)
+                        .position(x: fireMarker.x, y: fireMarker.y)
+                }
+            }
+            .scaleEffect(x: 1, y: revealAnimation ? 1 : 0.02, anchor: .bottom)
+            .opacity(revealAnimation ? 1 : 0)
+        }
+    }
+
+    private struct Layout {
+        let linePoints: [CGPoint]
+        let fireMarker: CGPoint?
+    }
+
+    private func computeLayout(in size: CGSize) -> Layout {
+        guard points.count > 1, endAge > currentAge else {
+            return Layout(linePoints: [], fireMarker: nil)
+        }
+
+        let values = points.map(\.netWorth)
+        let maxV = max(values.max() ?? 1, 1)
+        let minV: Double = 0  // 总是从 0 起算，让"耗尽"的视觉贴底
+        let range = max(maxV - minV, 1)
+
+        let topPad: CGFloat = 14   // 给 FIRE 圆点留头顶空间
+        let bottomPad: CGFloat = 4
+        let h = size.height
+        let usableH = max(1, h - topPad - bottomPad)
+        let w = size.width
+        let xSpan = CGFloat(endAge - currentAge)
+
+        let linePoints: [CGPoint] = points.map { p in
+            let x = CGFloat(p.age - currentAge) / xSpan * w
+            let normalized = (p.netWorth - minV) / range
+            let y = h - bottomPad - CGFloat(normalized) * usableH
+            return CGPoint(x: x, y: y)
+        }
+
+        // FIRE marker：找 fireAge 对应的曲线 y
+        var fireMarker: CGPoint? = nil
+        if let fireAge,
+           fireAge > currentAge,
+           fireAge < endAge,
+           let firePoint = points.first(where: { $0.age == fireAge })
+        {
+            let x = CGFloat(fireAge - currentAge) / xSpan * w
+            let normalized = (firePoint.netWorth - minV) / range
+            let y = h - bottomPad - CGFloat(normalized) * usableH
+            fireMarker = CGPoint(x: x, y: y)
+        }
+
+        return Layout(linePoints: linePoints, fireMarker: fireMarker)
     }
 }
 
@@ -1308,6 +1428,88 @@ private struct PreviewPathChart: View {
     }
 }
 
+
+// MARK: - Edit Value Sheet (light-shell modal, replaces system .alert)
+
+private struct SimulatorEditValueSheet: View {
+    let field: SimulatorEditableField
+    let initialText: String
+    let onSave: (String) -> Void
+    let onCancel: () -> Void
+
+    @State private var input: String = ""
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text("Edit Value")
+                    .font(.h4)
+                    .foregroundStyle(AppColors.inkPrimary)
+
+                Text(field.displayTitle)
+                    .font(.bodySmall)
+                    .foregroundStyle(AppColors.inkSoft)
+            }
+
+            TextField("Value", text: $input)
+                .keyboardType(field.prefersDecimal ? .decimalPad : .numberPad)
+                .focused($isFocused)
+                .font(.fieldBodyMedium)
+                .foregroundStyle(AppColors.inkPrimary)
+                .tint(AppColors.inkPrimary)
+                .padding(.horizontal, AppSpacing.md)
+                .padding(.vertical, AppSpacing.sm + 2)
+                .background(AppColors.ctaWhite)
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.md)
+                        .stroke(AppColors.inkBorder, lineWidth: 1)
+                )
+
+            HStack(spacing: AppSpacing.sm) {
+                Button(action: onCancel) {
+                    Text("Cancel")
+                        .font(.sheetPrimaryButton)
+                        .foregroundStyle(AppColors.inkPrimary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(AppColors.inkTrack)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    onSave(input)
+                } label: {
+                    Text("Save")
+                        .font(.sheetPrimaryButton)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(
+                            LinearGradient(
+                                colors: AppColors.gradientShellAccent,
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.top, AppSpacing.md)
+        .padding(.bottom, AppSpacing.lg)
+        .onAppear {
+            input = initialText
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                isFocused = true
+            }
+        }
+    }
+}
 
 #Preview {
     SimulatorView(displayState: .constant(.results))
