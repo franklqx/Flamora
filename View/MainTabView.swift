@@ -354,9 +354,7 @@ private extension MainTabView {
                     bottomPadding: 0,
                     isFireOn: true,
                     onFireToggle: exitSimulator,
-                    showResultCard: false,
                     contentTopPadding: TopHeaderBar.height + AppSpacing.lg,
-                    useHTMLPrototypeLayout: true,
                     fillsBackground: false
                 )
             }

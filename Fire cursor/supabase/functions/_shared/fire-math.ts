@@ -57,6 +57,16 @@ export function computeFireDate(
     months++
   }
 
+  // Hit the 50-year ceiling without crossing fireNumber → unreachable.
+  // Don't fabricate a fireAge; downstream UIs treat 'Unknown' as "not feasible".
+  if (portfolio < fireNumber) {
+    return {
+      yearsRemaining: 99,
+      fireDate: 'Unknown',
+      fireAge: null,
+    }
+  }
+
   const yearsRemaining = Math.ceil(months / 12)
   return {
     yearsRemaining,

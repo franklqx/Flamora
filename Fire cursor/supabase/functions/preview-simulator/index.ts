@@ -77,9 +77,12 @@ Deno.serve(async (req) => {
     const body: PreviewSimulatorRequest = await req.json()
     const mode = body.mode ?? 'demo'
 
-    // Simulator lifecycle uses today's dollars, so use real return after inflation.
-    const DEFAULT_RETURN_RATE = ASSUMPTIONS.REAL_ANNUAL_RETURN
-    const DEFAULT_WITHDRAWAL  = ASSUMPTIONS.WITHDRAWAL_RATE
+    // User input ("Expected Return") is NOMINAL. We subtract inflation to get
+    // the real return used by all projection math (today's-dollars portfolio).
+    const DEFAULT_NOMINAL_RETURN = ASSUMPTIONS.NOMINAL_ANNUAL_RETURN
+    const DEFAULT_INFLATION      = ASSUMPTIONS.INFLATION_RATE
+    const DEFAULT_WITHDRAWAL     = ASSUMPTIONS.WITHDRAWAL_RATE
+    const toReal = (nominal: number, inflation: number) => Math.max(0, nominal - inflation)
 
     // ── Resolve official anchors ──────────────────────────────
     let officialSavings:  number | null = body.official_savings_monthly ?? null
@@ -150,9 +153,13 @@ Deno.serve(async (req) => {
     }
 
     // ── Resolve sandbox overrides ─────────────────────────────
+    // sandbox_return_rate / official return are treated as NOMINAL inputs.
+    // We convert to real (after inflation) before any compounding math.
     const sandboxSavings  = body.sandbox_savings_monthly     ?? officialSavings  ?? 0
     const sandboxSpending = body.sandbox_retirement_spending ?? officialSpending ?? (officialFireNumber ? officialFireNumber * 0.04 / 12 : 5000)
-    const sandboxReturn   = body.sandbox_return_rate         ?? DEFAULT_RETURN_RATE
+    const sandboxNominalReturn = body.sandbox_return_rate    ?? DEFAULT_NOMINAL_RETURN
+    const inflation       = body.sandbox_inflation_rate      ?? DEFAULT_INFLATION
+    const sandboxRealReturn = toReal(sandboxNominalReturn, inflation)
     const sandboxWithdraw = body.sandbox_withdrawal_rate     ?? DEFAULT_WITHDRAWAL
     const sandboxFireNumber = computeFireNumber(sandboxSpending, sandboxWithdraw)
 
@@ -165,19 +172,21 @@ Deno.serve(async (req) => {
     let officialFireMonths: number | null = null
 
     if (mode === 'official_preview' && officialFireNumber && officialSavings != null) {
-      const r = computeFireDate(netWorth, officialFireNumber, officialSavings, DEFAULT_RETURN_RATE, currentAge)
+      const r = computeFireDate(netWorth, officialFireNumber, officialSavings, toReal(DEFAULT_NOMINAL_RETURN, inflation), currentAge)
       officialFireDate  = r.fireDate !== 'Unknown' ? r.fireDate : null
       officialFireAge   = r.fireAge
-      officialFireMonths = r.yearsRemaining * 12
+      officialFireMonths = r.fireAge != null ? r.yearsRemaining * 12 : null
     }
 
     // ── Compute sandbox FIRE date ─────────────────────────────
-    const sandboxResult = computeFireDate(netWorth, sandboxFireNumber, sandboxSavings, sandboxReturn, currentAge)
+    // Kept for the result-card label only; the lifecycle below is the
+    // single source of truth for the chart's FIRE marker.
+    const sandboxResult = computeFireDate(netWorth, sandboxFireNumber, sandboxSavings, sandboxRealReturn, currentAge)
     const sandboxFireDate = sandboxResult.fireDate !== 'Unknown' ? sandboxResult.fireDate : null
-    const sandboxFireMonths = sandboxResult.yearsRemaining * 12
+    const sandboxFireMonths = sandboxResult.fireAge != null ? sandboxResult.yearsRemaining * 12 : null
 
     // delta: negative = faster, positive = slower
-    const deltaMonths = officialFireMonths != null
+    const deltaMonths = officialFireMonths != null && sandboxFireMonths != null
       ? sandboxFireMonths - officialFireMonths
       : 0
     const deltaYears  = Math.round((deltaMonths / 12) * 10) / 10
@@ -188,22 +197,27 @@ Deno.serve(async (req) => {
           currentAge,
           currentNetWorth: netWorth,
           monthlySavings: officialSavings,
-          annualRealReturn: DEFAULT_RETURN_RATE,
+          annualRealReturn: toReal(DEFAULT_NOMINAL_RETURN, inflation),
           retirementSpendingMonthly: officialSpending ?? sandboxSpending,
           fireNumber: officialFireNumber,
           endAge: SIMULATOR_LIFECYCLE_END_AGE,
         })
-      : { path: [] as LifecyclePoint[], portfolio_depletion_age: null }
+      : { path: [] as LifecyclePoint[], portfolio_depletion_age: null, fire_reached_age: null, fire_reached_month: null }
 
     const adjustedLifecycle = generateSimulatorLifecycle({
       currentAge,
       currentNetWorth: netWorth,
       monthlySavings: sandboxSavings,
-      annualRealReturn: sandboxReturn,
+      annualRealReturn: sandboxRealReturn,
       retirementSpendingMonthly: sandboxSpending,
       fireNumber: sandboxFireNumber,
       endAge: SIMULATOR_LIFECYCLE_END_AGE,
     })
+
+    // Single source of truth for the chart's FIRE marker: the lifecycle's own
+    // crossing detection. If the curve never crosses fireNumber within the
+    // chart window, no marker is drawn (preview_fire_age = null).
+    const previewFireAge = adjustedLifecycle.fire_reached_age
 
     // Legacy chart fields now mirror lifecycle values for backward compatibility.
     const officialPath: DataPoint[] = officialLifecycle.path.map(({ year, net_worth }) => ({ year, net_worth }))
@@ -220,8 +234,8 @@ Deno.serve(async (req) => {
           official_fire_age:    officialFireAge,
           official_fire_number: mode === 'official_preview' ? officialFireNumber : null,
 
-          preview_fire_date:   sandboxFireDate,
-          preview_fire_age:    sandboxResult.fireAge,
+          preview_fire_date:   previewFireAge != null ? sandboxFireDate : null,
+          preview_fire_age:    previewFireAge,
           preview_fire_number: sandboxFireNumber,
 
           delta_months: deltaMonths,
@@ -235,11 +249,14 @@ Deno.serve(async (req) => {
           lifecycle_end_age: SIMULATOR_LIFECYCLE_END_AGE,
           projection_basis: 'real_dollars',
 
-          // Echo back the effective inputs used (useful for UI display)
+          // Echo back the effective inputs used (useful for UI display).
+          // return_rate is the NOMINAL value the user sees in the slider;
+          // the lifecycle/projection used (return_rate − inflation_rate).
           effective_inputs: {
             savings_monthly:     sandboxSavings,
             retirement_spending: sandboxSpending,
-            return_rate:         sandboxReturn,
+            return_rate:         sandboxNominalReturn,
+            inflation_rate:      inflation,
             withdrawal_rate:     sandboxWithdraw,
             net_worth:           netWorth,
             current_age:         currentAge,

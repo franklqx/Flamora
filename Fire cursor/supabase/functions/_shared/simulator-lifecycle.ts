@@ -14,6 +14,8 @@ export interface SimulatorLifecyclePoint {
 export interface SimulatorLifecycleResult {
   path: SimulatorLifecyclePoint[]
   portfolio_depletion_age: number | null
+  fire_reached_age: number | null
+  fire_reached_month: number | null
 }
 
 export interface SimulatorLifecycleInput {
@@ -88,6 +90,10 @@ export function generateSimulatorLifecycle(input: SimulatorLifecycleInput): Simu
     portfolio_depletion_age: depletionMonth == null
       ? null
       : Math.ceil(currentAge + depletionMonth / 12),
+    fire_reached_month: fireReachedMonth,
+    fire_reached_age: fireReachedMonth == null
+      ? null
+      : Math.ceil(currentAge + fireReachedMonth / 12),
   }
 }
 

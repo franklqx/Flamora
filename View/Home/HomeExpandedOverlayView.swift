@@ -19,9 +19,7 @@ struct HomeExpandedOverlayView: View {
             bottomPadding: 0,
             isFireOn: true,
             onFireToggle: onClose,
-            showResultCard: false,
             contentTopPadding: topPadding,
-            useHTMLPrototypeLayout: true,
             fillsBackground: false
         )
         .ignoresSafeArea(.container, edges: .bottom)

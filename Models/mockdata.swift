@@ -286,11 +286,21 @@ struct ChartPoint: Codable {
     let value: Double
 }
 
+/// Asset allocation buckets surfaced in the Investment tab.
+/// Each field reflects an actual Plaid `security.type` family — no slot-reuse.
 struct Allocation: Codable {
+    /// Pure equities: `equity` (incl. REITs which Plaid returns as `equity`).
     let stocks: AssetClass
-    let bonds: AssetClass    // Crypto
+    /// `etf` + `mutual fund` — basket holdings with unknown internal composition.
+    let funds: AssetClass
+    /// `fixed income` — actual bonds, treasuries, notes.
+    let bonds: AssetClass
+    /// `cash`, money market, currency, plus uninvested cash from accounts.
     let cash: AssetClass
-    let other: AssetClass?   // Other (gold, alts, etc.)
+    /// `cryptocurrency`.
+    let crypto: AssetClass
+    /// `derivative`, `loan`, anything Plaid couldn't classify.
+    let other: AssetClass
 }
 
 struct AssetClass: Codable {
@@ -714,10 +724,12 @@ struct MockData {
             Account(id: "3", institution: "Coinbase",  accountType: .crypto,    balance: 15450.80,  connected: true, logoUrl: "https://www.google.com/s2/favicons?domain=coinbase.com&sz=64")
         ],
         allocation: Allocation(
-            stocks: AssetClass(percent: 68, amount: 85306.54),
-            bonds: AssetClass(percent: 12, amount: 15054.10),  // Crypto
+            stocks: AssetClass(percent: 42, amount: 52668.45),
+            funds: AssetClass(percent: 26, amount: 32638.09),
+            bonds: AssetClass(percent: 8, amount: 10036.06),
             cash: AssetClass(percent: 5, amount: 6272.54),
-            other: AssetClass(percent: 15, amount: 18817.62)
+            crypto: AssetClass(percent: 12, amount: 15054.10),
+            other: AssetClass(percent: 7, amount: 8781.56)
         )
     )
 

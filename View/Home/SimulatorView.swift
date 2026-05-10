@@ -16,10 +16,7 @@ struct SimulatorView: View {
     let isFireOn: Bool
     let onFireToggle: (() -> Void)?
     let bottomPadding: CGFloat
-    let showResultCard: Bool
     let contentTopPadding: CGFloat
-    /// 与 `design-reference/home-rebuild-glass-prototype.html` 中 `.simulator-panel` 结构对齐（沙盒标题、柱状图、Retirement Detail 暗色面板）。
-    let useHTMLPrototypeLayout: Bool
     /// When false, root is clear so a parent (e.g. `BrandHeroBackground` in `MainTabView`) provides the atmospheric gradient.
     let fillsBackground: Bool
 
@@ -34,6 +31,7 @@ struct SimulatorView: View {
     @State private var showAdvancedDetails = false
     @State private var chartRevealAnimation = false
     @State private var selectedLifecyclePoint: SimulatorLifecyclePoint?
+    @State private var infoField: SimulatorInfoField?
 
     @Environment(PlaidManager.self) private var plaidManager
 
@@ -42,18 +40,14 @@ struct SimulatorView: View {
         bottomPadding: CGFloat = 0,
         isFireOn: Bool = true,
         onFireToggle: (() -> Void)? = nil,
-        showResultCard: Bool = true,
         contentTopPadding: CGFloat = TopHeaderBar.height + AppSpacing.md,
-        useHTMLPrototypeLayout: Bool = false,
         fillsBackground: Bool = true
     ) {
         _displayState = displayState
         self.bottomPadding = bottomPadding
         self.isFireOn = isFireOn
         self.onFireToggle = onFireToggle
-        self.showResultCard = showResultCard
         self.contentTopPadding = contentTopPadding
-        self.useHTMLPrototypeLayout = useHTMLPrototypeLayout
         self.fillsBackground = fillsBackground
     }
 
@@ -158,43 +152,14 @@ private extension SimulatorView {
     var resultsContent: some View {
         GeometryReader { proxy in
             let compactLayout = proxy.size.height < 780
-            let isCompactPhone = proxy.size.height <= 812
             let chartHeight = compactLayout
                 ? max(148, min(198, proxy.size.height * 0.29))
                 : max(170, min(220, proxy.size.height * 0.31))
 
-            Group {
-                if useHTMLPrototypeLayout {
-                    htmlPrototypeResults(
-                        chartHeight: chartHeight,
-                        compactLayout: compactLayout,
-                        isCompactPhone: isCompactPhone
-                    )
-                } else {
-                    VStack(alignment: .leading, spacing: compactLayout ? AppSpacing.xs : AppSpacing.sm) {
-                        if let errorMessage {
-                            Text(errorMessage)
-                                .font(.footnoteRegular)
-                                .foregroundStyle(AppColors.warning)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(AppSpacing.md)
-                                .background(AppColors.warning.opacity(0.12))
-                                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-                                .padding(.horizontal, AppSpacing.screenPadding)
-                        }
-                        if showResultCard {
-                            resultCard
-                        }
-                        comparisonGraph(isCompactPhone: isCompactPhone)
-                            .frame(height: chartHeight)
-                        controlsSection(isCompactPhone: isCompactPhone)
-
-                        if !compactLayout {
-                            swipeUpHint
-                        }
-                    }
-                }
-            }
+            htmlPrototypeResults(
+                chartHeight: chartHeight,
+                compactLayout: compactLayout
+            )
             .padding(.top, contentTopPadding)
             .padding(.bottom, max(bottomPadding, compactLayout ? AppSpacing.xs : AppSpacing.sm))
         }
@@ -214,6 +179,29 @@ private extension SimulatorView {
             .presentationDragIndicator(.visible)
             .presentationBackground(AppColors.shellBg1)
         }
+        .sheet(item: $infoField) { field in
+            SimulatorInfoSheet(
+                title: field.title,
+                message: infoBody(for: field),
+                onDismiss: { infoField = nil }
+            )
+            .presentationDetents([.height(260)])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(AppColors.shellBg1)
+        }
+    }
+
+    private func infoBody(for field: SimulatorInfoField) -> String {
+        switch field {
+        case .inflation:
+            let real = max(0, controls.returnRate - 3.0)
+            return String(
+                format: "Inflation slowly erodes purchasing power. We assume 3%% per year and subtract it from your expected return so all numbers in this simulator are in today's dollars.\n\nWith your %.1f%% expected return, projections use a real return of %.1f%%.",
+                controls.returnRate, real
+            )
+        case .withdrawalRate:
+            return "The Safe Withdrawal Rule estimates how large your portfolio needs to be before retirement. The default 4% comes from the Trinity Study and is a common rule of thumb for portfolios meant to last 30+ years."
+        }
     }
 
     var swipeUpHint: some View {
@@ -221,7 +209,7 @@ private extension SimulatorView {
             Capsule()
                 .fill(AppColors.overlayWhiteOnGlass)
                 .frame(width: 44, height: 4)
-            Text(useHTMLPrototypeLayout ? "Tap the bottom-left circle to return" : "Swipe up to return")
+            Text("Tap the bottom-left circle to return")
                 .font(.caption)
                 .foregroundStyle(AppColors.overlayWhiteOnGlass)
         }
@@ -231,8 +219,7 @@ private extension SimulatorView {
 
     func htmlPrototypeResults(
         chartHeight: CGFloat,
-        compactLayout: Bool,
-        isCompactPhone: Bool
+        compactLayout: Bool
     ) -> some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: compactLayout ? AppSpacing.sm : AppSpacing.md) {
@@ -245,10 +232,6 @@ private extension SimulatorView {
                         .background(AppColors.warning.opacity(0.12))
                         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                         .padding(.horizontal, AppSpacing.screenPadding)
-                }
-
-                if showResultCard {
-                    resultCard
                 }
 
                 sandboxHeader
@@ -271,27 +254,98 @@ private extension SimulatorView {
 
     // MARK: - Sandbox header (kicker + outcome)
 
-    /// 静态 kicker + 动态 FIRE age outcome。统一字号，靠 uppercase + opacity + weight 拉层级。
+    /// Kicker + headline + two-column readout (PORTFOLIO | AGE).
+    /// Readout follows the dragged chart point (defaulting to the FIRE point so
+    /// the header always has a value).
     private var sandboxHeader: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-            Text("TEST YOUR FIRE PATH")
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text("PREDICT")
                 .font(.bodySmallSemibold)
                 .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
                 .tracking(AppTypography.Tracking.cardHeader)
 
             Text(sandboxOutcomeText)
-                .font(.bodySmallSemibold)
+                .font(.detailTitle)
                 .foregroundStyle(AppColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
                 .contentTransition(.numericText())
                 .animation(.easeOut(duration: 0.35), value: sandboxOutcomeText)
+
+            if let columns = headlineColumns {
+                headlineReadoutColumns(columns)
+                    .padding(.top, AppSpacing.xs)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var sandboxOutcomeText: String {
-        guard let age = preview?.previewFireAge else { return "FIRE age unavailable." }
-        return "You could reach FIRE at \(age)."
+        guard let age = preview?.previewFireAge else {
+            return "Your scenario doesn't reach financial independence before age \(lifecycleEndAge)."
+        }
+        return "You will reach financial independence at age \(age)"
     }
+
+    /// Default = FIRE point (or today's point if FIRE unreachable).
+    /// Updates live as the user drags on the chart.
+    private var headlinePortfolioPoint: SimulatorLifecyclePoint? {
+        if let selected = selectedLifecyclePoint { return selected }
+        let pts = lifecyclePoints
+        if let fireAge = preview?.previewFireAge,
+           let firePoint = pts.first(where: { $0.age == fireAge }) {
+            return firePoint
+        }
+        return pts.first
+    }
+
+    /// Two-column readout: PORTFOLIO ($amount) | AGE (X · phase).
+    private var headlineColumns: (portfolio: String, ageWithPhase: String)? {
+        guard let p = headlinePortfolioPoint else { return nil }
+        let amount = NumberFormatter.appCurrency(p.netWorth)
+        let ageWithPhase = "\(p.age) · \(phaseDisplayName(p.phase))"
+        return (amount, ageWithPhase)
+    }
+
+    private func headlineReadoutColumns(_ columns: (portfolio: String, ageWithPhase: String)) -> some View {
+        HStack(alignment: .top, spacing: AppSpacing.xxl) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("PORTFOLIO")
+                    .font(.miniLabel)
+                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                    .tracking(AppTypography.Tracking.cardHeader)
+                Text(columns.portfolio)
+                    .font(.bodyRegular)
+                    .foregroundStyle(AppColors.textPrimary)
+                    .contentTransition(.numericText())
+                    .animation(.easeOut(duration: 0.18), value: columns.portfolio)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("AGE")
+                    .font(.miniLabel)
+                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                    .tracking(AppTypography.Tracking.cardHeader)
+                Text(columns.ageWithPhase)
+                    .font(.bodyRegular)
+                    .foregroundStyle(AppColors.textPrimary)
+                    .contentTransition(.numericText())
+                    .animation(.easeOut(duration: 0.18), value: columns.ageWithPhase)
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func phaseDisplayName(_ phase: String) -> String {
+        switch phase {
+        case "fire_reached": return "FIRE reached"
+        case "withdrawing":  return "Withdrawing"
+        case "depleted":     return "Portfolio depleted"
+        default:             return "Accumulating"
+        }
+    }
+
 
     // MARK: - Lifecycle area chart (accumulation + decumulation to age 90)
 
@@ -304,7 +358,12 @@ private extension SimulatorView {
                 endAge: lifecycleEndAge,
                 revealAnimation: chartRevealAnimation,
                 selectedPoint: selectedLifecyclePoint,
-                onSelect: { selectedLifecyclePoint = $0 }
+                onSelect: { selectedLifecyclePoint = $0 },
+                onEndSelection: {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        selectedLifecyclePoint = nil
+                    }
+                }
             )
             .frame(height: chartHeight)
 
@@ -376,11 +435,14 @@ private extension SimulatorView {
         if let points = preview?.adjustedLifecyclePath, points.count > 1 {
             return points
         }
+        // Match server: controls.returnRate is NOMINAL, subtract inflation for the
+        // real-dollar lifecycle projection.
+        let realReturn = max(0, controls.returnRate - FIREAssumptions.inflationRate * 100)
         return SandboxLifecycle.compute(
             currentAge: controls.currentAge,
             startingNetWorth: controls.investableAssets,
             monthlySavings: controls.savingsMonthly,
-            annualReturnPercent: controls.returnRate,
+            annualReturnPercent: realReturn,
             retirementSpendingMonthly: controls.retirementSpending,
             fireNumber: preview?.previewFireNumber,
             fireAge: preview?.previewFireAge,
@@ -417,35 +479,39 @@ private extension SimulatorView {
             VStack(spacing: 0) {
                 htmlDetailRow(
                     label: "Current Age",
-                    value: "\(controls.currentAge)"
-                ) {
-                    editingField = .currentAge
-                    editInput = "\(controls.currentAge)"
-                }
+                    value: "\(controls.currentAge)",
+                    onTap: {
+                        editingField = .currentAge
+                        editInput = "\(controls.currentAge)"
+                    }
+                )
 
                 htmlDetailRow(
                     label: "Monthly Investment",
-                    value: NumberFormatter.appCurrency(controls.savingsMonthly)
-                ) {
-                    editingField = .monthlyInvestment
-                    editInput = String(Int(controls.savingsMonthly.rounded()))
-                }
+                    value: NumberFormatter.appCurrency(controls.savingsMonthly),
+                    onTap: {
+                        editingField = .monthlyInvestment
+                        editInput = String(Int(controls.savingsMonthly.rounded()))
+                    }
+                )
 
                 htmlDetailRow(
                     label: "Current Portfolio",
-                    value: NumberFormatter.appCurrency(controls.investableAssets)
-                ) {
-                    editingField = .investableAssets
-                    editInput = String(Int(controls.investableAssets.rounded()))
-                }
+                    value: NumberFormatter.appCurrency(controls.investableAssets),
+                    onTap: {
+                        editingField = .investableAssets
+                        editInput = String(Int(controls.investableAssets.rounded()))
+                    }
+                )
 
                 htmlDetailRow(
                     label: "Monthly Retirement Spending",
-                    value: NumberFormatter.appCurrency(controls.retirementSpending)
-                ) {
-                    editingField = .monthlyExpenses
-                    editInput = String(Int(controls.retirementSpending.rounded()))
-                }
+                    value: NumberFormatter.appCurrency(controls.retirementSpending),
+                    onTap: {
+                        editingField = .monthlyExpenses
+                        editInput = String(Int(controls.retirementSpending.rounded()))
+                    }
+                )
             }
 
             Button {
@@ -471,28 +537,28 @@ private extension SimulatorView {
                 VStack(spacing: 0) {
                     htmlDetailRow(
                         label: "Expected Return",
-                        value: String(format: "%.1f%%", controls.returnRate)
-                    ) {
-                        editingField = .expectedReturn
-                        editInput = String(format: "%.1f", controls.returnRate)
-                    }
+                        value: String(format: "%.1f%%", controls.returnRate),
+                        onTap: {
+                            editingField = .expectedReturn
+                            editInput = String(format: "%.1f", controls.returnRate)
+                        }
+                    )
 
-                    htmlDetailStaticRow(label: "Inflation", value: "3.0%")
+                    htmlDetailRow(
+                        label: "Inflation",
+                        value: "3.0%",
+                        info: .inflation
+                    )
 
                     htmlDetailRow(
                         label: "Safe Withdrawal Rule",
-                        value: String(format: "%.2f%%", controls.withdrawalRate)
-                    ) {
-                        editingField = .withdrawalRate
-                        editInput = String(format: "%.2f", controls.withdrawalRate)
-                    }
-
-                    Text("Safe Withdrawal Rule estimates how large your portfolio needs to be before retirement.")
-                        .font(.caption)
-                        .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
-                        .lineSpacing(2)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, AppSpacing.xs)
+                        value: String(format: "%.2f%%", controls.withdrawalRate),
+                        info: .withdrawalRate,
+                        onTap: {
+                            editingField = .withdrawalRate
+                            editInput = String(format: "%.2f", controls.withdrawalRate)
+                        }
+                    )
                 }
             }
         }
@@ -511,32 +577,39 @@ private extension SimulatorView {
         )
     }
 
+    /// One row in Retirement Detail / Advanced Details.
+    /// - `onTap`: nil → static row (no chevron, not tappable). Non-nil → editable row with chevron.
+    /// - `info`: when set, an ⓘ icon appears next to the label and opens an info sheet.
     private func htmlDetailRow(
         label: String,
         value: String,
-        onTap: @escaping () -> Void
+        info: SimulatorInfoField? = nil,
+        onTap: (() -> Void)? = nil
     ) -> some View {
-        Button(action: onTap) {
-            htmlDetailRowContent(label: label, value: value, showChevron: true)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func htmlDetailStaticRow(label: String, value: String) -> some View {
-        htmlDetailRowContent(label: label, value: value, showChevron: false)
-    }
-
-    private func htmlDetailRowContent(label: String, value: String, showChevron: Bool) -> some View {
         HStack {
             Text(label)
                 .font(.bodySmall)
                 .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+
+            if let info {
+                Button {
+                    infoField = info
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.footnoteRegular)
+                        .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(label) info")
+            }
+
             Spacer()
+
             HStack(spacing: AppSpacing.xs) {
                 Text(value)
                     .font(.bodySmallSemibold)
                     .foregroundStyle(AppColors.textPrimary)
-                if showChevron {
+                if onTap != nil {
                     Image(systemName: "chevron.down")
                         .font(.footnoteSemibold)
                         .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
@@ -544,464 +617,15 @@ private extension SimulatorView {
             }
         }
         .padding(.vertical, AppSpacing.sm)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onTap?()
+        }
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(AppColors.simDetailsBorder)
                 .frame(height: 1)
         }
-    }
-
-    var resultCard: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text(simulatorMode == .demo ? "SAMPLE RESULT" : "IF APPLIED")
-                .font(.miniLabel)
-                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
-
-            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
-                Text(preview?.previewFireDate ?? "—")
-                    .font(.largeTitle.weight(.bold))
-                    .foregroundStyle(AppColors.textPrimary)
-
-                Spacer()
-
-                deltaBadge
-            }
-
-            HStack(spacing: AppSpacing.sm) {
-                statPill(
-                    title: "Current path",
-                    value: preview?.officialFireDate ?? (simulatorMode == .demo ? "Sample" : "—")
-                )
-                statPill(
-                    title: "Adjusted path",
-                    value: preview?.previewFireDate ?? "—"
-                )
-            }
-
-            Text(resultSupportingCopy)
-                .font(.footnoteRegular)
-                .foregroundStyle(AppColors.textSecondary)
-                .lineSpacing(2)
-        }
-        .padding(AppSpacing.cardPadding)
-        .background(AppColors.surfaceElevated)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
-        )
-        .padding(.horizontal, AppSpacing.screenPadding)
-    }
-
-    @ViewBuilder
-    var deltaBadge: some View {
-        if let preview {
-            Text(deltaLabel(for: preview))
-                .font(.bodySmallSemibold)
-                .foregroundStyle(preview.deltaMonths < 0 ? AppColors.success : AppColors.warning)
-                .padding(.horizontal, AppSpacing.md)
-                .padding(.vertical, AppSpacing.sm)
-                .background(
-                    (preview.deltaMonths < 0 ? AppColors.success : AppColors.warning).opacity(0.12)
-                )
-                .clipShape(Capsule())
-        } else {
-            EmptyView()
-        }
-    }
-
-    func statPill(title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title.uppercased())
-                .font(.miniLabel)
-                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
-            Text(value)
-                .font(.bodySmallSemibold)
-                .foregroundStyle(AppColors.textPrimary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(AppSpacing.md)
-        .background(AppColors.overlayWhiteWash)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-    }
-
-    var resultSupportingCopy: String {
-        guard let preview else {
-            return "Use the controls below to compare your current path against a new scenario."
-        }
-
-        if preview.isDemoMode {
-            return "Demo mode uses sample data. It helps you feel the product without changing your official progress."
-        }
-
-        if preview.deltaMonths == 0 {
-            return "This scenario keeps your FIRE timing roughly unchanged. Try bigger savings or lower retirement spending."
-        }
-
-        if preview.deltaMonths < 0 {
-            return "This scenario reaches FIRE earlier than your current official plan, but it does not change the Hero until you explicitly apply it later."
-        }
-
-        return "This scenario pushes FIRE further out than your official plan. The Home Hero still stays official."
-    }
-
-    func deltaLabel(for preview: SimulatorPreviewModel) -> String {
-        if preview.deltaMonths == 0 {
-            return "No change"
-        }
-        let direction = preview.deltaMonths < 0 ? "earlier" : "later"
-        return "\(abs(preview.deltaMonths)) mo \(direction)"
-    }
-
-    func comparisonGraph(isCompactPhone: Bool) -> some View {
-        let officialSeries = displayOfficialPath
-        let adjustedSeries = displayAdjustedPath
-
-        return VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack {
-                Text(showsOfficialSeries ? "PLAN VS ADJUSTED" : "LIVE ADJUSTED PATH")
-                    .font(.miniLabel)
-                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
-                Spacer()
-                legend
-            }
-
-            PreviewPathChart(
-                officialPath: officialSeries,
-                adjustedPath: adjustedSeries,
-                currentProgressLabel: currentProgressLabel
-            )
-            .frame(maxHeight: .infinity)
-        }
-        .padding(panelPadding(isCompactPhone: isCompactPhone))
-        .background(
-            LinearGradient(
-                colors: [
-                    AppColors.glassBorder,
-                    Color(hex: "#A7F3D0").opacity(0.06),
-                    Color(hex: "#93C5FD").opacity(0.05)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(AppColors.heroTrack, lineWidth: 1)
-        )
-        .shadow(color: AppColors.overlayWhiteWash, radius: 8, y: -1)
-        .padding(.horizontal, AppSpacing.screenPadding)
-    }
-
-    var legend: some View {
-        HStack(spacing: AppSpacing.md) {
-            if showsOfficialSeries {
-                LegendItemView(color: AppColors.surfaceBorder, label: "Plan baseline", style: .dash)
-            }
-            LegendItemView(color: AppColors.accentBlueBright, label: "Adjusted", style: .dash)
-        }
-    }
-
-    var displayOfficialPath: [SimulatorDataPoint] {
-        guard showsOfficialSeries else { return [] }
-        if let official = preview?.officialPath, official.count > 1 {
-            return official
-        }
-        return fallbackTrendPath(
-            seedNetWorth: controls.investableAssets,
-            monthlyInvestment: controls.savingsMonthly * 0.9,
-            annualReturnPercent: controls.returnRate * 0.92
-        )
-    }
-
-    var displayAdjustedPath: [SimulatorDataPoint] {
-        if let adjusted = preview?.adjustedPath, adjusted.count > 1 {
-            return adjusted
-        }
-        return fallbackTrendPath(
-            seedNetWorth: controls.investableAssets,
-            monthlyInvestment: controls.savingsMonthly,
-            annualReturnPercent: controls.returnRate
-        )
-    }
-
-    func fallbackTrendPath(
-        seedNetWorth: Double,
-        monthlyInvestment: Double,
-        annualReturnPercent: Double
-    ) -> [SimulatorDataPoint] {
-        let startYear = max(2026, Calendar.current.component(.year, from: .now))
-        let safeSeed = max(seedNetWorth, 1_000)
-        let safeMonthly = max(monthlyInvestment, 0)
-        let annualRate = max(0.01, annualReturnPercent / 100)
-        let monthlyRate = annualRate / 12
-
-        var points: [SimulatorDataPoint] = []
-        var running = safeSeed
-
-        for offset in 0...8 {
-            if offset > 0 {
-                for _ in 0..<12 {
-                    running += safeMonthly
-                    running *= (1 + monthlyRate)
-                }
-            }
-            points.append(
-                SimulatorDataPoint(
-                    year: startYear + offset,
-                    netWorth: running
-                )
-            )
-        }
-
-        return points
-    }
-
-    var showsOfficialSeries: Bool {
-        simulatorMode == .officialPreview
-    }
-
-    var currentProgressLabel: String {
-        guard let targetAge = preview?.previewFireAge, targetAge > controls.currentAge else {
-            return "Age \(controls.currentAge)"
-        }
-        let ratio = Double(controls.currentAge) / Double(targetAge)
-        let percent = min(99, max(1, Int((ratio * 100).rounded())))
-        return "Age \(controls.currentAge) · \(percent)%"
-    }
-
-    func controlsSection(isCompactPhone: Bool) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack(spacing: AppSpacing.xs) {
-                Image(systemName: "slider.horizontal.3")
-                    .font(.caption)
-                    .foregroundStyle(AppColors.successAlt)
-                Text("SCENARIO CONTROLS")
-                    .font(.miniLabel)
-                    .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
-            }
-
-            LazyVGrid(columns: gridColumns(isCompactPhone: isCompactPhone), spacing: gridCellGap(isCompactPhone: isCompactPhone)) {
-                compactControlCell(
-                    isCompactPhone: isCompactPhone,
-                    title: "Monthly Investment",
-                    valueText: NumberFormatter.appCurrency(controls.savingsMonthly),
-                    range: 0...20_000,
-                    step: 250,
-                    currentValue: controls.savingsMonthly,
-                    onChange: { controls.savingsMonthly = $0 },
-                    onEdit: {
-                        editingField = .monthlyInvestment
-                        editInput = String(Int(controls.savingsMonthly.rounded()))
-                    }
-                )
-
-                compactControlCell(
-                    isCompactPhone: isCompactPhone,
-                    title: "Current Portfolio",
-                    valueText: NumberFormatter.appCurrency(controls.investableAssets),
-                    range: 0...2_500_000,
-                    step: 5_000,
-                    currentValue: controls.investableAssets,
-                    onChange: { controls.investableAssets = $0 },
-                    onEdit: {
-                        editingField = .investableAssets
-                        editInput = String(Int(controls.investableAssets.rounded()))
-                    }
-                )
-
-                compactControlCell(
-                    isCompactPhone: isCompactPhone,
-                    title: "Expected Return",
-                    valueText: String(format: "%.1f%%", controls.returnRate),
-                    range: 1...12,
-                    step: 0.5,
-                    currentValue: controls.returnRate,
-                    onChange: { controls.returnRate = $0 },
-                    onEdit: {
-                        editingField = .expectedReturn
-                        editInput = String(format: "%.1f", controls.returnRate)
-                    }
-                )
-
-                compactControlCell(
-                    isCompactPhone: isCompactPhone,
-                    title: "Monthly Retirement Spending",
-                    valueText: NumberFormatter.appCurrency(controls.retirementSpending),
-                    range: 1_500...25_000,
-                    step: 250,
-                    currentValue: controls.retirementSpending,
-                    onChange: { controls.retirementSpending = $0 },
-                    onEdit: {
-                        editingField = .monthlyExpenses
-                        editInput = String(Int(controls.retirementSpending.rounded()))
-                    }
-                )
-
-                compactControlCell(
-                    isCompactPhone: isCompactPhone,
-                    title: "Safe Withdrawal Rule",
-                    valueText: String(format: "%.2f%%", controls.withdrawalRate),
-                    range: 2.5...6,
-                    step: 0.25,
-                    currentValue: controls.withdrawalRate,
-                    onChange: { controls.withdrawalRate = $0 },
-                    onEdit: {
-                        editingField = .withdrawalRate
-                        editInput = String(format: "%.2f", controls.withdrawalRate)
-                    }
-                )
-
-                compactControlCell(
-                    isCompactPhone: isCompactPhone,
-                    title: "Current Age",
-                    valueText: "\(controls.currentAge)",
-                    range: 18...70,
-                    step: 1,
-                    currentValue: Double(controls.currentAge),
-                    onChange: { controls.currentAge = Int($0.rounded()) },
-                    onEdit: {
-                        editingField = .currentAge
-                        editInput = "\(controls.currentAge)"
-                    }
-                )
-            }
-        }
-        .padding(panelPadding(isCompactPhone: isCompactPhone))
-        .background(
-            LinearGradient(
-                colors: [
-                    AppColors.glassBorder,
-                    Color(hex: "#D1FAE5").opacity(0.06),
-                    Color(hex: "#BFDBFE").opacity(0.04)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card)
-                .stroke(AppColors.glassPillStroke, lineWidth: 1)
-        )
-        .shadow(color: AppColors.overlayWhiteWash, radius: 8, y: -1)
-        .padding(.horizontal, AppSpacing.screenPadding)
-    }
-}
-
-private extension SimulatorView {
-    func panelPadding(isCompactPhone: Bool) -> CGFloat {
-        isCompactPhone ? AppSpacing.sm : AppSpacing.md
-    }
-
-    func gridCellGap(isCompactPhone: Bool) -> CGFloat {
-        isCompactPhone ? 6 : AppSpacing.xs
-    }
-
-    func controlButtonSize(isCompactPhone: Bool) -> CGFloat {
-        isCompactPhone ? 40 : 44
-    }
-
-    func controlCellPadding(isCompactPhone: Bool) -> CGFloat {
-        isCompactPhone ? 6 : 8
-    }
-
-    func controlRowGap(isCompactPhone: Bool) -> CGFloat {
-        isCompactPhone ? 4 : 6
-    }
-
-    func gridColumns(isCompactPhone: Bool) -> [GridItem] {
-        let gap = gridCellGap(isCompactPhone: isCompactPhone)
-        return [
-            GridItem(.flexible(), spacing: gap),
-            GridItem(.flexible(), spacing: gap)
-        ]
-    }
-
-    @ViewBuilder
-    func compactControlCell(
-        isCompactPhone: Bool,
-        title: String,
-        valueText: String,
-        range: ClosedRange<Double>,
-        step: Double,
-        currentValue: Double,
-        onChange: @escaping (Double) -> Void,
-        onEdit: @escaping () -> Void
-    ) -> some View {
-        VStack(alignment: .leading, spacing: controlRowGap(isCompactPhone: isCompactPhone)) {
-            Text(title.uppercased())
-                .font(.miniLabel)
-                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
-                .padding(.leading, 2)
-
-            HStack(spacing: 6) {
-                Button {
-                    let next = max(range.lowerBound, currentValue - step)
-                    onChange(next)
-                } label: {
-                    Image(systemName: "minus")
-                        .font(.footnoteSemibold)
-                        .frame(width: controlButtonSize(isCompactPhone: isCompactPhone), height: controlButtonSize(isCompactPhone: isCompactPhone))
-                        .background(AppColors.cardTopHighlight)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: AppRadius.sm)
-                                .stroke(AppColors.overlayWhiteHigh, lineWidth: 1)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm))
-                }
-                .buttonStyle(.plain)
-
-                Button(action: onEdit) {
-                    Text(valueText)
-                        .font(.footnoteSemibold)
-                        .foregroundStyle(AppColors.textPrimary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.72)
-                        .frame(maxWidth: .infinity, minHeight: controlButtonSize(isCompactPhone: isCompactPhone))
-                        .background(AppColors.overlayWhiteStroke)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: AppRadius.sm)
-                                .stroke(AppColors.overlayWhiteHigh, lineWidth: 1)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm))
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    let next = min(range.upperBound, currentValue + step)
-                    onChange(next)
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.footnoteSemibold)
-                        .frame(width: controlButtonSize(isCompactPhone: isCompactPhone), height: controlButtonSize(isCompactPhone: isCompactPhone))
-                        .foregroundStyle(AppColors.successAlt)
-                        .background(AppColors.cardTopHighlight)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: AppRadius.sm)
-                                .stroke(AppColors.successAlt.opacity(0.35), lineWidth: 1)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm))
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(controlCellPadding(isCompactPhone: isCompactPhone))
-        .background(
-            LinearGradient(
-                colors: [AppColors.overlayWhiteStroke, AppColors.overlayWhiteWash],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(AppColors.simDetailsBorder, lineWidth: 1)
-        )
     }
 
     @MainActor
@@ -1075,7 +699,7 @@ private extension SimulatorView {
             savingsMonthly: effective?.savingsMonthly ?? 1_800,
             retirementSpending: effective?.retirementSpending ?? 5_000,
             investableAssets: effective?.netWorth ?? 310_000,
-            returnRate: (effective?.returnRate ?? FIREAssumptions.realAnnualReturn) * 100,
+            returnRate: (effective?.returnRate ?? FIREAssumptions.nominalAnnualReturn) * 100,
             withdrawalRate: (effective?.withdrawalRate ?? FIREAssumptions.withdrawalRate) * 100,
             currentAge: effective?.currentAge ?? 33
         )
@@ -1123,9 +747,23 @@ private struct SimulatorControlState: Equatable {
     var savingsMonthly: Double = 1_800
     var retirementSpending: Double = 5_000
     var investableAssets: Double = 310_000
-    var returnRate: Double = 4.0
+    var returnRate: Double = 7.0           // nominal; real return = 7 − 3 inflation = 4
     var withdrawalRate: Double = 4.0
     var currentAge: Int = 33
+}
+
+private enum SimulatorInfoField: String, Identifiable {
+    case inflation
+    case withdrawalRate
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .inflation:      return "Inflation"
+        case .withdrawalRate: return "Safe Withdrawal Rule"
+        }
+    }
 }
 
 private enum SimulatorEditableField: Identifiable {
@@ -1273,6 +911,7 @@ private struct SandboxLifecycleChart: View {
     let revealAnimation: Bool
     let selectedPoint: SimulatorLifecyclePoint?
     let onSelect: (SimulatorLifecyclePoint) -> Void
+    let onEndSelection: () -> Void
 
     var body: some View {
         GeometryReader { geo in
@@ -1321,8 +960,9 @@ private struct SandboxLifecycleChart: View {
                 )
                 .shadow(color: Color(hex: "#60A5FA").opacity(0.40), radius: 6, y: 4)
 
-                // FIRE marker (vertical dashed line + glass dot)
-                if let fireMarker = layout.fireMarker {
+                // FIRE marker (vertical dashed line + glass dot).
+                // Hidden while user is dragging — only the drag dot shows then.
+                if let fireMarker = layout.fireMarker, selectedPoint == nil {
                     Path { path in
                         path.move(to: CGPoint(x: fireMarker.x, y: 0))
                         path.addLine(to: CGPoint(x: fireMarker.x, y: geo.size.height))
@@ -1343,26 +983,13 @@ private struct SandboxLifecycleChart: View {
                         .position(x: fireMarker.x, y: fireMarker.y)
                 }
 
-                if let selectedMarker = layout.selectedMarker,
-                   let selectedPoint {
-                    Path { path in
-                        path.move(to: CGPoint(x: selectedMarker.x, y: 0))
-                        path.addLine(to: CGPoint(x: selectedMarker.x, y: geo.size.height))
-                    }
-                    .stroke(Color.white.opacity(0.34), style: StrokeStyle(lineWidth: 1, dash: [2, 4]))
-
+                if let selectedMarker = layout.selectedMarker {
                     Circle()
                         .fill(Color.white)
                         .frame(width: 11, height: 11)
                         .overlay(Circle().stroke(AppColors.accentBlueBright, lineWidth: 2))
                         .shadow(color: AppColors.accentBlueBright.opacity(0.55), radius: 7)
                         .position(selectedMarker)
-
-                    lifecycleTooltip(for: selectedPoint)
-                        .position(
-                            x: min(max(selectedMarker.x, 86), max(86, geo.size.width - 86)),
-                            y: max(30, selectedMarker.y - 34)
-                        )
                 }
             }
             .scaleEffect(x: 1, y: revealAnimation ? 1 : 0.02, anchor: .bottom)
@@ -1372,6 +999,9 @@ private struct SandboxLifecycleChart: View {
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
                         selectNearestPoint(to: value.location.x, in: layout)
+                    }
+                    .onEnded { _ in
+                        onEndSelection()
                     }
             )
         }
@@ -1435,138 +1065,7 @@ private struct SandboxLifecycleChart: View {
         onSelect(points[index])
     }
 
-    private func lifecycleTooltip(for point: SimulatorLifecyclePoint) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("Age \(point.age)")
-                .font(.miniLabel)
-                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
-            Text(NumberFormatter.appCurrency(point.netWorth))
-                .font(.footnoteSemibold)
-                .foregroundStyle(AppColors.textPrimary)
-            Text(phaseLabel(point.phase))
-                .font(.caption)
-                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .frame(width: 172, alignment: .leading)
-        .background(AppColors.surfaceElevated.opacity(0.94))
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.2), radius: 10, y: 5)
-    }
-
-    private func phaseLabel(_ phase: String) -> String {
-        switch phase {
-        case "fire_reached":
-            return "FIRE reached"
-        case "withdrawing":
-            return "Withdrawing"
-        case "depleted":
-            return "Portfolio depleted"
-        default:
-            return "Accumulating"
-        }
-    }
 }
-
-private struct PreviewPathChart: View {
-    let officialPath: [SimulatorDataPoint]
-    let adjustedPath: [SimulatorDataPoint]
-    let currentProgressLabel: String
-
-    var body: some View {
-        GeometryReader { proxy in
-            let points = combinedPoints(in: proxy.size)
-
-            ZStack(alignment: .bottomLeading) {
-                Color.clear
-
-                VStack(spacing: 0) {
-                    ForEach(0..<4, id: \.self) { _ in
-                        Rectangle()
-                            .fill(AppColors.overlayWhiteStroke)
-                            .frame(height: 1)
-                        Spacer()
-                    }
-                }
-                .padding(.vertical, AppSpacing.md)
-                .padding(.horizontal, AppSpacing.sm)
-
-                if points.adjusted.count > 1 {
-                    path(points.adjusted)
-                        .stroke(
-                            LinearGradient(
-                                colors: [AppColors.accentBlueBright, AppColors.warning],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            ),
-                            style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round)
-                        )
-                }
-
-                if let currentPoint = points.adjusted.first {
-                    Circle()
-                        .fill(AppColors.accentBlueBright)
-                        .frame(width: 8, height: 8)
-                        .position(currentPoint)
-
-                    Text(currentProgressLabel)
-                        .font(.label)
-                        .foregroundStyle(AppColors.textSecondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 4)
-                        .background(AppColors.surface.opacity(0.9))
-                        .clipShape(Capsule())
-                        .position(x: min(proxy.size.width - 52, currentPoint.x + 52), y: max(12, currentPoint.y - 14))
-                }
-
-                if points.official.count > 1 {
-                    path(points.official)
-                        .stroke(
-                            AppColors.surfaceBorder,
-                            style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round, dash: [7, 6])
-                        )
-                }
-            }
-        }
-    }
-
-    private func combinedPoints(in size: CGSize) -> (official: [CGPoint], adjusted: [CGPoint]) {
-        let combined = (officialPath + adjustedPath).map(\.netWorth)
-        let maxValue = max(combined.max() ?? 1, 1)
-        let minValue = min(combined.min() ?? 0, 0)
-        let range = max(maxValue - minValue, 1)
-
-        func normalize(_ series: [SimulatorDataPoint]) -> [CGPoint] {
-            guard series.count > 1 else { return [] }
-            let width = size.width
-            let height = size.height
-            return series.enumerated().map { index, point in
-                let x = CGFloat(index) / CGFloat(series.count - 1) * width
-                let normalized = (point.netWorth - minValue) / range
-                let y = height - CGFloat(normalized) * (height - 12) - 6
-                return CGPoint(x: x, y: y)
-            }
-        }
-
-        return (normalize(officialPath), normalize(adjustedPath))
-    }
-
-    private func path(_ points: [CGPoint]) -> Path {
-        Path { path in
-            guard let first = points.first else { return }
-            path.move(to: first)
-            for point in points.dropFirst() {
-                path.addLine(to: point)
-            }
-        }
-    }
-}
-
 
 // MARK: - Edit Value Sheet (light-shell modal, replaces system .alert)
 
@@ -1647,6 +1146,50 @@ private struct SimulatorEditValueSheet: View {
                 isFocused = true
             }
         }
+    }
+}
+
+// MARK: - Info Sheet (light-shell modal for ⓘ icon explanations)
+
+private struct SimulatorInfoSheet: View {
+    let title: String
+    let message: String
+    let onDismiss: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text(title)
+                .font(.h4)
+                .foregroundStyle(AppColors.inkPrimary)
+
+            Text(message)
+                .font(.bodySmall)
+                .foregroundStyle(AppColors.inkSoft)
+                .lineSpacing(3)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Spacer(minLength: 0)
+
+            Button(action: onDismiss) {
+                Text("Got it")
+                    .font(.sheetPrimaryButton)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(
+                        LinearGradient(
+                            colors: AppColors.gradientShellAccent,
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.button))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.top, AppSpacing.xl)
+        .padding(.bottom, AppSpacing.lg)
     }
 }
 

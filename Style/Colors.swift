@@ -24,12 +24,18 @@ struct AppColors {
     static let gradientEnd      = Color(hex: "#FCD34D")
 
     // MARK: - Origin Palette (unified data-viz & semantic palette on light shell)
-    /// Positive / Stocks / Assets / up trend — Origin Emerald
+    /// Stocks / Positive / Assets / up trend — Origin Emerald
     static let allocEmerald     = Color(hex: "#10B981")
-    /// Warning / Crypto / Bonds / Credit — Origin Amber
-    static let allocAmber       = Color(hex: "#F59E0B")
-    /// Info / Cash / primary accent — Origin Indigo
+    /// ETFs & Mutual Funds — Pink (visually distinct from emerald)
+    static let allocPink        = Color(hex: "#EC4899")
+    /// Bonds / Fixed Income — Origin Purple (calm, fixed-income vibe)
+    static let allocPurple      = Color(hex: "#A78BFA")
+    /// Cash / Info / primary accent — Origin Indigo
     static let allocIndigo      = Color(hex: "#3B82F6")
+    /// Crypto — Origin Amber
+    static let allocAmber       = Color(hex: "#F59E0B")
+    /// Other / miscellaneous — neutral Slate (conveys "uncategorized")
+    static let allocSlate       = Color(hex: "#94A3B8")
     /// Negative / Loans / down trend / error — Origin Coral (softer than punchy red)
     static let allocCoral       = Color(hex: "#F97066")
 

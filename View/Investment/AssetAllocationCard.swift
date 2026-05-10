@@ -13,7 +13,14 @@ struct AssetAllocationCard: View {
     @State private var showDetail = false
 
     private var totalAmount: Double {
-        allocation.stocks.amount + allocation.bonds.amount + allocation.cash.amount + (allocation.other?.amount ?? 0)
+        [
+            allocation.stocks.amount,
+            allocation.funds.amount,
+            allocation.bonds.amount,
+            allocation.cash.amount,
+            allocation.crypto.amount,
+            allocation.other.amount
+        ].reduce(0, +)
     }
 
     private struct AllocRow {
@@ -23,14 +30,27 @@ struct AssetAllocationCard: View {
         let color: Color
     }
 
+    /// Only includes asset classes the user actually holds. A row with $0 / 0%
+    /// is misleading (looks like an unloaded slot), so we omit it entirely.
     private var sortedRows: [AllocRow] {
-        var rows = [
-            AllocRow(title: "U.S. Stocks", percent: allocation.stocks.percent, amount: allocation.stocks.amount, color: AppColors.allocEmerald),
-            AllocRow(title: "Crypto", percent: allocation.bonds.percent, amount: allocation.bonds.amount, color: AppColors.allocAmber),
-            AllocRow(title: "Cash", percent: allocation.cash.percent, amount: allocation.cash.amount, color: AppColors.allocIndigo)
-        ]
-        if let other = allocation.other, other.percent > 0 {
-            rows.append(AllocRow(title: "Other", percent: other.percent, amount: other.amount, color: AppColors.allocCoral))
+        var rows: [AllocRow] = []
+        if allocation.stocks.amount > 0.005 {
+            rows.append(AllocRow(title: "Stocks", percent: allocation.stocks.percent, amount: allocation.stocks.amount, color: AppColors.allocEmerald))
+        }
+        if allocation.funds.amount > 0.005 {
+            rows.append(AllocRow(title: "ETFs & Funds", percent: allocation.funds.percent, amount: allocation.funds.amount, color: AppColors.allocPink))
+        }
+        if allocation.bonds.amount > 0.005 {
+            rows.append(AllocRow(title: "Bonds", percent: allocation.bonds.percent, amount: allocation.bonds.amount, color: AppColors.allocPurple))
+        }
+        if allocation.cash.amount > 0.005 {
+            rows.append(AllocRow(title: "Cash", percent: allocation.cash.percent, amount: allocation.cash.amount, color: AppColors.allocIndigo))
+        }
+        if allocation.crypto.amount > 0.005 {
+            rows.append(AllocRow(title: "Crypto", percent: allocation.crypto.percent, amount: allocation.crypto.amount, color: AppColors.allocAmber))
+        }
+        if allocation.other.amount > 0.005 {
+            rows.append(AllocRow(title: "Other", percent: allocation.other.percent, amount: allocation.other.amount, color: AppColors.allocSlate))
         }
         return rows.sorted { $0.percent > $1.percent }
     }
@@ -67,10 +87,10 @@ struct AssetAllocationCard: View {
 
             if isConnected {
                 // Chart + breakdown
-                HStack(spacing: 20) {
+                HStack(spacing: AppSpacing.md) {
                     ZStack {
                         DonutChart(segments: allocationSegments)
-                            .frame(width: 110, height: 110)
+                            .frame(width: 140, height: 140)
 
                         VStack(spacing: 1) {
                             Text("TOTAL")
@@ -78,7 +98,7 @@ struct AssetAllocationCard: View {
                                 .foregroundColor(AppColors.inkMeta)
                                 .tracking(AppTypography.Tracking.miniUppercase)
                             Text(formatCompact(totalAmount))
-                                .font(.inlineFigureBold)
+                                .font(.bodySemibold)
                                 .foregroundStyle(AppColors.inkPrimary)
                         }
                     }
@@ -124,12 +144,12 @@ struct AssetAllocationCard: View {
     }
 
     private var disconnectedContent: some View {
-        HStack(spacing: 20) {
+        HStack(spacing: AppSpacing.md) {
             // Ghost donut
             ZStack {
                 Circle()
                     .stroke(Color.white.opacity(0.3), lineWidth: 14)
-                    .frame(width: 110, height: 110)
+                    .frame(width: 140, height: 140)
 
                 VStack(spacing: 1) {
                     Text("TOTAL")
@@ -137,14 +157,14 @@ struct AssetAllocationCard: View {
                         .foregroundColor(AppColors.inkMeta)
                         .tracking(AppTypography.Tracking.miniUppercase)
                     Text("$—")
-                        .font(.inlineFigureBold)
+                        .font(.bodySemibold)
                         .foregroundStyle(AppColors.inkSoft)
                 }
             }
 
             // Ghost rows (locked placeholder)
             VStack(alignment: .leading, spacing: 12) {
-                ForEach(["U.S. Stocks", "Crypto", "Cash"], id: \.self) { label in
+                ForEach(["Stocks", "ETFs & Funds", "Cash"], id: \.self) { label in
                     HStack(spacing: 8) {
                         Image(systemName: "lock.fill")
                             .font(.caption)
@@ -170,12 +190,11 @@ struct AssetAllocationCard: View {
         .padding(.vertical, AppSpacing.cardPadding)
     }
 
+    /// Same compact formatter as `AssetAllocationDetailView`, so the L1 card
+    /// and the L2 detail show the same headline amount (e.g. `$70.50K`).
     private func formatCompact(_ value: Double) -> String {
-        if value >= 1_000_000 {
-            return String(format: "$%.1fM", value / 1_000_000)
-        } else if value >= 1_000 {
-            return String(format: "$%.0fk", value / 1_000)
-        }
+        if value >= 1_000_000 { return String(format: "$%.2fM", value / 1_000_000) }
+        if value >= 1_000     { return String(format: "$%.2fK", value / 1_000) }
         return "$\(Int(value))"
     }
 }
@@ -210,37 +229,74 @@ private struct AllocationRow: View {
     }
 }
 
+/// Donut with visible gaps and rounded caps between segments,
+/// matching the style used by the Cashflow Budget ring.
 private struct DonutChart: View {
     let segments: [ChartSegment]
-    var body: some View {
-        ZStack {
-            Circle()
-                .stroke(Color.white.opacity(0.3), lineWidth: 14)
+    var lineWidth: CGFloat = 14
 
-            ForEach(segments.indices, id: \.self) { i in
-                if segments[i].percent > 0 {
-                    DonutSegmentShape(startAngle: startAngle(for: i), endAngle: endAngle(for: i))
-                        .stroke(segments[i].color, lineWidth: 14)
+    var body: some View {
+        GeometryReader { geo in
+            let diameter = min(geo.size.width, geo.size.height)
+            ZStack {
+                ForEach(positionedSegments(diameter: diameter)) { seg in
+                    DonutArcShape(
+                        startDegrees: seg.start,
+                        endDegrees: seg.end,
+                        lineWidth: lineWidth
+                    )
+                    .stroke(seg.color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 }
             }
         }
     }
-    private func startAngle(for i: Int) -> Angle {
-        .degrees(Double(segments.prefix(i).map(\.percent).reduce(0, +)) / 100 * 360 - 90)
+
+    private struct PositionedSegment: Identifiable {
+        let id = UUID()
+        let start: Double
+        let end: Double
+        let color: Color
     }
-    private func endAngle(for i: Int) -> Angle {
-        .degrees(Double(segments.prefix(i + 1).map(\.percent).reduce(0, +)) / 100 * 360 - 90)
+
+    private func positionedSegments(diameter: CGFloat) -> [PositionedSegment] {
+        let visible = segments.filter { $0.percent > 0 }
+        guard !visible.isEmpty else { return [] }
+        let total = visible.map(\.percent).reduce(0, +)
+        guard total > 0 else { return [] }
+
+        let radius = max((diameter - lineWidth) / 2, 1)
+        let capExtension = Double((lineWidth / 2) / radius) * 180 / .pi
+        let visibleGap = 3.5
+        let gap = visible.count > 1 ? visibleGap + capExtension * 2 : 0
+        let available = max(360.0 - gap * Double(visible.count), 0)
+
+        var cursor = -90.0
+        return visible.compactMap { seg in
+            let sweep = Double(seg.percent) / Double(total) * available
+            guard sweep > 0.5 else { return nil }
+            let start = cursor
+            let end = cursor + sweep
+            cursor = end + gap
+            return PositionedSegment(start: start, end: end, color: seg.color)
+        }
     }
 }
 
-private struct DonutSegmentShape: Shape {
-    let startAngle: Angle
-    let endAngle: Angle
+private struct DonutArcShape: Shape {
+    let startDegrees: Double
+    let endDegrees: Double
+    let lineWidth: CGFloat
+
     func path(in rect: CGRect) -> Path {
+        let radius = max((min(rect.width, rect.height) - lineWidth) / 2, 0)
         var p = Path()
-        p.addArc(center: CGPoint(x: rect.midX, y: rect.midY),
-                 radius: min(rect.width, rect.height) / 2,
-                 startAngle: startAngle, endAngle: endAngle, clockwise: false)
+        p.addArc(
+            center: CGPoint(x: rect.midX, y: rect.midY),
+            radius: radius,
+            startAngle: .degrees(startDegrees),
+            endAngle: .degrees(endDegrees),
+            clockwise: false
+        )
         return p
     }
 }

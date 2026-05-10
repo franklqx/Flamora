@@ -11,9 +11,11 @@ enum InvestmentAllocationBuilder {
     /// 无持仓或加载失败时用于已连接状态，避免再显示 Mock 假数据。
     static let zeroAllocation = Allocation(
         stocks: AssetClass(percent: 0, amount: 0),
-        bonds: AssetClass(percent: 0, amount: 0),
-        cash: AssetClass(percent: 0, amount: 0),
-        other: AssetClass(percent: 0, amount: 0)
+        funds:  AssetClass(percent: 0, amount: 0),
+        bonds:  AssetClass(percent: 0, amount: 0),
+        cash:   AssetClass(percent: 0, amount: 0),
+        crypto: AssetClass(percent: 0, amount: 0),
+        other:  AssetClass(percent: 0, amount: 0)
     )
 
     static func allocation(from payload: APIInvestmentHoldingsPayload) -> Allocation {
@@ -23,14 +25,18 @@ enum InvestmentAllocationBuilder {
 
         // 从 type_breakdown 累加各类持仓市值
         var stocks = 0.0
+        var funds  = 0.0
+        var bonds  = 0.0
+        var cash   = 0.0
         var crypto = 0.0
-        var cash = 0.0
-        var other = 0.0
+        var other  = 0.0
         for row in payload.typeBreakdown {
             switch bucket(for: row.type) {
             case .stocks: stocks += row.value
-            case .crypto: crypto += row.value
+            case .funds:  funds  += row.value
+            case .bonds:  bonds  += row.value
             case .cash:   cash   += row.value
+            case .crypto: crypto += row.value
             case .other:  other  += row.value
             }
         }
@@ -42,40 +48,56 @@ enum InvestmentAllocationBuilder {
         }
         return Allocation(
             stocks: AssetClass(percent: pct(stocks), amount: stocks),
-            bonds: AssetClass(percent: pct(crypto), amount: crypto),
-            cash: AssetClass(percent: pct(cash), amount: cash),
-            other: AssetClass(percent: pct(other), amount: other)
+            funds:  AssetClass(percent: pct(funds),  amount: funds),
+            bonds:  AssetClass(percent: pct(bonds),  amount: bonds),
+            cash:   AssetClass(percent: pct(cash),   amount: cash),
+            crypto: AssetClass(percent: pct(crypto), amount: crypto),
+            other:  AssetClass(percent: pct(other),  amount: other)
         )
     }
 
-    private enum Bucket { case stocks, crypto, cash, other }
+    private enum Bucket { case stocks, funds, bonds, cash, crypto, other }
 
-    /// 将 Plaid securities.type 映射到「股票 / Crypto / 现金 / 其他」四块（与 AssetAllocationCard 文案一致）。
+    /// Plaid `security.type` → bucket. Plaid's canonical types: `cash`, `cryptocurrency`,
+    /// `derivative`, `equity`, `etf`, `fixed income`, `loan`, `mutual fund`, `other`.
+    /// We split funds and bonds into their own buckets instead of force-fitting them
+    /// into stocks / other.
     private static func bucket(for apiType: String) -> Bucket {
         let t = apiType.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        // Crypto
+
+        // Canonical Plaid strings (exact match, fastest path)
+        switch t {
+        case "cryptocurrency":          return .crypto
+        case "cash":                    return .cash
+        case "equity":                  return .stocks
+        case "etf", "mutual fund":      return .funds
+        case "fixed income":            return .bonds
+        case "derivative", "loan",
+             "other", "":               return .other
+        default:                        break
+        }
+
+        // Defensive substring match for non-canonical / legacy strings
         if t.contains("crypto") || t == "digital asset" { return .crypto }
-        // Cash / 货币市场
-        if t == "cash" || t == "cash equivalent" || t.contains("money market") || t.contains("currency") { return .cash }
-        // 股票类
-        if t == "equity" || t == "etf" || t == "mutual fund" || t == "derivative"
-            || t == "fund" || t == "common stock" || t == "stock" || t == "reit" { return .stocks }
-        // 债券 / 固收 — 单独归入 other（UI 当前四档为 Stocks/Crypto/Cash/Other，无 Bonds 档）
-        if t.contains("bond") || t.contains("fixed income") || t.contains("treasury")
-            || t.contains("note") || t == "loan" { return .other }
+        if t == "cash equivalent" || t.contains("money market") || t.contains("currency") { return .cash }
+        if t.contains("bond") || t.contains("fixed") || t.contains("treasury") || t.contains("note") { return .bonds }
+        if t.contains("etf") || t.contains("fund") { return .funds }
+        if t.contains("equity") || t.contains("stock") || t == "reit" { return .stocks }
         return .other
     }
 
-    /// 与 `AssetAllocationDetailView` 中 `AllocDetailItem.id`（stocks / crypto / cash / other）对齐。
+    /// 与 `AssetAllocationDetailView` 中 `AllocDetailItem.id` 对齐。
     static func allocationDetailBucketId(for apiType: String?) -> String {
         guard let t = apiType?.trimmingCharacters(in: .whitespacesAndNewlines), !t.isEmpty else {
             return "other"
         }
         switch bucket(for: t) {
         case .stocks: return "stocks"
+        case .funds:  return "funds"
+        case .bonds:  return "bonds"
+        case .cash:   return "cash"
         case .crypto: return "crypto"
-        case .cash: return "cash"
-        case .other: return "other"
+        case .other:  return "other"
         }
     }
 

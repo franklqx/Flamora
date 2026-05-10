@@ -77,15 +77,7 @@ private extension InvestmentExpandedOverlayView {
                 .minimumScaleFactor(0.5)
                 .dynamicTypeSize(...DynamicTypeSize.xLarge)
 
-            if plaidManager.hasLinkedBank, let pct = store.todayChangePct {
-                Text(formattedPercent(pct) + " today")
-                    .font(.footnoteSemibold)
-                    .foregroundStyle(pct >= 0 ? AppColors.success : AppColors.error)
-                    .padding(.horizontal, AppSpacing.sm + AppSpacing.xs)
-                    .padding(.vertical, AppSpacing.xs)
-                    .background(Color.black.opacity(0.24))
-                    .clipShape(Capsule())
-            } else {
+            if !plaidManager.hasLinkedBank {
                 HStack(spacing: AppSpacing.xs) {
                     Image(systemName: "lock.fill")
                         .font(.caption)
@@ -97,7 +89,16 @@ private extension InvestmentExpandedOverlayView {
                 .padding(.vertical, AppSpacing.xs)
                 .background(Color.black.opacity(0.24))
                 .clipShape(Capsule())
+            } else if let pct = store.todayChangePct {
+                Text(formattedPercent(pct) + " today")
+                    .font(.footnoteSemibold)
+                    .foregroundStyle(pct >= 0 ? AppColors.success : AppColors.error)
+                    .padding(.horizontal, AppSpacing.sm + AppSpacing.xs)
+                    .padding(.vertical, AppSpacing.xs)
+                    .background(Color.black.opacity(0.24))
+                    .clipShape(Capsule())
             }
+            // Connected but no live pct yet (loading or no historical data) → show nothing.
         }
     }
 

@@ -28,18 +28,37 @@ struct AssetAllocationDetailView: View {
     @State private var expandedIds: Set<String> = []
 
     private var totalAmount: Double {
-        allocation.stocks.amount + allocation.bonds.amount +
-        allocation.cash.amount + (allocation.other?.amount ?? 0)
+        [
+            allocation.stocks.amount,
+            allocation.funds.amount,
+            allocation.bonds.amount,
+            allocation.cash.amount,
+            allocation.crypto.amount,
+            allocation.other.amount
+        ].reduce(0, +)
     }
 
+    /// Only includes asset classes the user actually holds. A row with $0 / 0%
+    /// is misleading (looks like an unloaded slot), so we omit it entirely.
     private var sortedItems: [AllocDetailItem] {
-        var items = [
-            AllocDetailItem(id: "stocks", title: "U.S. Stocks", percent: allocation.stocks.percent, amount: allocation.stocks.amount, color: AppColors.allocEmerald),
-            AllocDetailItem(id: "crypto", title: "Crypto",      percent: allocation.bonds.percent,  amount: allocation.bonds.amount,  color: AppColors.allocAmber),
-            AllocDetailItem(id: "cash",   title: "Cash",        percent: allocation.cash.percent,   amount: allocation.cash.amount,   color: AppColors.allocIndigo),
-        ]
-        if let other = allocation.other, other.percent > 0 {
-            items.append(AllocDetailItem(id: "other", title: "Other", percent: other.percent, amount: other.amount, color: AppColors.allocCoral))
+        var items: [AllocDetailItem] = []
+        if allocation.stocks.amount > 0.005 {
+            items.append(AllocDetailItem(id: "stocks", title: "Stocks", percent: allocation.stocks.percent, amount: allocation.stocks.amount, color: AppColors.allocEmerald))
+        }
+        if allocation.funds.amount > 0.005 {
+            items.append(AllocDetailItem(id: "funds", title: "ETFs & Funds", percent: allocation.funds.percent, amount: allocation.funds.amount, color: AppColors.allocPink))
+        }
+        if allocation.bonds.amount > 0.005 {
+            items.append(AllocDetailItem(id: "bonds", title: "Bonds", percent: allocation.bonds.percent, amount: allocation.bonds.amount, color: AppColors.allocPurple))
+        }
+        if allocation.cash.amount > 0.005 {
+            items.append(AllocDetailItem(id: "cash", title: "Cash", percent: allocation.cash.percent, amount: allocation.cash.amount, color: AppColors.allocIndigo))
+        }
+        if allocation.crypto.amount > 0.005 {
+            items.append(AllocDetailItem(id: "crypto", title: "Crypto", percent: allocation.crypto.percent, amount: allocation.crypto.amount, color: AppColors.allocAmber))
+        }
+        if allocation.other.amount > 0.005 {
+            items.append(AllocDetailItem(id: "other", title: "Other", percent: allocation.other.percent, amount: allocation.other.amount, color: AppColors.allocSlate))
         }
         return items.sorted { $0.percent > $1.percent }
     }
@@ -155,40 +174,73 @@ struct AssetAllocationDetailView: View {
 
 // MARK: - Donut Chart
 
+/// Detail-view donut: same gap + rounded-cap style as the Cashflow Budget ring.
 private struct AllocDonutChart: View {
     let items: [AllocDetailItem]
+    private let lineWidth: CGFloat = 18
 
     var body: some View {
-        ZStack {
-            Circle().stroke(AppColors.inkTrack, lineWidth: 18)
-            ForEach(Array(items.enumerated()), id: \.offset) { i, item in
-                if item.percent > 0 {
-                    AllocDonutSegment(
-                        startAngle: startAngle(for: i),
-                        endAngle: endAngle(for: i)
+        GeometryReader { geo in
+            let diameter = min(geo.size.width, geo.size.height)
+            ZStack {
+                ForEach(positionedSegments(diameter: diameter)) { seg in
+                    AllocDonutArcShape(
+                        startDegrees: seg.start,
+                        endDegrees: seg.end,
+                        lineWidth: lineWidth
                     )
-                    .stroke(item.color, style: StrokeStyle(lineWidth: 18, lineCap: .butt))
+                    .stroke(seg.color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 }
             }
         }
     }
 
-    private func startAngle(for i: Int) -> Angle {
-        .degrees(Double(items.prefix(i).map(\.percent).reduce(0, +)) / 100 * 360 - 90)
+    private struct PositionedSegment: Identifiable {
+        let id = UUID()
+        let start: Double
+        let end: Double
+        let color: Color
     }
-    private func endAngle(for i: Int) -> Angle {
-        .degrees(Double(items.prefix(i + 1).map(\.percent).reduce(0, +)) / 100 * 360 - 90)
+
+    private func positionedSegments(diameter: CGFloat) -> [PositionedSegment] {
+        let visible = items.filter { $0.percent > 0 }
+        guard !visible.isEmpty else { return [] }
+        let total = visible.map(\.percent).reduce(0, +)
+        guard total > 0 else { return [] }
+
+        let radius = max((diameter - lineWidth) / 2, 1)
+        let capExtension = Double((lineWidth / 2) / radius) * 180 / .pi
+        let visibleGap = 3.5
+        let gap = visible.count > 1 ? visibleGap + capExtension * 2 : 0
+        let available = max(360.0 - gap * Double(visible.count), 0)
+
+        var cursor = -90.0
+        return visible.compactMap { item in
+            let sweep = Double(item.percent) / Double(total) * available
+            guard sweep > 0.5 else { return nil }
+            let start = cursor
+            let end = cursor + sweep
+            cursor = end + gap
+            return PositionedSegment(start: start, end: end, color: item.color)
+        }
     }
 }
 
-private struct AllocDonutSegment: Shape {
-    let startAngle: Angle
-    let endAngle: Angle
+private struct AllocDonutArcShape: Shape {
+    let startDegrees: Double
+    let endDegrees: Double
+    let lineWidth: CGFloat
+
     func path(in rect: CGRect) -> Path {
+        let radius = max((min(rect.width, rect.height) - lineWidth) / 2, 0)
         var p = Path()
-        p.addArc(center: CGPoint(x: rect.midX, y: rect.midY),
-                 radius: min(rect.width, rect.height) / 2,
-                 startAngle: startAngle, endAngle: endAngle, clockwise: false)
+        p.addArc(
+            center: CGPoint(x: rect.midX, y: rect.midY),
+            radius: radius,
+            startAngle: .degrees(startDegrees),
+            endAngle: .degrees(endDegrees),
+            clockwise: false
+        )
         return p
     }
 }
