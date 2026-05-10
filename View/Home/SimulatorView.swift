@@ -33,6 +33,7 @@ struct SimulatorView: View {
     @State private var editInput = ""
     @State private var showAdvancedDetails = false
     @State private var chartRevealAnimation = false
+    @State private var selectedLifecyclePoint: SimulatorLifecyclePoint?
 
     @Environment(PlaidManager.self) private var plaidManager
 
@@ -273,7 +274,7 @@ private extension SimulatorView {
     /// 静态 kicker + 动态 FIRE age outcome。统一字号，靠 uppercase + opacity + weight 拉层级。
     private var sandboxHeader: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-            Text("TRY DIFFERENT SCENARIOS")
+            Text("TEST YOUR FIRE PATH")
                 .font(.bodySmallSemibold)
                 .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
                 .tracking(AppTypography.Tracking.cardHeader)
@@ -287,10 +288,9 @@ private extension SimulatorView {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// 输出：永远是 `FIRE at age <number>.`；数学层不可达时显示 `—`。
     private var sandboxOutcomeText: String {
-        guard let age = preview?.previewFireAge else { return "FIRE at age —." }
-        return "FIRE at age \(age)."
+        guard let age = preview?.previewFireAge else { return "FIRE age unavailable." }
+        return "You could reach FIRE at \(age)."
     }
 
     // MARK: - Lifecycle area chart (accumulation + decumulation to age 90)
@@ -302,34 +302,14 @@ private extension SimulatorView {
                 fireAge: preview?.previewFireAge,
                 currentAge: controls.currentAge,
                 endAge: lifecycleEndAge,
-                revealAnimation: chartRevealAnimation
+                revealAnimation: chartRevealAnimation,
+                selectedPoint: selectedLifecyclePoint,
+                onSelect: { selectedLifecyclePoint = $0 }
             )
             .frame(height: chartHeight)
 
-            // 横轴标签：Today / FIRE @X / Age 90
-            HStack {
-                Text("Today")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(AppColors.heroTextHint)
-
-                Spacer(minLength: 0)
-
-                if let fireAge = preview?.previewFireAge,
-                   fireAge > controls.currentAge,
-                   fireAge < SandboxLifecycle.endAge {
-                    Text("FIRE @\(fireAge)")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(AppColors.textPrimary)
-                    Spacer(minLength: 0)
-                }
-
-                Text("Age \(SandboxLifecycle.endAge)")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(AppColors.heroTextHint)
-            }
+            lifecycleAxisLabels
+                .frame(height: 20)
 
             Text(lifecycleMicrolabel)
                 .font(.footnoteRegular)
@@ -344,24 +324,67 @@ private extension SimulatorView {
                 chartRevealAnimation = true
             }
         }
+        .onChange(of: lifecyclePoints) { _, points in
+            guard let selectedLifecyclePoint else { return }
+            self.selectedLifecyclePoint = points.first(where: { $0.age == selectedLifecyclePoint.age })
+        }
     }
 
     /// 横轴终点：固定 age 90（用户拍板）。
-    private var lifecycleEndAge: Int { SandboxLifecycle.endAge }
+    private var lifecycleEndAge: Int { preview?.lifecycleEndAge ?? SandboxLifecycle.endAge }
+
+    private var lifecycleAxisLabels: some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            let span = max(1, lifecycleEndAge - controls.currentAge)
+            let fireX = preview?.previewFireAge.map { fireAge in
+                CGFloat(fireAge - controls.currentAge) / CGFloat(span) * width
+            }
+
+            ZStack(alignment: .leading) {
+                Text("Today")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(AppColors.heroTextHint)
+                    .position(x: 28, y: 10)
+
+                if let fireAge = preview?.previewFireAge,
+                   fireAge > controls.currentAge,
+                   fireAge < lifecycleEndAge,
+                   let fireX {
+                    Text("FIRE @\(fireAge)")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(AppColors.textPrimary)
+                        .position(x: min(max(fireX, 42), max(42, width - 42)), y: 10)
+                }
+
+                Text("Age \(lifecycleEndAge)")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(AppColors.heroTextHint)
+                    .position(x: max(40, width - 40), y: 10)
+            }
+        }
+    }
 
     /// 整段生命周期数据：从 currentAge 起，每月模拟 portfolio 演化到 age 90。
     /// 累积期：portfolio = portfolio*(1+r/12) + monthly_savings
     /// FIRE 后取款期：portfolio = portfolio*(1+r/12) − retirement_spending
     /// portfolio 跌到 0 之后保持 0（视觉上一条贴底直线）。
-    private var lifecyclePoints: [SandboxLifecyclePoint] {
-        SandboxLifecycle.compute(
+    private var lifecyclePoints: [SimulatorLifecyclePoint] {
+        if let points = preview?.adjustedLifecyclePath, points.count > 1 {
+            return points
+        }
+        return SandboxLifecycle.compute(
             currentAge: controls.currentAge,
             startingNetWorth: controls.investableAssets,
             monthlySavings: controls.savingsMonthly,
             annualReturnPercent: controls.returnRate,
             retirementSpendingMonthly: controls.retirementSpending,
             fireNumber: preview?.previewFireNumber,
-            fireAge: preview?.previewFireAge
+            fireAge: preview?.previewFireAge,
+            endAge: lifecycleEndAge
         )
     }
 
@@ -370,16 +393,19 @@ private extension SimulatorView {
         let pts = lifecyclePoints
         guard !pts.isEmpty else { return " " }
 
-        // FIRE 都到不了
-        if preview?.previewFireAge == nil {
-            return "Not reaching FIRE within 50 years."
+        guard let fireAge = preview?.previewFireAge,
+              fireAge <= lifecycleEndAge else {
+            return "This scenario does not reach FIRE before age \(lifecycleEndAge)."
         }
 
-        // 找第一个 portfolio == 0 的点（耗尽）
-        if let depleted = pts.first(where: { $0.netWorth <= 0 && $0.age > controls.currentAge }) {
-            return "Portfolio depletes at age \(depleted.age)."
+        if let depletionAge = preview?.portfolioDepletionAge {
+            return "In today’s dollars, this portfolio runs out at age \(depletionAge)."
         }
-        return "Portfolio lasts beyond age \(SandboxLifecycle.endAge)."
+
+        if let depleted = pts.first(where: { $0.netWorth <= 0 && $0.age > controls.currentAge }) {
+            return "In today’s dollars, this portfolio runs out at age \(depleted.age)."
+        }
+        return "In today’s dollars, this portfolio lasts beyond age \(lifecycleEndAge)."
     }
 
     private var htmlRetirementDetailPanel: some View {
@@ -398,7 +424,7 @@ private extension SimulatorView {
                 }
 
                 htmlDetailRow(
-                    label: "Monthly Contribution",
+                    label: "Monthly Investment",
                     value: NumberFormatter.appCurrency(controls.savingsMonthly)
                 ) {
                     editingField = .monthlyInvestment
@@ -406,7 +432,7 @@ private extension SimulatorView {
                 }
 
                 htmlDetailRow(
-                    label: "Current Investment",
+                    label: "Current Portfolio",
                     value: NumberFormatter.appCurrency(controls.investableAssets)
                 ) {
                     editingField = .investableAssets
@@ -414,7 +440,7 @@ private extension SimulatorView {
                 }
 
                 htmlDetailRow(
-                    label: "Retire Monthly Expense",
+                    label: "Monthly Retirement Spending",
                     value: NumberFormatter.appCurrency(controls.retirementSpending)
                 ) {
                     editingField = .monthlyExpenses
@@ -451,15 +477,22 @@ private extension SimulatorView {
                         editInput = String(format: "%.1f", controls.returnRate)
                     }
 
-                    htmlDetailStaticRow(label: "Inflation", value: "2.5%")
+                    htmlDetailStaticRow(label: "Inflation", value: "3.0%")
 
                     htmlDetailRow(
-                        label: "Withdrawal Rate",
+                        label: "Safe Withdrawal Rule",
                         value: String(format: "%.2f%%", controls.withdrawalRate)
                     ) {
                         editingField = .withdrawalRate
                         editInput = String(format: "%.2f", controls.withdrawalRate)
                     }
+
+                    Text("Safe Withdrawal Rule estimates how large your portfolio needs to be before retirement.")
+                        .font(.caption)
+                        .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+                        .lineSpacing(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, AppSpacing.xs)
                 }
             }
         }
@@ -766,7 +799,7 @@ private extension SimulatorView {
 
                 compactControlCell(
                     isCompactPhone: isCompactPhone,
-                    title: "Investable Assets",
+                    title: "Current Portfolio",
                     valueText: NumberFormatter.appCurrency(controls.investableAssets),
                     range: 0...2_500_000,
                     step: 5_000,
@@ -794,7 +827,7 @@ private extension SimulatorView {
 
                 compactControlCell(
                     isCompactPhone: isCompactPhone,
-                    title: "Monthly Expenses",
+                    title: "Monthly Retirement Spending",
                     valueText: NumberFormatter.appCurrency(controls.retirementSpending),
                     range: 1_500...25_000,
                     step: 250,
@@ -808,7 +841,7 @@ private extension SimulatorView {
 
                 compactControlCell(
                     isCompactPhone: isCompactPhone,
-                    title: "Withdrawal Rate",
+                    title: "Safe Withdrawal Rule",
                     valueText: String(format: "%.2f%%", controls.withdrawalRate),
                     range: 2.5...6,
                     step: 0.25,
@@ -1042,7 +1075,7 @@ private extension SimulatorView {
             savingsMonthly: effective?.savingsMonthly ?? 1_800,
             retirementSpending: effective?.retirementSpending ?? 5_000,
             investableAssets: effective?.netWorth ?? 310_000,
-            returnRate: (effective?.returnRate ?? FIREAssumptions.nominalAnnualReturn) * 100,
+            returnRate: (effective?.returnRate ?? FIREAssumptions.realAnnualReturn) * 100,
             withdrawalRate: (effective?.withdrawalRate ?? FIREAssumptions.withdrawalRate) * 100,
             currentAge: effective?.currentAge ?? 33
         )
@@ -1090,7 +1123,7 @@ private struct SimulatorControlState: Equatable {
     var savingsMonthly: Double = 1_800
     var retirementSpending: Double = 5_000
     var investableAssets: Double = 310_000
-    var returnRate: Double = 7.0
+    var returnRate: Double = 4.0
     var withdrawalRate: Double = 4.0
     var currentAge: Int = 33
 }
@@ -1117,10 +1150,10 @@ private enum SimulatorEditableField: Identifiable {
     var displayTitle: String {
         switch self {
         case .monthlyInvestment: return "Monthly Investment"
-        case .investableAssets: return "Investable Assets"
+        case .investableAssets: return "Current Portfolio"
         case .expectedReturn: return "Expected Return (%)"
-        case .monthlyExpenses: return "Monthly Expenses"
-        case .withdrawalRate: return "Withdrawal Rate (%)"
+        case .monthlyExpenses: return "Monthly Retirement Spending"
+        case .withdrawalRate: return "Safe Withdrawal Rule (%)"
         case .currentAge: return "Current Age"
         }
     }
@@ -1128,10 +1161,10 @@ private enum SimulatorEditableField: Identifiable {
     var subtitle: String {
         switch self {
         case .monthlyInvestment: return "How much you invest each month."
-        case .investableAssets: return "Total amount currently invested."
-        case .expectedReturn: return "Annual nominal return assumption."
-        case .monthlyExpenses: return "Spending you'll need each month in retirement."
-        case .withdrawalRate: return "Safe withdrawal rate (Trinity Study uses 4%)."
+        case .investableAssets: return "Your current FIRE portfolio balance."
+        case .expectedReturn: return "Annual real return assumption, after inflation."
+        case .monthlyExpenses: return "Monthly spending you'll need in retirement."
+        case .withdrawalRate: return "Rule used to estimate how large your portfolio needs to be."
         case .currentAge: return "Your age today."
         }
     }
@@ -1146,12 +1179,6 @@ private enum SimulatorEditableField: Identifiable {
 }
 
 // MARK: - Sandbox Lifecycle (accumulation + decumulation)
-
-/// 单点：年龄 + portfolio 估值。一年一个点。
-private struct SandboxLifecyclePoint: Equatable {
-    let age: Int
-    let netWorth: Double
-}
 
 /// 生命周期模拟逻辑 + 横轴常量。
 /// - 横轴永远从 currentAge → endAge (90)
@@ -1169,16 +1196,30 @@ private enum SandboxLifecycle {
         annualReturnPercent: Double,
         retirementSpendingMonthly: Double,
         fireNumber: Double?,
-        fireAge: Int?
-    ) -> [SandboxLifecyclePoint] {
+        fireAge: Int?,
+        endAge: Int = SandboxLifecycle.endAge
+    ) -> [SimulatorLifecyclePoint] {
         guard currentAge < endAge else {
-            return [SandboxLifecyclePoint(age: currentAge, netWorth: startingNetWorth)]
+            return [
+                SimulatorLifecyclePoint(
+                    age: currentAge,
+                    year: Calendar.current.component(.year, from: .now),
+                    netWorth: startingNetWorth,
+                    phase: "accumulating"
+                )
+            ]
         }
         let annualRate = max(0.001, annualReturnPercent / 100.0)
         let monthlyRate = annualRate / 12.0
         var portfolio = max(0, startingNetWorth)
-        var points: [SandboxLifecyclePoint] = [
-            SandboxLifecyclePoint(age: currentAge, netWorth: portfolio)
+        let currentYear = Calendar.current.component(.year, from: .now)
+        var points: [SimulatorLifecyclePoint] = [
+            SimulatorLifecyclePoint(
+                age: currentAge,
+                year: currentYear,
+                netWorth: portfolio,
+                phase: fireAge == currentAge ? "fire_reached" : "accumulating"
+            )
         ]
 
         // 决定何时切换到取款期：用 fireAge 作为 boundary；如果 fireAge 不可达，
@@ -1195,7 +1236,24 @@ private enum SandboxLifecycle {
                 }
                 if portfolio < 0 { portfolio = 0 }
             }
-            points.append(SandboxLifecyclePoint(age: age, netWorth: portfolio))
+            let phase: String
+            if portfolio <= 0 {
+                phase = "depleted"
+            } else if age == switchAge {
+                phase = "fire_reached"
+            } else if isWithdrawing {
+                phase = "withdrawing"
+            } else {
+                phase = "accumulating"
+            }
+            points.append(
+                SimulatorLifecyclePoint(
+                    age: age,
+                    year: currentYear + (age - currentAge),
+                    netWorth: portfolio,
+                    phase: phase
+                )
+            )
         }
         return points
     }
@@ -1208,11 +1266,13 @@ private enum SandboxLifecycle {
 /// - FIRE 节点：垂直虚线 + 玻璃圆点
 /// - portfolio 耗尽后曲线贴底
 private struct SandboxLifecycleChart: View {
-    let points: [SandboxLifecyclePoint]
+    let points: [SimulatorLifecyclePoint]
     let fireAge: Int?
     let currentAge: Int
     let endAge: Int
     let revealAnimation: Bool
+    let selectedPoint: SimulatorLifecyclePoint?
+    let onSelect: (SimulatorLifecyclePoint) -> Void
 
     var body: some View {
         GeometryReader { geo in
@@ -1282,20 +1342,50 @@ private struct SandboxLifecycleChart: View {
                         .shadow(color: Color(hex: "#60A5FA").opacity(0.6), radius: 6)
                         .position(x: fireMarker.x, y: fireMarker.y)
                 }
+
+                if let selectedMarker = layout.selectedMarker,
+                   let selectedPoint {
+                    Path { path in
+                        path.move(to: CGPoint(x: selectedMarker.x, y: 0))
+                        path.addLine(to: CGPoint(x: selectedMarker.x, y: geo.size.height))
+                    }
+                    .stroke(Color.white.opacity(0.34), style: StrokeStyle(lineWidth: 1, dash: [2, 4]))
+
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 11, height: 11)
+                        .overlay(Circle().stroke(AppColors.accentBlueBright, lineWidth: 2))
+                        .shadow(color: AppColors.accentBlueBright.opacity(0.55), radius: 7)
+                        .position(selectedMarker)
+
+                    lifecycleTooltip(for: selectedPoint)
+                        .position(
+                            x: min(max(selectedMarker.x, 86), max(86, geo.size.width - 86)),
+                            y: max(30, selectedMarker.y - 34)
+                        )
+                }
             }
             .scaleEffect(x: 1, y: revealAnimation ? 1 : 0.02, anchor: .bottom)
             .opacity(revealAnimation ? 1 : 0)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        selectNearestPoint(to: value.location.x, in: layout)
+                    }
+            )
         }
     }
 
     private struct Layout {
         let linePoints: [CGPoint]
         let fireMarker: CGPoint?
+        let selectedMarker: CGPoint?
     }
 
     private func computeLayout(in size: CGSize) -> Layout {
         guard points.count > 1, endAge > currentAge else {
-            return Layout(linePoints: [], fireMarker: nil)
+            return Layout(linePoints: [], fireMarker: nil, selectedMarker: nil)
         }
 
         let values = points.map(\.netWorth)
@@ -1330,7 +1420,56 @@ private struct SandboxLifecycleChart: View {
             fireMarker = CGPoint(x: x, y: y)
         }
 
-        return Layout(linePoints: linePoints, fireMarker: fireMarker)
+        let selectedMarker = selectedPoint.flatMap { selected in
+            points.firstIndex(where: { $0.age == selected.age }).map { linePoints[$0] }
+        }
+
+        return Layout(linePoints: linePoints, fireMarker: fireMarker, selectedMarker: selectedMarker)
+    }
+
+    private func selectNearestPoint(to x: CGFloat, in layout: Layout) {
+        guard !points.isEmpty, !layout.linePoints.isEmpty else { return }
+        let index = layout.linePoints.enumerated().min { lhs, rhs in
+            abs(lhs.element.x - x) < abs(rhs.element.x - x)
+        }?.offset ?? 0
+        onSelect(points[index])
+    }
+
+    private func lifecycleTooltip(for point: SimulatorLifecyclePoint) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Age \(point.age)")
+                .font(.miniLabel)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+            Text(NumberFormatter.appCurrency(point.netWorth))
+                .font(.footnoteSemibold)
+                .foregroundStyle(AppColors.textPrimary)
+            Text(phaseLabel(point.phase))
+                .font(.caption)
+                .foregroundStyle(AppColors.overlayWhiteForegroundMuted)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(width: 172, alignment: .leading)
+        .background(AppColors.surfaceElevated.opacity(0.94))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .stroke(AppColors.overlayWhiteStroke, lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.2), radius: 10, y: 5)
+    }
+
+    private func phaseLabel(_ phase: String) -> String {
+        switch phase {
+        case "fire_reached":
+            return "FIRE reached"
+        case "withdrawing":
+            return "Withdrawing"
+        case "depleted":
+            return "Portfolio depleted"
+        default:
+            return "Accumulating"
+        }
     }
 }
 
@@ -1452,7 +1591,7 @@ private struct SimulatorEditValueSheet: View {
                     .foregroundStyle(AppColors.inkSoft)
             }
 
-            TextField("Value", text: $input)
+            TextField("", text: $input)
                 .keyboardType(field.prefersDecimal ? .decimalPad : .numberPad)
                 .focused($isFocused)
                 .font(.fieldBodyMedium)

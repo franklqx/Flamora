@@ -17,9 +17,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import {
   computeFireDate,
   computeFireNumber,
-  generateGraphSeries,
 } from '../_shared/fire-math.ts'
 import { ASSUMPTIONS } from '../_shared/fire-assumptions.ts'
+import {
+  generateSimulatorLifecycle,
+  SIMULATOR_LIFECYCLE_END_AGE,
+} from '../_shared/simulator-lifecycle.ts'
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -47,6 +50,11 @@ interface DataPoint {
   net_worth: number
 }
 
+interface LifecyclePoint extends DataPoint {
+  age: number
+  phase: string
+}
+
 // ── Handler ───────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -69,9 +77,8 @@ Deno.serve(async (req) => {
     const body: PreviewSimulatorRequest = await req.json()
     const mode = body.mode ?? 'demo'
 
-    const GRAPH_HORIZON_YEARS = 35
-    // Simulator shows projected portfolio dollar amounts → use NOMINAL return.
-    const DEFAULT_RETURN_RATE = ASSUMPTIONS.NOMINAL_ANNUAL_RETURN
+    // Simulator lifecycle uses today's dollars, so use real return after inflation.
+    const DEFAULT_RETURN_RATE = ASSUMPTIONS.REAL_ANNUAL_RETURN
     const DEFAULT_WITHDRAWAL  = ASSUMPTIONS.WITHDRAWAL_RATE
 
     // ── Resolve official anchors ──────────────────────────────
@@ -150,6 +157,7 @@ Deno.serve(async (req) => {
     const sandboxFireNumber = computeFireNumber(sandboxSpending, sandboxWithdraw)
 
     const netWorth = officialNetWorth ?? 0
+    const currentAge = officialAge ?? 33
 
     // ── Compute official FIRE date (empty in demo) ────────────
     let officialFireDate: string | null = null
@@ -157,14 +165,14 @@ Deno.serve(async (req) => {
     let officialFireMonths: number | null = null
 
     if (mode === 'official_preview' && officialFireNumber && officialSavings != null) {
-      const r = computeFireDate(netWorth, officialFireNumber, officialSavings, DEFAULT_RETURN_RATE, officialAge ?? undefined)
+      const r = computeFireDate(netWorth, officialFireNumber, officialSavings, DEFAULT_RETURN_RATE, currentAge)
       officialFireDate  = r.fireDate !== 'Unknown' ? r.fireDate : null
       officialFireAge   = r.fireAge
       officialFireMonths = r.yearsRemaining * 12
     }
 
     // ── Compute sandbox FIRE date ─────────────────────────────
-    const sandboxResult = computeFireDate(netWorth, sandboxFireNumber, sandboxSavings, sandboxReturn, officialAge ?? undefined)
+    const sandboxResult = computeFireDate(netWorth, sandboxFireNumber, sandboxSavings, sandboxReturn, currentAge)
     const sandboxFireDate = sandboxResult.fireDate !== 'Unknown' ? sandboxResult.fireDate : null
     const sandboxFireMonths = sandboxResult.yearsRemaining * 12
 
@@ -174,14 +182,32 @@ Deno.serve(async (req) => {
       : 0
     const deltaYears  = Math.round((deltaMonths / 12) * 10) / 10
 
-    // ── Generate graph series ─────────────────────────────────
-    const officialPath: DataPoint[] = mode === 'official_preview' && officialSavings != null
-      ? generateGraphSeries(netWorth, officialSavings, DEFAULT_RETURN_RATE, GRAPH_HORIZON_YEARS)
-      : []
+    // ── Generate lifecycle series ─────────────────────────────
+    const officialLifecycle = mode === 'official_preview' && officialSavings != null && officialFireNumber
+      ? generateSimulatorLifecycle({
+          currentAge,
+          currentNetWorth: netWorth,
+          monthlySavings: officialSavings,
+          annualRealReturn: DEFAULT_RETURN_RATE,
+          retirementSpendingMonthly: officialSpending ?? sandboxSpending,
+          fireNumber: officialFireNumber,
+          endAge: SIMULATOR_LIFECYCLE_END_AGE,
+        })
+      : { path: [] as LifecyclePoint[], portfolio_depletion_age: null }
 
-    const adjustedPath: DataPoint[] = generateGraphSeries(
-      netWorth, sandboxSavings, sandboxReturn, GRAPH_HORIZON_YEARS
-    )
+    const adjustedLifecycle = generateSimulatorLifecycle({
+      currentAge,
+      currentNetWorth: netWorth,
+      monthlySavings: sandboxSavings,
+      annualRealReturn: sandboxReturn,
+      retirementSpendingMonthly: sandboxSpending,
+      fireNumber: sandboxFireNumber,
+      endAge: SIMULATOR_LIFECYCLE_END_AGE,
+    })
+
+    // Legacy chart fields now mirror lifecycle values for backward compatibility.
+    const officialPath: DataPoint[] = officialLifecycle.path.map(({ year, net_worth }) => ({ year, net_worth }))
+    const adjustedPath: DataPoint[] = adjustedLifecycle.path.map(({ year, net_worth }) => ({ year, net_worth }))
 
     // ── Return ────────────────────────────────────────────────
     return new Response(
@@ -203,6 +229,11 @@ Deno.serve(async (req) => {
 
           official_path: officialPath,
           adjusted_path: adjustedPath,
+          official_lifecycle_path: officialLifecycle.path,
+          adjusted_lifecycle_path: adjustedLifecycle.path,
+          portfolio_depletion_age: adjustedLifecycle.portfolio_depletion_age,
+          lifecycle_end_age: SIMULATOR_LIFECYCLE_END_AGE,
+          projection_basis: 'real_dollars',
 
           // Echo back the effective inputs used (useful for UI display)
           effective_inputs: {
@@ -211,7 +242,7 @@ Deno.serve(async (req) => {
             return_rate:         sandboxReturn,
             withdrawal_rate:     sandboxWithdraw,
             net_worth:           netWorth,
-            current_age:         officialAge,
+            current_age:         currentAge,
           },
         },
         meta: { timestamp: new Date().toISOString(), user_id: user.id },

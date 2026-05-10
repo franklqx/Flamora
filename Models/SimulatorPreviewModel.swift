@@ -31,6 +31,11 @@ struct SimulatorPreviewModel: Codable {
     // Graph series
     let officialPath: [SimulatorDataPoint]   // empty in demo mode
     let adjustedPath: [SimulatorDataPoint]
+    let officialLifecyclePath: [SimulatorLifecyclePoint]?
+    let adjustedLifecyclePath: [SimulatorLifecyclePoint]?
+    let portfolioDepletionAge: Int?
+    let lifecycleEndAge: Int?
+    let projectionBasis: String?
 
     // Effective inputs echoed back for display
     let effectiveInputs: SimulatorEffectiveInputs?
@@ -47,6 +52,11 @@ struct SimulatorPreviewModel: Codable {
         case deltaYears          = "delta_years"
         case officialPath        = "official_path"
         case adjustedPath        = "adjusted_path"
+        case officialLifecyclePath = "official_lifecycle_path"
+        case adjustedLifecyclePath = "adjusted_lifecycle_path"
+        case portfolioDepletionAge = "portfolio_depletion_age"
+        case lifecycleEndAge = "lifecycle_end_age"
+        case projectionBasis = "projection_basis"
         case effectiveInputs     = "effective_inputs"
     }
 
@@ -63,6 +73,21 @@ struct SimulatorDataPoint: Codable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case year
         case netWorth = "net_worth"
+    }
+}
+
+struct SimulatorLifecyclePoint: Codable, Identifiable, Equatable {
+    var id: Int { age }
+    let age: Int
+    let year: Int
+    let netWorth: Double
+    let phase: String
+
+    enum CodingKeys: String, CodingKey {
+        case age
+        case year
+        case netWorth = "net_worth"
+        case phase
     }
 }
 
@@ -100,7 +125,7 @@ struct SimulatorPreviewRequest: Encodable {
     // Sandbox overrides
     var sandboxSavingsMonthly: Double?
     var sandboxRetirementSpending: Double?
-    var sandboxReturnRate: Double?           // default 0.07
+    var sandboxReturnRate: Double?           // default 0.04 real return
     var sandboxInflationRate: Double?        // default 0.03
     var sandboxWithdrawalRate: Double?       // default 0.04
     var sandboxTargetAge: Int?               // optional, sandbox-only
