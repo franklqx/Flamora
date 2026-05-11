@@ -201,6 +201,9 @@ struct HomeReportsEntryCard: View {
         }
         .buttonStyle(.plain)
         .disabled(!isAvailable)
+        .accessibilityLabel("\(title)\(showNewBadge ? ", new" : "")")
+        .accessibilityValue(subtitle)
+        .accessibilityHint(isAvailable ? "Open report" : "Report not available yet")
     }
 
     // MARK: - Locked

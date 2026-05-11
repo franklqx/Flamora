@@ -40,44 +40,60 @@ struct CashAccountsCard: View {
 
             divider
 
-            if !cashAccounts.isEmpty {
-                sectionHeader("Cash")
-                ForEach(cashAccounts) { account in
-                    Button { selectedAccount = account } label: {
-                        CashAccountRow(account: account, lastSyncedAt: lastSyncedAt)
+            if cashAccounts.isEmpty && creditAccounts.isEmpty {
+                EmptyStateView(
+                    icon: "building.columns",
+                    title: "No cash accounts yet",
+                    message: "Link a checking, savings, or credit account to see balances and transactions here.",
+                    actionTitle: onAddAccount == nil ? nil : "Connect bank account",
+                    action: onAddAccount
+                )
+                .padding(.vertical, AppSpacing.sm)
+            } else {
+                if !cashAccounts.isEmpty {
+                    sectionHeader("Cash")
+                    ForEach(cashAccounts) { account in
+                        Button { selectedAccount = account } label: {
+                            CashAccountRow(account: account, lastSyncedAt: lastSyncedAt)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(account.name), balance \(Int(account.balance ?? 0)) dollars")
+                        .accessibilityHint("Open account details")
+                        if account.id != cashAccounts.last?.id { divider }
                     }
-                    .buttonStyle(.plain)
-                    if account.id != cashAccounts.last?.id { divider }
+                    divider
                 }
-                divider
-            }
 
-            if !creditAccounts.isEmpty {
-                sectionHeader("Debt")
-                ForEach(creditAccounts) { account in
-                    Button { selectedAccount = account } label: {
-                        CashAccountRow(account: account, lastSyncedAt: lastSyncedAt)
+                if !creditAccounts.isEmpty {
+                    sectionHeader("Debt")
+                    ForEach(creditAccounts) { account in
+                        Button { selectedAccount = account } label: {
+                            CashAccountRow(account: account, lastSyncedAt: lastSyncedAt)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(account.name), balance \(Int(account.balance ?? 0)) dollars")
+                        .accessibilityHint("Open account details")
+                        if account.id != creditAccounts.last?.id { divider }
                     }
-                    .buttonStyle(.plain)
-                    if account.id != creditAccounts.last?.id { divider }
+                    divider
                 }
-                divider
-            }
 
-            // ── Add Account
-            Button(action: { onAddAccount?() }) {
-                HStack(spacing: AppSpacing.sm) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.bodyRegular)
-                        .foregroundStyle(AppColors.inkPrimary)
-                    Text("Add Account")
-                        .font(.bodySemibold)
-                        .foregroundStyle(AppColors.inkPrimary)
+                Button(action: { onAddAccount?() }) {
+                    HStack(spacing: AppSpacing.sm) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.bodyRegular)
+                            .foregroundStyle(AppColors.inkPrimary)
+                        Text("Add Account")
+                            .font(.bodySemibold)
+                            .foregroundStyle(AppColors.inkPrimary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, AppSpacing.md)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, AppSpacing.md)
+                .buttonStyle(.plain)
+                .accessibilityLabel("Add account")
+                .accessibilityHint("Connect another bank or credit account")
             }
-            .buttonStyle(.plain)
         }
         .background(cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))

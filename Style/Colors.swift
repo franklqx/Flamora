@@ -39,6 +39,23 @@ struct AppColors {
     /// Negative / Loans / down trend / error — Origin Coral (softer than punchy red)
     static let allocCoral       = Color(hex: "#F97066")
 
+    // MARK: - Asset Allocation (semantic tokens — distinct from account-type alloc* tokens above)
+    // 资产类别专用色（用于 AssetAllocationCard / DetailView 的甜甜圈和列表）。
+    // 与 alloc* 颜色 token 分离，因为 alloc* 还服务 account-type 图标（brokerage=绿/bank=蓝/crypto=琥珀），
+    // 那些语义保留不变；这里是按资产类别本身重新分配。
+    /// Equity / Stocks — Blue
+    static let assetEquity      = Color(hex: "#3B82F6")
+    /// ETFs & Funds — Deep Purple
+    static let assetFunds       = Color(hex: "#7C3AED")
+    /// Bonds — Emerald Green (conservative, "safety" vibe)
+    static let assetBonds       = Color(hex: "#10B981")
+    /// Cash — Slate (neutral / liquid)
+    static let assetCash        = Color(hex: "#94A3B8")
+    /// Crypto — Amber (high risk warm tone)
+    static let assetCrypto      = Color(hex: "#F59E0B")
+    /// Other / miscellaneous — Light Purple
+    static let assetOther       = Color(hex: "#A78BFA")
+
     // MARK: - Functional (aliased to Origin palette — single source of truth)
     static let success          = allocEmerald
     static let successAlt       = Color(hex: "#34C759")   // system-green variant
@@ -145,10 +162,10 @@ struct AppColors {
     static let inkPrimary          = Color(hex: "#111827")
     /// Secondary text — 66% ink
     static let inkSoft             = Color(hex: "#111827").opacity(0.66)
-    /// Tertiary text — 42% ink
-    static let inkFaint            = Color(hex: "#111827").opacity(0.42)
-    /// Meta / kicker labels — 34% ink
-    static let inkMeta             = Color(hex: "#111827").opacity(0.34)
+    /// Tertiary text — 55% ink (a11y: lifted from 0.42 → 0.55 to reach WCAG AA-Large 3:1 on shellBg)
+    static let inkFaint            = Color(hex: "#111827").opacity(0.55)
+    /// Meta / kicker labels — 50% ink (a11y: lifted from 0.34 → 0.50 to reach WCAG AA-Large 3:1 on shellBg)
+    static let inkMeta             = Color(hex: "#111827").opacity(0.50)
     /// Chip label — 62% ink
     static let inkChip             = Color(hex: "#111827").opacity(0.62)
     /// 1pt border on light backgrounds — 8% ink
@@ -233,10 +250,10 @@ struct AppColors {
     static let heroTextPrimary     = Color.white.opacity(0.98)
     /// Soft white on hero — secondary
     static let heroTextSoft        = Color.white.opacity(0.94)
-    /// Dim white on hero — tertiary
-    static let heroTextFaint       = Color.white.opacity(0.58)
-    /// Ultra-dim — placeholder / hint on hero
-    static let heroTextHint        = Color.white.opacity(0.36)
+    /// Dim white on hero — tertiary (a11y: lifted from 0.58 → 0.72 to reach AA-Large 3:1 on the mid-hero blue stop)
+    static let heroTextFaint       = Color.white.opacity(0.72)
+    /// Ultra-dim — placeholder / hint on hero (a11y: lifted from 0.36 → 0.55 to reach AA-Large 3:1 on the mid-hero blue stop)
+    static let heroTextHint        = Color.white.opacity(0.55)
     /// Hero progress track
     static let heroTrack           = Color.white.opacity(0.16)
     /// Hero track fill (active segment)

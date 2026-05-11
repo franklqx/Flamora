@@ -43,22 +43,22 @@ struct AssetAllocationDetailView: View {
     private var sortedItems: [AllocDetailItem] {
         var items: [AllocDetailItem] = []
         if allocation.stocks.amount > 0.005 {
-            items.append(AllocDetailItem(id: "stocks", title: "Stocks", percent: allocation.stocks.percent, amount: allocation.stocks.amount, color: AppColors.allocEmerald))
+            items.append(AllocDetailItem(id: "stocks", title: "Equity", percent: allocation.stocks.percent, amount: allocation.stocks.amount, color: AppColors.assetEquity))
         }
         if allocation.funds.amount > 0.005 {
-            items.append(AllocDetailItem(id: "funds", title: "ETFs & Funds", percent: allocation.funds.percent, amount: allocation.funds.amount, color: AppColors.allocPink))
+            items.append(AllocDetailItem(id: "funds", title: "ETFs & Funds", percent: allocation.funds.percent, amount: allocation.funds.amount, color: AppColors.assetFunds))
         }
         if allocation.bonds.amount > 0.005 {
-            items.append(AllocDetailItem(id: "bonds", title: "Bonds", percent: allocation.bonds.percent, amount: allocation.bonds.amount, color: AppColors.allocPurple))
+            items.append(AllocDetailItem(id: "bonds", title: "Bonds", percent: allocation.bonds.percent, amount: allocation.bonds.amount, color: AppColors.assetBonds))
         }
         if allocation.cash.amount > 0.005 {
-            items.append(AllocDetailItem(id: "cash", title: "Cash", percent: allocation.cash.percent, amount: allocation.cash.amount, color: AppColors.allocIndigo))
+            items.append(AllocDetailItem(id: "cash", title: "Cash", percent: allocation.cash.percent, amount: allocation.cash.amount, color: AppColors.assetCash))
         }
         if allocation.crypto.amount > 0.005 {
-            items.append(AllocDetailItem(id: "crypto", title: "Crypto", percent: allocation.crypto.percent, amount: allocation.crypto.amount, color: AppColors.allocAmber))
+            items.append(AllocDetailItem(id: "crypto", title: "Crypto", percent: allocation.crypto.percent, amount: allocation.crypto.amount, color: AppColors.assetCrypto))
         }
         if allocation.other.amount > 0.005 {
-            items.append(AllocDetailItem(id: "other", title: "Other", percent: allocation.other.percent, amount: allocation.other.amount, color: AppColors.allocSlate))
+            items.append(AllocDetailItem(id: "other", title: "Other", percent: allocation.other.percent, amount: allocation.other.amount, color: AppColors.assetOther))
         }
         return items.sorted { $0.percent > $1.percent }
     }

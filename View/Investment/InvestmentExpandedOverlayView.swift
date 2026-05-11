@@ -59,7 +59,7 @@ struct InvestmentExpandedOverlayView: View {
 private extension InvestmentExpandedOverlayView {
     var topBar: some View {
         HStack {
-            Text("Investment Total")
+            Text("Total Investment")
                 .font(.h1)
                 .foregroundStyle(AppColors.heroTextPrimary)
             Spacer()
@@ -68,8 +68,9 @@ private extension InvestmentExpandedOverlayView {
 
     var amountSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            // 金额降级到 h1（32pt bold）— 与标题持平，不再 48pt 压过标题。
             Text(formattedHeadlineValue)
-                .font(.currencyHero)
+                .font(.h1)
                 .foregroundStyle(AppColors.heroTextPrimary)
                 .contentTransition(.numericText())
                 .monospacedDigit()
@@ -491,6 +492,9 @@ private struct InvestmentAccountGroupCard: View {
                 .padding(AppSpacing.cardPadding)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("\(group.account.name ?? group.account.institution), \(Int(group.account.balance)) dollars")
+            .accessibilityHint(isExpanded ? "Collapse holdings" : "Expand to view holdings")
+            .accessibilityAddTraits(isExpanded ? .isSelected : [])
 
             if isExpanded {
                 Rectangle()

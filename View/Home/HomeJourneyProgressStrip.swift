@@ -102,6 +102,9 @@ struct HomeJourneyProgressStrip: View {
         startAmountText != nil || targetAmountText != nil || dayCount != nil
     }
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    private var isAX: Bool { dynamicTypeSize.isAccessibilitySize }
+
     /// 单段填充比例（0..1）。已过的段=1，未到的段=0，正在进行的那一段=部分填充。
     private func segmentFill(at index: Int) -> Double {
         let segmentSize = 1.0 / Double(totalSegments)
@@ -114,25 +117,9 @@ struct HomeJourneyProgressStrip: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Kicker row: "YOUR FIRE JOURNEY" 左 + "DAY 9 · 9%" 右（layout X）
-            HStack(alignment: .firstTextBaseline) {
-                Text(title)
-                    .font(.inlineFigureBold)
-                    .foregroundStyle(AppColors.heroTextPrimary)
-                    .tracking(AppTypography.Tracking.miniUppercase)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-
-                Spacer(minLength: AppSpacing.sm)
-
-                if let kicker = kickerRightText {
-                    Text(kicker)
-                        .font(.smallLabel)
-                        .foregroundStyle(AppColors.heroTextPrimary)
-                        .tracking(AppTypography.Tracking.miniUppercase)
-                        .lineLimit(1)
-                }
-            }
-            .padding(.bottom, AppSpacing.sm)
+            // 大字号下竖排，避免右侧 kicker 被压缩或溢出。
+            kickerRow
+                .padding(.bottom, AppSpacing.sm)
 
             if !isActiveLayout {
                 Text(subtitle)
@@ -155,65 +142,127 @@ struct HomeJourneyProgressStrip: View {
                 .accessibilityValue("\(Int(progressFraction * 100)) percent")
 
                 if isActiveLayout {
-                    // 起止金额（左右对齐进度条两端）
-                    HStack(alignment: .firstTextBaseline) {
-                        if let startAmountText {
-                            Text(startAmountText)
-                                .font(.footnoteBold)
-                                .foregroundStyle(AppColors.heroTextPrimary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
-                        }
-                        Spacer(minLength: AppSpacing.xs)
-                        if let targetAmountText {
-                            Text(targetAmountText)
-                                .font(.footnoteBold)
-                                .foregroundStyle(AppColors.heroTextPrimary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
-                        }
-                    }
-
-                    // 终点 FREEDOM DATE（右下，单行）
-                    HStack(spacing: AppSpacing.xs) {
-                        Spacer(minLength: 0)
-                        Text(footerLabel)
-                            .font(.label)
-                            .foregroundStyle(AppColors.heroTextHint)
-                            .tracking(AppTypography.Tracking.miniUppercase)
-                            .textCase(.uppercase)
-                            .lineLimit(1)
-                        if let freedomDateText {
-                            Text(freedomDateText)
-                                .font(.footnoteSemibold)
-                                .foregroundStyle(AppColors.heroTextPrimary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
-                        }
-                    }
+                    amountRow
+                    footerRow
                 } else {
-                    HStack(alignment: .firstTextBaseline) {
-                        if let trailingPercentText {
-                            Text(trailingPercentText)
-                                .font(.cardFigurePrimary)
-                                .foregroundStyle(AppColors.heroTextPrimary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.6)
-                        }
-                        Spacer(minLength: 0)
-                        Text(footerLabel)
-                            .font(.label)
-                            .foregroundStyle(AppColors.heroTextHint)
-                            .tracking(AppTypography.Tracking.miniUppercase)
-                            .textCase(.uppercase)
-                            .lineLimit(1)
-                    }
+                    preplanFooterRow
                 }
             }
         }
         .padding(.horizontal, AppSpacing.screenPadding)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .dynamicTypeSize(...DynamicTypeSize.xLarge)
+    }
+
+    // MARK: - Subviews (kicker / amount / footer)
+    // 在 accessibility sizes（AX1+）下从横排切换到竖排，避免文本截断或溢出。
+
+    @ViewBuilder
+    private var kickerRow: some View {
+        let titleText = Text(title)
+            .font(.inlineFigureBold)
+            .foregroundStyle(AppColors.heroTextPrimary)
+            .tracking(AppTypography.Tracking.miniUppercase)
+
+        let kickerText: Text? = kickerRightText.map { kicker in
+            Text(kicker)
+                .font(.smallLabel)
+                .foregroundStyle(AppColors.heroTextPrimary)
+                .tracking(AppTypography.Tracking.miniUppercase)
+        }
+
+        if isAX {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                titleText
+                if let kickerText { kickerText }
+            }
+        } else {
+            HStack(alignment: .firstTextBaseline) {
+                titleText.lineLimit(1).minimumScaleFactor(0.7)
+                Spacer(minLength: AppSpacing.sm)
+                if let kickerText { kickerText.lineLimit(1) }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var amountRow: some View {
+        let start = startAmountText.map {
+            Text($0)
+                .font(.footnoteBold)
+                .foregroundStyle(AppColors.heroTextPrimary)
+        }
+        let target = targetAmountText.map {
+            Text($0)
+                .font(.footnoteBold)
+                .foregroundStyle(AppColors.heroTextPrimary)
+        }
+
+        if isAX {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                if let start { start }
+                if let target { target }
+            }
+        } else {
+            HStack(alignment: .firstTextBaseline) {
+                if let start { start.lineLimit(1).minimumScaleFactor(0.7) }
+                Spacer(minLength: AppSpacing.xs)
+                if let target { target.lineLimit(1).minimumScaleFactor(0.7) }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var footerRow: some View {
+        let label = Text(footerLabel)
+            .font(.label)
+            .foregroundStyle(AppColors.heroTextHint)
+            .tracking(AppTypography.Tracking.miniUppercase)
+            .textCase(.uppercase)
+        let date = freedomDateText.map {
+            Text($0)
+                .font(.footnoteSemibold)
+                .foregroundStyle(AppColors.heroTextPrimary)
+        }
+
+        if isAX {
+            VStack(alignment: .leading, spacing: 2) {
+                label
+                if let date { date }
+            }
+        } else {
+            HStack(spacing: AppSpacing.xs) {
+                Spacer(minLength: 0)
+                label.lineLimit(1)
+                if let date { date.lineLimit(1).minimumScaleFactor(0.8) }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var preplanFooterRow: some View {
+        let percent = trailingPercentText.map {
+            Text($0)
+                .font(.cardFigurePrimary)
+                .foregroundStyle(AppColors.heroTextPrimary)
+        }
+        let label = Text(footerLabel)
+            .font(.label)
+            .foregroundStyle(AppColors.heroTextHint)
+            .tracking(AppTypography.Tracking.miniUppercase)
+            .textCase(.uppercase)
+
+        if isAX {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                if let percent { percent }
+                label
+            }
+        } else {
+            HStack(alignment: .firstTextBaseline) {
+                if let percent { percent.lineLimit(1).minimumScaleFactor(0.6) }
+                Spacer(minLength: 0)
+                label.lineLimit(1)
+            }
+        }
     }
 
     /// Active 时把 DAY 与百分比合并到右上角："DAY 9 · 9%"。

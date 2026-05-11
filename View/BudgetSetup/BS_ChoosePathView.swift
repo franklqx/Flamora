@@ -13,6 +13,8 @@ struct BS_ChoosePathView: View {
     @Bindable var viewModel: BudgetSetupViewModel
 
     @State private var showContent = false
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    private var isAX: Bool { dynamicTypeSize.isAccessibilitySize }
 
     private let dotSize: CGFloat = 7
 
@@ -253,31 +255,7 @@ struct BS_ChoosePathView: View {
             VStack(alignment: .leading, spacing: AppSpacing.cardGap) {
                 HStack {
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        HStack(spacing: AppSpacing.sm) {
-                            Text(planTitle(for: plan))
-                                .font(.h3)
-                                .foregroundStyle(AppColors.inkPrimary)
-
-                            if showBestFit {
-                                Text("BEST FIT")
-                                    .font(.miniLabel)
-                                    .foregroundStyle(AppColors.ctaWhite)
-                                    .padding(.horizontal, AppSpacing.xs)
-                                    .padding(.vertical, AppSpacing.xxs)
-                                    .background(AppColors.warning)
-                                    .clipShape(RoundedRectangle(cornerRadius: AppSpacing.xs))
-                            }
-
-                            if let badge = badgeText(for: plan, showBestFit: showBestFit) {
-                                Text(badge)
-                                    .font(.miniLabel)
-                                    .foregroundStyle(AppColors.ctaWhite)
-                                    .padding(.horizontal, AppSpacing.xs)
-                                    .padding(.vertical, AppSpacing.xxs)
-                                    .background(AppColors.planDifficultyAccelerate)
-                                    .clipShape(RoundedRectangle(cornerRadius: AppSpacing.xs))
-                            }
-                        }
+                        planTitleRow(plan: plan, showBestFit: showBestFit)
 
                         HStack(spacing: AppSpacing.xs) {
                             ForEach(0..<3) { i in
@@ -326,16 +304,7 @@ struct BS_ChoosePathView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, AppSpacing.sm)
 
-                HStack(spacing: 0) {
-                    statColumnSmall(label: "SAVE", value: "$\(formattedInt(plan.monthlySave))")
-                    Rectangle().fill(AppColors.inkBorder).frame(width: 1, height: AppSpacing.lg)
-                    statColumnSmall(label: "SAVING RATE", value: formattedPct(plan.savingsRate * 100))
-                    Rectangle().fill(AppColors.inkBorder).frame(width: 1, height: AppSpacing.lg)
-                    statColumnSmall(label: "FIRE AGE", value: "Age \(plan.projectedFireAge)")
-                }
-                .padding(.vertical, AppSpacing.sm)
-                .background(AppColors.glassBlockBg)
-                .clipShape(RoundedRectangle(cornerRadius: AppRadius.glassBlock))
+                planStatsRow(plan: plan)
 
                 if isSelected {
                     fireDetailExpand(plan: plan)
@@ -420,6 +389,96 @@ struct BS_ChoosePathView: View {
             .padding(.horizontal, AppSpacing.lg)
             .padding(.bottom, AppSpacing.md)
             .background(AppColors.shellBg2)
+        }
+    }
+
+    /// 标题行 + 徽章。Accessibility 字号下徽章换到下一行，避免 h3 标题被截断或徽章溢出。
+    @ViewBuilder
+    private func planTitleRow(plan: BudgetPlanOption, showBestFit: Bool) -> some View {
+        let title = Text(planTitle(for: plan))
+            .font(.h3)
+            .foregroundStyle(AppColors.inkPrimary)
+
+        let bestFit: AnyView? = showBestFit ? AnyView(
+            Text("BEST FIT")
+                .font(.miniLabel)
+                .foregroundStyle(AppColors.ctaWhite)
+                .padding(.horizontal, AppSpacing.xs)
+                .padding(.vertical, AppSpacing.xxs)
+                .background(AppColors.warning)
+                .clipShape(RoundedRectangle(cornerRadius: AppSpacing.xs))
+        ) : nil
+
+        let extraBadge: AnyView? = badgeText(for: plan, showBestFit: showBestFit).map { badge in
+            AnyView(
+                Text(badge)
+                    .font(.miniLabel)
+                    .foregroundStyle(AppColors.ctaWhite)
+                    .padding(.horizontal, AppSpacing.xs)
+                    .padding(.vertical, AppSpacing.xxs)
+                    .background(AppColors.planDifficultyAccelerate)
+                    .clipShape(RoundedRectangle(cornerRadius: AppSpacing.xs))
+            )
+        }
+
+        if isAX {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                title
+                HStack(spacing: AppSpacing.xs) {
+                    if let bestFit { bestFit }
+                    if let extraBadge { extraBadge }
+                }
+            }
+        } else {
+            HStack(spacing: AppSpacing.sm) {
+                title
+                if let bestFit { bestFit }
+                if let extraBadge { extraBadge }
+            }
+        }
+    }
+
+    /// 3 列统计：标准字号下横排（含竖分隔条），accessibility 字号下竖排成 3 行 `label · value`，避免被压缩或溢出。
+    @ViewBuilder
+    private func planStatsRow(plan: BudgetPlanOption) -> some View {
+        if isAX {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                statRowAX(label: "SAVE", value: "$\(formattedInt(plan.monthlySave))")
+                Rectangle().fill(AppColors.inkBorder).frame(height: 1)
+                statRowAX(label: "SAVING RATE", value: formattedPct(plan.savingsRate * 100))
+                Rectangle().fill(AppColors.inkBorder).frame(height: 1)
+                statRowAX(label: "FIRE AGE", value: "Age \(plan.projectedFireAge)")
+            }
+            .padding(AppSpacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppColors.glassBlockBg)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.glassBlock))
+        } else {
+            HStack(spacing: 0) {
+                statColumnSmall(label: "SAVE", value: "$\(formattedInt(plan.monthlySave))")
+                Rectangle().fill(AppColors.inkBorder).frame(width: 1, height: AppSpacing.lg)
+                statColumnSmall(label: "SAVING RATE", value: formattedPct(plan.savingsRate * 100))
+                Rectangle().fill(AppColors.inkBorder).frame(width: 1, height: AppSpacing.lg)
+                statColumnSmall(label: "FIRE AGE", value: "Age \(plan.projectedFireAge)")
+            }
+            .padding(.vertical, AppSpacing.sm)
+            .background(AppColors.glassBlockBg)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.glassBlock))
+        }
+    }
+
+    @ViewBuilder
+    private func statRowAX(label: String, value: String) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(label)
+                .font(.label)
+                .tracking(0.8)
+                .foregroundStyle(AppColors.inkFaint)
+            Spacer(minLength: AppSpacing.sm)
+            Text(value)
+                .font(.bodySemibold)
+                .foregroundStyle(AppColors.inkPrimary)
+                .monospacedDigit()
         }
     }
 

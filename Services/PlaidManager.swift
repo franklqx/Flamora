@@ -314,6 +314,9 @@ enum FlamoraStorageKey {
     /// disconnect so the home reconnect banner can distinguish "previously
     /// connected, now offline" from "manual user who never linked".
     static let everConnectedAccounts = "flamoraEverConnectedAccounts"
+    /// Highest net worth value we've already celebrated. Prevents the
+    /// "Net worth new high" toast from re-firing as values oscillate.
+    static let lastCelebratedNetWorthHigh = "flamoraLastCelebratedNetWorthHigh"
 
     /// 旧版未写入该标记但后端已有预算时，首次启动视为已完成，避免老用户被挡在「Build Your Plan」外。
     static func migrateBudgetSetupIfNeeded(budget: APIMonthlyBudget?, hasLinkedBank: Bool) {

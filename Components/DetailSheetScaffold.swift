@@ -74,6 +74,7 @@ private struct DetailSheetHeader: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Back")
+                .accessibilityHint("Dismiss \(title)")
 
                 Spacer()
             }

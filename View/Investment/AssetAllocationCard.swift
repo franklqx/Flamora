@@ -35,22 +35,22 @@ struct AssetAllocationCard: View {
     private var sortedRows: [AllocRow] {
         var rows: [AllocRow] = []
         if allocation.stocks.amount > 0.005 {
-            rows.append(AllocRow(title: "Stocks", percent: allocation.stocks.percent, amount: allocation.stocks.amount, color: AppColors.allocEmerald))
+            rows.append(AllocRow(title: "Equity", percent: allocation.stocks.percent, amount: allocation.stocks.amount, color: AppColors.assetEquity))
         }
         if allocation.funds.amount > 0.005 {
-            rows.append(AllocRow(title: "ETFs & Funds", percent: allocation.funds.percent, amount: allocation.funds.amount, color: AppColors.allocPink))
+            rows.append(AllocRow(title: "ETFs & Funds", percent: allocation.funds.percent, amount: allocation.funds.amount, color: AppColors.assetFunds))
         }
         if allocation.bonds.amount > 0.005 {
-            rows.append(AllocRow(title: "Bonds", percent: allocation.bonds.percent, amount: allocation.bonds.amount, color: AppColors.allocPurple))
+            rows.append(AllocRow(title: "Bonds", percent: allocation.bonds.percent, amount: allocation.bonds.amount, color: AppColors.assetBonds))
         }
         if allocation.cash.amount > 0.005 {
-            rows.append(AllocRow(title: "Cash", percent: allocation.cash.percent, amount: allocation.cash.amount, color: AppColors.allocIndigo))
+            rows.append(AllocRow(title: "Cash", percent: allocation.cash.percent, amount: allocation.cash.amount, color: AppColors.assetCash))
         }
         if allocation.crypto.amount > 0.005 {
-            rows.append(AllocRow(title: "Crypto", percent: allocation.crypto.percent, amount: allocation.crypto.amount, color: AppColors.allocAmber))
+            rows.append(AllocRow(title: "Crypto", percent: allocation.crypto.percent, amount: allocation.crypto.amount, color: AppColors.assetCrypto))
         }
         if allocation.other.amount > 0.005 {
-            rows.append(AllocRow(title: "Other", percent: allocation.other.percent, amount: allocation.other.amount, color: AppColors.allocSlate))
+            rows.append(AllocRow(title: "Other", percent: allocation.other.percent, amount: allocation.other.amount, color: AppColors.assetOther))
         }
         return rows.sorted { $0.percent > $1.percent }
     }
@@ -61,21 +61,14 @@ struct AssetAllocationCard: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack(spacing: 6) {
+            // Header（仅 title，无 chevron；点击区已上移到整张卡片）
+            HStack {
                 Text("ASSET ALLOCATION")
                     .font(.cardHeader)
                     .foregroundColor(AppColors.inkPrimary)
                     .tracking(AppTypography.Tracking.cardHeader)
-                if isConnected {
-                    Image(systemName: "chevron.right")
-                        .font(.miniLabel)
-                        .foregroundColor(AppColors.inkMeta)
-                }
                 Spacer()
             }
-            .contentShape(Rectangle())
-            .onTapGesture { if isConnected { showDetail = true } }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.top, AppSpacing.cardPadding)
             .padding(.bottom, AppSpacing.sm + AppSpacing.xs)
@@ -134,6 +127,11 @@ struct AssetAllocationCard: View {
             RoundedRectangle(cornerRadius: AppRadius.xl)
                 .stroke(Color.white.opacity(0.62), lineWidth: 1)
         )
+        .contentShape(RoundedRectangle(cornerRadius: AppRadius.xl))
+        .onTapGesture { if isConnected { showDetail = true } }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Asset allocation")
+        .accessibilityHint(isConnected ? "View full allocation breakdown" : "Connect accounts to unlock")
         .fullScreenCover(isPresented: $showDetail) {
             AssetAllocationDetailView(
                 allocation: allocation,
@@ -164,7 +162,7 @@ struct AssetAllocationCard: View {
 
             // Ghost rows (locked placeholder)
             VStack(alignment: .leading, spacing: 12) {
-                ForEach(["Stocks", "ETFs & Funds", "Cash"], id: \.self) { label in
+                ForEach(["Equity", "ETFs & Funds", "Cash"], id: \.self) { label in
                     HStack(spacing: 8) {
                         Image(systemName: "lock.fill")
                             .font(.caption)

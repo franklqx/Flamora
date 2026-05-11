@@ -46,6 +46,8 @@ struct SettingsView: View {
                                 Button("Done") { dismiss() }
                                     .foregroundStyle(AppColors.inkPrimary)
                                     .fontWeight(.semibold)
+                                    .accessibilityLabel("Done")
+                                    .accessibilityHint("Close settings")
                             }
                         }
                 }

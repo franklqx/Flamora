@@ -407,12 +407,12 @@ struct TotalSpendingAnalysisDetailView: View {
                 .buttonStyle(.plain)
                     .padding(.bottom, AppSpacing.sm)
             } else {
-                Text("No spend recorded for \(selectedPeriodLabel)")
-                    .font(.bodyRegular)
-                    .foregroundStyle(AppColors.inkSoft)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, AppSpacing.cardPadding)
-                    .padding(.bottom, AppSpacing.cardPadding)
+                EmptyStateView(
+                    icon: "tray",
+                    title: "No spend yet",
+                    message: "We haven't recorded any spending for \(selectedPeriodLabel). Once transactions sync, the breakdown will appear here."
+                )
+                .padding(.bottom, AppSpacing.sm)
             }
         }
         .background(cardBackground)

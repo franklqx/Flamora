@@ -357,6 +357,9 @@ private extension CashflowExpandedOverlayView {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier(view.rawValue)
+                .accessibilityLabel(view.rawValue)
+                .accessibilityValue(selectedSurface == view ? "Selected" : "")
+                .accessibilityAddTraits(selectedSurface == view ? .isSelected : [])
             }
         }
         .padding(4)
@@ -546,6 +549,8 @@ private extension CashflowExpandedOverlayView {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Day \(day)\(cell.txCount > 0 ? ", \(cell.txCount) transactions" : "")")
+            .accessibilityHint("Show transactions for this day")
         } else {
             Color.clear.frame(height: 64)
         }
@@ -665,6 +670,9 @@ private extension CashflowExpandedOverlayView {
                 }
                 .buttonStyle(.plain)
                 .disabled(point.value == nil)
+                .accessibilityLabel("\(monthInitials[point.id]) net cash flow")
+                .accessibilityValue(point.value.map { "\(Int($0)) dollars" } ?? "No data")
+                .accessibilityAddTraits(selectedMonthIndex == point.id ? .isSelected : [])
             }
         }
         .frame(height: 170, alignment: .bottom)

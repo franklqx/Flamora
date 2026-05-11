@@ -251,6 +251,10 @@ struct HomeNetWorthCard: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(range.label)
+                .accessibilityValue(selectedRange == range ? "Selected" : "")
+                .accessibilityAddTraits(selectedRange == range ? .isSelected : [])
+                .accessibilityHint("Show net worth over \(range.label)")
             }
         }
     }
@@ -303,53 +307,35 @@ struct HomeNetWorthCard: View {
 
 // MARK: - Empty history state (shared by Home card + Detail view)
 
-/// 没有历史数据时的占位图：一条蓝色的渐变曲线 + 下方填充阴影 + 下方文案 "Tracking starts today"。
-/// 视觉上像一张真实 graph 的轮廓预览，避免空白或灰色占位。
+/// 没有历史数据时的占位图：一条**水平的蓝色实线**（"今天的状态"基线），
+/// 下方带渐变阴影。线本身平直，表示"还没有变化记录"；待有数据后才会起伏。
 struct NetWorthEmptyHistoryView: View {
     let chartHeight: CGFloat
     var caption: String = "Tracking starts today"
 
-    /// 占位曲线的归一化 y 值（0=底，1=顶）。轻微上扬，暗示增长方向。
-    private static let curvePoints: [CGPoint] = [
-        CGPoint(x: 0.00, y: 0.55),
-        CGPoint(x: 0.12, y: 0.50),
-        CGPoint(x: 0.24, y: 0.58),
-        CGPoint(x: 0.38, y: 0.46),
-        CGPoint(x: 0.52, y: 0.42),
-        CGPoint(x: 0.66, y: 0.34),
-        CGPoint(x: 0.80, y: 0.30),
-        CGPoint(x: 0.92, y: 0.22),
-        CGPoint(x: 1.00, y: 0.18)
-    ]
+    /// 基线在卡片中部偏下（y=0.5）。两端不留 padding，撑满 chart 宽度。
+    private static let baselineY: CGFloat = 0.5
 
     var body: some View {
         VStack(spacing: AppSpacing.sm) {
             GeometryReader { geo in
-                let pts = Self.curvePoints.map {
-                    CGPoint(
-                        x: $0.x * geo.size.width,
-                        y: (1 - $0.y) * geo.size.height
-                    )
-                }
+                let lineY = (1 - Self.baselineY) * geo.size.height
+                let leftEdge = CGPoint(x: 0, y: lineY)
+                let rightEdge = CGPoint(x: geo.size.width, y: lineY)
 
                 ZStack {
-                    // 曲线下方的填充阴影（蓝紫渐变 → 透明）
+                    // 基线下方的填充阴影（蓝紫 → 透明），表达"目前的水位"。
                     Path { path in
-                        guard let first = pts.first else { return }
-                        path.move(to: CGPoint(x: first.x, y: geo.size.height))
-                        path.addLine(to: first)
-                        for p in pts.dropFirst() {
-                            path.addLine(to: p)
-                        }
-                        if let last = pts.last {
-                            path.addLine(to: CGPoint(x: last.x, y: geo.size.height))
-                        }
+                        path.move(to: CGPoint(x: 0, y: geo.size.height))
+                        path.addLine(to: leftEdge)
+                        path.addLine(to: rightEdge)
+                        path.addLine(to: CGPoint(x: geo.size.width, y: geo.size.height))
                         path.closeSubpath()
                     }
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color(hex: "#60A5FA").opacity(0.35),
+                                Color(hex: "#60A5FA").opacity(0.32),
                                 Color(hex: "#818CF8").opacity(0.10),
                                 Color(hex: "#818CF8").opacity(0.0)
                             ],
@@ -358,13 +344,10 @@ struct NetWorthEmptyHistoryView: View {
                         )
                     )
 
-                    // 主曲线（蓝紫渐变）+ 下方柔光阴影
+                    // 主线：水平实线，蓝色渐变 + 下方柔光阴影。
                     Path { path in
-                        guard let first = pts.first else { return }
-                        path.move(to: first)
-                        for p in pts.dropFirst() {
-                            path.addLine(to: p)
-                        }
+                        path.move(to: leftEdge)
+                        path.addLine(to: rightEdge)
                     }
                     .stroke(
                         LinearGradient(
@@ -372,7 +355,7 @@ struct NetWorthEmptyHistoryView: View {
                             startPoint: .leading,
                             endPoint: .trailing
                         ),
-                        style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round)
+                        style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
                     )
                     .shadow(color: Color(hex: "#60A5FA").opacity(0.45), radius: 6, x: 0, y: 4)
                 }

@@ -39,41 +39,56 @@ struct AccountsCard: View {
                 .padding(.horizontal, AppSpacing.cardPadding)
 
             if isConnected {
-                ForEach(Array(groupedAccounts.enumerated()), id: \.offset) { sectionIndex, section in
-                    if sectionIndex > 0 {
-                        divider
-                    }
+                if groupedAccounts.isEmpty {
+                    EmptyStateView(
+                        icon: "chart.line.uptrend.xyaxis",
+                        title: "No investment accounts yet",
+                        message: "Add a brokerage or retirement account to see your FIRE progress reflect real holdings.",
+                        actionTitle: onAddAccount == nil ? nil : "Add account",
+                        action: onAddAccount
+                    )
+                    .padding(.vertical, AppSpacing.sm)
+                } else {
+                    ForEach(Array(groupedAccounts.enumerated()), id: \.offset) { sectionIndex, section in
+                        if sectionIndex > 0 {
+                            divider
+                        }
 
-                    VStack(spacing: 0) {
-                        sectionHeader(section.title)
+                        VStack(spacing: 0) {
+                            sectionHeader(section.title)
 
-                        ForEach(Array(section.accounts.enumerated()), id: \.element.id) { index, account in
-                            Button(action: { selectedAccount = account }) {
-                                AccountRow(account: account, lastSyncedAt: lastSyncedAt)
-                            }
-                            .buttonStyle(.plain)
+                            ForEach(Array(section.accounts.enumerated()), id: \.element.id) { index, account in
+                                Button(action: { selectedAccount = account }) {
+                                    AccountRow(account: account, lastSyncedAt: lastSyncedAt)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("\(account.name ?? account.institution), balance \(Int(account.balance)) dollars")
+                                .accessibilityHint("Open account details")
 
-                            if index < section.accounts.count - 1 {
-                                divider
+                                if index < section.accounts.count - 1 {
+                                    divider
+                                }
                             }
                         }
                     }
-                }
 
-                divider
-                Button(action: { onAddAccount?() }) {
-                    HStack(spacing: AppSpacing.sm) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.bodyRegular)
-                            .foregroundStyle(AppColors.inkPrimary)
-                        Text("Add Account")
-                            .font(.bodySemibold)
-                            .foregroundStyle(AppColors.inkPrimary)
+                    divider
+                    Button(action: { onAddAccount?() }) {
+                        HStack(spacing: AppSpacing.sm) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.bodyRegular)
+                                .foregroundStyle(AppColors.inkPrimary)
+                            Text("Add Account")
+                                .font(.bodySemibold)
+                                .foregroundStyle(AppColors.inkPrimary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, AppSpacing.md)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, AppSpacing.md)
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Add account")
+                    .accessibilityHint("Connect another investment or bank account")
                 }
-                .buttonStyle(.plain)
             } else {
                 disconnectedContent
             }
@@ -155,6 +170,8 @@ struct AccountsCard: View {
                 .padding(.vertical, AppSpacing.md)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Add account")
+            .accessibilityHint("Connect your first bank or investment account")
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.top, AppSpacing.md)

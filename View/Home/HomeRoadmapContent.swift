@@ -330,6 +330,9 @@ struct HomeRoadmapContent: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Step \(index), \(title)")
+        .accessibilityValue(detail)
+        .accessibilityHint("Open this setup step")
     }
 
     private var cashflowStepDetail: String {
@@ -393,6 +396,8 @@ struct HomeRoadmapContent: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Reconnect your accounts")
+        .accessibilityHint("Resume cashflow and investment tracking")
     }
 
     private func startPlaidLinkFlow() {
@@ -495,7 +500,39 @@ struct HomeRoadmapContent: View {
                 issueZero: issueZero ?? self.latestIssueZeroReport,
                 annual: annual ?? self.latestAnnualReport
             )
+
+            self.detectNetWorthHigh()
         }
+    }
+
+    /// 检测净资产历史新高：用 `.all` 历史曲线作基准（不含今日点），
+    /// 若当前 `totalNetWorth` 严格大于全部历史值且高于上次触发值，则触发 toast。
+    /// 用 UserDefaults 存"上次已庆祝的最高值"，避免账户波动反复触发。
+    private func detectNetWorthHigh() {
+        guard let summary = netWorthSummary else { return }
+        let current = summary.totalNetWorth
+        guard current > 0 else { return }
+
+        let allHistory = netWorthHistory[.all] ?? []
+        // 历史点至少要有 2 个（>=1 周历史），否则今天就是"新高"没意义。
+        guard allHistory.count >= 2 else { return }
+        let historicalMax = allHistory.dropLast().map(\.value).max() ?? 0
+        guard current > historicalMax else { return }
+
+        // 已经为这个值（或更高）庆祝过，跳过。
+        let lastCelebrated = UserDefaults.standard.double(forKey: FlamoraStorageKey.lastCelebratedNetWorthHigh)
+        guard current > lastCelebrated else { return }
+        UserDefaults.standard.set(current, forKey: FlamoraStorageKey.lastCelebratedNetWorthHigh)
+
+        let payload = SuccessMomentPayload.netWorthHigh(
+            amount: current,
+            deltaThisMonth: summary.growthAmount
+        )
+        NotificationCenter.default.post(
+            name: .successMomentDidOccur,
+            object: nil,
+            userInfo: ["payload": payload]
+        )
     }
 
     private func handleSavingsSheetDismiss() {
@@ -600,6 +637,9 @@ struct HomeRoadmapContent: View {
     @MainActor
     private func persistSavings(_ value: Double, year: Int, monthIndex: Int) async {
         let month = String(format: "%04d-%02d", year, monthIndex + 1)
+        // 庆祝先行：用户的输入足够判断是否达标，无需等待 API。toast 通过 NotificationCenter
+        // 投递，会在 sheet dismiss 动画收尾的同一帧显示出来。
+        detectSavingsGoalMet(month: month, monthIndex: monthIndex, savedAmount: value)
         do {
             _ = try await APIService.shared.saveSavingsCheckIn(month: month, savingsActual: value)
             setSavingsAmount(value, year: year, monthIndex: monthIndex)
@@ -611,5 +651,32 @@ struct HomeRoadmapContent: View {
         } catch {
             print("❌ [HomeRoadmapContent] Failed to persist savings: \(error)")
         }
+    }
+
+    /// 每次打卡只要命中本月（或回填的某个月）储蓄目标就触发庆祝。
+    /// 不做"每月一次"门控——用户回填过去几个月或重新调整数字时，达标都值得被看见。
+    @MainActor
+    private func detectSavingsGoalMet(month: String, monthIndex: Int, savedAmount: Double) {
+        let target = targetAmount
+        guard target > 0, savedAmount >= target else { return }
+
+        let payload = SuccessMomentPayload.savingsGoalMet(
+            monthLabel: monthShortLabel(monthIndex: monthIndex),
+            saved: savedAmount,
+            target: target
+        )
+        NotificationCenter.default.post(
+            name: .successMomentDidOccur,
+            object: nil,
+            userInfo: ["payload": payload]
+        )
+    }
+
+    private func monthShortLabel(monthIndex: Int) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "LLLL"
+        let names = f.monthSymbols ?? []
+        guard monthIndex >= 0, monthIndex < names.count else { return "this month" }
+        return names[monthIndex]
     }
 }

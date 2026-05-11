@@ -98,6 +98,9 @@ struct MainTabView: View {
     @State private var plaidLinkToastMessage: String?
     @State private var plaidLinkToastTask: Task<Void, Never>?
 
+    @State private var successMoment: SuccessMomentPayload?
+    @State private var successMomentTask: Task<Void, Never>?
+
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(PlaidManager.self) private var plaidManager
 
@@ -128,9 +131,17 @@ struct MainTabView: View {
             PlaidLinkSuccessToast(message: plaidLinkToastMessage)
                 .zIndex(300)
         }
+        .overlay {
+            SuccessToast(payload: successMoment)
+                .zIndex(310)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .plaidLinkDidSucceed)) { note in
             let name = note.userInfo?["institutionName"] as? String
             showPlaidLinkToast(institutionName: name)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .successMomentDidOccur)) { note in
+            guard let payload = note.userInfo?["payload"] as? SuccessMomentPayload else { return }
+            showSuccessMoment(payload)
         }
         .ignoresSafeArea(.keyboard, edges: .all)
         .ignoresSafeArea(edges: .bottom)
@@ -510,6 +521,21 @@ private extension MainTabView {
             guard !Task.isCancelled else { return }
             withAnimation(.easeInOut(duration: 0.24)) {
                 plaidLinkToastMessage = nil
+            }
+        }
+    }
+
+    private func showSuccessMoment(_ payload: SuccessMomentPayload) {
+        successMomentTask?.cancel()
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.84)) {
+            successMoment = payload
+        }
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        successMomentTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 0.28)) {
+                successMoment = nil
             }
         }
     }
@@ -948,6 +974,8 @@ private struct NotificationsView: View {
                     Button("Done") { dismiss() }
                         .foregroundStyle(AppColors.inkPrimary)
                         .fontWeight(.semibold)
+                        .accessibilityLabel("Done")
+                        .accessibilityHint("Close notifications")
                 }
             }
         }

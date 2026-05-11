@@ -117,6 +117,9 @@ struct ReportFeedRow: View {
             .padding(.vertical, AppSpacing.sm + 2)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(item.title)\(item.isUnread ? ", new" : "")")
+        .accessibilityValue("\(item.subtitle), \(item.periodLabel)")
+        .accessibilityHint("Open report")
     }
 
     private var iconBackground: Color {

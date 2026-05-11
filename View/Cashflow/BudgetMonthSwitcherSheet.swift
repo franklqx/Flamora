@@ -39,6 +39,8 @@ struct BudgetMonthSwitcherSheet: View {
                 Button("Done") { dismiss() }
                     .font(.bodySemibold)
                     .foregroundStyle(AppColors.inkPrimary)
+                    .accessibilityLabel("Done")
+                    .accessibilityHint("Close month picker")
             }
 
             if months.isEmpty {

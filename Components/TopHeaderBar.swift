@@ -45,6 +45,8 @@ struct TopHeaderBar: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Notifications")
+                .accessibilityHint("Open insights and reports")
 
                 Button(action: onSettingsTapped) {
                     Circle()
@@ -61,6 +63,8 @@ struct TopHeaderBar: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Settings")
+                .accessibilityHint("Open account and app preferences")
             }
         }
         .padding(.horizontal, AppSpacing.screenPadding)

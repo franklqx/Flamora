@@ -578,6 +578,8 @@ struct CashflowYearSwitcherSheet: View {
                 Button("Done") { dismiss() }
                     .font(.bodySemibold)
                     .foregroundStyle(AppColors.inkPrimary)
+                    .accessibilityLabel("Done")
+                    .accessibilityHint("Close year picker")
             }
 
             ScrollView {
@@ -720,6 +722,8 @@ struct SpendingCategoryTransactionsDetailView: View {
                     .frame(width: 34, height: 34, alignment: .leading)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Back")
+            .accessibilityHint("Return to cashflow")
 
             Spacer()
         }
