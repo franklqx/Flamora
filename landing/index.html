@@ -49,6 +49,7 @@
   .iphone-screen { border-radius: 40px; overflow: hidden; background: #fff; position: relative; display: flex; flex-direction: column; }
   .iphone-sheet { flex: 1 1 auto; background: #fff; }
   .notch { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 90px; height: 26px; background: #000; border-radius: 999px; z-index: 10; }
+  .iphone-shot { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
   @keyframes scrollPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
@@ -111,38 +112,7 @@
       <div class="lg:col-span-5 hidden lg:block fade-up" style="animation-delay: 0.3s">
         <div class="iphone-frame max-w-[300px] mx-auto" style="transform: rotate(-4deg);">
           <div class="iphone-screen aspect-[9/19.5]">
-            <div class="notch"></div>
-            <div class="bg-fire pt-12 px-6 pb-8 relative">
-              <div class="text-white/90 text-[10px] font-bold tracking-widest uppercase mb-2">Your FIRE Journey</div>
-              <div class="font-display text-white text-3xl font-bold leading-none">$127,403</div>
-              <div class="text-white/85 text-xs mb-4">Net Worth · ↑ 8 months ahead</div>
-              <div class="bg-black/20 rounded-full h-2 mb-2 overflow-hidden"><div class="h-full bg-white rounded-full" style="width: 23%;"></div></div>
-              <div class="flex justify-between text-white/90 text-[10px] font-medium"><span>23% to FIRE</span><span>Mar 14, 2041</span></div>
-            </div>
-            <div class="iphone-sheet -mt-4 rounded-t-3xl px-4 py-5 relative">
-              <div class="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-3">Net Worth</div>
-              <svg viewBox="0 0 280 70" class="w-full mb-4">
-                <path d="M 0 55 Q 60 48 100 38 T 180 22 T 280 8" stroke="#A78BFA" stroke-width="2.5" fill="none"/>
-                <path d="M 0 55 Q 60 48 100 38 T 180 22 T 280 8 L 280 70 L 0 70 Z" fill="url(#grad1)" opacity="0.25"/>
-                <circle cx="280" cy="8" r="4" fill="#A78BFA"/>
-                <defs><linearGradient id="grad1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#A78BFA"/><stop offset="100%" stop-color="#A78BFA" stop-opacity="0"/></linearGradient></defs>
-              </svg>
-              <div class="grid grid-cols-2 gap-2 mb-4">
-                <div class="bg-gray-50 rounded-xl p-2.5"><div class="text-[8px] text-gray-500 uppercase tracking-wide font-semibold">Savings rate</div><div class="text-base font-bold text-ink mt-0.5">42%</div></div>
-                <div class="bg-gray-50 rounded-xl p-2.5"><div class="text-[8px] text-gray-500 uppercase tracking-wide font-semibold">Months ahead</div><div class="text-base font-bold text-emerald-600 mt-0.5">+8</div></div>
-              </div>
-              <div class="flex gap-1">
-                <div class="flex-1 h-2 bg-blue-500 rounded-sm"></div>
-                <div class="flex-1 h-2 bg-purple-500 rounded-sm" style="flex-grow: 0.6"></div>
-                <div class="h-2 bg-emerald-500 rounded-sm" style="width: 22%"></div>
-              </div>
-              <div class="flex gap-1 mt-1.5 text-[8px] text-gray-500 font-medium"><div class="flex-1">NEEDS 50%</div><div class="flex-1">WANTS 28%</div><div>SAVE 22%</div></div>
-              <div class="mt-5 pt-4 border-t border-gray-100 space-y-2.5">
-                <div class="flex items-center justify-between text-xs"><div class="flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center text-[10px]">🏠</div><span class="text-gray-700">Rent</span></div><span class="font-semibold text-ink">$1,800</span></div>
-                <div class="flex items-center justify-between text-xs"><div class="flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center text-[10px]">🛒</div><span class="text-gray-700">Groceries</span></div><span class="font-semibold text-ink">$420</span></div>
-                <div class="flex items-center justify-between text-xs"><div class="flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-purple-50 flex items-center justify-center text-[10px]">☕</div><span class="text-gray-700">Coffee</span></div><span class="font-semibold text-ink">$84</span></div>
-              </div>
-            </div>
+            <img src="screenshots/home.png" alt="Flamora Home screen with net worth chart" class="iphone-shot" />
           </div>
         </div>
       </div>
@@ -176,25 +146,7 @@
         <div class="lg:col-span-6">
           <div class="iphone-frame max-w-[280px] mx-auto">
             <div class="iphone-screen aspect-[9/19.5]">
-              <div class="notch"></div>
-              <div class="bg-fire pt-14 px-6 pb-10 text-center relative">
-                <div class="text-white/90 text-[10px] font-bold tracking-widest uppercase mb-3">Freedom Date</div>
-                <div class="font-display text-white text-4xl font-bold leading-none">Mar 14<br>2041</div>
-                <div class="text-white/90 text-[11px] mt-4">14 years, 10 months</div>
-              </div>
-              <div class="iphone-sheet -mt-5 rounded-t-3xl px-5 py-5 relative">
-                <div class="text-[9px] font-bold tracking-widest uppercase text-gray-500 mb-3">Your FIRE Journey</div>
-                <div class="flex gap-1 mb-5">
-                  <div class="flex-1 h-3 bg-fire rounded-sm"></div><div class="flex-1 h-3 bg-fire rounded-sm"></div><div class="flex-1 h-3 bg-fire rounded-sm" style="opacity: 0.5;"></div>
-                  <div class="flex-1 h-3 bg-gray-200 rounded-sm"></div><div class="flex-1 h-3 bg-gray-200 rounded-sm"></div><div class="flex-1 h-3 bg-gray-200 rounded-sm"></div><div class="flex-1 h-3 bg-gray-200 rounded-sm"></div><div class="flex-1 h-3 bg-gray-200 rounded-sm"></div>
-                </div>
-                <div class="grid grid-cols-2 gap-3 mb-3">
-                  <div><div class="text-[9px] uppercase tracking-wide text-gray-400 font-semibold">Net Worth</div><div class="text-base font-bold mt-0.5">$127K</div></div>
-                  <div><div class="text-[9px] uppercase tracking-wide text-gray-400 font-semibold">Savings</div><div class="text-base font-bold mt-0.5">42%</div></div>
-                </div>
-                <div class="bg-gray-50 rounded-xl p-3 mb-3"><div class="text-[9px] uppercase tracking-wide text-gray-400 font-semibold mb-1">Ahead of plan</div><div class="text-emerald-600 font-bold text-sm">↑ 8 months</div></div>
-                <div class="bg-gradient-to-br from-purple-50 to-amber-50 rounded-xl p-3 border border-purple-100"><div class="text-[9px] uppercase tracking-wide text-purple-600 font-semibold mb-1">Simulator</div><div class="text-xs text-gray-600">+$200/mo savings →</div><div class="text-xs font-bold text-ink mt-0.5">FIRE 11 months sooner</div></div>
-              </div>
+              <img src="screenshots/home.png" alt="Freedom Date and FIRE journey progress" class="iphone-shot" />
             </div>
           </div>
         </div>
@@ -250,82 +202,40 @@
     <div class="showcase-scroll overflow-x-auto pb-12">
       <div class="flex gap-8 px-12 lg:px-24" style="width: max-content;">
         <div class="showcase-card text-center w-[260px] flex-shrink-0">
-          <div class="iphone-frame mb-5"><div class="iphone-screen aspect-[9/19.5]"><div class="notch"></div>
-            <div class="bg-fire flex-1 pt-16 px-6 text-center flex flex-col justify-center">
-              <div class="text-white text-[10px] font-bold tracking-widest uppercase mb-4">Welcome</div>
-              <div class="font-display text-white text-3xl font-semibold leading-tight mb-3">Retire on<br>your terms.</div>
-              <div class="text-white/85 text-xs">Plan your path to financial freedom.</div>
-            </div>
-          </div></div>
-          <p class="font-display italic text-lg text-white/90">"Start with why."</p>
-        </div>
-        <div class="showcase-card text-center w-[260px] flex-shrink-0">
-          <div class="iphone-frame mb-5"><div class="iphone-screen aspect-[9/19.5]"><div class="notch"></div>
-            <div class="iphone-sheet pt-14 px-6 text-center">
-              <div class="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-4">FIRE Timeline</div>
-              <svg viewBox="0 0 200 200" class="mx-auto w-44 h-44 mb-4 -rotate-90">
-                <circle cx="100" cy="100" r="80" stroke="#F3F4F6" stroke-width="14" fill="none"/>
-                <circle cx="100" cy="100" r="80" stroke="url(#ringGrad)" stroke-width="14" fill="none" stroke-dasharray="502" stroke-dashoffset="385" stroke-linecap="round"/>
-                <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#A78BFA"/><stop offset="50%" stop-color="#FCA5A5"/><stop offset="100%" stop-color="#FCD34D"/></linearGradient></defs>
-              </svg>
-              <div class="font-display text-3xl font-bold leading-none">23%</div>
-              <div class="text-xs text-gray-500 mt-2">to financial freedom</div>
-              <div class="text-xs text-gray-400 mt-3">Mar 14, 2041</div>
-            </div>
+          <div class="iphone-frame mb-5"><div class="iphone-screen aspect-[9/19.5]">
+            <img src="screenshots/home.png" alt="Home — net worth and FIRE journey" class="iphone-shot" />
           </div></div>
           <p class="font-display italic text-lg text-white/90">"Your day, calculated."</p>
         </div>
         <div class="showcase-card text-center w-[260px] flex-shrink-0">
-          <div class="iphone-frame mb-5"><div class="iphone-screen aspect-[9/19.5]"><div class="notch"></div>
-            <div class="iphone-sheet pt-14 px-5">
-              <div class="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-2">Net Worth</div>
-              <div class="font-display text-2xl font-bold mb-1">$127,403</div>
-              <div class="text-emerald-600 text-xs mb-5">↑ $23,400 (1Y)</div>
-              <svg viewBox="0 0 240 100" class="w-full mb-4">
-                <path d="M 0 90 Q 40 80 70 60 T 130 35 T 200 20 T 240 8" stroke="#A78BFA" stroke-width="2.5" fill="none"/>
-                <path d="M 0 90 Q 40 80 70 60 T 130 35 T 200 20 T 240 8 L 240 100 L 0 100 Z" fill="url(#nwGrad)" opacity="0.4"/>
-                <circle cx="240" cy="8" r="4" fill="#A78BFA"/>
-                <defs><linearGradient id="nwGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#A78BFA"/><stop offset="100%" stop-color="#A78BFA" stop-opacity="0"/></linearGradient></defs>
-              </svg>
-              <div class="flex justify-between text-[9px] text-gray-400 mb-4 font-medium"><span>6M</span><span>1Y</span><span class="font-bold text-ink bg-gray-100 px-2 py-0.5 rounded">3Y</span><span>5Y</span><span>ALL</span></div>
-              <div class="bg-gray-50 rounded-xl p-3"><div class="text-[9px] uppercase text-gray-500 tracking-wide font-semibold">Investments</div><div class="text-sm font-bold mt-0.5">$84,200</div></div>
-            </div>
+          <div class="iphone-frame mb-5"><div class="iphone-screen aspect-[9/19.5]">
+            <img src="screenshots/home-simulator.png" alt="Pull down to simulate — what if I save $200 more?" class="iphone-shot" />
           </div></div>
-          <p class="font-display italic text-lg text-white/90">"Track every dollar."</p>
+          <p class="font-display italic text-lg text-white/90">"Pull down. Simulate."</p>
         </div>
         <div class="showcase-card text-center w-[260px] flex-shrink-0">
-          <div class="iphone-frame mb-5"><div class="iphone-screen aspect-[9/19.5]"><div class="notch"></div>
-            <div class="iphone-sheet pt-14 px-5">
-              <div class="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-4">Cash Flow</div>
-              <div class="space-y-3.5">
-                <div><div class="flex justify-between text-xs mb-1.5"><span class="text-gray-700 font-medium">Needs</span><span class="font-bold">$2,450</span></div><div class="h-2 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-blue-500" style="width: 50%;"></div></div></div>
-                <div><div class="flex justify-between text-xs mb-1.5"><span class="text-gray-700 font-medium">Wants</span><span class="font-bold">$1,400</span></div><div class="h-2 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-purple-500" style="width: 28%;"></div></div></div>
-                <div><div class="flex justify-between text-xs mb-1.5"><span class="text-gray-700 font-medium">Savings</span><span class="font-bold">$1,070</span></div><div class="h-2 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500" style="width: 22%;"></div></div></div>
-              </div>
-              <div class="mt-5 pt-4 border-t border-gray-100">
-                <div class="text-[9px] uppercase text-gray-400 tracking-wide font-semibold mb-2">Top categories</div>
-                <div class="flex justify-between text-xs"><span class="text-gray-600">Rent</span><span class="font-semibold">$1,800</span></div>
-                <div class="flex justify-between text-xs mt-1.5"><span class="text-gray-600">Groceries</span><span class="font-semibold">$420</span></div>
-                <div class="flex justify-between text-xs mt-1.5"><span class="text-gray-600">Coffee</span><span class="font-semibold">$84</span></div>
-              </div>
-            </div>
+          <div class="iphone-frame mb-5"><div class="iphone-screen aspect-[9/19.5]">
+            <img src="screenshots/cashflow.png" alt="Cash Flow — needs, wants, savings" class="iphone-shot" />
           </div></div>
           <p class="font-display italic text-lg text-white/90">"Spend without guilt."</p>
         </div>
         <div class="showcase-card text-center w-[260px] flex-shrink-0">
-          <div class="iphone-frame mb-5"><div class="iphone-screen aspect-[9/19.5]"><div class="notch"></div>
-            <div class="iphone-sheet pt-14 px-5">
-              <div class="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-2">Savings Rate</div>
-              <div class="font-display text-3xl font-bold leading-none">42%</div>
-              <div class="text-gray-500 text-xs mt-1 mb-5">12-month average</div>
-              <div class="flex items-end gap-1 h-28 mb-3 relative">
-                <div class="flex-1 bg-fire rounded-sm" style="height: 30%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 45%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 38%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 60%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 52%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 75%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 68%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 82%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 78%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 85%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 90%;"></div><div class="flex-1 bg-fire rounded-sm" style="height: 95%;"></div>
-                <div class="absolute left-0 right-0 border-t border-dashed border-gray-300" style="top: 50%;"></div>
-              </div>
-              <div class="text-xs text-gray-500 text-left">Target: <span class="font-bold text-ink">50%</span></div>
-            </div>
+          <div class="iphone-frame mb-5"><div class="iphone-screen aspect-[9/19.5]">
+            <img src="screenshots/cashflow-calendar.png" alt="Cash Flow calendar — every day, every dollar" class="iphone-shot" />
           </div></div>
-          <p class="font-display italic text-lg text-white/90">"Build the habit."</p>
+          <p class="font-display italic text-lg text-white/90">"Every day, every dollar."</p>
+        </div>
+        <div class="showcase-card text-center w-[260px] flex-shrink-0">
+          <div class="iphone-frame mb-5"><div class="iphone-screen aspect-[9/19.5]">
+            <img src="screenshots/investment.png" alt="Investment — asset allocation and accounts" class="iphone-shot" />
+          </div></div>
+          <p class="font-display italic text-lg text-white/90">"Every account, every day."</p>
+        </div>
+        <div class="showcase-card text-center w-[260px] flex-shrink-0">
+          <div class="iphone-frame mb-5"><div class="iphone-screen aspect-[9/19.5]">
+            <img src="screenshots/investment-detail.png" alt="Investment growth — track every gain" class="iphone-shot" />
+          </div></div>
+          <p class="font-display italic text-lg text-white/90">"Track every gain."</p>
         </div>
       </div>
     </div>

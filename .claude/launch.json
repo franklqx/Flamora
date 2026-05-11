@@ -2,6 +2,13 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "landing",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": ["-c", "cd /tmp/flamora-landing && python3 -m http.server 7891"],
+      "port": 7891,
+      "autoPort": true
+    },
+    {
       "name": "html-preview",
       "runtimeExecutable": "/bin/sh",
       "runtimeArgs": ["-c", "cd /tmp && python3 -m http.server --directory /tmp 7890"],
