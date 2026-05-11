@@ -401,33 +401,14 @@ struct AccountDetailView: View {
 
     // MARK: - Logo
 
-    @ViewBuilder
     private var accountLogoView: some View {
-        if let urlString = account.logoUrl, let url = URL(string: urlString) {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                        .frame(width: 38, height: 38)
-                        .clipShape(Circle())
-                default:
-                    fallbackLogo
-                }
-            }
-        } else {
-            fallbackLogo
-        }
-    }
-
-    private var fallbackLogo: some View {
-        ZStack {
-            Circle()
-                .fill(accentColor.opacity(0.14))
-                .frame(width: 38, height: 38)
-            Image(systemName: iconName)
-                .font(.footnoteSemibold)
-                .foregroundStyle(accentColor)
-        }
+        BankLogoView(
+            logoBase64: account.institutionLogoBase64,
+            primaryColorHex: account.institutionPrimaryColor,
+            institutionName: account.institution,
+            fallbackSymbol: iconName,
+            fallbackColor: accentColor
+        )
     }
 
     // MARK: - Data
@@ -602,17 +583,7 @@ private struct HoldingRow: View {
 
     var body: some View {
         HStack(spacing: AppSpacing.md) {
-            ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.md)
-                    .fill(AppColors.inkTrack)
-                    .frame(width: 40, height: 40)
-                Text(holding.symbol)
-                    .font(.footnoteBold)
-                    .foregroundStyle(AppColors.inkPrimary)
-                    .minimumScaleFactor(0.6)
-                    .lineLimit(1)
-                    .padding(.horizontal, AppSpacing.xs)
-            }
+            TickerBadge(symbol: holding.symbol)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(holding.name)

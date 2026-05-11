@@ -265,7 +265,7 @@ struct SpendingAnalysisDetailView: View {
             }
 
             Text(formatCurrencyNoCents(selectedTotal))
-                .font(.currencyHero)
+                .font(.h1)
                 .foregroundStyle(AppColors.inkPrimary)
                 .monospacedDigit()
                 .lineLimit(1)
@@ -335,17 +335,21 @@ struct SpendingAnalysisDetailView: View {
     private func barColumn(index: Int, barWidth: CGFloat, maxHeight: CGFloat) -> some View {
         let amount: Double? = currentTrend.indices.contains(index) ? currentTrend[index] : nil
         let height = barHeight(for: amount, maxHeight: maxHeight)
-        let isSelected = !isShowingAnnualTotal && index == selectedBarIndex
+        let hasData = (amount ?? 0) > 0
+        // When the year total is displayed, every month with data is "lit" so the
+        // chart reads as the breakdown behind that total. When a specific month
+        // is selected, only that bar is lit.
+        let isLit = isShowingAnnualTotal ? hasData : index == selectedBarIndex
 
         return VStack(spacing: 8) {
             RoundedRectangle(cornerRadius: 4)
-                .fill(isSelected ? accentColor : AppColors.inkTrack)
+                .fill(isLit ? accentColor : AppColors.inkTrack)
                 .frame(width: barWidth, height: height)
                 .opacity(amount == nil ? 0.5 : 1.0)
 
             Text(monthLabels[index])
                 .font(.caption)
-                .foregroundStyle(isSelected ? AppColors.inkPrimary : AppColors.inkFaint)
+                .foregroundStyle(isLit ? AppColors.inkPrimary : AppColors.inkFaint)
         }
         .frame(maxWidth: .infinity)
     }

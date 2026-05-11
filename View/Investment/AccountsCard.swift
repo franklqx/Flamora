@@ -187,7 +187,13 @@ private struct AccountRow: View {
 
     var body: some View {
         HStack(spacing: AppSpacing.md) {
-            fallbackIcon
+            BankLogoView(
+                logoBase64: account.institutionLogoBase64,
+                primaryColorHex: account.institutionPrimaryColor,
+                institutionName: account.institution,
+                fallbackSymbol: iconName,
+                fallbackColor: iconColor
+            )
             VStack(alignment: .leading, spacing: 2) {
                 Text(account.name ?? account.institution)
                     .font(.footnoteSemibold)

@@ -341,16 +341,21 @@ private extension CashflowView {
             return
         }
 
-        if force || apiBudget.budgetId.isEmpty {
-            if let b = await fetchBudget(month: monthStr) {
-                apiBudget = b
-                FlamoraStorageKey.migrateBudgetSetupIfNeeded(budget: b, hasLinkedBank: true)
-                currentSavings = b.savingsActual ?? 0
-                needsTotal = b.needsSpent ?? 0
-                wantsTotal = b.wantsSpent ?? 0
-                totalSpend = (b.needsSpent ?? 0) + (b.wantsSpent ?? 0)
-                TabContentCache.shared.setCashflowBudget(b)
-            }
+        // Always refresh the budget on appear. needsSpent / wantsSpent are
+        // computed live by `get-monthly-budget` from the transactions table —
+        // if we only refetch when budgetId is empty, the user sees a stale
+        // snapshot from before Plaid finished syncing this month's transactions
+        // (the symptom was Budget May showing $0 spent despite May having tx).
+        // The cached `apiBudget` is still visible while this fetch is in flight,
+        // so there's no flicker.
+        if let b = await fetchBudget(month: monthStr) {
+            apiBudget = b
+            FlamoraStorageKey.migrateBudgetSetupIfNeeded(budget: b, hasLinkedBank: true)
+            currentSavings = b.savingsActual ?? 0
+            needsTotal = b.needsSpent ?? 0
+            wantsTotal = b.wantsSpent ?? 0
+            totalSpend = (b.needsSpent ?? 0) + (b.wantsSpent ?? 0)
+            TabContentCache.shared.setCashflowBudget(b)
         }
 
         await refreshActiveSavingsTarget()

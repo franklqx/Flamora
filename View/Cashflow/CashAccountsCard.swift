@@ -133,14 +133,13 @@ private struct CashAccountRow: View {
 
     var body: some View {
         HStack(spacing: AppSpacing.md) {
-            ZStack {
-                Circle()
-                    .fill(iconColor.opacity(0.15))
-                    .frame(width: 38, height: 38)
-                Image(systemName: iconName)
-                    .font(.footnoteSemibold)
-                    .foregroundStyle(iconColor)
-            }
+            BankLogoView(
+                logoBase64: account.institutionLogoBase64,
+                primaryColorHex: account.institutionPrimaryColor,
+                institutionName: account.institution,
+                fallbackSymbol: iconName,
+                fallbackColor: iconColor
+            )
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(account.name)

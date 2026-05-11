@@ -63,7 +63,7 @@ serve(async (req) => {
           subtype,
           balance_current,
           mask,
-          plaid_items ( institution_name )
+          plaid_items ( institution_name, institution_logo_base64, institution_logo_url, institution_primary_color )
         `)
         .eq('user_id', user.id)
         .eq('is_active', true)
@@ -160,6 +160,9 @@ serve(async (req) => {
                 balance: a.balance_current ?? null,
                 mask: a.mask ?? null,
                 institution: a.plaid_items?.institution_name ?? '',
+                institution_logo_base64: a.plaid_items?.institution_logo_base64 ?? null,
+                institution_logo_url: a.plaid_items?.institution_logo_url ?? null,
+                institution_primary_color: a.plaid_items?.institution_primary_color ?? null,
               }
             }),
             data_source: 'plaid',

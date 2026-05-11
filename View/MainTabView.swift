@@ -138,6 +138,10 @@ struct MainTabView: View {
         .onReceive(NotificationCenter.default.publisher(for: .plaidLinkDidSucceed)) { note in
             let name = note.userInfo?["institutionName"] as? String
             showPlaidLinkToast(institutionName: name)
+            // First bank link means every tab's cache was empty — kick a fresh
+            // warm so the user doesn't have to manually pull-to-refresh each
+            // tab to see their freshly-synced accounts.
+            AppDataPreloader.warmAfterBankLink()
         }
         .onReceive(NotificationCenter.default.publisher(for: .successMomentDidOccur)) { note in
             guard let payload = note.userInfo?["payload"] as? SuccessMomentPayload else { return }

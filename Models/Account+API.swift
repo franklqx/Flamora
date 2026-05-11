@@ -17,7 +17,11 @@ extension Account {
             accountType: mapPlaidAccountType(a.type),
             balance: a.balance ?? 0,
             connected: true,
-            logoUrl: a.logoUrl
+            logoUrl: a.institutionLogoUrl,
+            name: a.name.isEmpty ? nil : a.name,
+            mask: a.mask,
+            institutionLogoBase64: a.institutionLogoBase64,
+            institutionPrimaryColor: a.institutionPrimaryColor
         )
     }
 
@@ -30,9 +34,11 @@ extension Account {
             accountType: .brokerage,
             balance: a.balanceCurrent,
             connected: true,
-            logoUrl: nil,
+            logoUrl: a.institutionLogoUrl,
             name: a.name.isEmpty ? nil : a.name,
-            mask: a.mask
+            mask: a.mask,
+            institutionLogoBase64: a.institutionLogoBase64,
+            institutionPrimaryColor: a.institutionPrimaryColor
         )
     }
 

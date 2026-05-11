@@ -18,7 +18,12 @@ struct OB_InvestmentView: View {
     @State private var showInsight = false
     @State private var insightWorkItem: DispatchWorkItem?
     @State private var lastSliderHapticTime = Date.distantPast
-    private let investmentRange: ClosedRange<Double> = 0...10_000_000
+    // Slider caps at $2M — covers ~95% of users at this onboarding stage.
+    // Users with larger portfolios tap the amount above to type any value;
+    // the slider visually pins to max via `min(value, upperBound)` in the
+    // binding getter, so the typed amount isn't clamped — only the slider
+    // thumb is. Pinning still lets them refine downward with the slider.
+    private let investmentRange: ClosedRange<Double> = 0...2_000_000
 
     private var monthlyPassiveIncome: Int {
         Int((investmentValue * 0.04) / 12)
@@ -153,7 +158,7 @@ struct OB_InvestmentView: View {
                         .font(.caption)
                         .foregroundColor(AppColors.inkFaint)
                     Spacer()
-                    Text("\(data.currencySymbol)10M+")
+                    Text("\(data.currencySymbol)2M+")
                         .font(.caption)
                         .foregroundColor(AppColors.inkFaint)
                 }

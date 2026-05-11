@@ -220,7 +220,7 @@ struct TotalSpendingAnalysisDetailView: View {
             }
 
             Text(formatCurrencyNoCents(selectedTotal))
-                .font(.currencyHero)
+                .font(.h1)
                 .foregroundStyle(AppColors.inkPrimary)
                 .monospacedDigit()
                 .lineLimit(1)

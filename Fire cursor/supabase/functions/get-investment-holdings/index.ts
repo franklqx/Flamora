@@ -52,7 +52,7 @@ serve(async (req) => {
         mask,
         subtype,
         balance_current,
-        plaid_items ( institution_name )
+        plaid_items ( institution_name, institution_logo_base64, institution_logo_url, institution_primary_color )
       `)
       .eq('user_id', user.id)
       .eq('type', 'investment')
@@ -239,6 +239,9 @@ serve(async (req) => {
       mask: a.mask ?? null,
       subtype: a.subtype ?? null,
       institution_name: a.plaid_items?.institution_name ?? null,
+      institution_logo_base64: a.plaid_items?.institution_logo_base64 ?? null,
+      institution_logo_url: a.plaid_items?.institution_logo_url ?? null,
+      institution_primary_color: a.plaid_items?.institution_primary_color ?? null,
       balance_current: parseFloat((a.balance_current || 0).toFixed(2)),
       holdings_value: parseFloat((holdingsValueByAccountId[a.id] || 0).toFixed(2)),
       uninvested_cash_value: parseFloat(Math.max(0, (a.balance_current || 0) - (holdingsValueByAccountId[a.id] || 0)).toFixed(2)),

@@ -4,6 +4,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders, handleCors } from '../_shared/cors.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { ensureIssueZeroReport, stampFirstBankConnectedAt } from '../_shared/report-builder.ts'
+import { fetchInstitutionBranding, brandingPatch } from '../_shared/institution-logo.ts'
 
 interface ExchangeRequest {
   public_token: string
@@ -297,6 +298,23 @@ serve(async (req) => {
     // ============================================================
     console.log('[exchange] Step 4: Storing plaid_item')
 
+    // Fetch institution branding (logo + primary color) before insert so we can
+    // store it in one round-trip. Best-effort: branding failure must not block
+    // the link flow — the iOS row falls back to an SF Symbol when logo is null.
+    let branding: Awaited<ReturnType<typeof fetchInstitutionBranding>> = null
+    if (body.institution?.institution_id) {
+      branding = await fetchInstitutionBranding(body.institution.institution_id, {
+        plaidClientId,
+        plaidSecret,
+        plaidBaseUrl,
+      })
+      if (branding?.logoBase64) {
+        console.log(`[exchange] ✅ Institution branding fetched (logo ${branding.logoBase64.length} bytes, color ${branding.primaryColor})`)
+      } else {
+        console.log('[exchange] ⚠️ Institution branding not available')
+      }
+    }
+
     const { data: plaidItem, error: itemInsertError } = await supabase
       .from('plaid_items')
       .upsert({
@@ -307,6 +325,7 @@ serve(async (req) => {
         institution_name: body.institution?.name || null,
         status: 'active',
         products: billedProducts,
+        ...brandingPatch(branding),
       }, { onConflict: 'item_id' })
       .select()
       .single()

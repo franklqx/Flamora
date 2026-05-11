@@ -95,6 +95,11 @@ struct ContentView: View {
             withAnimation(.easeInOut(duration: 0.5)) {
                 isOnboardingComplete = true
             }
+            // Warm Home / Cashflow / Investment caches in parallel. By the
+            // time the user lands on (or switches into) any tab, the cached
+            // values are already populated — eliminating the "blank → fetch
+            // → content" flash that made the app feel sluggish.
+            AppDataPreloader.warmAllTabs()
         }
     }
 

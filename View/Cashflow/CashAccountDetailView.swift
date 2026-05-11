@@ -84,14 +84,13 @@ struct CashAccountDetailView: View {
     private var heroCard: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             HStack(spacing: AppSpacing.md) {
-                ZStack {
-                    Circle()
-                        .fill(accentColor.opacity(0.14))
-                        .frame(width: 38, height: 38)
-                    Image(systemName: iconName)
-                        .font(.footnoteSemibold)
-                        .foregroundStyle(accentColor)
-                }
+                BankLogoView(
+                    logoBase64: account.institutionLogoBase64,
+                    primaryColorHex: account.institutionPrimaryColor,
+                    institutionName: account.institution,
+                    fallbackSymbol: iconName,
+                    fallbackColor: accentColor
+                )
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(balanceLabel)

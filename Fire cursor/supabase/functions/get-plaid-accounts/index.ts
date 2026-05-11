@@ -52,6 +52,9 @@ serve(async (req) => {
         plaid_items!inner (
           institution_name,
           institution_id,
+          institution_logo_base64,
+          institution_logo_url,
+          institution_primary_color,
           status
         )
       `)
@@ -78,6 +81,9 @@ serve(async (req) => {
       mask: a.mask,
       balance_current: a.balance_current,
       institution_name: a.plaid_items?.institution_name || null,
+      institution_logo_base64: a.plaid_items?.institution_logo_base64 ?? null,
+      institution_logo_url: a.plaid_items?.institution_logo_url ?? null,
+      institution_primary_color: a.plaid_items?.institution_primary_color ?? null,
       has_transactions: ['depository', 'credit'].includes(a.type),
     }))
 

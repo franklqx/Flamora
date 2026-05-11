@@ -101,6 +101,7 @@
 		CDAA00022FA0000000000001 /* CategoryDisplayHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA00012FA0000000000001 /* CategoryDisplayHelper.swift */; };
 		CDAA00072FA0000000000001 /* CashflowDetailBuilders.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA00062FA0000000000001 /* CashflowDetailBuilders.swift */; };
 		CDAA00092FA0000000000001 /* TabContentCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA00082FA0000000000001 /* TabContentCache.swift */; };
+		CDAA00112FA0000000000005 /* AppDataPreloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA00102FA0000000000005 /* AppDataPreloader.swift */; };
 		CDAA000B2FA0000000000001 /* InvestmentAllocationBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA000A2FA0000000000001 /* InvestmentAllocationBuilder.swift */; };
 		CDAA000D2FA0000000000001 /* InvestmentHeroData.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA000C2FA0000000000001 /* InvestmentHeroData.swift */; };
 		CDBB00022FA1000000000001 /* CashAccountsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00012FA1000000000001 /* CashAccountsCard.swift */; };
@@ -117,6 +118,8 @@
 		EB0000012F9A00000000EB01 /* ErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB0000022F9A00000000EB01 /* ErrorBanner.swift */; };
 		EB0000032F9A00000000EB02 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB0000042F9A00000000EB02 /* EmptyStateView.swift */; };
 		EB0000052F9A00000000EB03 /* SuccessToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB0000062F9A00000000EB03 /* SuccessToast.swift */; };
+		EB0000072F9A00000000EB04 /* BankLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB0000082F9A00000000EB04 /* BankLogoView.swift */; };
+		EB0000092F9A00000000EB05 /* TickerBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB00000A2F9A00000000EB05 /* TickerBadge.swift */; };
 		F10000022FB0000000000001 /* InvestmentDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000012FB0000000000001 /* InvestmentDataStore.swift */; };
 		F10000042FB0000000000001 /* InvestmentExpandedOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000032FB0000000000001 /* InvestmentExpandedOverlayView.swift */; };
 		F10000062FB0000000000001 /* InvestmentSheetContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000052FB0000000000001 /* InvestmentSheetContent.swift */; };
@@ -271,6 +274,7 @@
 		CDAA00012FA0000000000001 /* CategoryDisplayHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryDisplayHelper.swift; sourceTree = "<group>"; };
 		CDAA00062FA0000000000001 /* CashflowDetailBuilders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowDetailBuilders.swift; sourceTree = "<group>"; };
 		CDAA00082FA0000000000001 /* TabContentCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabContentCache.swift; sourceTree = "<group>"; };
+		CDAA00102FA0000000000005 /* AppDataPreloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDataPreloader.swift; sourceTree = "<group>"; };
 		CDAA000A2FA0000000000001 /* InvestmentAllocationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentAllocationBuilder.swift; sourceTree = "<group>"; };
 		CDAA000C2FA0000000000001 /* InvestmentHeroData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentHeroData.swift; sourceTree = "<group>"; };
 		CDBB00012FA1000000000001 /* CashAccountsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountsCard.swift; sourceTree = "<group>"; };
@@ -287,6 +291,8 @@
 		EB0000022F9A00000000EB01 /* ErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBanner.swift; sourceTree = "<group>"; };
 		EB0000042F9A00000000EB02 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		EB0000062F9A00000000EB03 /* SuccessToast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuccessToast.swift; sourceTree = "<group>"; };
+		EB0000082F9A00000000EB04 /* BankLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankLogoView.swift; sourceTree = "<group>"; };
+		EB00000A2F9A00000000EB05 /* TickerBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TickerBadge.swift; sourceTree = "<group>"; };
 		F10000012FB0000000000001 /* InvestmentDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentDataStore.swift; sourceTree = "<group>"; };
 		F10000032FB0000000000001 /* InvestmentExpandedOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentExpandedOverlayView.swift; sourceTree = "<group>"; };
 		F10000052FB0000000000001 /* InvestmentSheetContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentSheetContent.swift; sourceTree = "<group>"; };
@@ -479,6 +485,7 @@
 				1571A1D62F3C2A2C0024A729 /* APIService.swift */,
 				CDAA00062FA0000000000001 /* CashflowDetailBuilders.swift */,
 				CDAA00082FA0000000000001 /* TabContentCache.swift */,
+				CDAA00102FA0000000000005 /* AppDataPreloader.swift */,
 				CDAA000A2FA0000000000001 /* InvestmentAllocationBuilder.swift */,
 				CDAA000C2FA0000000000001 /* InvestmentHeroData.swift */,
 				AAOB00112F38500000000001 /* OnboardingData.swift */,
@@ -638,6 +645,8 @@
 				EB0000022F9A00000000EB01 /* ErrorBanner.swift */,
 				EB0000042F9A00000000EB02 /* EmptyStateView.swift */,
 				EB0000062F9A00000000EB03 /* SuccessToast.swift */,
+				EB0000082F9A00000000EB04 /* BankLogoView.swift */,
+				EB00000A2F9A00000000EB05 /* TickerBadge.swift */,
 				CDSP00052FE0000000000005 /* DetailSheetScaffold.swift */,
 			);
 			path = Components;
@@ -831,6 +840,8 @@
 				EB0000012F9A00000000EB01 /* ErrorBanner.swift in Sources */,
 				EB0000032F9A00000000EB02 /* EmptyStateView.swift in Sources */,
 				EB0000052F9A00000000EB03 /* SuccessToast.swift in Sources */,
+				EB0000072F9A00000000EB04 /* BankLogoView.swift in Sources */,
+				EB0000092F9A00000000EB05 /* TickerBadge.swift in Sources */,
 				CDSP00062FE0000000000006 /* DetailSheetScaffold.swift in Sources */,
 				152BE0862F67A67000CACBBC /* ChartInteractionLayer.swift in Sources */,
 				15E21AED2F33C11A00A9BB60 /* MainTabView.swift in Sources */,
@@ -838,6 +849,7 @@
 				1571A1D82F3C2A2C0024A729 /* APIService.swift in Sources */,
 				CDAA00072FA0000000000001 /* CashflowDetailBuilders.swift in Sources */,
 				CDAA00092FA0000000000001 /* TabContentCache.swift in Sources */,
+				CDAA00112FA0000000000005 /* AppDataPreloader.swift in Sources */,
 				CDAA000B2FA0000000000001 /* InvestmentAllocationBuilder.swift in Sources */,
 				CDAA000D2FA0000000000001 /* InvestmentHeroData.swift in Sources */,
 				12748F252F65CCEE00410D60 /* BudgetSetupView.swift in Sources */,

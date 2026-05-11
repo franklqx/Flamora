@@ -145,43 +145,73 @@ struct OB_RoadmapView: View {
         }
     }
 
+    // MARK: - Title helpers
+    //
+    // Inline-highlighted titles use SwiftUI's Text concatenation (`+`) so the
+    // whole sentence flows as ONE wrapping paragraph — mixing colors per
+    // fragment without the layout breaking at HStack boundaries. The previous
+    // HStack(spacing: 0) approach forced segments to stay rigid: when the
+    // sentence overflowed a line, the highlighted age/dollar amount got
+    // shoved to the right of empty space, producing the ragged title the
+    // user reported.
+
+    private func titleText(plain: String, highlight: String, plainSuffix: String = ".") -> Text {
+        Text(plain).foregroundStyle(AppColors.textPrimary)
+            + Text(highlight).foregroundStyle(brandGradient)
+            + Text(plainSuffix).foregroundStyle(AppColors.textPrimary)
+    }
+
+    private var beforeTitleText: Text {
+        switch data.userSituation {
+        case .cannotSave:
+            return titleText(
+                plain: "At your current pace, financial freedom is ",
+                highlight: "out of reach"
+            )
+        default:
+            let ageLabel = data.isFreedomAgeCapped ? "\(data.displayFreedomAge)+" : "\(data.freedomAge)"
+            return titleText(
+                plain: "You will reach financial independence at age ",
+                highlight: ageLabel
+            )
+        }
+    }
+
+    private var afterTitleText: Text {
+        switch data.userSituation {
+        case .cannotSave:
+            // Two highlights — build the chain explicitly. Spaces live in the
+            // plain fragments so wrap points stay clean.
+            return Text("Start investing ").foregroundStyle(AppColors.textPrimary)
+                + Text("\(formatCurrency(data.suggestedExtraInvestment))/mo").foregroundStyle(brandGradient)
+                + Text(", you could be free by ").foregroundStyle(AppColors.textPrimary)
+                + Text("\(data.optimizedFreedomAge)").foregroundStyle(brandGradient)
+                + Text(".").foregroundStyle(AppColors.textPrimary)
+        default:
+            if data.yearsSaved == 0 {
+                return Text("With Flamora, you'll build ").foregroundStyle(AppColors.textPrimary)
+                    + Text("+\(formatCompact(data.extraPortfolioValue)) more").foregroundStyle(brandGradient)
+                    + Text(" by age ").foregroundStyle(AppColors.textPrimary)
+                    + Text("\(data.optimizedFreedomAge)").foregroundStyle(brandGradient)
+                    + Text(".").foregroundStyle(AppColors.textPrimary)
+            } else {
+                let yearText = data.yearsSaved == 1 ? "1 year sooner" : "\(data.yearsSaved) years sooner"
+                return Text("With Flamora, you'll be free by ").foregroundStyle(AppColors.textPrimary)
+                    + Text("\(data.optimizedFreedomAge)").foregroundStyle(brandGradient)
+                    + Text(" — that's ").foregroundStyle(AppColors.textPrimary)
+                    + Text(yearText).foregroundStyle(brandGradient)
+                    + Text(".").foregroundStyle(AppColors.textPrimary)
+            }
+        }
+    }
+
     private var beforeTitle: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Group {
-                switch data.userSituation {
-                case .cannotSave:
-                    HStack(spacing: 0) {
-                        Text("At your current pace, financial freedom is ")
-                            .foregroundStyle(AppColors.textPrimary)
-                        Text("out of reach")
-                            .foregroundStyle(brandGradient)
-                        Text(".")
-                            .foregroundStyle(AppColors.textPrimary)
-                    }
-                default:
-                    if data.isFreedomAgeCapped {
-                        HStack(spacing: 0) {
-                            Text("You will reach financial independence at age ")
-                                .foregroundStyle(AppColors.textPrimary)
-                            Text("\(data.displayFreedomAge)+")
-                                .foregroundStyle(brandGradient)
-                            Text(".")
-                                .foregroundStyle(AppColors.textPrimary)
-                        }
-                    } else {
-                        HStack(spacing: 0) {
-                            Text("You will reach financial independence at age ")
-                                .foregroundStyle(AppColors.textPrimary)
-                            Text("\(data.freedomAge)")
-                                .foregroundStyle(brandGradient)
-                            Text(".")
-                                .foregroundStyle(AppColors.textPrimary)
-                        }
-                    }
-                }
-            }
-            .font(.detailTitle)
-            .lineSpacing(3)
+            beforeTitleText
+                .font(.detailTitle)
+                .lineSpacing(3)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
 
             Group {
                 switch data.userSituation {
@@ -200,54 +230,11 @@ struct OB_RoadmapView: View {
 
     private var afterTitle: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Group {
-                switch data.userSituation {
-                case .cannotSave:
-                    HStack(spacing: 0) {
-                        Text("Start investing ")
-                            .foregroundStyle(AppColors.textPrimary)
-                        Text("\(formatCurrency(data.suggestedExtraInvestment))/mo")
-                            .foregroundStyle(brandGradient)
-                        Text(", you could be free by ")
-                            .foregroundStyle(AppColors.textPrimary)
-                        Text("\(data.optimizedFreedomAge)")
-                            .foregroundStyle(brandGradient)
-                        Text(".")
-                            .foregroundStyle(AppColors.textPrimary)
-                    }
-                default:
-                    if data.yearsSaved == 0 {
-                        HStack(spacing: 0) {
-                            Text("With Flamora, you'll build ")
-                                .foregroundStyle(AppColors.textPrimary)
-                            Text("+\(formatCompact(data.extraPortfolioValue)) more")
-                                .foregroundStyle(brandGradient)
-                            Text(" by age ")
-                                .foregroundStyle(AppColors.textPrimary)
-                            Text("\(data.optimizedFreedomAge)")
-                                .foregroundStyle(brandGradient)
-                            Text(".")
-                                .foregroundStyle(AppColors.textPrimary)
-                        }
-                    } else {
-                        let yearText = data.yearsSaved == 1 ? "1 year sooner" : "\(data.yearsSaved) years sooner"
-                        HStack(spacing: 0) {
-                            Text("With Flamora, you'll be free by ")
-                                .foregroundStyle(AppColors.textPrimary)
-                            Text("\(data.optimizedFreedomAge)")
-                                .foregroundStyle(brandGradient)
-                            Text(" — that's ")
-                                .foregroundStyle(AppColors.textPrimary)
-                            Text(yearText)
-                                .foregroundStyle(brandGradient)
-                            Text(".")
-                                .foregroundStyle(AppColors.textPrimary)
-                        }
-                    }
-                }
-            }
-            .font(.detailTitle)
-            .lineSpacing(3)
+            afterTitleText
+                .font(.detailTitle)
+                .lineSpacing(3)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
 
             Group {
                 switch data.userSituation {
@@ -616,10 +603,15 @@ struct OB_RoadmapView: View {
     // MARK: - Info Sheet
 
     private var infoSheet: some View {
+        // Light-shell theme to match every other main-app sheet (SavingsInputSheet,
+        // CashAccountDetailView, SpendingAnalysisDetailView). Previously this
+        // popup inherited the onboarding's dark `AppColors.surface` background
+        // with white-on-photo text — visually disconnected from the rest of
+        // the app once the user lands in MainTab.
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             Text("How this is calculated")
                 .font(.h4)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(AppColors.inkPrimary)
                 .padding(.bottom, AppSpacing.xs)
 
             infoRow(label: "Annual return", value: "9%")
@@ -627,17 +619,22 @@ struct OB_RoadmapView: View {
             infoRow(label: "Flamora optimized", value: formatCurrency(data.optimizedMonthlySavings))
             infoRow(label: "Your FIRE number", value: formatCompact(data.fireNumber))
 
-            Divider().background(AppColors.cardTopHighlight)
+            Divider().background(AppColors.inkDivider)
 
             Text("Based on the historical nominal return of the S&P 500 (~10% annually since 1957), adjusted for estimated fees. Projections assume consistent contributions. Actual results vary with market conditions. Past performance does not guarantee future results.")
                 .font(.cardRowMeta)
-                .foregroundColor(AppColors.overlayWhiteForegroundSoft)
+                .foregroundStyle(AppColors.inkSoft)
                 .lineSpacing(3)
         }
-        .padding(AppSpacing.lg)
+        // Tighter top padding — the sheet drag-handle already eats ~10pt at
+        // the top, so duplicating `lg` (24pt) on all sides leaves the header
+        // floating in empty space. Asymmetric padding pulls the title up.
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.top, AppSpacing.md)
+        .padding(.bottom, AppSpacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .presentationDetents([.medium])
-        .presentationBackground(AppColors.surface)
+        .presentationBackground(AppColors.shellBg1)
     }
 
     @ViewBuilder
@@ -645,11 +642,11 @@ struct OB_RoadmapView: View {
         HStack {
             Text(label)
                 .font(.bodySmall)
-                .foregroundColor(AppColors.overlayWhiteOnPhoto)
+                .foregroundStyle(AppColors.inkSoft)
             Spacer()
             Text(value)
                 .font(.inlineFigureBold)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(AppColors.inkPrimary)
         }
     }
 

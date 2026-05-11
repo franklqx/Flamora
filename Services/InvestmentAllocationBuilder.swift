@@ -113,13 +113,43 @@ enum InvestmentAllocationBuilder {
             id: row.id,
             accountId: row.plaidAccountId ?? "",
             symbol: symbol,
-            name: row.name,
+            name: cleanedSecurityName(row.name),
             shares: row.quantity ?? 0,
             totalValue: row.value ?? 0,
             logoUrl: nil,
             accountName: row.accountName,
             accountMask: row.accountMask
         )
+    }
+
+    /// Plaid security names are verbose ("Vanguard Index Funds - Vanguard Total
+    /// Stock Market ETF"). Strip the issuer-fund-family prefix so the row title
+    /// fits on one line.
+    static func cleanedSecurityName(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return raw }
+
+        // Pattern 1: "Issuer Family - Real Name" → take the part after " - "
+        if let dashRange = trimmed.range(of: " - ") {
+            let tail = trimmed[dashRange.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
+            if !tail.isEmpty {
+                return stripTrailingSeries(tail)
+            }
+        }
+
+        return stripTrailingSeries(trimmed)
+    }
+
+    /// Drops trailing " Series N" / " Class A/B" noise that Plaid appends.
+    /// Example: "Invesco QQQ Trust Series 1" → "Invesco QQQ Trust".
+    private static func stripTrailingSeries(_ name: String) -> String {
+        let suffixes = [" Series ", " Class "]
+        for suffix in suffixes {
+            if let range = name.range(of: suffix, options: .backwards) {
+                return String(name[..<range.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        }
+        return name
     }
 
     static func holdings(for detailItemId: String, payload: APIInvestmentHoldingsPayload?) -> [Holding] {

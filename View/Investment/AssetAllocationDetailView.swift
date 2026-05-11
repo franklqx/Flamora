@@ -401,16 +401,7 @@ private struct AllocDetailRow: View {
     }
 
     private func fallbackSymbolIcon(_ symbol: String, tint: Color) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: AppRadius.md)
-                .fill(tint.opacity(0.16))
-                .frame(width: 36, height: 36)
-            Text(symbol)
-                .font(.footnoteBold)
-                .foregroundStyle(AppColors.inkPrimary)
-                .minimumScaleFactor(0.6)
-                .padding(.horizontal, 4)
-        }
+        TickerBadge(symbol: symbol, tint: tint.opacity(0.16), size: CGSize(width: 56, height: 36))
     }
 
     private var fallbackBankIcon: some View {
@@ -429,15 +420,10 @@ private struct AllocDetailRow: View {
     }
 
     private func holdingSubtitle(_ holding: Holding) -> String {
-        var parts: [String] = [sharesLabel(holding.shares)]
-        if let acctName = holding.accountName, !acctName.isEmpty {
-            var acct = acctName
-            if let mask = holding.accountMask, !mask.isEmpty {
-                acct += "\u{00A0}•\u{00A0}\(mask)"
-            }
-            parts.append(acct)
-        }
-        return parts.joined(separator: " · ")
+        // Both Asset Allocation and Account Detail rows show the same subtitle —
+        // just shares. Account/mask is implicit (Allocation aggregates across
+        // accounts, Account Detail is already filtered to one).
+        sharesLabel(holding.shares)
     }
 
     private func formatCurrency(_ value: Double) -> String {

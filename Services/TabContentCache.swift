@@ -77,21 +77,112 @@ final class TabContentCache {
     private(set) var investmentAccountTransactions: [String: [Transaction]] = [:]
     private(set) var investmentAccountHistory: [String: [BalanceSnapshot]] = [:]
 
-    private init() {}
+    private init() {
+        hydrateFromDisk()
+    }
+
+    // MARK: - Disk persistence
+    //
+    // We persist a snapshot of the API-shaped cache fields to a JSON file in
+    // the user's Documents directory. On cold launch, hydrate populates the
+    // shared cache before any view's `.task` runs — so the Home / Cashflow /
+    // Investment tabs render last-known-good values instantly while a fresh
+    // fetch runs in the background.
+    //
+    // Only `Codable` API payloads are persisted. Derived detail builders
+    // (SpendingDetailData, NetWorthPoint history) rebuild cheaply from those
+    // payloads — keeping the snapshot Codable-only avoids a fragile Codable
+    // conformance sprawl across UI models.
+
+    private static let cacheFilename = "flamora_tab_cache.v1.json"
+
+    private static let cacheURL: URL? = {
+        guard let docs = try? FileManager.default.url(
+            for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false
+        ) else { return nil }
+        return docs.appendingPathComponent(cacheFilename)
+    }()
+
+    private struct PersistedSnapshot: Codable {
+        let homeNetWorthSummary: APINetWorthSummary?
+        let investmentNetWorth: APINetWorthSummary?
+        let investmentHoldings: APIInvestmentHoldingsPayload?
+        let cashflowBudget: APIMonthlyBudget?
+        let cashflowMonthlySummaries: [Int: APISpendingSummary]?
+        let cashflowMonthlySummariesYear: Int?
+        let cashflowSavingsByYear: [Int: [Double?]]?
+        let cashflowAccounts: [APIAccount]?
+        let homeMonthlyReport: ReportSnapshot?
+        let homeIssueZeroReport: ReportSnapshot?
+        let homeAnnualReport: ReportSnapshot?
+    }
+
+    private func hydrateFromDisk() {
+        guard let url = Self.cacheURL,
+              let data = try? Data(contentsOf: url),
+              let snap = try? JSONDecoder().decode(PersistedSnapshot.self, from: data)
+        else { return }
+        homeNetWorthSummary = snap.homeNetWorthSummary
+        investmentNetWorth = snap.investmentNetWorth
+        investmentHoldings = snap.investmentHoldings
+        cashflowBudget = snap.cashflowBudget
+        cashflowMonthlySummaries = snap.cashflowMonthlySummaries
+        cashflowMonthlySummariesYear = snap.cashflowMonthlySummariesYear
+        cashflowSavingsByYear = snap.cashflowSavingsByYear
+        cashflowAccounts = snap.cashflowAccounts
+        homeMonthlyReport = snap.homeMonthlyReport
+        homeIssueZeroReport = snap.homeIssueZeroReport
+        homeAnnualReport = snap.homeAnnualReport
+    }
+
+    /// Persist the current snapshot in the background. Coalesces rapid writes
+    /// via a debounce token — when 5 setters fire in a single frame, we only
+    /// write once. Encoding happens off the main thread.
+    private var pendingPersistToken: UUID?
+
+    private func schedulePersist() {
+        let token = UUID()
+        pendingPersistToken = token
+        let snapshot = PersistedSnapshot(
+            homeNetWorthSummary: homeNetWorthSummary,
+            investmentNetWorth: investmentNetWorth,
+            investmentHoldings: investmentHoldings,
+            cashflowBudget: cashflowBudget,
+            cashflowMonthlySummaries: cashflowMonthlySummaries,
+            cashflowMonthlySummariesYear: cashflowMonthlySummariesYear,
+            cashflowSavingsByYear: cashflowSavingsByYear,
+            cashflowAccounts: cashflowAccounts,
+            homeMonthlyReport: homeMonthlyReport,
+            homeIssueZeroReport: homeIssueZeroReport,
+            homeAnnualReport: homeAnnualReport
+        )
+        // 80ms debounce: any further setter call within the window cancels this
+        // write (newer token replaces ours), so we only hit disk for the final
+        // state in a burst.
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 0.08) { [weak self] in
+            guard let self, self.pendingPersistToken == token else { return }
+            guard let url = Self.cacheURL else { return }
+            guard let data = try? JSONEncoder().encode(snapshot) else { return }
+            try? data.write(to: url, options: .atomic)
+        }
+    }
 
     func setHomeNetWorth(summary: APINetWorthSummary?, history: [NetWorthRange: [NetWorthPoint]]?) {
         homeNetWorthSummary = summary
         homeNetWorthHistory = history
+        schedulePersist()
     }
 
     func setHomeReports(monthly: ReportSnapshot?, issueZero: ReportSnapshot?, annual: ReportSnapshot?) {
         homeMonthlyReport = monthly
         homeIssueZeroReport = issueZero
         homeAnnualReport = annual
+        schedulePersist()
     }
 
     func setInvestmentNetWorth(_ value: APINetWorthSummary?) {
         investmentNetWorth = value
+        schedulePersist()
     }
 
     func setPortfolioHistory(_ value: [String: [PortfolioDataPoint]]) {
@@ -100,23 +191,28 @@ final class TabContentCache {
 
     func setInvestmentHoldings(_ value: APIInvestmentHoldingsPayload?) {
         investmentHoldings = value
+        schedulePersist()
     }
 
     func setCashflowBudget(_ value: APIMonthlyBudget?) {
         cashflowBudget = value
+        schedulePersist()
     }
 
     func setCashflowSavingsByYear(_ value: [Int: [Double?]]?) {
         cashflowSavingsByYear = value
+        schedulePersist()
     }
 
     func setCashflowMonthlySummaries(_ value: [Int: APISpendingSummary]?, year: Int? = nil) {
         cashflowMonthlySummaries = value
         cashflowMonthlySummariesYear = (value == nil) ? nil : year
+        schedulePersist()
     }
 
     func setCashflowAccounts(_ value: [APIAccount]?) {
         cashflowAccounts = value
+        schedulePersist()
     }
 
     func setCashflowRecentTransactions(_ value: [Transaction]?) {
@@ -192,5 +288,6 @@ final class TabContentCache {
         //   • cashflowBudget — committed plan numbers (user can still review)
         //   • homeMonthlyReport / homeIssueZeroReport / homeAnnualReport —
         //     past reports are historical artifacts, not live data
+        schedulePersist()
     }
 }

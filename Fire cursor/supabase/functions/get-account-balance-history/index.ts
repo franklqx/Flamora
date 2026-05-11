@@ -82,7 +82,7 @@ serve(async (req) => {
         mask,
         balance_current,
         balance_available,
-        plaid_items ( institution_name )
+        plaid_items ( institution_name, institution_logo_base64, institution_logo_url, institution_primary_color )
       `)
       .eq('id', accountId)
       .eq('user_id', user.id)
@@ -150,6 +150,9 @@ serve(async (req) => {
             subtype: account.subtype ?? null,
             mask: account.mask ?? null,
             institution_name: account.plaid_items?.institution_name ?? null,
+            institution_logo_base64: account.plaid_items?.institution_logo_base64 ?? null,
+            institution_logo_url: account.plaid_items?.institution_logo_url ?? null,
+            institution_primary_color: account.plaid_items?.institution_primary_color ?? null,
           },
           points,
           range,

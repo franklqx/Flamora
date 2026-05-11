@@ -622,12 +622,17 @@ struct APIInvestmentHoldingsSummary: Codable {
 }
 
 /// 单个 investment account 的余额与持仓拆分。
+/// `APIService.perform` uses `keyDecodingStrategy = .convertFromSnakeCase`,
+/// so `institution_logo_base64` → `institutionLogoBase64` automatically — no CodingKeys needed.
 struct APIInvestmentAccount: Codable {
     let id: String
     let name: String
     let mask: String?
     let subtype: String?
     let institutionName: String?
+    let institutionLogoBase64: String?
+    let institutionLogoUrl: String?
+    let institutionPrimaryColor: String?
     let balanceCurrent: Double
     let holdingsValue: Double
     let uninvestedCashValue: Double

@@ -360,10 +360,15 @@ struct Account: Codable, Identifiable {
     var name: String? = nil
     /// Last-4 mask of the account number (e.g. "7892"). nil when source is net-worth-summary.
     var mask: String? = nil
+    /// Plaid institution logo (base64 PNG). When present, AccountRow renders it instead of an SF Symbol.
+    var institutionLogoBase64: String? = nil
+    /// Institution primary brand color (hex like "#0a1d40"). Used as the fallback tint.
+    var institutionPrimaryColor: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case id, institution, balance, connected, logoUrl
         case accountType = "type"
+        case institutionLogoBase64, institutionPrimaryColor
     }
 }
 
@@ -932,15 +937,38 @@ struct APIAccount: Codable {
     let mask: String?
     /// `get-net-worth-summary` 在 `plaid_items` 未关联到时可返回 null，必须为可选否则整包解码失败、金额全为 0。
     let institution: String?
+    /// Plaid 银行 logo（base64 PNG）。后端从 `/institutions/get_by_id` 抓取后存在 plaid_items 表。
+    let institutionLogoBase64: String?
+    /// 可选远程 URL（Plaid 当前只返回 base64，留作未来扩展）。
+    let institutionLogoUrl: String?
+    /// 机构主品牌色（hex），logo 不可用时作为兜底圆形 tint。
+    let institutionPrimaryColor: String?
 
-    var logoUrl: String? { nil }
+    /// 兼容已有调用方（TransactionDetailSheet）：返回远程 URL。
+    var logoUrl: String? { institutionLogoUrl }
 
     enum CodingKeys: String, CodingKey {
         case id, name, type, subtype, balance, mask, institution
         case accountId = "account_id"
+        // No raw values below: APIService.perform sets keyDecodingStrategy = .convertFromSnakeCase,
+        // which converts JSON `institution_logo_base64` → `institutionLogoBase64` before key lookup.
+        case institutionLogoBase64
+        case institutionLogoUrl
+        case institutionPrimaryColor
     }
 
-    init(id: String, name: String, type: String, subtype: String?, balance: Double?, mask: String?, institution: String?) {
+    init(
+        id: String,
+        name: String,
+        type: String,
+        subtype: String?,
+        balance: Double?,
+        mask: String?,
+        institution: String?,
+        institutionLogoBase64: String? = nil,
+        institutionLogoUrl: String? = nil,
+        institutionPrimaryColor: String? = nil
+    ) {
         self.id = id
         self.name = name
         self.type = type
@@ -948,6 +976,9 @@ struct APIAccount: Codable {
         self.balance = balance
         self.mask = mask
         self.institution = institution
+        self.institutionLogoBase64 = institutionLogoBase64
+        self.institutionLogoUrl = institutionLogoUrl
+        self.institutionPrimaryColor = institutionPrimaryColor
     }
 
     init(from decoder: Decoder) throws {
@@ -969,6 +1000,9 @@ struct APIAccount: Codable {
         balance = try c.decodeIfPresent(Double.self, forKey: .balance)
         mask = try c.decodeIfPresent(String.self, forKey: .mask)
         institution = try c.decodeIfPresent(String.self, forKey: .institution)
+        institutionLogoBase64 = try c.decodeIfPresent(String.self, forKey: .institutionLogoBase64)
+        institutionLogoUrl = try c.decodeIfPresent(String.self, forKey: .institutionLogoUrl)
+        institutionPrimaryColor = try c.decodeIfPresent(String.self, forKey: .institutionPrimaryColor)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -980,6 +1014,9 @@ struct APIAccount: Codable {
         try c.encodeIfPresent(balance, forKey: .balance)
         try c.encodeIfPresent(mask, forKey: .mask)
         try c.encodeIfPresent(institution, forKey: .institution)
+        try c.encodeIfPresent(institutionLogoBase64, forKey: .institutionLogoBase64)
+        try c.encodeIfPresent(institutionLogoUrl, forKey: .institutionLogoUrl)
+        try c.encodeIfPresent(institutionPrimaryColor, forKey: .institutionPrimaryColor)
     }
 }
 

@@ -89,6 +89,9 @@ struct CashflowExpandedOverlayView: View {
         let merchant: String
         let amount: Double
         let category: String
+        /// True for the synthetic "No transactions" row shown on empty days —
+        /// renders without category label or amount.
+        var isEmpty: Bool = false
     }
 
     private enum DataState {
@@ -326,7 +329,7 @@ private extension CashflowExpandedOverlayView {
         }
 
         return [
-            DayTransaction(id: "d1", merchant: "No transactions yet", amount: 0, category: "—")
+            DayTransaction(id: "d1", merchant: "No transactions", amount: 0, category: "", isEmpty: true)
         ]
     }
 
@@ -394,17 +397,26 @@ private extension CashflowExpandedOverlayView {
     }
 
     private var calendarMonthPager: some View {
-        GeometryReader { geo in
+        // 24pt gap inserted between adjacent month pages during a swipe so the
+        // two months read as separate cards (reference design has a visible
+        // gutter; flush-tile pages create the overlap the user reported).
+        let pageSpacing: CGFloat = 24
+        return GeometryReader { geo in
             let width = max(geo.size.width, 1)
-            ZStack(alignment: .leading) {
+            let stride = width + pageSpacing
+            // .topLeading pins each page to the top edge of the pager. Default
+            // ZStack alignment is vertical-center, which centers the VStack
+            // when a 5-row month uses less height than the 6-row reservation —
+            // the title visibly drifts down on shorter months.
+            ZStack(alignment: .topLeading) {
                 if calendarDragOffset > 0, selectedMonthIndex > 0 {
                     monthPage(monthIndex: selectedMonthIndex - 1, pageWidth: width)
-                        .offset(x: -width + calendarDragOffset)
+                        .offset(x: -stride + calendarDragOffset)
                 }
 
                 if calendarDragOffset < 0, selectedMonthIndex < monthCountInScope - 1 {
                     monthPage(monthIndex: selectedMonthIndex + 1, pageWidth: width)
-                        .offset(x: width + calendarDragOffset)
+                        .offset(x: stride + calendarDragOffset)
                 }
 
                 monthPage(monthIndex: selectedMonthIndex, pageWidth: width)
@@ -415,9 +427,16 @@ private extension CashflowExpandedOverlayView {
             .clipShape(Rectangle())
             .mask(Rectangle())
             .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 10)
+            // highPriorityGesture + minimumDistance:0 so the calendar page follows
+            // the finger from the first pixel of motion. The parent ScrollView
+            // would otherwise win the gesture race for the first ~10pt, making
+            // it feel like the page snaps only after the finger lifts.
+            .highPriorityGesture(
+                DragGesture(minimumDistance: 0)
                     .onChanged { value in
+                        // Only commit horizontal motion. Vertical wins still pass
+                        // through to the ScrollView since highPriorityGesture
+                        // doesn't claim updates we don't apply.
                         guard abs(value.translation.width) > abs(value.translation.height) else { return }
                         let canDragPrev = selectedMonthIndex > 0
                         let canDragNext = selectedMonthIndex < monthCountInScope - 1
@@ -434,12 +453,14 @@ private extension CashflowExpandedOverlayView {
                             resetCalendarDragOffset()
                             return
                         }
+                        // Page snaps after a 22% drag OR a quick flick (velocity-aware
+                        // via predictedEndTranslation). Lower threshold = snappier feel.
                         let threshold = width * 0.22
                         let predicted = value.predictedEndTranslation.width
                         if predicted > threshold, selectedMonthIndex > 0 {
-                            completeMonthSwipe(delta: -1, width: width)
+                            completeMonthSwipe(delta: -1, stride: stride)
                         } else if predicted < -threshold, selectedMonthIndex < monthCountInScope - 1 {
-                            completeMonthSwipe(delta: 1, width: width)
+                            completeMonthSwipe(delta: 1, stride: stride)
                         } else {
                             resetCalendarDragOffset()
                         }
@@ -489,15 +510,26 @@ private extension CashflowExpandedOverlayView {
         }
     }
 
-    private func completeMonthSwipe(delta: Int, width: CGFloat) {
-        let duration = 0.24
-        let targetOffset = delta > 0 ? -width : width
+    private func completeMonthSwipe(delta: Int, stride: CGFloat) {
+        // Fire haptic the instant the swipe commits — same affordance the
+        // day-detail tray uses when its content swaps below. Light style so
+        // it reads as "page flipped" rather than "action confirmed".
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
 
-        withAnimation(.easeInOut(duration: duration)) {
+        // Animate to the spaced-target offset (-stride or +stride) using a
+        // critically-damped spring so the page glides in rather than easing
+        // in-and-out. response ≈ 0.32s, damping 0.9 → no overshoot but still
+        // feels native to iOS.
+        let targetOffset: CGFloat = delta > 0 ? -stride : stride
+        let snap = Animation.spring(response: 0.32, dampingFraction: 0.9)
+
+        withAnimation(snap) {
             calendarDragOffset = targetOffset
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+        // Wait slightly past the spring's settling time, then swap the data
+        // pointer back to offset=0 with animation disabled so there's no flash.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.34) {
             var reset = SwiftUI.Transaction(animation: nil)
             reset.disablesAnimations = true
             withTransaction(reset) {
@@ -508,7 +540,7 @@ private extension CashflowExpandedOverlayView {
     }
 
     private func resetCalendarDragOffset() {
-        withAnimation(.easeInOut(duration: 0.18)) {
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
             calendarDragOffset = 0
         }
     }
@@ -605,7 +637,11 @@ private extension CashflowExpandedOverlayView {
     }
 
     private var dayTotalText: String {
-        isPlaceholder ? "—" : "-\(NumberFormatter.appCurrency(dayExpenseTotal))"
+        if isPlaceholder { return "—" }
+        // Empty days collapse to "$0" (no minus sign) — there's nothing to
+        // spend, so the leading negative reads as a confusing fake debit.
+        if dayExpenseTotal == 0 { return NumberFormatter.appCurrency(0) }
+        return "-\(NumberFormatter.appCurrency(dayExpenseTotal))"
     }
 
     private var trendSection: some View {
@@ -903,15 +939,19 @@ private extension CashflowExpandedOverlayView {
             VStack(alignment: .leading, spacing: 2) {
                 Text(tx.merchant)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(AppColors.inkPrimary)
-                Text(tx.category.uppercased())
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(AppColors.inkMeta)
+                    .foregroundStyle(tx.isEmpty ? AppColors.inkSoft : AppColors.inkPrimary)
+                if !tx.isEmpty {
+                    Text(tx.category.uppercased())
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(AppColors.inkMeta)
+                }
             }
             Spacer()
-            Text(tx.amount == 0 ? "—" : NumberFormatter.appCurrency(tx.amount))
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(AppColors.inkPrimary)
+            if !tx.isEmpty {
+                Text(tx.amount == 0 ? "—" : NumberFormatter.appCurrency(tx.amount))
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(AppColors.inkPrimary)
+            }
         }
         .padding(10)
         .background(
@@ -979,15 +1019,29 @@ private extension CashflowExpandedOverlayView {
         var fetchedTransactions: [Transaction] = []
 
         do {
+            // Paginate through the full year. Previously this only fetched
+            // page 1 / limit 300, which silently dropped older months for any
+            // user past ~10 tx/day — the symptom the user reported (March /
+            // April had real transactions but rendered empty).
             let startDate = String(format: "%04d-01-01", currentYear)
             let endDate = apiDate(Date())
-            let response = try await APIService.shared.getTransactions(
-                page: 1,
-                limit: 300,
-                startDate: startDate,
-                endDate: endDate
-            )
-            fetchedTransactions = response.transactions.map { Transaction(from: $0) }
+            let pageSize = 300
+            var page = 1
+            var collected: [APITransaction] = []
+            // Hard cap at 20 pages (6000 tx) so a backend bug can't spin us
+            // forever; a year of normal usage is well under this.
+            while page <= 20 {
+                let response = try await APIService.shared.getTransactions(
+                    page: page,
+                    limit: pageSize,
+                    startDate: startDate,
+                    endDate: endDate
+                )
+                collected.append(contentsOf: response.transactions)
+                if !response.pagination.hasMore { break }
+                page += 1
+            }
+            fetchedTransactions = collected.map { Transaction(from: $0) }
         } catch {
             fetchedTransactions = []
         }
