@@ -225,7 +225,6 @@ struct MainTabView: View {
                 .zIndex(-1)
 
             BrandHeroBackground(
-                isInvestTab: selectedTab == .investment && !simulatorFullScreenActive,
                 gradientHeight: brandGradientDisplayHeight,
                 fillViewport: simulatorFullScreenActive
             )
@@ -847,7 +846,6 @@ private extension HomeHeroCardHost {
 // MARK: - Brand Hero Background (HTML: --brand-purple-surface)
 
 private struct BrandHeroBackground: View {
-    var isInvestTab: Bool = false
     /// Drawn height; 与 `MainTabView.brandGradientDisplayHeight` 一致（各 Tab 均随 sheet 拖拽渐变，不再单独全屏）。
     var gradientHeight: CGFloat
     /// When true, use one full-screen background source for simulator expanded state.
@@ -861,62 +859,30 @@ private struct BrandHeroBackground: View {
                 : gradientHeight
             let radialBox = min(w, targetHeight)
             ZStack {
-                if isInvestTab {
-                    LinearGradient(
-                        gradient: AppColors.investBrandLinearGradient,
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                } else {
-                    // Home + Cash Flow: HTML `.hero-layer` / `.cash-view` (`--brand-purple-surface`)
-                    LinearGradient(
-                        gradient: AppColors.heroBrandLinearGradient,
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                }
+                LinearGradient(
+                    gradient: AppColors.heroBrandLinearGradient,
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
 
-                if isInvestTab {
-                    // HTML `.invest-view` radial stack (slightly shifted vs Home/Cash)
-                    RadialGradient(
-                        gradient: Gradient(colors: [AppColors.heroGlowPurple1, .clear]),
-                        center: UnitPoint(x: 0.16, y: 0.05),
-                        startRadius: 0,
-                        endRadius: radialBox * 0.24
-                    )
-                    RadialGradient(
-                        gradient: Gradient(colors: [AppColors.investHeroGlowPurple2, .clear]),
-                        center: UnitPoint(x: 0.84, y: 0.12),
-                        startRadius: 0,
-                        endRadius: radialBox * 0.26
-                    )
-                    RadialGradient(
-                        gradient: Gradient(colors: [AppColors.heroGlowPink, .clear]),
-                        center: UnitPoint(x: 0.58, y: 0.56),
-                        startRadius: 0,
-                        endRadius: radialBox * 0.28
-                    )
-                } else {
-                    // Home + Cash Flow: HTML `--brand-purple-surface` radials
-                    RadialGradient(
-                        gradient: Gradient(colors: [AppColors.heroGlowPurple1, .clear]),
-                        center: UnitPoint(x: 0.18, y: 0.06),
-                        startRadius: 0,
-                        endRadius: radialBox * 0.24
-                    )
-                    RadialGradient(
-                        gradient: Gradient(colors: [AppColors.heroGlowPurple2, .clear]),
-                        center: UnitPoint(x: 0.82, y: 0.14),
-                        startRadius: 0,
-                        endRadius: radialBox * 0.26
-                    )
-                    RadialGradient(
-                        gradient: Gradient(colors: [AppColors.heroGlowPink, .clear]),
-                        center: UnitPoint(x: 0.56, y: 0.58),
-                        startRadius: 0,
-                        endRadius: radialBox * 0.28
-                    )
-                }
+                RadialGradient(
+                    gradient: Gradient(colors: [AppColors.heroGlowPurple1, .clear]),
+                    center: UnitPoint(x: 0.18, y: 0.06),
+                    startRadius: 0,
+                    endRadius: radialBox * 0.24
+                )
+                RadialGradient(
+                    gradient: Gradient(colors: [AppColors.heroGlowPurple2, .clear]),
+                    center: UnitPoint(x: 0.82, y: 0.14),
+                    startRadius: 0,
+                    endRadius: radialBox * 0.26
+                )
+                RadialGradient(
+                    gradient: Gradient(colors: [AppColors.heroGlowPink, .clear]),
+                    center: UnitPoint(x: 0.56, y: 0.58),
+                    startRadius: 0,
+                    endRadius: radialBox * 0.28
+                )
             }
             .frame(width: w, height: targetHeight)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

@@ -259,8 +259,9 @@ struct AppColors {
     /// Hero track fill (active segment)
     static let heroTrackFill       = Color.white.opacity(0.50)
 
-    // MARK: Investment Hero Gradient (blue-cold variant, distinct from Home heroGradient)
-    // Usage: prefer `investBrandLinearGradient` for full-bleed hero (matches HTML stop positions).
+    // MARK: Investment Hero Gradient (legacy blue-cold variant)
+    // Kept for historical prototypes. Main Home / Cash Flow / Investment tabs
+    // intentionally use `heroBrandLinearGradient` so the dark hero region stays unified.
     static let investHeroGradient: [Color] = [
         Color(hex: "#13152a"),   // deep navy (top)
         Color(hex: "#20275f"),   // dark indigo

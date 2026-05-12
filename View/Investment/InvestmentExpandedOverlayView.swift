@@ -195,25 +195,25 @@ private extension InvestmentExpandedOverlayView {
     var backgroundView: some View {
         ZStack {
             LinearGradient(
-                gradient: AppColors.investBrandLinearGradient,
+                gradient: AppColors.heroBrandLinearGradient,
                 startPoint: .top,
                 endPoint: .bottom
             )
             RadialGradient(
                 gradient: Gradient(colors: [AppColors.heroGlowPurple1, .clear]),
-                center: UnitPoint(x: 0.16, y: 0.05),
+                center: UnitPoint(x: 0.18, y: 0.06),
                 startRadius: 0,
                 endRadius: 260
             )
             RadialGradient(
-                gradient: Gradient(colors: [AppColors.investHeroGlowPurple2, .clear]),
-                center: UnitPoint(x: 0.84, y: 0.12),
+                gradient: Gradient(colors: [AppColors.heroGlowPurple2, .clear]),
+                center: UnitPoint(x: 0.82, y: 0.14),
                 startRadius: 0,
                 endRadius: 280
             )
             RadialGradient(
                 gradient: Gradient(colors: [AppColors.heroGlowPink, .clear]),
-                center: UnitPoint(x: 0.62, y: 0.55),
+                center: UnitPoint(x: 0.56, y: 0.58),
                 startRadius: 0,
                 endRadius: 320
             )

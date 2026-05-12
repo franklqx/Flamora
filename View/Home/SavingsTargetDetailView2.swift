@@ -473,13 +473,55 @@ struct SavingsTargetDetailView2: View {
     private func handleChartGesture(at location: CGPoint, proxy: ChartProxy, geo: GeometryProxy) {
         let plotFrame = geo[proxy.plotAreaFrame]
         let xPos = location.x - plotFrame.origin.x
-        guard xPos >= 0, xPos <= plotFrame.width else { return }
-        guard let label: String = proxy.value(atX: xPos) else { return }
-        guard let idx = snapshot.fullYearNodes.firstIndex(where: { axisLabel(for: $0) == label }) else { return }
-        // Skip locked future months — drag scrubs only across unlocked bars.
-        guard snapshot.fullYearNodes[idx].state != .future else { return }
+        let yPos = location.y - plotFrame.origin.y
+        guard xPos >= 0, xPos <= plotFrame.width, yPos >= 0, yPos <= plotFrame.height else {
+            clearChartSelection()
+            return
+        }
+        guard let label: String = proxy.value(atX: xPos),
+              let idx = snapshot.fullYearNodes.firstIndex(where: { axisLabel(for: $0) == label }) else {
+            clearChartSelection()
+            return
+        }
+        guard isPointOnBar(monthIndex: idx, xPos: xPos, yPos: yPos, proxy: proxy, plotFrame: plotFrame) else {
+            clearChartSelection()
+            return
+        }
         if selectedMonthIndex != idx {
             selectedMonthIndex = idx
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
+    }
+
+    private func isPointOnBar(
+        monthIndex: Int,
+        xPos: CGFloat,
+        yPos: CGFloat,
+        proxy: ChartProxy,
+        plotFrame: CGRect
+    ) -> Bool {
+        let node = snapshot.fullYearNodes[monthIndex]
+        guard node.state != .future, let amount = node.amount, amount > 0 else { return false }
+        let label = axisLabel(for: node)
+        guard let barCenterX = proxy.position(forX: label),
+              let barTopY = proxy.position(forY: amount),
+              let baselineY = proxy.position(forY: 0) else {
+            return false
+        }
+
+        let monthBandWidth = plotFrame.width / 12
+        let hitHalfWidth = max(16, monthBandWidth * 0.34)
+        let top = min(barTopY, baselineY)
+        let bottom = max(barTopY, baselineY)
+
+        return abs(xPos - barCenterX) <= hitHalfWidth
+            && yPos >= top
+            && yPos <= bottom
+    }
+
+    private func clearChartSelection() {
+        if selectedMonthIndex != nil {
+            selectedMonthIndex = nil
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         }
     }

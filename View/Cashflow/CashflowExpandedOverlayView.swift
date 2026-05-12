@@ -362,7 +362,7 @@ private extension CashflowExpandedOverlayView {
             )
         }
         var trailingIdx = 0
-        while cells.count % 7 != 0 {
+        while cells.count < 42 {
             cells.append(DayCell(id: "empty-post-\(monthIndex)-\(trailingIdx)", day: nil, amount: 0, txCount: 0, isCurrentMonth: false))
             trailingIdx += 1
         }
@@ -459,6 +459,39 @@ private extension CashflowExpandedOverlayView {
     }
 
     private var calendarMonthPager: some View {
+        VStack(spacing: 0) {
+            Text(currentMonthTitle.uppercased())
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppColors.heroTextSoft)
+                .tracking(0.6)
+                .frame(maxWidth: .infinity)
+                .frame(height: calendarTitleHeight)
+
+            Color.clear.frame(height: calendarTitleGap)
+
+            calendarWeekdayHeader
+                .frame(height: calendarWeekdayHeight)
+
+            Color.clear.frame(height: calendarWeekdayGap)
+
+            calendarGridPager
+        }
+        .frame(height: calendarPagerHeight, alignment: .top)
+        .accessibilityIdentifier("cashflow_calendar_month_pager")
+    }
+
+    private var calendarWeekdayHeader: some View {
+        LazyVGrid(columns: calendarGridColumns, spacing: 0) {
+            ForEach(weekdayShort, id: \.self) { day in
+                Text(day)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(AppColors.heroTextHint)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    private var calendarGridPager: some View {
         // 24pt gap inserted between adjacent month pages during a swipe so the
         // two months read as separate cards (reference design has a visible
         // gutter; flush-tile pages create the overlap the user reported).
@@ -466,25 +499,21 @@ private extension CashflowExpandedOverlayView {
         return GeometryReader { geo in
             let width = max(geo.size.width, 1)
             let stride = width + pageSpacing
-            // .topLeading pins each page to the top edge of the pager. Default
-            // ZStack alignment is vertical-center, which centers the VStack
-            // when a 5-row month uses less height than the 6-row reservation —
-            // the title visibly drifts down on shorter months.
             ZStack(alignment: .topLeading) {
                 if calendarDragOffset > 0, selectedMonthIndex > 0 {
-                    monthPage(monthIndex: selectedMonthIndex - 1, pageWidth: width)
+                    monthGridPage(monthIndex: selectedMonthIndex - 1, pageWidth: width)
                         .offset(x: -stride + calendarDragOffset)
                 }
 
                 if calendarDragOffset < 0, selectedMonthIndex < monthCountInScope - 1 {
-                    monthPage(monthIndex: selectedMonthIndex + 1, pageWidth: width)
+                    monthGridPage(monthIndex: selectedMonthIndex + 1, pageWidth: width)
                         .offset(x: stride + calendarDragOffset)
                 }
 
-                monthPage(monthIndex: selectedMonthIndex, pageWidth: width)
+                monthGridPage(monthIndex: selectedMonthIndex, pageWidth: width)
                     .offset(x: calendarDragOffset)
             }
-            .frame(width: width, height: calendarPagerHeight, alignment: .leading)
+            .frame(width: width, height: calendarGridHeight, alignment: .topLeading)
             .compositingGroup()
             .clipShape(Rectangle())
             .mask(Rectangle())
@@ -530,47 +559,43 @@ private extension CashflowExpandedOverlayView {
                         }
                     }
             )
-            .accessibilityIdentifier("cashflow_calendar_month_pager")
         }
-        .frame(height: calendarPagerHeight)
+        .frame(height: calendarGridHeight)
+    }
+
+    private var calendarTitleHeight: CGFloat { 18 }
+    private var calendarTitleGap: CGFloat { 12 }
+    private var calendarWeekdayHeight: CGFloat { 18 }
+    private var calendarWeekdayGap: CGFloat { 6 }
+    private var calendarRowHeight: CGFloat { 64 }
+    private var calendarRowGap: CGFloat { 6 }
+    private var calendarGridColumns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: calendarRowGap), count: 7)
+    }
+    private var calendarGridHeight: CGFloat {
+        (calendarRowHeight * 6) + (calendarRowGap * 5)
     }
 
     private var calendarPagerHeight: CGFloat {
-        let titleHeight: CGFloat = 18
-        let titleGap: CGFloat = 12
-        let weekdayHeight: CGFloat = 18
-        let weekdayGap: CGFloat = 6
-        let rowHeight: CGFloat = 64
-        let rowGap: CGFloat = 6
-        return titleHeight + titleGap + weekdayHeight + weekdayGap + (rowHeight * 6) + (rowGap * 5)
+        calendarTitleHeight
+            + calendarTitleGap
+            + calendarWeekdayHeight
+            + calendarWeekdayGap
+            + calendarGridHeight
     }
 
     @ViewBuilder
-    private func monthPage(monthIndex: Int, pageWidth: CGFloat) -> some View {
+    private func monthGridPage(monthIndex: Int, pageWidth: CGFloat) -> some View {
         if (0..<monthCountInScope).contains(monthIndex) {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("\(monthShort[monthIndex]) \(currentYear)".uppercased())
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppColors.heroTextSoft)
-                    .tracking(0.6)
-                    .frame(maxWidth: .infinity)
-
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 7), spacing: 6) {
-                    ForEach(weekdayShort, id: \.self) { day in
-                        Text(day)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(AppColors.heroTextHint)
-                            .frame(maxWidth: .infinity)
-                    }
-                    ForEach(calendarGrid(monthIndex: monthIndex)) { cell in
-                        dayCellView(cell, monthIndex: monthIndex)
-                    }
+            LazyVGrid(columns: calendarGridColumns, spacing: calendarRowGap) {
+                ForEach(calendarGrid(monthIndex: monthIndex)) { cell in
+                    dayCellView(cell, monthIndex: monthIndex)
                 }
-                .accessibilityIdentifier(monthIndex == selectedMonthIndex ? "cashflow_calendar_grid" : "cashflow_calendar_grid_\(monthIndex)")
             }
-            .frame(width: pageWidth, alignment: .top)
+            .frame(width: pageWidth, height: calendarGridHeight, alignment: .top)
+            .accessibilityIdentifier(monthIndex == selectedMonthIndex ? "cashflow_calendar_grid" : "cashflow_calendar_grid_\(monthIndex)")
         } else {
-            Color.clear.frame(width: pageWidth)
+            Color.clear.frame(width: pageWidth, height: calendarGridHeight)
         }
     }
 
@@ -633,7 +658,7 @@ private extension CashflowExpandedOverlayView {
                     }
                 }
                 .padding(8)
-                .frame(height: 64)
+                .frame(height: calendarRowHeight)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
@@ -648,7 +673,7 @@ private extension CashflowExpandedOverlayView {
             .accessibilityLabel("Day \(day)\(cell.txCount > 0 ? ", \(cell.txCount) transactions" : "")")
             .accessibilityHint("Show transactions for this day")
         } else {
-            Color.clear.frame(height: 64)
+            Color.clear.frame(height: calendarRowHeight)
         }
     }
 

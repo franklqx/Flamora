@@ -472,14 +472,13 @@ struct NetWorthDetailView: View {
 
     private func accountRow(_ account: APIAccount) -> some View {
         HStack(spacing: AppSpacing.md) {
-            ZStack {
-                Circle()
-                    .fill(iconTint(for: account).opacity(0.14))
-                    .frame(width: 38, height: 38)
-                Image(systemName: iconName(for: account))
-                    .font(.footnoteSemibold)
-                    .foregroundStyle(iconTint(for: account))
-            }
+            BankLogoView(
+                logoBase64: account.institutionLogoBase64,
+                primaryColorHex: account.institutionPrimaryColor,
+                institutionName: account.institution,
+                fallbackSymbol: iconName(for: account),
+                fallbackColor: iconTint(for: account)
+            )
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(account.name)
