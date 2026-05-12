@@ -119,11 +119,12 @@ class PlaidManager {
             linkError = "Connection failed. Please try again."
         } catch let error as FunctionsError {
             if case .httpError(let code, _) = error {
-                // 403 PREMIUM_REQUIRED → 触发 Paywall（生产路径）
+                // 403 PREMIUM_REQUIRED → 通知触发 view 弹 paywall（生产路径）。
+                // 走 NotificationCenter 而不是直接戳 SubscriptionManager，因为
+                // paywall 现在挂在触发 view 的本地 fullScreenCover 上（避免
+                // sheet-over-sheet 阻塞）。BS_AccountSelectionView 监听这个通知。
                 if code == 403 {
-                    await MainActor.run {
-                        SubscriptionManager.shared.showPaywall = true
-                    }
+                    NotificationCenter.default.post(name: .plaidPremiumRequired, object: nil)
                     return
                 }
                 #if DEBUG

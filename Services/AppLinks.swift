@@ -3,7 +3,6 @@
 //  Flamora app
 //
 //  Unified legal URLs and trust bridge copy.
-//  Replace the placeholder URLs below with live links before App Store submission.
 //
 
 import Foundation
@@ -11,7 +10,15 @@ import Foundation
 enum AppLinks {
 
     // MARK: - Legal URLs
-    // TODO: Replace with live URLs before App Store submission.
+    //
+    // ⚠️ LAUNCH BLOCKER for App Store submission:
+    // Both URLs MUST resolve (HTTP 200) before submission. Apple verifies them.
+    // Currently pointing at flamora.app/{privacy,terms} — deploy the static
+    // pages in `landing/` to those paths, or update these constants to a
+    // hosted URL (Vercel / GitHub Pages / etc.) before the first ASC build.
+    //
+    // TestFlight external review also requires Privacy Policy URL in App
+    // Store Connect → App Information; the in-app link should match it.
     static let privacyPolicyURL  = URL(string: "https://flamora.app/privacy")!
     static let termsOfServiceURL = URL(string: "https://flamora.app/terms")!
 

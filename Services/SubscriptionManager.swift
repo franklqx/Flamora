@@ -14,7 +14,6 @@ class SubscriptionManager {
     static let shared = SubscriptionManager()
 
     var isPremium: Bool = false
-    var showPaywall: Bool = false
 
     private let entitlementId = "Flamora Pro"
 

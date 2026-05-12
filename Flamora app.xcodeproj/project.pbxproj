@@ -13,7 +13,7 @@
 		12123E342F4719A20011B385 /* LinkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 12123E332F4719A20011B385 /* LinkKit */; };
 		12123E372F4859CB0011B385 /* PlaidManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E352F4859CB0011B385 /* PlaidManager.swift */; };
 		12123E382F4859CB0011B385 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E362F4859CB0011B385 /* SubscriptionManager.swift */; };
-		12123E422F485B920011B385 /* PaywallSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E3E2F485B920011B385 /* PaywallSheet.swift */; };
+		12123E422F485B920011B385 /* PaywallScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E3E2F485B920011B385 /* PaywallScreen.swift */; };
 		12123E432F485B920011B385 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E3C2F485B920011B385 /* SettingsView.swift */; };
 		12123E452F48D7E20011B385 /* PlaidLinkPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12123E442F48D7E20011B385 /* PlaidLinkPresenter.swift */; };
 		124C46492F56F65E00E4EA8B /* OB_IntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124C46372F56F65E00E4EA8B /* OB_IntroView.swift */; };
@@ -101,9 +101,9 @@
 		CDAA00022FA0000000000001 /* CategoryDisplayHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA00012FA0000000000001 /* CategoryDisplayHelper.swift */; };
 		CDAA00072FA0000000000001 /* CashflowDetailBuilders.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA00062FA0000000000001 /* CashflowDetailBuilders.swift */; };
 		CDAA00092FA0000000000001 /* TabContentCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA00082FA0000000000001 /* TabContentCache.swift */; };
-		CDAA00112FA0000000000005 /* AppDataPreloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA00102FA0000000000005 /* AppDataPreloader.swift */; };
 		CDAA000B2FA0000000000001 /* InvestmentAllocationBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA000A2FA0000000000001 /* InvestmentAllocationBuilder.swift */; };
 		CDAA000D2FA0000000000001 /* InvestmentHeroData.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA000C2FA0000000000001 /* InvestmentHeroData.swift */; };
+		CDAA00112FA0000000000005 /* AppDataPreloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAA00102FA0000000000005 /* AppDataPreloader.swift */; };
 		CDBB00022FA1000000000001 /* CashAccountsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00012FA1000000000001 /* CashAccountsCard.swift */; };
 		CDBB00042FA1000000000001 /* CashAccountDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBB00032FA1000000000001 /* CashAccountDetailView.swift */; };
 		CDFM00022FB0000000000001 /* FIREMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDFM00012FB0000000000001 /* FIREMath.swift */; };
@@ -159,7 +159,7 @@
 		12123E352F4859CB0011B385 /* PlaidManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidManager.swift; sourceTree = "<group>"; };
 		12123E362F4859CB0011B385 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
 		12123E3C2F485B920011B385 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		12123E3E2F485B920011B385 /* PaywallSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallSheet.swift; sourceTree = "<group>"; };
+		12123E3E2F485B920011B385 /* PaywallScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallScreen.swift; sourceTree = "<group>"; };
 		12123E442F48D7E20011B385 /* PlaidLinkPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidLinkPresenter.swift; sourceTree = "<group>"; };
 		124C462E2F56F65E00E4EA8B /* OB_MicroInsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_MicroInsightCard.swift; sourceTree = "<group>"; };
 		124C46302F56F65E00E4EA8B /* OB_PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_PrimaryButton.swift; sourceTree = "<group>"; };
@@ -274,9 +274,9 @@
 		CDAA00012FA0000000000001 /* CategoryDisplayHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryDisplayHelper.swift; sourceTree = "<group>"; };
 		CDAA00062FA0000000000001 /* CashflowDetailBuilders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowDetailBuilders.swift; sourceTree = "<group>"; };
 		CDAA00082FA0000000000001 /* TabContentCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabContentCache.swift; sourceTree = "<group>"; };
-		CDAA00102FA0000000000005 /* AppDataPreloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDataPreloader.swift; sourceTree = "<group>"; };
 		CDAA000A2FA0000000000001 /* InvestmentAllocationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentAllocationBuilder.swift; sourceTree = "<group>"; };
 		CDAA000C2FA0000000000001 /* InvestmentHeroData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentHeroData.swift; sourceTree = "<group>"; };
+		CDAA00102FA0000000000005 /* AppDataPreloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDataPreloader.swift; sourceTree = "<group>"; };
 		CDBB00012FA1000000000001 /* CashAccountsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountsCard.swift; sourceTree = "<group>"; };
 		CDBB00032FA1000000000001 /* CashAccountDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashAccountDetailView.swift; sourceTree = "<group>"; };
 		CDFM00012FB0000000000001 /* FIREMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIREMath.swift; sourceTree = "<group>"; };
@@ -372,7 +372,7 @@
 		12123E402F485B920011B385 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
-				12123E3E2F485B920011B385 /* PaywallSheet.swift */,
+				12123E3E2F485B920011B385 /* PaywallScreen.swift */,
 				AAB934E0EA2D41B4B246F19E /* SafariView.swift */,
 				A896C70355034867B690BCB2 /* PlaidTrustBridgeView.swift */,
 				F10000072FB0000000000001 /* SheetPrimaryCTAButton.swift */,
@@ -906,7 +906,7 @@
 				15E21AB32F3257B000A9BB60 /* CashflowView.swift in Sources */,
 				CF10A0012F50000100A9BB60 /* CashflowSpendingOverviewPrototypeCard.swift in Sources */,
 				CF10A0112F50000100A9BB60 /* CashflowExpandedOverlayView.swift in Sources */,
-				12123E422F485B920011B385 /* PaywallSheet.swift in Sources */,
+				12123E422F485B920011B385 /* PaywallScreen.swift in Sources */,
 				12123E432F485B920011B385 /* SettingsView.swift in Sources */,
 				12748F232F65CA7300410D60 /* BudgetSetupViewModel.swift in Sources */,
 				AAOB00012F38500000000001 /* OnboardingData.swift in Sources */,
@@ -1110,7 +1110,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SKDUW38P9T;
+				DEVELOPMENT_TEAM = 526LTP6Z7D;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Flamora-App-Info.plist";

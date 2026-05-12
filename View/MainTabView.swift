@@ -212,9 +212,16 @@ struct MainTabView: View {
             let simulatorFullScreenActive = supportsSimulatorFullScreenBackground && homeState == .simulator
 
             // 全屏壳渐变：只作最底层背景（zIndex 低于 sheet），叠在 sheet「后面」，不盖在 sheet 上面。
+            //
+            // Previously this had `.opacity(simulatorFullScreenActive ? 0 : 1)`
+            // with a 180ms fade animation. When the sheet expanded back from
+            // collapsed (simulator → sheet transition) the simulator overlay
+            // disappeared instantly but shellUnderlay's fade-in took 180ms —
+            // during that gap the window's dark backgroundPrimary bled through
+            // and the user saw a black flash before the sheet re-appeared.
+            // Always-opaque shellUnderlay sits at zIndex -1 behind everything,
+            // so it never visually interferes; only the gap was problematic.
             shellUnderlay
-                .opacity(simulatorFullScreenActive ? 0 : 1)
-                .animation(.easeInOut(duration: 0.18), value: simulatorFullScreenActive)
                 .zIndex(-1)
 
             BrandHeroBackground(

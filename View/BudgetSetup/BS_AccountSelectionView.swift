@@ -15,6 +15,7 @@ struct BS_AccountSelectionView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @State private var showTrustBridge = false
     @State private var showZeroPortfolioAssumptionAlert = false
+    @State private var showPaywall = false
 
     private static let currencyFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
@@ -105,11 +106,27 @@ struct BS_AccountSelectionView: View {
         }) {
             PlaidTrustBridgeView()
         }
-        .sheet(isPresented: Binding(
-            get: { subscriptionManager.showPaywall },
-            set: { subscriptionManager.showPaywall = $0 }
-        )) {
-            PaywallSheet()
+        // Paywall as fullScreenCover so it layers above BudgetSetupView (which
+        // is itself a fullScreenCover from MainTabView).
+        .fullScreenCover(isPresented: $showPaywall) {
+            PaywallScreen(
+                onClose: { showPaywall = false },
+                onPurchaseSucceeded: {
+                    // After purchase, immediately resume the Plaid link flow
+                    // the user was trying to start when the paywall opened.
+                    if plaidManager.shouldShowTrustBridge() {
+                        showTrustBridge = true
+                    } else {
+                        Task { await plaidManager.startLinkFlow() }
+                    }
+                }
+            )
+            .environment(subscriptionManager)
+        }
+        // Service-layer paywall trigger: PlaidManager posts this when the
+        // edge function returns 403 PREMIUM_REQUIRED (mid-flow expiry / race).
+        .onReceive(NotificationCenter.default.publisher(for: .plaidPremiumRequired)) { _ in
+            showPaywall = true
         }
     }
 
@@ -197,7 +214,7 @@ struct BS_AccountSelectionView: View {
 
             Button {
                 guard subscriptionManager.isPremium else {
-                    subscriptionManager.showPaywall = true
+                    showPaywall = true
                     return
                 }
                 if plaidManager.shouldShowTrustBridge() {
@@ -627,7 +644,7 @@ struct BS_AccountSelectionView: View {
 
     private func startPlaidLinkFlow() {
         guard subscriptionManager.isPremium else {
-            subscriptionManager.showPaywall = true
+            showPaywall = true
             return
         }
         if plaidManager.shouldShowTrustBridge() {

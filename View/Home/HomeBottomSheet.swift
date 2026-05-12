@@ -55,28 +55,35 @@ struct HomeBottomSheet: View {
                 }
             }
 
+            // Only the active tab's content is in the view tree. The previous
+            // opacity-stacked approach kept all 4 ScrollViews alive concurrently,
+            // and on real-device iOS 26 the off-axis pan recognizers of the
+            // invisible scroll views picked up finger micro-jitter as horizontal
+            // pan — the visible content would slide left/right with any
+            // vertical swipe attempt. `.scrollDisabled(true)` on inactive
+            // ScrollViews was tried but doesn't actually deactivate the
+            // underlying gesture recognizer on iOS 26. Removing inactive
+            // views from the tree entirely is the only reliable fix.
+            //
+            // State preservation: each tab view's local @State is lost when
+            // it leaves the tree, but TabContentCache is the shared source of
+            // truth — restoreFromCache() on .onAppear immediately repopulates
+            // the displayed data from cache without a network roundtrip.
             ZStack {
-                HomeRoadmapContent(onSelectTab: onSelectTab)
-                    .opacity(selectedTab == .home ? 1 : 0)
-                    .allowsHitTesting(selectedTab == .home)
-
-                Group {
+                switch selectedTab {
+                case .home:
+                    HomeRoadmapContent(onSelectTab: onSelectTab)
+                case .cashflow:
                     if plaidManager.hasLinkedBank {
                         CashflowView()
                     } else {
                         CashUnconnectedContent()
                     }
+                case .investment:
+                    InvestmentSheetContent()
+                case .settings:
+                    SettingsView(isEmbeddedInSheet: true)
                 }
-                .opacity(selectedTab == .cashflow ? 1 : 0)
-                .allowsHitTesting(selectedTab == .cashflow)
-
-                InvestmentSheetContent()
-                    .opacity(selectedTab == .investment ? 1 : 0)
-                    .allowsHitTesting(selectedTab == .investment)
-
-                SettingsView(isEmbeddedInSheet: true)
-                    .opacity(selectedTab == .settings ? 1 : 0)
-                    .allowsHitTesting(selectedTab == .settings)
             }
             .animation(.easeInOut(duration: 0.2), value: selectedTab)
             .frame(maxWidth: .infinity)

@@ -14,8 +14,6 @@ struct ContentView: View {
     @State private var bridgeVisible = false
     @AppStorage("hasCompletedOnboardingV2") private var hasCompletedOnboarding = false  // key 保留兼容已完程用户
 
-    @Environment(SubscriptionManager.self) private var subscriptionManager
-
     // 观察 SupabaseManager 的 auth 状态
     private let supabase = SupabaseManager.shared
     private var forcesMainTabsForUITests: Bool {
@@ -60,15 +58,10 @@ struct ContentView: View {
             }
         }
         .ignoresSafeArea(.keyboard, edges: .all)
-        // Plaid Link 通过 PlaidLinkPresenter（UIWindow overlay）呈现，无 SwiftUI sheet
-        // 全局 Paywall Sheet
-        .sheet(isPresented: Binding(
-            get: { subscriptionManager.showPaywall },
-            set: { subscriptionManager.showPaywall = $0 }
-        )) {
-            PaywallSheet()
-                .environment(subscriptionManager)
-        }
+        // Plaid Link 通过 PlaidLinkPresenter（UIWindow overlay）呈现，无 SwiftUI sheet。
+        // Paywall: 每个触发点（Settings / BudgetSetup）在自己的 view 里挂本地
+        // `.fullScreenCover { PaywallScreen(...) }` —— fullScreenCover 能叠在
+        // 已展开的 sheet 之上，避免之前 sheet-over-sheet 阻塞导致的"点 Upgrade 没反应"问题。
         // 检查现有 session（已登录 → 直接进主应用）l
         .task { await checkExistingSession() }
         // 持续监听 auth 状态变化（退出登录时回到 onboarding）

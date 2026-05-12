@@ -25,20 +25,30 @@ struct CashflowView: View {
     @Environment(PlaidManager.self) private var plaidManager
     @AppStorage(FlamoraStorageKey.budgetSetupCompleted) private var budgetSetupCompleted: Bool = false
 
+    // ⚠️ All @State below initializes directly from TabContentCache so the
+    // very first render (right after CashflowView is reinstantiated by the
+    // HomeBottomSheet switch-case) already has data. Previously these were
+    // empty defaults and the cache was applied in `.onAppear` AFTER the
+    // first render — the Budget card flashed all-zeros for one frame on
+    // every tab return.
     @State private var loadError = false
-    @State private var apiBudget = APIMonthlyBudget.empty
+    @State private var apiBudget: APIMonthlyBudget = TabContentCache.shared.cashflowBudget ?? .empty
     /// 当月收入（来自 `get-spending-summary.total_income`；active/passive 尚无拆分时与 total 对齐）。
     @State private var incomeMonthDisplay = Income(total: 0, active: 0, passive: 0, sources: [])
     /// 本年累计收入（多个月 `get-spending-summary` 汇总）；无银行连接时为 nil。
     @State private var incomeYearDisplay: Income?
-    @State private var currentSavings: Double = 0
+    @State private var currentSavings: Double = TabContentCache.shared.cashflowBudget?.savingsActual ?? 0
     @State private var activeSavingsTargetMonthly: Double?
-    @State private var needsTotal: Double = 0
-    @State private var wantsTotal: Double = 0
-    @State private var totalSpend: Double = 0
+    @State private var needsTotal: Double = TabContentCache.shared.cashflowBudget?.needsSpent ?? 0
+    @State private var wantsTotal: Double = TabContentCache.shared.cashflowBudget?.wantsSpent ?? 0
+    @State private var totalSpend: Double = {
+        let b = TabContentCache.shared.cashflowBudget
+        return (b?.needsSpent ?? 0) + (b?.wantsSpent ?? 0)
+    }()
     @State private var allTransactions: [Transaction] = TabContentCache.shared.cashflowRecentTransactions ?? []
     /// 与 `transaction.accountId` 匹配，供交易详情 Sheet 展示账户行。
-    @State private var linkedAccounts: [Account] = []
+    @State private var linkedAccounts: [Account] = TabContentCache.shared.cashflowAccounts?
+        .map { Account.fromNetWorthAccount($0) } ?? []
     /// Cash 页账户列表：depository + credit，来自 get-net-worth-summary.accounts。
     @State private var cashAccountsList: [APIAccount] = TabContentCache.shared.cashflowAccounts?
         .filter { $0.type == "depository" || $0.type == "credit" } ?? []
@@ -51,12 +61,12 @@ struct CashflowView: View {
     @State private var displayBudgetMonth: Date = Date()
 
     /// 已连接银行时由多月份 `get-spending-summary` 构建；未连接或拉取失败时为 nil，详情页使用空数据（非 Mock）。
-    @State private var cashflowSpendingTotalDetail: TotalSpendingDetailData?
-    @State private var cashflowNeedsDetail: SpendingDetailData?
-    @State private var cashflowWantsDetail: SpendingDetailData?
+    @State private var cashflowSpendingTotalDetail: TotalSpendingDetailData? = TabContentCache.shared.cashflowSpendingTotalDetail
+    @State private var cashflowNeedsDetail: SpendingDetailData? = TabContentCache.shared.cashflowNeedsDetail
+    @State private var cashflowWantsDetail: SpendingDetailData? = TabContentCache.shared.cashflowWantsDetail
     @State private var cashflowTotalIncomeDetail: TotalIncomeDetailData?
     /// 已连接且拉到 summary 时为当年各月储蓄序列；否则 nil → 储蓄全屏用当年全 nil 序列。
-    @State private var cashflowSavingsByYear: [Int: [Double?]]?
+    @State private var cashflowSavingsByYear: [Int: [Double?]]? = TabContentCache.shared.cashflowSavingsByYear
 
     private var currentMonthIndex: Int {
         Calendar.current.component(.month, from: Date()) - 1
@@ -127,40 +137,38 @@ struct CashflowView: View {
     }
 
     var connectedView: some View {
-        ZStack {
-            Color.clear
-
-            GeometryReader { proxy in
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                        BudgetCard(
-                            spending: spendingForDisplay,
-                            apiBudget: apiBudget,
-                            needsDetailData: cashflowNeedsDetail,
-                            wantsDetailData: cashflowWantsDetail,
-                            isConnected: plaidManager.hasLinkedBank,
-                            hasBudget: hasBudget,
-                            onSetupBudget: { plaidManager.openBudgetSetup(mode: .fresh) },
-                            onCardTapped: { showTotalSpendingDetail = true },
-                            onNeedsTapped: { showNeedsSpendingDetail = true },
-                            onWantsTapped: { showWantsSpendingDetail = true },
-                            onAdjustOverallPlan: { plaidManager.openBudgetSetup(mode: .editPlan) },
-                            onEditCategoryBudgets: { plaidManager.openBudgetSetup(mode: .editCategories) },
-                            displayMonth: displayBudgetMonth,
-                            onMonthLabelTapped: {
-                                Task { await loadAvailableBudgetMonthsIfNeeded() }
-                                showMonthSwitcher = true
-                            }
-                        )
-                        .padding(.horizontal, AppSpacing.screenPadding)
-
-                        cashAccountsSection
+        // Note: previously wrapped in GeometryReader + non-lazy VStack which
+        // forced full re-layout on every scroll tick → bottom-sheet drag felt
+        // sluggish. ScrollView sizes itself; the inner LazyVStack defers
+        // off-screen children, which is the right pattern when transaction /
+        // account counts grow.
+        ScrollView(showsIndicators: false) {
+            LazyVStack(alignment: .leading, spacing: AppSpacing.lg) {
+                BudgetCard(
+                    spending: spendingForDisplay,
+                    apiBudget: apiBudget,
+                    needsDetailData: cashflowNeedsDetail,
+                    wantsDetailData: cashflowWantsDetail,
+                    isConnected: plaidManager.hasLinkedBank,
+                    hasBudget: hasBudget,
+                    onSetupBudget: { plaidManager.openBudgetSetup(mode: .fresh) },
+                    onCardTapped: { showTotalSpendingDetail = true },
+                    onNeedsTapped: { showNeedsSpendingDetail = true },
+                    onWantsTapped: { showWantsSpendingDetail = true },
+                    onAdjustOverallPlan: { plaidManager.openBudgetSetup(mode: .editPlan) },
+                    onEditCategoryBudgets: { plaidManager.openBudgetSetup(mode: .editCategories) },
+                    displayMonth: displayBudgetMonth,
+                    onMonthLabelTapped: {
+                        Task { await loadAvailableBudgetMonthsIfNeeded() }
+                        showMonthSwitcher = true
                     }
-                    .frame(minHeight: proxy.size.height, alignment: .top)
-                    .padding(.top, AppSpacing.md)
-                    .padding(.bottom, AppSpacing.lg)
-                }
+                )
+                .padding(.horizontal, AppSpacing.screenPadding)
+
+                cashAccountsSection
             }
+            .padding(.top, AppSpacing.md)
+            .padding(.bottom, AppSpacing.lg)
         }
         .alert("Bank Connection Failed", isPresented: Binding(
             get: { plaidManager.linkError != nil },
@@ -324,6 +332,23 @@ private extension CashflowView {
         }
 
         guard isCashflowUnlocked else {
+            // Previously this branch eagerly zeroed every @State, which made
+            // any transient `hasLinkedBank = false` flicker (sheet drag → view
+            // recompose → PlaidManager state refresh) wipe the visible Budget
+            // card down to all zeros even when TabContentCache still had a
+            // valid snapshot.
+            //
+            // Now: only clear when the cache also has nothing — i.e. a true
+            // "user has never connected a bank" state. Otherwise we keep the
+            // last-known-good values on screen and let the next successful
+            // load refresh them in place. The reconnect banner on Home covers
+            // the explicit "previously connected, currently offline" case.
+            let cache = TabContentCache.shared
+            let cacheIsEmpty = cache.cashflowBudget == nil
+                && cache.cashflowAccounts == nil
+                && cache.cashflowMonthlySummaries == nil
+            guard cacheIsEmpty else { return }
+
             apiBudget = .empty
             activeSavingsTargetMonthly = nil
             currentSavings = 0

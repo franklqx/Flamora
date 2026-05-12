@@ -64,8 +64,13 @@ struct SettingsView: View {
             }
             await loadArchivedReports()
         }
-        .sheet(isPresented: $showPaywall) {
-            PaywallSheet()
+        // Paywall mounts locally as fullScreenCover — settings itself is a sheet
+        // (presented from MainTabView), and SwiftUI blocks .sheet-over-.sheet.
+        // fullScreenCover layers on top of any sheet, so the paywall opens
+        // immediately on "Upgrade" tap without the user having to dismiss
+        // settings first.
+        .fullScreenCover(isPresented: $showPaywall) {
+            PaywallScreen(onClose: { showPaywall = false })
                 .environment(subscriptionManager)
         }
         .fullScreenCover(item: $selectedReport, onDismiss: {

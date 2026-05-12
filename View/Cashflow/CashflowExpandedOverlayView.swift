@@ -109,10 +109,51 @@ struct CashflowExpandedOverlayView: View {
     @State private var selectedDay: Int = Calendar.current.component(.day, from: Date())
     @State private var calendarDragOffset: CGFloat = 0
 
-    @State private var dataState: DataState = .placeholder
+    // ⚠️ @State default values are evaluated ONCE at view init — initialize
+    // directly from TabContentCache so the first render already has data.
+    // Previously these were empty `[:] / []` and the cache was restored in
+    // `.onAppear`, which fires AFTER the first render — the user saw a
+    // single-frame flash of "empty calendar" every time the overlay
+    // re-appeared (e.g. after a tab switch), making it feel like the data
+    // was reloading from scratch.
+    @State private var dataState: DataState = {
+        TabContentCache.shared.cashflowMonthlySummaries?.isEmpty == false ? .live : .placeholder
+    }()
     @State private var loading = false
-    @State private var summaries: [Int: APISpendingSummary] = [:]
-    @State private var transactions: [Transaction] = []
+    @State private var summaries: [Int: APISpendingSummary] = TabContentCache.shared.cashflowMonthlySummaries ?? [:]
+    @State private var transactions: [Transaction] = {
+        let cache = TabContentCache.shared
+        let currentYear = Calendar.current.component(.year, from: Date())
+        guard cache.cashflowOverlayTransactionsYear == currentYear else { return [] }
+        return cache.cashflowOverlayTransactions ?? []
+    }()
+    /// O(1) lookup of transactions by "yyyy-MM-dd" date key. Rebuilt once on
+    /// transactions change; before this cache, `transactionsOnDay` filtered
+    /// the whole array AND allocated a fresh `DateFormatter` per transaction
+    /// per day cell per body re-evaluation — a single tap could fire
+    /// 30000+ formatter inits and pin the main thread for 2-3 seconds.
+    @State private var transactionsByDayKey: [String: [Transaction]] = {
+        let cache = TabContentCache.shared
+        let currentYear = Calendar.current.component(.year, from: Date())
+        guard cache.cashflowOverlayTransactionsYear == currentYear,
+              let txs = cache.cashflowOverlayTransactions else { return [:] }
+        var dict: [String: [Transaction]] = [:]
+        for tx in txs {
+            dict[tx.date, default: []].append(tx)
+        }
+        return dict.mapValues { $0.sorted { $0.amount > $1.amount } }
+    }()
+
+    /// Reused across the lifetime of the view. `DateFormatter` allocation is
+    /// surprisingly expensive on iOS (ICU locale data loading) — re-using a
+    /// single instance instead of creating one per parse is the difference
+    /// between a smooth tap and a 2-second freeze.
+    private static let dayKeyFormatter: DateFormatter = {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        return fmt
+    }()
 
     private let cal = Calendar.current
     private let monthShort = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -150,10 +191,24 @@ struct CashflowExpandedOverlayView: View {
         }
         .onAppear {
             if selectedDay <= 0 { selectedDay = 1 }
-            // Restore from cache immediately to avoid empty flash when overlay reopens.
-            if let cached = TabContentCache.shared.cashflowMonthlySummaries, !cached.isEmpty {
+            // Restore from cache immediately to avoid empty flash when overlay
+            // reopens. This view sits inside simulatorOverlay's switch-case so
+            // it gets destroyed and re-created on every tab change — without
+            // these cache restores the user sees an empty calendar for the
+            // full 3-5s of API pagination.
+            let cache = TabContentCache.shared
+            if let cached = cache.cashflowMonthlySummaries, !cached.isEmpty {
                 summaries = cached
                 dataState = .live
+            }
+            let currentYearNow = cal.component(.year, from: Date())
+            if let cachedTxs = cache.cashflowOverlayTransactions,
+               cache.cashflowOverlayTransactionsYear == currentYearNow {
+                transactions = cachedTxs
+            }
+            // Build by-day cache from any transactions already loaded.
+            if !transactions.isEmpty, transactionsByDayKey.isEmpty {
+                rebuildTransactionsByDayCache()
             }
         }
         .task(id: plaidManager.hasLinkedBank) {
@@ -286,14 +341,19 @@ private extension CashflowExpandedOverlayView {
 
         let firstWeekday = cal.component(.weekday, from: firstDay)
         let leading = max(0, firstWeekday - 1)
-        var cells: [DayCell] = Array(repeating: DayCell(id: UUID().uuidString, day: nil, amount: 0, txCount: 0, isCurrentMonth: false), count: leading)
+        // Stable IDs for empty cells — previously `UUID().uuidString` gave a
+        // fresh identity each render, forcing SwiftUI to rebuild the entire
+        // grid on every body re-eval instead of reusing existing views.
+        var cells: [DayCell] = (0..<leading).map { idx in
+            DayCell(id: "empty-pre-\(monthIndex)-\(idx)", day: nil, amount: 0, txCount: 0, isCurrentMonth: false)
+        }
 
         for day in dayRange {
             let txs = transactionsOnDay(day: day, monthIndex: monthIndex)
             let expense = txs.filter { $0.amount >= 0 }.reduce(0) { $0 + $1.amount }
             cells.append(
                 DayCell(
-                    id: "day-\(day)",
+                    id: "day-\(monthIndex)-\(day)",
                     day: day,
                     amount: expense,
                     txCount: txs.count,
@@ -301,8 +361,10 @@ private extension CashflowExpandedOverlayView {
                 )
             )
         }
+        var trailingIdx = 0
         while cells.count % 7 != 0 {
-            cells.append(DayCell(id: UUID().uuidString, day: nil, amount: 0, txCount: 0, isCurrentMonth: false))
+            cells.append(DayCell(id: "empty-post-\(monthIndex)-\(trailingIdx)", day: nil, amount: 0, txCount: 0, isCurrentMonth: false))
+            trailingIdx += 1
         }
         return cells
     }
@@ -427,12 +489,14 @@ private extension CashflowExpandedOverlayView {
             .clipShape(Rectangle())
             .mask(Rectangle())
             .contentShape(Rectangle())
-            // highPriorityGesture + minimumDistance:0 so the calendar page follows
-            // the finger from the first pixel of motion. The parent ScrollView
-            // would otherwise win the gesture race for the first ~10pt, making
-            // it feel like the page snaps only after the finger lifts.
+            // minimumDistance:10 (not 0) so single taps on day cells fall
+            // through to their buttons. 0 was intercepting every touch — even
+            // the initial down-event of a tap — and day cells never received
+            // their tap, making the whole grid appear "frozen". 10pt matches
+            // iOS's default tap-vs-drag threshold so the swipe still feels
+            // snappy as soon as the finger actually moves.
             .highPriorityGesture(
-                DragGesture(minimumDistance: 0)
+                DragGesture(minimumDistance: 10)
                     .onChanged { value in
                         // Only commit horizontal motion. Vertical wins still pass
                         // through to the ScrollView since highPriorityGesture
@@ -979,26 +1043,27 @@ private extension CashflowExpandedOverlayView {
 
     private func transactionsOnDay(day: Int, monthIndex: Int) -> [Transaction] {
         guard day > 0 else { return [] }
-        return transactions.filter { tx in
-            guard let date = parseDate(tx.date) else { return false }
-            let components = cal.dateComponents([.year, .month, .day], from: date)
-            return components.year == currentYear && components.month == monthIndex + 1 && components.day == day
+        let key = String(format: "%04d-%02d-%02d", currentYear, monthIndex + 1, day)
+        return transactionsByDayKey[key] ?? []
+    }
+
+    /// Build the by-day cache once per transactions update. Sorted descending
+    /// by amount once here so the lookups don't have to re-sort on each access.
+    private func rebuildTransactionsByDayCache() {
+        var dict: [String: [Transaction]] = [:]
+        for tx in transactions {
+            // tx.date is already "yyyy-MM-dd"; use it directly as the key.
+            dict[tx.date, default: []].append(tx)
         }
-        .sorted { $0.amount > $1.amount }
+        transactionsByDayKey = dict.mapValues { $0.sorted { $0.amount > $1.amount } }
     }
 
     private func parseDate(_ value: String) -> Date? {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd"
-        fmt.locale = Locale(identifier: "en_US_POSIX")
-        return fmt.date(from: value)
+        Self.dayKeyFormatter.date(from: value)
     }
 
     private func apiDate(_ date: Date) -> String {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd"
-        fmt.locale = Locale(identifier: "en_US_POSIX")
-        return fmt.string(from: date)
+        Self.dayKeyFormatter.string(from: date)
     }
 
     @MainActor
@@ -1046,9 +1111,22 @@ private extension CashflowExpandedOverlayView {
             fetchedTransactions = []
         }
 
-        summaries = fetchedSummaries
-        transactions = fetchedTransactions
-        dataState = fetchedSummaries.isEmpty ? .demo : .live
-        TabContentCache.shared.setCashflowMonthlySummaries(fetchedSummaries.isEmpty ? nil : fetchedSummaries)
+        // Stale-while-revalidate: ONLY overwrite @State + cache on a
+        // successful non-empty fetch. An empty response (transient error,
+        // rate limit, network blip) used to wipe both — every view re-create
+        // then started from a blank slate, which is exactly the "data keeps
+        // reloading from scratch" symptom the user reported. Keeping the
+        // previous good data in place until the next success means the
+        // calendar always renders what the user last saw.
+        if !fetchedSummaries.isEmpty {
+            summaries = fetchedSummaries
+            dataState = .live
+            TabContentCache.shared.setCashflowMonthlySummaries(fetchedSummaries, year: currentYear)
+        }
+        if !fetchedTransactions.isEmpty {
+            transactions = fetchedTransactions
+            rebuildTransactionsByDayCache()
+            TabContentCache.shared.setCashflowOverlayTransactions(fetchedTransactions, year: currentYear)
+        }
     }
 }

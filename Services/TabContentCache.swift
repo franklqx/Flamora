@@ -16,6 +16,9 @@ extension Notification.Name {
     static let budgetSetupFlowDidDismiss = Notification.Name("BudgetSetupFlowDidDismiss")
     /// Plaid Link 成功完成时广播，触发一次性 toast。userInfo: ["institutionName": String?]
     static let plaidLinkDidSucceed = Notification.Name("PlaidLinkDidSucceed")
+    /// Plaid Link 返回 403 PREMIUM_REQUIRED 时广播，触发 view 弹本地 paywall。
+    /// 服务层不直接戳 paywall flag，避免和 sheet-over-sheet 限制冲突。
+    static let plaidPremiumRequired = Notification.Name("PlaidPremiumRequired")
 }
 
 final class TabContentCache {
@@ -68,6 +71,14 @@ final class TabContentCache {
 
     /// Cash Flow 首页最近活动缓存。
     private(set) var cashflowRecentTransactions: [Transaction]?
+
+    /// Cash Flow 展开层（下拉 calendar）的全年交易缓存。CashflowExpandedOverlayView
+    /// 在 simulatorOverlay 的 switch-case 里——切到别的 tab 再回来时视图会重建、
+    /// `transactions` @State 会清空、`.task` 会重新发起分页拉取（最多 20 页 6000 条），
+    /// 这就是用户看到「下拉之后又要等 3-5 秒」的原因。把上次成功拉到的 transactions
+    /// 写进 cache，view 重建时立即从这里恢复，新一轮 fetch 在背景静默替换。
+    private(set) var cashflowOverlayTransactions: [Transaction]?
+    private(set) var cashflowOverlayTransactionsYear: Int?
 
     /// Cash / Debt 账户详情缓存。
     private(set) var cashAccountTransactions: [String: [Transaction]] = [:]
@@ -219,6 +230,11 @@ final class TabContentCache {
         cashflowRecentTransactions = value
     }
 
+    func setCashflowOverlayTransactions(_ value: [Transaction]?, year: Int? = nil) {
+        cashflowOverlayTransactions = value
+        cashflowOverlayTransactionsYear = (value == nil) ? nil : year
+    }
+
     func setCashflowSpendingDetails(
         total: TotalSpendingDetailData?,
         needs: SpendingDetailData?,
@@ -279,6 +295,8 @@ final class TabContentCache {
         cashflowMonthlySummariesYear = nil
         cashflowAccounts = nil
         cashflowRecentTransactions = nil
+        cashflowOverlayTransactions = nil
+        cashflowOverlayTransactionsYear = nil
         cashAccountTransactions = [:]
         cashAccountHistory = [:]
         investmentAccountTransactions = [:]
