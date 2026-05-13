@@ -1,6 +1,6 @@
 //
 //  SimulatorView.swift
-//  Flamora app
+//  Meridian
 //
 //  Step 5 sandbox simulator:
 //  - Demo mode before full setup

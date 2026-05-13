@@ -1,6 +1,6 @@
 //
 //  OB_SplashView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - Step 0: Animated Splash
 //
@@ -10,16 +10,16 @@ import SwiftUI
 struct OB_SplashView: View {
     let onNext: () -> Void
 
-    @State private var letterOpacities: [Double] = Array(repeating: 0, count: 7)
+    @State private var letterOpacities: [Double] = Array(repeating: 0, count: 8)
 
-    private let letters = ["F", "L", "A", "M", "O", "R", "A"]
+    private let letters = ["M", "E", "R", "I", "D", "I", "A", "N"]
 
     var body: some View {
         GeometryReader { geo in
             let width = geo.size.width
             let fontSize = min(34, max(20, width * 0.07))
             let letterScale = fontSize / AppTypography.h1
-            let letterSpacing = min(12, max(4, width * 0.03))
+            let letterSpacing = min(10, max(3, width * 0.022))
 
             ZStack {
                 AppColors.backgroundPrimary.ignoresSafeArea()

@@ -1,6 +1,6 @@
 //
 //  GlassPillSelector.swift
-//  Flamora app
+//  Meridian
 //
 //  Reusable glass-style pill selector (e.g. time range: 1W / 1M / 3M / YTD / ALL)
 //

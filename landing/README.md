@@ -1,6 +1,6 @@
-# Flamora — Landing Page
+# Meridian — Landing Page
 
-Marketing site for Flamora. Lives in the same monorepo as the iOS app, deployed via GitHub Pages.
+Marketing site for Meridian. Lives in the same monorepo as the iOS app, deployed via GitHub Pages.
 
 ## Stack
 - Single-file HTML, no build
@@ -15,7 +15,7 @@ open landing/index.html
 ## Deploy
 Auto-deployed via `.github/workflows/deploy-pages.yml` on every push to `main` that touches `landing/**`.
 
-Live URL (after first deploy): <https://franklqx.github.io/Flamora/>
+Live URL: TBD after final domain / hosting decision.
 
 ## Status
 🚧 Phase 1 — Waitlist. Email form is a UI mock; will be wired to Supabase + Resend before launch.

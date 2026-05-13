@@ -1,6 +1,6 @@
 //
 //  APIService.swift
-//  Flamora app
+//  Meridian
 //
 //  API Service for backend communication
 //

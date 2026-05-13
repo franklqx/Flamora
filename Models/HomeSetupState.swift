@@ -1,6 +1,6 @@
 //
 //  HomeSetupState.swift
-//  Flamora app
+//  Meridian
 //
 //  Setup state machine for Home (S0–S5).
 //  Decoded from `get-setup-state` Edge Function.

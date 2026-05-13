@@ -1,6 +1,6 @@
 //
 //  BS_DiagnosisView.swift
-//  Flamora app
+//  Meridian
 //
 //  Budget Setup — Step 3: Your Reality
 //

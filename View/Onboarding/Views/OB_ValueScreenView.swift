@@ -1,6 +1,6 @@
 //
 //  OB_ValueScreenView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - Step 8: Dynamic Value Screen (based on painPoint)
 //
@@ -204,7 +204,7 @@ private struct ValueMoneyTrackingContent: View {
             }
 
             // Bottom text
-            Text("Flamora connects to your accounts and automatically categorizes every transaction in real-time — so you always know exactly where your money goes.")
+            Text("Meridian connects to your accounts and automatically categorizes every transaction in real-time — so you always know exactly where your money goes.")
                 .font(.bodySmall)
                 .foregroundColor(AppColors.inkSoft)
                 .lineSpacing(4)
@@ -541,7 +541,7 @@ private struct ValueInvestingContent: View {
             .background(AppColors.glassCardBg)
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
 
-            Text("Even small contributions grow dramatically with time. Flamora helps you find that extra $100-300/month hiding in your spending.")
+            Text("Even small contributions grow dramatically with time. Meridian helps you find that extra $100-300/month hiding in your spending.")
                 .font(.bodySmall)
                 .foregroundColor(AppColors.inkSoft)
                 .lineSpacing(4)

@@ -1,6 +1,6 @@
 //
 //  TopHeaderBar.swift
-//  Flamora app
+//  Meridian
 //
 //  顶部导航栏 - 页面标题风格
 //

@@ -1,6 +1,6 @@
 //
 //  OB_InvestmentView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - Step 12: Investment Portfolio (Snapshot 4/5)
 //

@@ -1,6 +1,6 @@
 //
 //  MainTabView.swift
-//  Flamora app
+//  Meridian
 //
 //  主导航容器 - Home hero + draggable sheet
 //

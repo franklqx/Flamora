@@ -1,6 +1,6 @@
 //
 //  AssetAllocationDetailView.swift
-//  Flamora app
+//  Meridian
 //
 //  Light-shell asset allocation detail: donut on a glass hero card, then
 //  glass breakdown card with expandable category rows (holdings / cash accounts).

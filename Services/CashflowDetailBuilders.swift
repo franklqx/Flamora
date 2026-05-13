@@ -1,6 +1,6 @@
 //
 //  CashflowDetailBuilders.swift
-//  Flamora app
+//  Meridian
 //
 //  将多个月份的 `get-spending-summary` 汇总为 Cash Flow 全屏详情页与储蓄年度趋势使用的结构体。
 //

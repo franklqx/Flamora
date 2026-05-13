@@ -1,6 +1,6 @@
 //
 //  InvestmentExpandedOverlayView.swift
-//  Flamora app
+//  Meridian
 //
 
 import SwiftUI

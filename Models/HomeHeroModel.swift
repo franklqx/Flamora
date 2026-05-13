@@ -1,6 +1,6 @@
 //
 //  HomeHeroModel.swift
-//  Flamora app
+//  Meridian
 //
 //  Official Hero data model — decoded from `get-active-fire-goal` v2 response.
 //  Used by the rebuilt Home Hero card (Phase 3).

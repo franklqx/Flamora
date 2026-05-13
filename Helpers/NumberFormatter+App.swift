@@ -1,6 +1,6 @@
 //
 //  NumberFormatter+App.swift
-//  Flamora app
+//  Meridian
 //
 //  Shared number and date formatting utilities.
 //  Replaces duplicated compactCurrency() in legacy Home shell and formatCurrency() in SimulatorView.

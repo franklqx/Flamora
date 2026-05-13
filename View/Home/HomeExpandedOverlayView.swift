@@ -1,6 +1,6 @@
 //
 //  HomeExpandedOverlayView.swift
-//  Flamora app
+//  Meridian
 //
 //  Home 下拉展开专用页面（结构与 CashflowExpandedOverlayView 对齐）
 //

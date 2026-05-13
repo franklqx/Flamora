@@ -1,6 +1,6 @@
 //
 //  OB_SignInView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - Step 2: Sign In / Sign Up
 //
@@ -34,7 +34,7 @@ struct OB_SignInView: View {
                     Spacer()
                 }
                 .overlay {
-                    Text("FLAMORA")
+                    Text("MERIDIAN")
                         .font(.caption)
                         .tracking(3)
                         .foregroundColor(AppColors.inkSoft)

@@ -1,6 +1,6 @@
 //
 //  NetWorthDetailView.swift
-//  Flamora app
+//  Meridian
 //
 //  Dedicated Home net-worth detail page in the current light-shell style.
 //

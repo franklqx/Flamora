@@ -1,4 +1,4 @@
-# Flamora — Claude 工作规范
+# Meridian — Claude 工作规范
 
 ## 项目信息
 - iOS SwiftUI app（FIRE 财务自由追踪器）
@@ -172,7 +172,7 @@ static var myNewToken: Font { appFont(XX, .weight) }
 
 ## 架构说明
 
-- 入口：`Flamora_appApp.swift` → `ContentView` → `OnboardingContainerView` 或 `MainTabView`
+- 入口：`MeridianApp.swift` → `ContentView` → `OnboardingContainerView` 或 `MainTabView`
 - Onboarding 数据：`OnboardingData`（Observable class）
 - API：`APIService.shared`（Supabase）
 - 新增 Swift 文件后需手动更新 `project.pbxproj`

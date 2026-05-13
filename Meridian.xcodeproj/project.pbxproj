@@ -144,14 +144,14 @@
 			containerPortal = 1508998C2F30F60F003DDFBF /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 150899932F30F60F003DDFBF;
-			remoteInfo = "Flamora app";
+			remoteInfo = Meridian;
 		};
 		150899AE2F30F611003DDFBF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 1508998C2F30F60F003DDFBF /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 150899932F30F60F003DDFBF;
-			remoteInfo = "Flamora app";
+			remoteInfo = Meridian;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -196,9 +196,9 @@
 		12748FF02F72790000410D60 /* BS_SplitBudgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_SplitBudgetView.swift; sourceTree = "<group>"; };
 		12748FF22F72790000410D61 /* BS_PlanSetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_PlanSetView.swift; sourceTree = "<group>"; };
 		1504D2DF2F35A99D00FEE0E3 /* AppBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBackgroundView.swift; sourceTree = "<group>"; };
-		150899942F30F60F003DDFBF /* Flamora app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Flamora app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		150899A32F30F611003DDFBF /* Flamora appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		150899AD2F30F611003DDFBF /* Flamora appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Flamora appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		150899942F30F60F003DDFBF /* Meridian.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Meridian.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		150899A32F30F611003DDFBF /* MeridianTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MeridianTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		150899AD2F30F611003DDFBF /* MeridianUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MeridianUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1508AF362F5D1A2600D59781 /* OB_BarChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_BarChartView.swift; sourceTree = "<group>"; };
 		152BE0832F67A66C00CACBBC /* GlassPillSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassPillSelector.swift; sourceTree = "<group>"; };
 		152BE0852F67A67000CACBBC /* ChartInteractionLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartInteractionLayer.swift; sourceTree = "<group>"; };
@@ -315,19 +315,19 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		150899962F30F60F003DDFBF /* Flamora app */ = {
+		150899962F30F60F003DDFBF /* Meridian */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Flamora app";
+			path = Meridian;
 			sourceTree = "<group>";
 		};
-		150899A62F30F611003DDFBF /* Flamora appTests */ = {
+		150899A62F30F611003DDFBF /* MeridianTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Flamora appTests";
+			path = MeridianTests;
 			sourceTree = "<group>";
 		};
-		150899B02F30F611003DDFBF /* Flamora appUITests */ = {
+		150899B02F30F611003DDFBF /* MeridianUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Flamora appUITests";
+			path = MeridianUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -452,9 +452,9 @@
 				8E03E4A8398A47FD9CC3F0BF /* Config.xcconfig */,
 				CDAA00032FA0000000000001 /* Helpers */,
 				1571A1D72F3C2A2C0024A729 /* Services */,
-				150899962F30F60F003DDFBF /* Flamora app */,
-				150899B02F30F611003DDFBF /* Flamora appUITests */,
-				150899A62F30F611003DDFBF /* Flamora appTests */,
+				150899962F30F60F003DDFBF /* Meridian */,
+				150899B02F30F611003DDFBF /* MeridianUITests */,
+				150899A62F30F611003DDFBF /* MeridianTests */,
 				15E21AA52F3248F500A9BB60 /* View */,
 				15A115982F3246460085ED9B /* Models */,
 				15FF6ED62F31031D0005F482 /* Components */,
@@ -466,9 +466,9 @@
 		150899952F30F60F003DDFBF /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				150899942F30F60F003DDFBF /* Flamora app.app */,
-				150899A32F30F611003DDFBF /* Flamora appTests.xctest */,
-				150899AD2F30F611003DDFBF /* Flamora appUITests.xctest */,
+				150899942F30F60F003DDFBF /* Meridian.app */,
+				150899A32F30F611003DDFBF /* MeridianTests.xctest */,
+				150899AD2F30F611003DDFBF /* MeridianUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -673,9 +673,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		150899932F30F60F003DDFBF /* Flamora app */ = {
+		150899932F30F60F003DDFBF /* Meridian */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 150899B72F30F611003DDFBF /* Build configuration list for PBXNativeTarget "Flamora app" */;
+			buildConfigurationList = 150899B72F30F611003DDFBF /* Build configuration list for PBXNativeTarget "Meridian" */;
 			buildPhases = (
 				150899902F30F60F003DDFBF /* Sources */,
 				150899912F30F60F003DDFBF /* Frameworks */,
@@ -686,22 +686,22 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				150899962F30F60F003DDFBF /* Flamora app */,
+				150899962F30F60F003DDFBF /* Meridian */,
 			);
-			name = "Flamora app";
+			name = Meridian;
 			packageProductDependencies = (
 				AA5B00022F38500000001002 /* Supabase */,
 				12123E2E2F4717FB0011B385 /* RevenueCat */,
 				12123E302F4717FB0011B385 /* RevenueCatUI */,
 				12123E332F4719A20011B385 /* LinkKit */,
 			);
-			productName = "Flamora app";
-			productReference = 150899942F30F60F003DDFBF /* Flamora app.app */;
+			productName = Meridian;
+			productReference = 150899942F30F60F003DDFBF /* Meridian.app */;
 			productType = "com.apple.product-type.application";
 		};
-		150899A22F30F611003DDFBF /* Flamora appTests */ = {
+		150899A22F30F611003DDFBF /* MeridianTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 150899BA2F30F611003DDFBF /* Build configuration list for PBXNativeTarget "Flamora appTests" */;
+			buildConfigurationList = 150899BA2F30F611003DDFBF /* Build configuration list for PBXNativeTarget "MeridianTests" */;
 			buildPhases = (
 				1508999F2F30F611003DDFBF /* Sources */,
 				150899A02F30F611003DDFBF /* Frameworks */,
@@ -713,18 +713,18 @@
 				150899A52F30F611003DDFBF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				150899A62F30F611003DDFBF /* Flamora appTests */,
+				150899A62F30F611003DDFBF /* MeridianTests */,
 			);
-			name = "Flamora appTests";
+			name = MeridianTests;
 			packageProductDependencies = (
 			);
-			productName = "Flamora appTests";
-			productReference = 150899A32F30F611003DDFBF /* Flamora appTests.xctest */;
+			productName = MeridianTests;
+			productReference = 150899A32F30F611003DDFBF /* MeridianTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		150899AC2F30F611003DDFBF /* Flamora appUITests */ = {
+		150899AC2F30F611003DDFBF /* MeridianUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 150899BD2F30F611003DDFBF /* Build configuration list for PBXNativeTarget "Flamora appUITests" */;
+			buildConfigurationList = 150899BD2F30F611003DDFBF /* Build configuration list for PBXNativeTarget "MeridianUITests" */;
 			buildPhases = (
 				150899A92F30F611003DDFBF /* Sources */,
 				150899AA2F30F611003DDFBF /* Frameworks */,
@@ -736,13 +736,13 @@
 				150899AF2F30F611003DDFBF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				150899B02F30F611003DDFBF /* Flamora appUITests */,
+				150899B02F30F611003DDFBF /* MeridianUITests */,
 			);
-			name = "Flamora appUITests";
+			name = MeridianUITests;
 			packageProductDependencies = (
 			);
-			productName = "Flamora appUITests";
-			productReference = 150899AD2F30F611003DDFBF /* Flamora appUITests.xctest */;
+			productName = MeridianUITests;
+			productReference = 150899AD2F30F611003DDFBF /* MeridianUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -768,7 +768,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 1508998F2F30F60F003DDFBF /* Build configuration list for PBXProject "Flamora app" */;
+			buildConfigurationList = 1508998F2F30F60F003DDFBF /* Build configuration list for PBXProject "Meridian" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -787,9 +787,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				150899932F30F60F003DDFBF /* Flamora app */,
-				150899A22F30F611003DDFBF /* Flamora appTests */,
-				150899AC2F30F611003DDFBF /* Flamora appUITests */,
+				150899932F30F60F003DDFBF /* Meridian */,
+				150899A22F30F611003DDFBF /* MeridianTests */,
+				150899AC2F30F611003DDFBF /* MeridianUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -970,12 +970,12 @@
 /* Begin PBXTargetDependency section */
 		150899A52F30F611003DDFBF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 150899932F30F60F003DDFBF /* Flamora app */;
+			target = 150899932F30F60F003DDFBF /* Meridian */;
 			targetProxy = 150899A42F30F611003DDFBF /* PBXContainerItemProxy */;
 		};
 		150899AF2F30F611003DDFBF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 150899932F30F60F003DDFBF /* Flamora app */;
+			target = 150899932F30F60F003DDFBF /* Meridian */;
 			targetProxy = 150899AE2F30F611003DDFBF /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -1114,6 +1114,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Flamora-App-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Meridian;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -1125,7 +1127,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.LC.fire.Flamora-app11l";
+				PRODUCT_BUNDLE_IDENTIFIER = com.enxilin.meridian;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -1145,10 +1147,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 526LTP6Z7D;
+				DEVELOPMENT_TEAM = SKDUW38P9T;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Flamora-App-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Meridian;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -1160,7 +1164,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.LA.fire.Flamora-app11l";
+				PRODUCT_BUNDLE_IDENTIFIER = com.meridian.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -1181,7 +1185,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.FL.fire.Flamora-appTests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.meridian.appTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -1189,7 +1193,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Flamora app.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Flamora app";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Meridian.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Meridian";
 			};
 			name = Debug;
 		};
@@ -1202,7 +1206,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.FL.fire.Flamora-appTests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.meridian.appTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -1210,7 +1214,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Flamora app.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Flamora app";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Meridian.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Meridian";
 			};
 			name = Release;
 		};
@@ -1221,7 +1225,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.FL.fire.Flamora-appUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.meridian.appUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -1229,7 +1233,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = "Flamora app";
+				TEST_TARGET_NAME = Meridian;
 			};
 			name = Debug;
 		};
@@ -1240,7 +1244,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.FL.fire.Flamora-appUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.meridian.appUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -1248,14 +1252,14 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = "Flamora app";
+				TEST_TARGET_NAME = Meridian;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1508998F2F30F60F003DDFBF /* Build configuration list for PBXProject "Flamora app" */ = {
+		1508998F2F30F60F003DDFBF /* Build configuration list for PBXProject "Meridian" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				150899B52F30F611003DDFBF /* Debug */,
@@ -1264,7 +1268,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		150899B72F30F611003DDFBF /* Build configuration list for PBXNativeTarget "Flamora app" */ = {
+		150899B72F30F611003DDFBF /* Build configuration list for PBXNativeTarget "Meridian" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				150899B82F30F611003DDFBF /* Debug */,
@@ -1273,7 +1277,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		150899BA2F30F611003DDFBF /* Build configuration list for PBXNativeTarget "Flamora appTests" */ = {
+		150899BA2F30F611003DDFBF /* Build configuration list for PBXNativeTarget "MeridianTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				150899BB2F30F611003DDFBF /* Debug */,
@@ -1282,7 +1286,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		150899BD2F30F611003DDFBF /* Build configuration list for PBXNativeTarget "Flamora appUITests" */ = {
+		150899BD2F30F611003DDFBF /* Build configuration list for PBXNativeTarget "MeridianUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				150899BE2F30F611003DDFBF /* Debug */,

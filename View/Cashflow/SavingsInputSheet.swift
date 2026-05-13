@@ -1,6 +1,6 @@
 //
 //  SavingsInputSheet.swift
-//  Flamora app
+//  Meridian
 //
 //  Savings input modal — light-shell version (Home + Cashflow shared).
 //  旧的深色版本归档在 OLDDESIGN/SavingsInputSheet.swift。

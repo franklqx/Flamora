@@ -1,6 +1,6 @@
 //
 //  AssetAllocationCard.swift
-//  Flamora app
+//  Meridian
 //
 
 import SwiftUI

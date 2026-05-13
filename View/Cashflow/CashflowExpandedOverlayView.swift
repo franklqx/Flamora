@@ -1,6 +1,6 @@
 //
 //  CashflowExpandedOverlayView.swift
-//  Flamora app
+//  Meridian
 //
 //  Cash Flow 下拉展开专用页面（独立于 Home Simulator）。
 //

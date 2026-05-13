@@ -1,6 +1,6 @@
 //
 //  ReportModels.swift
-//  Flamora app
+//  Meridian
 //
 //  Unified report/feed/archive models for weekly, monthly, annual, and issue-zero stories.
 //

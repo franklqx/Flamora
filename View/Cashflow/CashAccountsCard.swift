@@ -1,6 +1,6 @@
 //
 //  CashAccountsCard.swift
-//  Flamora app
+//  Meridian
 //
 //  Cash 页账户列表卡片：分成 Cash Accounts（depository）和 Credit Cards（credit）两组。
 //  数据来自 get-net-worth-summary.accounts，按 type 过滤后传入。

@@ -1,6 +1,6 @@
 //
 //  ChartInteractionLayer.swift
-//  Flamora app
+//  Meridian
 //
 //  UIViewRepresentable gesture layer for stock-style chart scrubbing.
 //

@@ -1,6 +1,6 @@
 //
 //  SuccessToast.swift
-//  Flamora app
+//  Meridian
 //
 //  Lightweight celebration toast for "Net worth new high", "Goal met for May" etc.
 //  Triggered via NotificationCenter so any view can post; rendered by MainTabView

@@ -1,6 +1,6 @@
 //
 //  BS_LoadingView.swift
-//  Flamora app
+//  Meridian
 //
 //  Budget Setup — Step 1: Loading
 //  V3: Onboarding-style loading animation + 3 sequential status lines

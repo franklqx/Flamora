@@ -1,6 +1,6 @@
 //
 //  BS_TargetView.swift
-//  Flamora app
+//  Meridian
 //
 //  Budget Setup — Step 4: Set Your Target
 //

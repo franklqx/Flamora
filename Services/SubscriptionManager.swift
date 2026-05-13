@@ -1,6 +1,6 @@
 //
 //  SubscriptionManager.swift
-//  Flamora app
+//  Meridian
 //
 //  RevenueCat 订阅状态管理
 //
@@ -11,11 +11,17 @@ import RevenueCat
 @MainActor
 @Observable
 class SubscriptionManager {
+    enum RestoreResult {
+        case restored
+        case noActivePurchase
+        case failed(message: String)
+    }
+
     static let shared = SubscriptionManager()
 
     var isPremium: Bool = false
 
-    private let entitlementId = "Flamora Pro"
+    private let entitlementIds = ["Meridian Pro", "Flamora Pro"]
 
     private init() {}
 
@@ -28,7 +34,7 @@ class SubscriptionManager {
     func checkStatus() async {
         do {
             let info = try await Purchases.shared.customerInfo()
-            isPremium = info.entitlements[entitlementId]?.isActive == true
+            isPremium = hasActiveEntitlement(in: info)
             #if DEBUG
             print("🔍 [SubscriptionManager] checkStatus — isPremium=\(isPremium)")
             #endif
@@ -67,14 +73,25 @@ class SubscriptionManager {
     }
 
     // MARK: - 恢复购买
-    func restorePurchases() async -> Bool {
+    func restorePurchases() async -> RestoreResult {
         do {
             let info = try await Purchases.shared.restorePurchases()
-            let active = info.entitlements[entitlementId]?.isActive == true
+            let active = hasActiveEntitlement(in: info)
             isPremium = active
-            return active
+            #if DEBUG
+            let activeIds = info.entitlements.active.keys.sorted()
+            print("🔍 [SubscriptionManager] restorePurchases — activeEntitlements=\(activeIds), isPremium=\(active)")
+            #endif
+            return active ? .restored : .noActivePurchase
         } catch {
-            return false
+            #if DEBUG
+            print("🔍 [SubscriptionManager] restorePurchases error: \(error)")
+            #endif
+            return .failed(message: error.localizedDescription)
         }
+    }
+
+    func hasActiveEntitlement(in customerInfo: CustomerInfo) -> Bool {
+        entitlementIds.contains { customerInfo.entitlements[$0]?.isActive == true }
     }
 }

@@ -1,6 +1,6 @@
 //
 //  OB_SpendingView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - Step 11: Monthly Spending (Snapshot 3/5)
 //

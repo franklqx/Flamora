@@ -1,6 +1,6 @@
 //
 //  Account+API.swift
-//  Flamora app
+//  Meridian
 //
 
 import Foundation

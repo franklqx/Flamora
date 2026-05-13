@@ -1,6 +1,6 @@
 //
 //  AppDataPreloader.swift
-//  Flamora app
+//  Meridian
 //
 //  Fires off the main-tab data fetches in parallel right after auth, so by
 //  the time the user lands on (or taps into) any tab the cache is warm.

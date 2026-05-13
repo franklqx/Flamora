@@ -1,4 +1,4 @@
-# Flamora — TODOS
+# Meridian — TODOS
 
 Maintained by /plan-ceo-review. Last updated: 2026-04-07.
 
@@ -6,7 +6,7 @@ Maintained by /plan-ceo-review. Last updated: 2026-04-07.
 
 ## P1 — Launch Blockers (from prior CEO review)
 
-- [ ] **Privacy/Terms URL live check** — flamora.app/privacy and /terms must resolve before App Store submission. Dead links are an App Store rejection reason.
+- [ ] **Privacy/Terms URL live check** — final public `/privacy` and `/terms` URLs must resolve before App Store submission. Dead links are an App Store rejection reason.
 - [ ] **Push notification entitlements** — APNs entitlements must be set in Xcode project before OB step 16 can send real notifications.
 - [ ] **OB step 16 (notification permission)** — onboarding notification permission screen not yet implemented.
 - [ ] **Supabase APNs token column migration** — `push_token` column needed for push delivery.

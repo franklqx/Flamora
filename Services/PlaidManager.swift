@@ -1,6 +1,6 @@
 //
 //  PlaidManager.swift
-//  Flamora app
+//  Meridian
 //
 //  Plaid 银行连接流程管理
 //

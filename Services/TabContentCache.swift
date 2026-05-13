@@ -1,6 +1,6 @@
 //
 //  TabContentCache.swift
-//  Flamora app
+//  Meridian
 //
 //  跨 Tab 切换时保留上次拉取的摘要数据，避免子视图销毁后重进出现「先空后闪」。
 //  断连银行时清空。

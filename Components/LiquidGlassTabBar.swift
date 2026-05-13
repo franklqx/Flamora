@@ -1,6 +1,6 @@
 //
 //  LiquidGlassTabBar.swift
-//  Flamora app
+//  Meridian
 //
 //  Liquid Glass 浮动 Tab Bar（与 HTML 原型视觉一致）
 //  展开：三键胶囊；收拢：右侧单圆，点击恢复 Sheet。
@@ -105,7 +105,7 @@ struct LiquidGlassTabBar: View {
         .animation(.spring(response: 0.28, dampingFraction: 0.78), value: selectedTab)
     }
 
-    /// Stable accessibility identifiers consumed by `Flamora_appUITests`.
+    /// Stable accessibility identifiers consumed by `MeridianUITests`.
     private static func accessibilityIdentifier(for item: MainTabItem) -> String {
         switch item {
         case .home: return "tab_home"

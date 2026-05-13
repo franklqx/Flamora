@@ -1,6 +1,6 @@
 //
 //  GlassmorphicTabBar.swift
-//  Flamora app
+//  Meridian
 //
 //  底部 Tab Bar 外观（三键胶囊 / 可选收拢为单圆）。由 `MainTabView` 内 `MainTabBarInset` 贴底挂载；
 //  `collapseProgress` 随 Sheet 低于默认高度时增大（仅形态，不侵入 Tab 安全区）。
@@ -247,7 +247,7 @@ struct GlassmorphicTabBar: View {
         return max(0, 1 - min(1, distance))
     }
 
-    /// Stable accessibility identifiers consumed by `Flamora_appUITests`.
+    /// Stable accessibility identifiers consumed by `MeridianUITests`.
     private static func accessibilityIdentifier(for item: MainTabItem) -> String {
         switch item {
         case .home: return "tab_home"

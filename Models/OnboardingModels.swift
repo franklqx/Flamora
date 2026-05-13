@@ -1,6 +1,6 @@
 //
 //  OnboardingModels.swift
-//  Flamora app
+//  Meridian
 //
 //  API Response models for Onboarding
 //

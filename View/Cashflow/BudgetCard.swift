@@ -1,6 +1,6 @@
 //
 //  BudgetCard.swift
-//  Flamora app
+//  Meridian
 //
 //  L1 budget summary on the Cash Flow main page.
 //  - Ring shows total budget usage, split only by Needs vs Wants.

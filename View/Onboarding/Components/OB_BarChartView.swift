@@ -1,6 +1,6 @@
 //
 //  OB_BarChartView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - Bar chart with stagger animation, scrubber, dual mode
 //  V3 — matches HTML prototype (roadmap-v3-prototype.html)
@@ -438,7 +438,7 @@ struct OB_BarChartView: View {
                     .foregroundColor(AppColors.overlayWhiteForegroundSoft)
 
                 if showOpt {
-                    Text("Flamora: \(formatCompactValue(optVal))")
+                    Text("Meridian: \(formatCompactValue(optVal))")
                         .font(.footnoteSemibold)
                         .foregroundColor(Color(hex: "FCA5A5"))
 

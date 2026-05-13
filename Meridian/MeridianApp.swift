@@ -1,6 +1,6 @@
 //
-//  Flamora_appApp.swift
-//  Flamora app
+//  MeridianApp.swift
+//  Meridian
 //
 //  Created by Frank Li on 2/2/26.
 //
@@ -11,7 +11,7 @@ import RevenueCat
 import UIKit
 
 @main
-struct Flamora_appApp: App {
+struct MeridianApp: App {
 
     @State private var subscriptionManager = SubscriptionManager.shared
     @State private var plaidManager = PlaidManager.shared

@@ -1,6 +1,6 @@
 //
 //  CashAccountDetailView.swift
-//  Flamora app
+//  Meridian
 //
 //  Light-shell master template for secondary detail pages.
 //  Structure: shellBg gradient → glass hero card (balance + chart + range)

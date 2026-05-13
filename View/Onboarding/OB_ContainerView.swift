@@ -1,6 +1,6 @@
 //
 //  OB_ContainerView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - Main Navigation Container (18 steps)
 //

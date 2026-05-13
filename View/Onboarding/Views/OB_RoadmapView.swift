@@ -1,6 +1,6 @@
 //
 //  OB_RoadmapView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - Step 15: Before/After Roadmap (merged)
 //  V3 — matches HTML prototype (roadmap-v3-prototype.html)
@@ -189,14 +189,14 @@ struct OB_RoadmapView: View {
                 + Text(".").foregroundStyle(AppColors.textPrimary)
         default:
             if data.yearsSaved == 0 {
-                return Text("With Flamora, you'll build ").foregroundStyle(AppColors.textPrimary)
+                return Text("With Meridian, you'll build ").foregroundStyle(AppColors.textPrimary)
                     + Text("+\(formatCompact(data.extraPortfolioValue)) more").foregroundStyle(brandGradient)
                     + Text(" by age ").foregroundStyle(AppColors.textPrimary)
                     + Text("\(data.optimizedFreedomAge)").foregroundStyle(brandGradient)
                     + Text(".").foregroundStyle(AppColors.textPrimary)
             } else {
                 let yearText = data.yearsSaved == 1 ? "1 year sooner" : "\(data.yearsSaved) years sooner"
-                return Text("With Flamora, you'll be free by ").foregroundStyle(AppColors.textPrimary)
+                return Text("With Meridian, you'll be free by ").foregroundStyle(AppColors.textPrimary)
                     + Text("\(data.optimizedFreedomAge)").foregroundStyle(brandGradient)
                     + Text(" — that's ").foregroundStyle(AppColors.textPrimary)
                     + Text(yearText).foregroundStyle(brandGradient)
@@ -242,7 +242,7 @@ struct OB_RoadmapView: View {
                     Text("Your current path has no timeline to freedom.")
                 default:
                     if data.yearsSaved == 0 {
-                        Text("You're already close — Flamora helps you finish strong.")
+                        Text("You're already close — Meridian helps you finish strong.")
                     } else {
                         let label = data.isFreedomAgeCapped ? "\(data.displayFreedomAge)+" : "\(data.freedomAge)"
                         Text("Your current path has you working until \(label).")
@@ -272,7 +272,7 @@ struct OB_RoadmapView: View {
                             )
                         )
                         .frame(width: 7, height: 7)
-                    Text("Flamora")
+                    Text("Meridian")
                         .font(.label)
                         .foregroundColor(AppColors.overlayWhiteAt40)
                 }
@@ -557,7 +557,7 @@ struct OB_RoadmapView: View {
                 ZStack {
                     // Before CTA (white)
                     OB_PrimaryButton(
-                        title: "See My Flamora Plan",
+                        title: "See My Meridian Plan",
                         style: .ctaWhite,
                         includeContainerPadding: false,
                         action: {
@@ -616,7 +616,7 @@ struct OB_RoadmapView: View {
 
             infoRow(label: "Annual return", value: "9%")
             infoRow(label: "Monthly savings", value: formatCurrency(data.monthlySavings))
-            infoRow(label: "Flamora optimized", value: formatCurrency(data.optimizedMonthlySavings))
+            infoRow(label: "Meridian optimized", value: formatCurrency(data.optimizedMonthlySavings))
             infoRow(label: "Your FIRE number", value: formatCompact(data.fireNumber))
 
             Divider().background(AppColors.inkDivider)

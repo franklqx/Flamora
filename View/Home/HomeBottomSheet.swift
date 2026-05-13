@@ -1,6 +1,6 @@
 //
 //  HomeBottomSheet.swift
-//  Flamora app
+//  Meridian
 //
 //  底部白色可拖动 Sheet，三个 Tab 共用。
 //  上方圆角、下方平直边；由 MainTabView 贴屏底并忽略底部安全区，避免 Home Indicator 带露出背景色。

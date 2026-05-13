@@ -1,6 +1,6 @@
 //
 //  TotalSpendingAnalysisDetailView.swift
-//  Flamora app
+//  Meridian
 //
 //  Light-shell redesign for combined (Needs + Wants) spending breakdown.
 //  Entry: BudgetCard → total spending card; Journey → total spending tile.

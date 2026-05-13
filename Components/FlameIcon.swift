@@ -1,6 +1,6 @@
 //
 //  FlameIcon.swift
-//  Flamora app
+//  Meridian
 //
 //  Unified flame icon style
 //

@@ -1,6 +1,6 @@
 //
 //  TransactionCategoryCatalog.swift
-//  Flamora app
+//  Meridian
 //
 //  交易子分类与 Needs/Wants 的静态清单（与后端 `flamora_subcategory` 展示名对齐；后续可换为远端配置）。
 //

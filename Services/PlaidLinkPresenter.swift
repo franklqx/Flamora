@@ -1,6 +1,6 @@
 //
 //  PlaidLinkPresenter.swift
-//  Flamora app
+//  Meridian
 //
 //  用独立 UIWindow 呈现 Plaid Link，彻底绕开 SwiftUI fullScreenCover
 //  触摸拦截 Bug（Plaid dismiss 后残留透明 UIHostingController）

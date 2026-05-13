@@ -1,6 +1,6 @@
 //
 //  BS_ConfirmView.swift
-//  Flamora app
+//  Meridian
 //
 //  Budget Setup — Step 6: Confirm & Save (V3, Phase E rewrite)
 //

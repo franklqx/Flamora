@@ -1,6 +1,6 @@
 //
 //  OB_OnboardingHeader.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - Unified header: back button + progress bar + step text
 //  统一返回键与进度条布局，参考 Financial Snapshot 样式

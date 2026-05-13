@@ -1,6 +1,6 @@
 //
 //  OB_PainPointsView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding Step - Primary financial challenge (single-select cards)
 //

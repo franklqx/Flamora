@@ -1,6 +1,6 @@
 //
 //  HomeJourneyProgressStrip.swift
-//  Flamora app
+//  Meridian
 //
 //  Segmented hero track + copy (embedded on brand gradient Hero, not a separate card).
 //

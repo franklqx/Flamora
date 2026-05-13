@@ -1,6 +1,6 @@
 //
 //  SettingsView.swift
-//  Flamora app
+//  Meridian
 //
 //  设置页面 - 订阅管理、银行连接、账户操作
 //
@@ -10,12 +10,19 @@ import SafariServices
 internal import Auth
 
 struct SettingsView: View {
+    private struct RestoreAlert: Identifiable {
+        let id = UUID()
+        let title: String
+        let message: String
+    }
+
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(PlaidManager.self) private var plaidManager
     @Environment(\.dismiss) private var dismiss
 
     @State private var showDisconnectConfirm = false
     @State private var isRestoringPurchases = false
+    @State private var restoreAlert: RestoreAlert?
     @State private var isDisconnecting = false
     @State private var showPaywall = false
     @State private var showPrivacy = false
@@ -94,6 +101,13 @@ struct SettingsView: View {
         } message: {
             Text("Your bank account will be disconnected and automatic transaction syncing will stop.")
         }
+        .alert(item: $restoreAlert) { alert in
+            Alert(
+                title: Text(alert.title),
+                message: Text(alert.message),
+                dismissButton: .default(Text("OK"))
+            )
+        }
     }
 }
 
@@ -154,7 +168,7 @@ private extension SettingsView {
                         row(
                             icon: "flame.fill",
                             iconColor: AppColors.brandPrimary,
-                            title: "Flamora Pro",
+                            title: "Meridian Pro",
                             trailing: {
                                 AnyView(
                                     Text(subscriptionManager.isPremium ? "Active" : "Upgrade")
@@ -199,8 +213,25 @@ private extension SettingsView {
                     Button(action: {
                         Task {
                             isRestoringPurchases = true
-                            _ = await subscriptionManager.restorePurchases()
+                            let result = await subscriptionManager.restorePurchases()
                             isRestoringPurchases = false
+                            switch result {
+                            case .restored:
+                                restoreAlert = RestoreAlert(
+                                    title: "Purchases Restored",
+                                    message: "Your Meridian Pro access has been restored."
+                                )
+                            case .noActivePurchase:
+                                restoreAlert = RestoreAlert(
+                                    title: "Nothing to Restore",
+                                    message: "We couldn't find an active purchase to restore for this Apple ID."
+                                )
+                            case .failed(let message):
+                                restoreAlert = RestoreAlert(
+                                    title: "Restore Failed",
+                                    message: message
+                                )
+                            }
                         }
                     }) {
                         row(
@@ -244,7 +275,7 @@ private extension SettingsView {
                     row(
                         icon: "lock.fill",
                         iconColor: AppColors.accentGreen,
-                        title: "Your credentials are never stored in Flamora",
+                        title: "Your credentials are never stored in Meridian",
                         subtitle: nil
                     )
 

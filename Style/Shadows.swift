@@ -1,6 +1,6 @@
 //
 //  Shadows.swift
-//  Flamora app
+//  Meridian
 //
 //  Glass shadow system — ViewModifiers for multi-layer SwiftUI shadows.
 //  Source: design-reference/home-rebuild-glass-prototype.html

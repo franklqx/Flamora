@@ -1,6 +1,6 @@
 //
 //  SavingsTrackingUI.swift
-//  Flamora app
+//  Meridian
 //
 //  Shared month-state model + UI for Home / Cashflow savings tracking.
 //

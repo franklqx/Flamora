@@ -1,13 +1,13 @@
 //
-//  Flamora_appUITests.swift
-//  Flamora appUITests
+//  MeridianUITests.swift
+//  MeridianUITests
 //
 //  Created by Frank Li on 2/2/26.
 //
 
 import XCTest
 
-final class Flamora_appUITests: XCTestCase {
+final class MeridianUITests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

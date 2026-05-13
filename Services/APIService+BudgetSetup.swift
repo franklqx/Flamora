@@ -1,6 +1,6 @@
 //
 //  APIService+BudgetSetup.swift
-//  Flamora app
+//  Meridian
 //
 //  API methods for Budget Setup flow (V2)
 //  Uses authenticatedRequest + perform (same as other APIService calls)

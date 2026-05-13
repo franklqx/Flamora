@@ -1,13 +1,13 @@
 //
-//  Flamora_appUITestsLaunchTests.swift
-//  Flamora appUITests
+//  MeridianUITestsLaunchTests.swift
+//  MeridianUITests
 //
 //  Created by Frank Li on 2/2/26.
 //
 
 import XCTest
 
-final class Flamora_appUITestsLaunchTests: XCTestCase {
+final class MeridianUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

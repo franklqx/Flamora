@@ -1,6 +1,6 @@
 //
 //  HomeRoadmapContent.swift
-//  Flamora app
+//  Meridian
 //
 //  Home Tab sheet primary content.
 //

@@ -1,6 +1,6 @@
 //
 //  PlaidTrustBridgeView.swift
-//  Flamora app
+//  Meridian
 //
 //  Trust bridge sheet shown once before the user's first Plaid connection.
 //

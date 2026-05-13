@@ -1,4 +1,4 @@
-# Design System — Flamora (Current App Baseline)
+# Design System — Meridian (Current App Baseline)
 
 ## Product Context
 - **What this is:** FIRE-focused personal finance app (Home, Cash Flow, Investment).
@@ -7,7 +7,7 @@
 - **Source of truth:** Existing shipped `Home + Cash Flow + Investment` visual language.
 
 ## North Star
-Flamora is a **light-shell system** with a **dark atmospheric hero** and **glass-like content cards**.
+Meridian is a **light-shell system** with a **dark atmospheric hero** and **glass-like content cards**.
 
 The app should feel:
 - focused and premium

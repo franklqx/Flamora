@@ -1,6 +1,6 @@
 //
 //  SupabaseManager.swift
-//  Flamora app
+//  Meridian
 //
 //  Supabase Auth Manager - 单例，管理认证状态
 //
@@ -24,7 +24,7 @@ class SupabaseManager {
             supabaseKey: AppConfig.supabaseAnonKey,
             options: .init(
                 auth: .init(
-                    redirectToURL: URL(string: "com.flamora.app://auth-callback"),
+                    redirectToURL: URL(string: "com.meridian.app://auth-callback"),
                     emitLocalSessionAsInitialSession: true
                 )
             )

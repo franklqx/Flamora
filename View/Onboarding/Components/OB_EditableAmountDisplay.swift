@@ -1,6 +1,6 @@
 //
 //  OB_EditableAmountDisplay.swift
-//  Flamora app
+//  Meridian
 //
 //  Reusable editable amount display: tap number to open keyboard, type to input.
 //

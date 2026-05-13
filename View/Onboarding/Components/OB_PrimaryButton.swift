@@ -1,6 +1,6 @@
 //
 //  OB_PrimaryButton.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - Primary CTA Button (统一样式)
 //

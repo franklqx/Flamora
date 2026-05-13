@@ -1,6 +1,6 @@
 //
 //  AppConfig.swift
-//  Flamora app
+//  Meridian
 //
 //  统一配置读取层。所有 secrets 通过 xcconfig → Info.plist → Bundle 读取，
 //  不在源码中硬编码。
@@ -14,7 +14,7 @@ import os
 
 enum AppConfig {
 
-    private static let log = Logger(subsystem: "com.flamora.app", category: "AppConfig")
+    private static let log = Logger(subsystem: "com.meridian.app", category: "AppConfig")
 
     // MARK: - Supabase
 

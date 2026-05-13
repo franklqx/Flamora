@@ -1,6 +1,6 @@
 //
 //  TickerBadge.swift
-//  Flamora app
+//  Meridian
 //
 //  Placeholder badge for holdings rows when no real security logo exists
 //  (Plaid investments endpoints don't return security logos). Pill-shaped so

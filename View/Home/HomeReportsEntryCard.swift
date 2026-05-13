@@ -1,6 +1,6 @@
 //
 //  HomeReportsEntryCard.swift
-//  Flamora app
+//  Meridian
 //
 //  Home Tab — Report 入口卡片（3 条入口：Monthly / Issue Zero / Annual）。
 //  点击触发 `onSelect(.monthly | .issueZero | .annual)`；父 View 负责 present

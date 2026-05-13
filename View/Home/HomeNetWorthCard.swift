@@ -1,6 +1,6 @@
 //
 //  HomeNetWorthCard.swift
-//  Flamora app
+//  Meridian
 //
 //  Home Tab — 净资产卡片。
 //  已连接态：当前金额 + 趋势图（1W / 1M / 3M / 1Y / ALL）。

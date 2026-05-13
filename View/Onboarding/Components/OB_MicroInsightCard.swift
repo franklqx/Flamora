@@ -1,6 +1,6 @@
 //
 //  OB_MicroInsightCard.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - Micro Insight Card with slide-up animation
 //

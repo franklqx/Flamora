@@ -1,4 +1,4 @@
-// Flamora appTests/FIREMathTests.swift
+// MeridianTests/FIREMathTests.swift
 //
 // V3 alignment test (Swift half). Mirror of
 // `Fire cursor/supabase/functions/_tests/fire-math-alignment.test.ts`.
@@ -6,7 +6,7 @@
 // so cross-runtime drift would surface as a failing assertion in either file.
 
 import XCTest
-@testable import Flamora_app
+@testable import Meridian
 
 final class FIREMathTests: XCTestCase {
 

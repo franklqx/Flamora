@@ -1,6 +1,6 @@
 //
 //  BS_AccountSelectionView.swift
-//  Flamora app
+//  Meridian
 //
 //  Budget Setup — Step 0: Account Selection
 //  Lets user choose which connected accounts to include in budget analysis.

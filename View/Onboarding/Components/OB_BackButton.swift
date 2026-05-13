@@ -1,6 +1,6 @@
 //
 //  OB_BackButton.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - 屏幕左上角返回键
 //

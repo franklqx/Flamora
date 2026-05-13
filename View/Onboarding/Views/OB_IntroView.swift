@@ -1,6 +1,6 @@
 //
 //  OB_IntroView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - Step 3: "Let's build your freedom plan"
 //

@@ -1,6 +1,6 @@
 //
 //  InvestmentHeroData.swift
-//  Flamora app
+//  Meridian
 //
 //  @Observable shared state between InvestmentView (sheet) and
 //  InvestmentPortfolioReveal (hero area overlay).

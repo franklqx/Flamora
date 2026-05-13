@@ -1,6 +1,6 @@
 //
 //  SheetPrimaryCTAButton.swift
-//  Flamora app
+//  Meridian
 //
 
 import SwiftUI

@@ -1,6 +1,6 @@
 //
 //  BankLogoView.swift
-//  Flamora app
+//  Meridian
 //
 //  Render a Plaid institution logo (base64 PNG) with three fallback tiers:
 //    1. Real logo (institutionLogoBase64) → decoded image

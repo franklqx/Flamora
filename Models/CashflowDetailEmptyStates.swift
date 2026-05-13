@@ -1,6 +1,6 @@
 //
 //  CashflowDetailEmptyStates.swift
-//  Flamora app
+//  Meridian
 //
 //  无聚合数据时的空详情（非 Mock 假数），供 Cashflow / Journey / MainTab 运行时回退。
 //

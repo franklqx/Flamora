@@ -1,6 +1,6 @@
 //
 //  InvestmentView.swift
-//  Flamora app
+//  Meridian
 //
 //  Investment overview page
 //

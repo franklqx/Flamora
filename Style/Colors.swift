@@ -1,6 +1,6 @@
 //
 //  Colors.swift
-//  Flamora app
+//  Meridian
 //
 //  全局颜色系统 - 所有页面统一使用 AppColors
 //

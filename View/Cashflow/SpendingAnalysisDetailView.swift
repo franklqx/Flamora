@@ -1,6 +1,6 @@
 //
 //  SpendingAnalysisDetailView.swift
-//  Flamora app
+//  Meridian
 //
 //  Light-shell redesign. Entry: BudgetCard → Needs / Wants section.
 //  Structure: shellBg gradient → glass hero card (selected total + annual bar

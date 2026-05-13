@@ -1,6 +1,6 @@
 //
 //  TransactionRow.swift
-//  Flamora app
+//  Meridian
 //
 //  Light-shell transaction row — slots into glass cards with inkDivider separators.
 //  No own background; container provides card chrome.

@@ -1,14 +1,14 @@
 //
-//  Flamora_appTests.swift
-//  Flamora appTests
+//  MeridianTests.swift
+//  MeridianTests
 //
 //  Created by Frank Li on 2/2/26.
 //
 
 import XCTest
-@testable import Flamora_app
+@testable import Meridian
 
-final class Flamora_appTests: XCTestCase {
+final class MeridianTests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

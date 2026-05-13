@@ -1,6 +1,6 @@
 //
 //  SavingsTargetDetailView2.swift
-//  Flamora app
+//  Meridian
 //
 //  Full-year savings tracking detail.
 //

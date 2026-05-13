@@ -1,6 +1,6 @@
 //
 //  ReportViews.swift
-//  Flamora app
+//  Meridian
 //
 //  Shared story renderer plus weekly/monthly/annual/issue-zero wrappers.
 //

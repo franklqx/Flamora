@@ -1,6 +1,6 @@
 //
 //  CashflowSpendingOverviewPrototypeCard.swift
-//  Flamora app
+//  Meridian
 //
 //  Unconnected Cash tab: Spending overview 单卡，对齐
 //  design-reference/home-rebuild-glass-prototype.html `.cash-flow-card`（Spending overview）。

@@ -1,6 +1,6 @@
 //
 //  OB_LoadingView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - Step 14: Animated Loading / Calculation
 //

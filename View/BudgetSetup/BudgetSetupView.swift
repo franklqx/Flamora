@@ -1,6 +1,6 @@
 //
 //  BudgetSetupView.swift
-//  Flamora app
+//  Meridian
 //
 //  Budget Setup — Main container with step navigation
 //  V3 (Phase E): connect → loading → reality → target → plan → split → confirm

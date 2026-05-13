@@ -1,6 +1,6 @@
 //
 //  SimulatorPreviewModel.swift
-//  Flamora app
+//  Meridian
 //
 //  Simulator preview data — decoded from `preview-simulator` Edge Function.
 //  Strictly separate from HomeHeroModel / APIFireGoal.

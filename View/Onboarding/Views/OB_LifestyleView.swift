@@ -1,6 +1,6 @@
 //
 //  OB_LifestyleView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - Step 13: Retirement Lifestyle (Snapshot 5/5)
 //

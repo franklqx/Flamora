@@ -1,6 +1,6 @@
 //
 //  Typography.swift
-//  Flamora app
+//  Meridian
 //
 //  Created by Frank Li 02/02/2026
 //

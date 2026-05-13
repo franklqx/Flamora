@@ -1,6 +1,6 @@
 //
 //  OB_SocialProofView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - Step 6: Social Proof Transition
 //
@@ -44,7 +44,7 @@ struct OB_SocialProofView: View {
                         }
                         .opacity(showLeftCard ? 1 : 0)
 
-                        // Right card: WITH FLAMORA
+                        // Right card: WITH MERIDIAN
                         VStack(spacing: 10) {
                             RoundedRectangle(cornerRadius: AppRadius.md)
                                 .fill(
@@ -78,7 +78,7 @@ struct OB_SocialProofView: View {
                                 )
                                 .animation(.spring(response: 0.6, dampingFraction: 0.75), value: showRightCard)
 
-                            Text("WITH \(Text("FLAMORA").font(.caption.italic()).foregroundStyle(AppColors.inkPrimary))")
+                            Text("WITH \(Text("MERIDIAN").font(.caption.italic()).foregroundStyle(AppColors.inkPrimary))")
                                 .font(.caption)
                                 .foregroundColor(AppColors.inkFaint)
                                 .opacity(showLabels ? 1 : 0)

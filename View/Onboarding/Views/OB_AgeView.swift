@@ -1,6 +1,6 @@
 //
 //  OB_AgeView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - 年龄 & 货币（Financial Snapshot 1/5）
 //  玻璃风格年龄滑块保留并升级

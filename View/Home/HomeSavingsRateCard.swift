@@ -1,6 +1,6 @@
 //
 //  HomeSavingsRateCard.swift
-//  Flamora app
+//  Meridian
 //
 //  Home Tab — 4-month savings check-in card.
 //  - No progress bar

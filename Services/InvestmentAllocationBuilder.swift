@@ -1,6 +1,6 @@
 //
 //  InvestmentAllocationBuilder.swift
-//  Flamora app
+//  Meridian
 //
 //  将 `get-investment-holdings` 的 `type_breakdown` 映射为 AssetAllocation 卡片使用的 Allocation。
 //

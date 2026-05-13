@@ -1,6 +1,6 @@
 //
 //  ActivePlanModel.swift
-//  Flamora app
+//  Meridian
 //
 //  Official active plan record — decoded from `apply-selected-plan` response
 //  and used by Home Action Strip, CashFlow budget card, and plan summary.

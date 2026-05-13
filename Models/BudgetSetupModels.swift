@@ -1,6 +1,6 @@
 //
 //  BudgetSetupModels.swift
-//  Flamora app
+//  Meridian
 //
 //  V2 Response models for Budget Setup flow
 //  Matches: calculate-spending-stats, generate-plans, generate-spending-plan

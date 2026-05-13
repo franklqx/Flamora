@@ -1,6 +1,6 @@
 //
 //  OnboardingData.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding 数据模型 - 收集用户信息
 //

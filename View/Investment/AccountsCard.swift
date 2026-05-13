@@ -1,6 +1,6 @@
 //
 //  AccountsCard.swift
-//  Flamora app
+//  Meridian
 //
 
 import SwiftUI

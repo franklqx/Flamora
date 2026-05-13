@@ -1,6 +1,6 @@
 //
 //  OB_WelcomeView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - Step 1: Welcome Carousel (4 pages)
 //  • 翻页：点击左半屏 ← / 点击右半屏 → / 左右滑动 / 动画完成后自动播放

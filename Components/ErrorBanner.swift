@@ -1,6 +1,6 @@
 //
 //  ErrorBanner.swift
-//  Flamora app
+//  Meridian
 //
 //  Minimal reusable error banner for data-load and action failures.
 //  Usage: ErrorBanner(message: "...", onRetry: { ... })

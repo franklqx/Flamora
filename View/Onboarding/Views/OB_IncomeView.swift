@@ -1,6 +1,6 @@
 //
 //  OB_IncomeView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding - Step 10: Monthly Income (Snapshot 2/5)
 //

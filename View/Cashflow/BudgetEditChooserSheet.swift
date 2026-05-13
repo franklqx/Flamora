@@ -1,6 +1,6 @@
 //
 //  BudgetEditChooserSheet.swift
-//  Flamora app
+//  Meridian
 //
 //  White bottom sheet that lets the user pick between adjusting the overall
 //  plan or editing per-category budgets. Replaces the native ActionSheet so

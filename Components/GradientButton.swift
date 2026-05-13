@@ -1,6 +1,6 @@
 //
 //  GradientButton.swift
-//  Flamora app
+//  Meridian
 //
 //  渐变按钮组件 - 全局统一使用
 //

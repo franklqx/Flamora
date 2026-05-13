@@ -1,6 +1,6 @@
 //
 //  AppLinks.swift
-//  Flamora app
+//  Meridian
 //
 //  Unified legal URLs and trust bridge copy.
 //
@@ -28,7 +28,7 @@ enum AppLinks {
     // MARK: - Trust Bridge Copy
     enum TrustBridge {
         static let title       = "Connect Securely"
-        static let body        = "Flamora connects through Plaid, a read-only service used by major financial apps. Your bank credentials are never stored in Flamora."
+        static let body        = "Meridian connects through Plaid, a read-only service used by major financial apps. Your bank credentials are never stored in Meridian."
         static let buttonLabel = "Connect Securely"
 
         static let badges: [(icon: String, label: String)] = [

@@ -1,6 +1,6 @@
 //
 //  EmptyStateView.swift
-//  Flamora app
+//  Meridian
 //
 //  Inline empty-state placeholder for cards / sections with no data yet.
 //  Designed to be dropped INSIDE an existing card (which provides its own

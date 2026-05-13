@@ -1,6 +1,6 @@
 //
 //  OB_NameView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding Step 2 - 名字输入
 //

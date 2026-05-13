@@ -1,6 +1,6 @@
 //
 //  AccountDetailView.swift
-//  Flamora app
+//  Meridian
 //
 //  Light-shell detail page for a brokerage / crypto / bank account.
 //  Shell pattern mirrors CashAccountDetailView: shellBg gradient →

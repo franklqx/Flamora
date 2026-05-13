@@ -1,6 +1,6 @@
 //
 //  TransactionDetailSheet.swift
-//  Flamora app
+//  Meridian
 //
 //  Transaction detail sheet — light-shell styling.
 //  Shows info, allows subcategory editing; subcategory drives Needs/Wants classification.

@@ -1,6 +1,6 @@
 //
 //  Spacing.swift
-//  Flamora app
+//  Meridian
 //
 //  全局间距和圆角系统 - 所有页面统一使用
 //

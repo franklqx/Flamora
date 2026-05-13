@@ -1,6 +1,6 @@
 //
 //  BS_SplitBudgetView.swift
-//  Flamora app
+//  Meridian
 //
 //  Budget Setup — Optional category budgets step.
 //  Reached only via the Plan-Set celebration page when the user opts in.

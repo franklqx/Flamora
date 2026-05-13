@@ -1,6 +1,6 @@
 //
 //  DetailSheetScaffold.swift
-//  Flamora app
+//  Meridian
 //
 //  统一的二级详情页容器：light-shell 渐变背景 + 垂直滚动 + h1 标题 + 圆形关闭按钮。
 //  用法：

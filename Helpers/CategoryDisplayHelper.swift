@@ -1,6 +1,6 @@
 //
 //  CategoryDisplayHelper.swift
-//  Flamora app
+//  Meridian
 //
 //  Centralized category display names and emoji mappings.
 //  Converts raw Plaid PFC / subcategory field names into human-readable labels.

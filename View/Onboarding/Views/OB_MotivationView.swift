@@ -1,6 +1,6 @@
 //
 //  OB_MotivationView.swift
-//  Flamora app
+//  Meridian
 //
 //  Onboarding Step 3 - 动机选择（多选卡片）
 //

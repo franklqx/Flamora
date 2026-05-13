@@ -1,6 +1,6 @@
 //
 //  SafariView.swift
-//  Flamora app
+//  Meridian
 //
 //  Thin UIViewControllerRepresentable wrapper around SFSafariViewController.
 //

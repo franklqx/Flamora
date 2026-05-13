@@ -1,6 +1,6 @@
 //
 //  InvestmentDataStore.swift
-//  Flamora app
+//  Meridian
 //
 
 import Foundation

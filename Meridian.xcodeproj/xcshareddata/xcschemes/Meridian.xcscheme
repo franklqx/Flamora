@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "150899932F30F60F003DDFBF"
-               BuildableName = "Flamora app.app"
-               BlueprintName = "Flamora app"
-               ReferencedContainer = "container:Flamora app.xcodeproj">
+               BuildableName = "Meridian.app"
+               BlueprintName = "Meridian"
+               ReferencedContainer = "container:Meridian.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -36,9 +36,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "150899A22F30F611003DDFBF"
-               BuildableName = "Flamora appTests.xctest"
-               BlueprintName = "Flamora appTests"
-               ReferencedContainer = "container:Flamora app.xcodeproj">
+               BuildableName = "MeridianTests.xctest"
+               BlueprintName = "MeridianTests"
+               ReferencedContainer = "container:Meridian.xcodeproj">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -47,9 +47,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "150899AC2F30F611003DDFBF"
-               BuildableName = "Flamora appUITests.xctest"
-               BlueprintName = "Flamora appUITests"
-               ReferencedContainer = "container:Flamora app.xcodeproj">
+               BuildableName = "MeridianUITests.xctest"
+               BlueprintName = "MeridianUITests"
+               ReferencedContainer = "container:Meridian.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -69,9 +69,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "150899932F30F60F003DDFBF"
-            BuildableName = "Flamora app.app"
-            BlueprintName = "Flamora app"
-            ReferencedContainer = "container:Flamora app.xcodeproj">
+            BuildableName = "Meridian.app"
+            BlueprintName = "Meridian"
+            ReferencedContainer = "container:Meridian.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -86,9 +86,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "150899932F30F60F003DDFBF"
-            BuildableName = "Flamora app.app"
-            BlueprintName = "Flamora app"
-            ReferencedContainer = "container:Flamora app.xcodeproj">
+            BuildableName = "Meridian.app"
+            BlueprintName = "Meridian"
+            ReferencedContainer = "container:Meridian.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  Flamora app
+//  Meridian
 //
 //  Created by Frank Li on 2/3/26.
 //

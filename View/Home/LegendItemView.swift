@@ -1,6 +1,6 @@
 //
 //  LegendItemView.swift
-//  Flamora app
+//  Meridian
 //
 //  Shared chart-legend item used by SimulatorView (Home).
 //  Two visual styles:

@@ -1,6 +1,6 @@
 //
 //  BudgetMonthSwitcherSheet.swift
-//  Flamora app
+//  Meridian
 //
 //  Lets the user pick a historical month to view in BudgetCard.
 //  Only months with a saved monthly_budget record are listed.

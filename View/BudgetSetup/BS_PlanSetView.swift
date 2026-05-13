@@ -1,6 +1,6 @@
 //
 //  BS_PlanSetView.swift
-//  Flamora app
+//  Meridian
 //
 //  Budget Setup — Plan-set celebration step.
 //  Shown after user picks a plan (.plan) and before optional category split (.split).

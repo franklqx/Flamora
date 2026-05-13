@@ -1,6 +1,6 @@
 //
 //  CashflowView.swift
-//  Flamora app
+//  Meridian
 //
 //  Saving / Cash Flow summary page
 //

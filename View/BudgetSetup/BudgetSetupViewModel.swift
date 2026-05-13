@@ -1,6 +1,6 @@
 //
 //  BudgetSetupViewModel.swift
-//  Flamora app
+//  Meridian
 //
 //  V3 ViewModel for Budget Setup flow (Phase E refactor — 6-step contract)
 //  Step 1 Connect:  Plaid Link or Skip → manual 4 fields

@@ -1,6 +1,6 @@
 //
 //  BS_ChoosePathView.swift
-//  Flamora app
+//  Meridian
 //
 //  Budget Setup — Step 5: Choose Your Plan
 //  Phase D wiring: consumes the new dynamic `plans[]` contract from generate-plans.
