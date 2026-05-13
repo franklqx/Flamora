@@ -38,9 +38,9 @@ This document tracks what has been renamed from `Flamora` to `Meridian`, what is
 
 ## Intentionally Deferred
 
-- RevenueCat internal entitlement ID
-  - Code now supports both `Meridian Pro` and `Flamora Pro` during migration
-  - User-facing copy is already `Meridian Pro`
+- RevenueCat cleanup
+  - Code now recognizes only `Meridian Pro`
+  - Old RevenueCat entitlement `Flamora Pro` can be removed from the dashboard once final QA is complete
 - Local storage keys
   - `FlamoraStorageKey`
   - Existing `UserDefaults` keys keep the old prefix to avoid breaking existing local state

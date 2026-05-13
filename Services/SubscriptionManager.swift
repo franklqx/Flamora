@@ -21,7 +21,7 @@ class SubscriptionManager {
 
     var isPremium: Bool = false
 
-    private let entitlementIds = ["Meridian Pro", "Flamora Pro"]
+    private let entitlementIds = ["Meridian Pro"]
 
     private init() {}
 
