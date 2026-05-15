@@ -60,8 +60,6 @@
 		1571A1D82F3C2A2C0024A729 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1571A1D62F3C2A2C0024A729 /* APIService.swift */; };
 		1571A1DA2F3C2A5B0024A729 /* OnboardingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1571A1D92F3C2A5B0024A729 /* OnboardingModels.swift */; };
 		15A115992F3246460085ED9B /* mockdata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A115972F3246460085ED9B /* mockdata.swift */; };
-		15ABCD012F36A00000AABB01 /* IncomeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15ABCD002F36A00000AABB01 /* IncomeDetailView.swift */; };
-		15ABCD032F36B00000AABB02 /* TotalIncomeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15ABCD022F36B00000AABB02 /* TotalIncomeDetailView.swift */; };
 		15E21AAB2F324EFA00A9BB60 /* Spacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AAA2F324EFA00A9BB60 /* Spacing.swift */; };
 		15E21AB12F32548A00A9BB60 /* SimulatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB02F32548A00A9BB60 /* SimulatorView.swift */; };
 		15E21AB32F3257B000A9BB60 /* CashflowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AB22F3257B000A9BB60 /* CashflowView.swift */; };
@@ -75,7 +73,6 @@
 		15E21AF52F33F2BE00A9BB60 /* AssetAllocationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */; };
 		15E21AF82F34010000A9BB71 /* TransactionDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF72F34010000A9BB70 /* TransactionDetailSheet.swift */; };
 		15E21AFA2F34020000A9BB72 /* TransactionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AF92F34020000A9BB73 /* TransactionRow.swift */; };
-		15E21AFC2F34030000A9BB74 /* AllTransactionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21AFB2F34030000A9BB75 /* AllTransactionsView.swift */; };
 		15E21B102F33F31000A9BB70 /* AccountDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21B0F2F33F31000A9BB70 /* AccountDetailView.swift */; };
 		15E21B142F33F33000A9BB80 /* AssetAllocationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E21B132F33F33000A9BB80 /* AssetAllocationDetailView.swift */; };
 		15FF6EDA2F31096B0005F482 /* GradientButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15FF6ED92F31043F0005F482 /* GradientButton.swift */; };
@@ -208,15 +205,12 @@
 		1571A1D62F3C2A2C0024A729 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
 		1571A1D92F3C2A5B0024A729 /* OnboardingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingModels.swift; sourceTree = "<group>"; };
 		15A115972F3246460085ED9B /* mockdata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mockdata.swift; sourceTree = "<group>"; };
-		15ABCD002F36A00000AABB01 /* IncomeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomeDetailView.swift; sourceTree = "<group>"; };
-		15ABCD022F36B00000AABB02 /* TotalIncomeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotalIncomeDetailView.swift; sourceTree = "<group>"; };
 		15E21AAA2F324EFA00A9BB60 /* Spacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spacing.swift; sourceTree = "<group>"; };
 		15E21AB02F32548A00A9BB60 /* SimulatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorView.swift; sourceTree = "<group>"; };
 		15E21AB22F3257B000A9BB60 /* CashflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowView.swift; sourceTree = "<group>"; };
 		15E21AB62F3257C600A9BB60 /* InvestmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvestmentView.swift; sourceTree = "<group>"; };
 		15E21AB82F3257D700A9BB60 /* GlassmorphicTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassmorphicTabBar.swift; sourceTree = "<group>"; };
 		15E21AD82F3394B100A9BB60 /* FlameIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlameIcon.swift; sourceTree = "<group>"; };
-		15E21AE02F33BB9200A9BB60 /* SavingsTargetCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsTargetCard.swift; sourceTree = "<group>"; };
 		15E21AE22F33BBB600A9BB60 /* SavingsInputSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsInputSheet.swift; sourceTree = "<group>"; };
 		15E21AEC2F33C11A00A9BB60 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		15E21AF02F33C40000A9BB60 /* BudgetCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetCard.swift; sourceTree = "<group>"; };
@@ -224,33 +218,8 @@
 		15E21AF42F33F2BE00A9BB60 /* AssetAllocationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetAllocationCard.swift; sourceTree = "<group>"; };
 		15E21AF72F34010000A9BB70 /* TransactionDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionDetailSheet.swift; sourceTree = "<group>"; };
 		15E21AF92F34020000A9BB73 /* TransactionRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionRow.swift; sourceTree = "<group>"; };
-		15E21AFB2F34030000A9BB75 /* AllTransactionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllTransactionsView.swift; sourceTree = "<group>"; };
 		15E21B0F2F33F31000A9BB70 /* AccountDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountDetailView.swift; sourceTree = "<group>"; };
 		15E21B132F33F33000A9BB80 /* AssetAllocationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetAllocationDetailView.swift; sourceTree = "<group>"; };
-		15E99F502F906CD6008E9FBA /* AppCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCard.swift; sourceTree = "<group>"; };
-		15E99F512F906CD6008E9FBA /* BS_SpendingBreakdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS_SpendingBreakdownView.swift; sourceTree = "<group>"; };
-		15E99F522F906CD6008E9FBA /* BudgetPlanCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetPlanCard.swift; sourceTree = "<group>"; };
-		15E99F532F906CD6008E9FBA /* ConnectAccountCTAView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectAccountCTAView.swift; sourceTree = "<group>"; };
-		15E99F542F906CD6008E9FBA /* DailyQuoteCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyQuoteCard.swift; sourceTree = "<group>"; };
-		15E99F552F906CD6008E9FBA /* FIRECountdownCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FIRECountdownCard.swift; sourceTree = "<group>"; };
-		15E99F562F906CD6008E9FBA /* FlameTogglePill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlameTogglePill.swift; sourceTree = "<group>"; };
-		15E99F572F906CD6008E9FBA /* HeaderVisibilityPreferenceKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeaderVisibilityPreferenceKey.swift; sourceTree = "<group>"; };
-		15E99F582F906CD6008E9FBA /* IncomeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomeCard.swift; sourceTree = "<group>"; };
-		15E99F592F906CD6008E9FBA /* JourneyContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyContainerView.swift; sourceTree = "<group>"; };
-		15E99F5A2F906CD6008E9FBA /* JourneyTodoList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyTodoList.swift; sourceTree = "<group>"; };
-		15E99F5B2F906CD6008E9FBA /* JourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyView.swift; sourceTree = "<group>"; };
-		15E99F5C2F906CD6008E9FBA /* JourneyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyViewModel.swift; sourceTree = "<group>"; };
-		15E99F5D2F906CD6008E9FBA /* MonthIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthIndicator.swift; sourceTree = "<group>"; };
-		15E99F5E2F906CD6008E9FBA /* NoDelayScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoDelayScrollView.swift; sourceTree = "<group>"; };
-		15E99F5F2F906CD6008E9FBA /* OB_PersonalizeProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_PersonalizeProgress.swift; sourceTree = "<group>"; };
-		15E99F602F906CD6008E9FBA /* OB_SnapshotProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OB_SnapshotProgress.swift; sourceTree = "<group>"; };
-		15E99F612F906CD6008E9FBA /* PlaidLinkRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaidLinkRepresentable.swift; sourceTree = "<group>"; };
-		15E99F622F906CD6008E9FBA /* PortfolioCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioCard.swift; sourceTree = "<group>"; };
-		15E99F632F906CD6008E9FBA /* PortfolioHoldingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioHoldingsSection.swift; sourceTree = "<group>"; };
-		15E99F642F906CD6008E9FBA /* ProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBar.swift; sourceTree = "<group>"; };
-		15E99F652F906CD6008E9FBA /* SavingsRateCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsRateCard.swift; sourceTree = "<group>"; };
-		15E99F662F906CD6008E9FBA /* SmoothPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmoothPath.swift; sourceTree = "<group>"; };
-		15E99F672F906CD6008E9FBA /* TabBarVisibilityPreferenceKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarVisibilityPreferenceKey.swift; sourceTree = "<group>"; };
 		15FF6ED72F31033C0005F482 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
 		15FF6ED82F3103F70005F482 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		15FF6ED92F31043F0005F482 /* GradientButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientButton.swift; sourceTree = "<group>"; };
@@ -302,8 +271,6 @@
 		F10000C32FB3000000000003 /* HomeNetWorthCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeNetWorthCard.swift; sourceTree = "<group>"; };
 		F10000C52FB3000000000005 /* HomeSavingsRateCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeSavingsRateCard.swift; sourceTree = "<group>"; };
 		F10000C72FB3000000000007 /* HomeReportsEntryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeReportsEntryCard.swift; sourceTree = "<group>"; };
-		F10000C92FB3000000000009 /* SavingsInputSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsInputSheet.swift; sourceTree = "<group>"; };
-		F10000CA2FB300000000000A /* SavingsTargetDetailView2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavingsTargetDetailView2.swift; sourceTree = "<group>"; };
 		F3D88B1E877C494CB82A4469 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		PH0B00012F40000000000002 /* LegendItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegendItemView.swift; sourceTree = "<group>"; };
 		PH0C00022F40000000000003 /* NumberFormatter+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NumberFormatter+App.swift"; sourceTree = "<group>"; };
@@ -448,7 +415,6 @@
 		1508998B2F30F60F003DDFBF = {
 			isa = PBXGroup;
 			children = (
-				15E99F682F906CD6008E9FBA /* OLDDESIGN */,
 				8E03E4A8398A47FD9CC3F0BF /* Config.xcconfig */,
 				CDAA00032FA0000000000001 /* Helpers */,
 				1571A1D72F3C2A2C0024A729 /* Services */,
@@ -581,43 +547,6 @@
 				15E21AB62F3257C600A9BB60 /* InvestmentView.swift */,
 			);
 			path = Investment;
-			sourceTree = "<group>";
-		};
-		15E99F682F906CD6008E9FBA /* OLDDESIGN */ = {
-			isa = PBXGroup;
-			children = (
-				15E99F502F906CD6008E9FBA /* AppCard.swift */,
-				15E99F512F906CD6008E9FBA /* BS_SpendingBreakdownView.swift */,
-				15E99F522F906CD6008E9FBA /* BudgetPlanCard.swift */,
-				15E99F532F906CD6008E9FBA /* ConnectAccountCTAView.swift */,
-				15E99F542F906CD6008E9FBA /* DailyQuoteCard.swift */,
-				15E99F552F906CD6008E9FBA /* FIRECountdownCard.swift */,
-				15E99F562F906CD6008E9FBA /* FlameTogglePill.swift */,
-				15E99F572F906CD6008E9FBA /* HeaderVisibilityPreferenceKey.swift */,
-				15E99F582F906CD6008E9FBA /* IncomeCard.swift */,
-				15E99F592F906CD6008E9FBA /* JourneyContainerView.swift */,
-				15E99F5A2F906CD6008E9FBA /* JourneyTodoList.swift */,
-				15E99F5B2F906CD6008E9FBA /* JourneyView.swift */,
-				15E99F5C2F906CD6008E9FBA /* JourneyViewModel.swift */,
-				15E99F5D2F906CD6008E9FBA /* MonthIndicator.swift */,
-				15E99F5E2F906CD6008E9FBA /* NoDelayScrollView.swift */,
-				15E99F5F2F906CD6008E9FBA /* OB_PersonalizeProgress.swift */,
-				15E99F602F906CD6008E9FBA /* OB_SnapshotProgress.swift */,
-				15E99F612F906CD6008E9FBA /* PlaidLinkRepresentable.swift */,
-				15E99F622F906CD6008E9FBA /* PortfolioCard.swift */,
-				15E99F632F906CD6008E9FBA /* PortfolioHoldingsSection.swift */,
-				15E99F642F906CD6008E9FBA /* ProgressBar.swift */,
-				15E99F652F906CD6008E9FBA /* SavingsRateCard.swift */,
-				15E99F662F906CD6008E9FBA /* SmoothPath.swift */,
-				15E99F672F906CD6008E9FBA /* TabBarVisibilityPreferenceKey.swift */,
-				15E21AE02F33BB9200A9BB60 /* SavingsTargetCard.swift */,
-				F10000C92FB3000000000009 /* SavingsInputSheet.swift */,
-				F10000CA2FB300000000000A /* SavingsTargetDetailView2.swift */,
-				15ABCD002F36A00000AABB01 /* IncomeDetailView.swift */,
-				15E21AFB2F34030000A9BB75 /* AllTransactionsView.swift */,
-				15ABCD022F36B00000AABB02 /* TotalIncomeDetailView.swift */,
-			);
-			path = OLDDESIGN;
 			sourceTree = "<group>";
 		};
 		15FF6ED52F3102D50005F482 /* Style */ = {
@@ -870,7 +799,6 @@
 				15E21AE32F33BBB600A9BB60 /* SavingsInputSheet.swift in Sources */,
 				15E21AF82F34010000A9BB71 /* TransactionDetailSheet.swift in Sources */,
 				15E21AFA2F34020000A9BB72 /* TransactionRow.swift in Sources */,
-				15E21AFC2F34030000A9BB74 /* AllTransactionsView.swift in Sources */,
 				CDBB00022FA1000000000001 /* CashAccountsCard.swift in Sources */,
 				CDBB00042FA1000000000001 /* CashAccountDetailView.swift in Sources */,
 				153CA31A2F34EDEC001ED98E /* TopHeaderBar.swift in Sources */,
@@ -899,8 +827,6 @@
 				F10000082FB0000000000001 /* SheetPrimaryCTAButton.swift in Sources */,
 				15E21B102F33F31000A9BB70 /* AccountDetailView.swift in Sources */,
 				153CA32C2F3562AC001ED98E /* SavingsTargetDetailView2.swift in Sources */,
-				15ABCD012F36A00000AABB01 /* IncomeDetailView.swift in Sources */,
-				15ABCD032F36B00000AABB02 /* TotalIncomeDetailView.swift in Sources */,
 				1571A1DA2F3C2A5B0024A729 /* OnboardingModels.swift in Sources */,
 				15E21AD92F3394B100A9BB60 /* FlameIcon.swift in Sources */,
 				15E21AB32F3257B000A9BB60 /* CashflowView.swift in Sources */,
@@ -1110,7 +1036,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SKDUW38P9T;
+				DEVELOPMENT_TEAM = 526LTP6Z7D;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Flamora-App-Info.plist";
