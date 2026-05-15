@@ -27,47 +27,38 @@ struct InvestmentView: View {
     }
 
     var connectedView: some View {
-        ZStack {
-            LinearGradient(
-                colors: [AppColors.shellBg1, AppColors.shellBg2],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-
-            GeometryReader { proxy in
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                        if loadError {
-                            ErrorBanner(
-                                message: "Couldn't load portfolio data.",
-                                onRetry: { Task { await loadInvestmentData() } }
-                            )
-                        }
-
-                        if showSetupBanner {
-                            setupBanner
-                        }
-
-                        AssetAllocationCard(
-                            allocation: displayAllocation,
-                            isConnected: plaidManager.hasLinkedBank,
-                            holdingsPayload: apiHoldingsPayload,
-                            cashBankAccounts: cashBankAccounts
-                        )
-
-                        AccountsCard(
-                            accounts: computedAccounts,
-                            isConnected: plaidManager.hasLinkedBank,
-                            onAddAccount: handleAddAccount
-                        )
-                    }
-                    .frame(minHeight: proxy.size.height, alignment: .top)
-                    .padding(.horizontal, AppSpacing.cardPadding)
-                    .padding(.top, AppSpacing.lg)
-                    .padding(.bottom, AppSpacing.xl)
+        ScrollView(showsIndicators: false) {
+            LazyVStack(alignment: .leading, spacing: AppSpacing.lg) {
+                if loadError {
+                    ErrorBanner(
+                        message: "Couldn't load portfolio data.",
+                        onRetry: { Task { await loadInvestmentData() } }
+                    )
+                    .padding(.horizontal, AppSpacing.screenPadding)
                 }
+
+                if showSetupBanner {
+                    setupBanner
+                        .padding(.horizontal, AppSpacing.screenPadding)
+                }
+
+                AssetAllocationCard(
+                    allocation: displayAllocation,
+                    isConnected: plaidManager.hasLinkedBank,
+                    holdingsPayload: apiHoldingsPayload,
+                    cashBankAccounts: cashBankAccounts
+                )
+                .padding(.horizontal, AppSpacing.screenPadding)
+
+                AccountsCard(
+                    accounts: computedAccounts,
+                    isConnected: plaidManager.hasLinkedBank,
+                    onAddAccount: handleAddAccount
+                )
+                .padding(.horizontal, AppSpacing.screenPadding)
             }
+            .padding(.top, AppSpacing.md)
+            .padding(.bottom, AppSpacing.lg)
         }
         .alert("Bank Connection Failed", isPresented: Binding(
             get: { plaidManager.linkError != nil },
